@@ -1,24 +1,29 @@
 <!-- Auto-generated from README.md by scripts/generate_i18n.py — do not edit manually -->
 # Prism AAC
 
-**Ayuda a los niños no verbales a comunicarse.**
+**Ayuda a niños y adultos no verbales a hablar.**
 
-Aplicación de Comunicación Aumentativa y Alternativa (AAC) para niños con discapacidades motoras y necesidades complejas de comunicación. Toca imágenes, construye frases, escúchalas en voz alta — en 23 idiomas. Funciona en cualquier tableta, portátil, iPhone, iPad y Apple Watch.
+Aplicación de Comunicación Aumentativa y Alternativa (CAA) para niños con deficiencias motoras y necesidades complejas de comunicación. Toca imágenes, construye frases, escúchalas en voz alta — en 25 idiomas (28 variantes regionales). Funciona en cualquier tableta, portátil, iPhone, iPad y Apple Watch.
 
 Parte de la [plataforma Synalux](https://synalux.ai).
+
+**Pruébalo ahora:**
+- **Aplicación web (gratis):** [synalux.ai/prism-aac](https://synalux.ai/prism-aac) — funciona en cualquier dispositivo con un navegador
+- **iOS (iPhone + iPad + Apple Watch):** [App Store](https://apps.apple.com/app/id6764692277)
+- **Precios:** [synalux.ai/pricing](https://synalux.ai/pricing) — gratis, más un plan opcional Prism AAC Cloud (4,99 US$/mes) para voz natural e inclusión de IA en la nube
 
 🌐 [English](../../README.md) · **Español** · [Français](README_fr.md) · [Português](README_pt.md) · [Română](README_ro.md) · [Українська](README_uk.md) · [Русский](README_ru.md) · [Deutsch](README_de.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [中文](README_zh.md) · [العربية](README_ar.md)
 
 <p align="center">
-  <a href="https://apps.apple.com/app/id6764692277"><img src="https://img.shields.io/badge/App_Store-Download-0D96F6?style=for-the-badge&logo=apple&logoColor=white" alt="App Store"></a>
-  <a href="https://synalux.ai/prism-aac"><img src="https://img.shields.io/badge/Try_It-Free-43e97b?style=for-the-badge" alt="Probar Gratis"></a>
-  <a href="https://synalux.ai/pricing"><img src="https://img.shields.io/badge/Plans-Free_+_Paid-764ba2?style=for-the-badge" alt="Precios"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=for-the-badge" alt="AGPL-3.0"></a>
-  <a href="PRIVACY.md"><img src="https://img.shields.io/badge/Privacy-Policy-lightgrey?style=for-the-badge" alt="Privacidad"></a>
-  <a href="TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Términos"></a>
+  <a href="https://apps.apple.com/app/id6764692277"><img src="https://img.shields.io/badge/App_Store-Descargar-0D96F6?style=for-the-badge&logo=apple&logoColor=white" alt="App Store"></a>
+  <a href="https://synalux.ai/prism-aac"><img src="https://img.shields.io/badge/Probar-Gratis-43e97b?style=for-the-badge" alt="Probar gratis"></a>
+  <a href="https://synalux.ai/pricing"><img src="https://img.shields.io/badge/Planes-Gratis_+_De_pago-764ba2?style=for-the-badge" alt="Precios"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Licencia-AGPL--3.0-blue?style=for-the-badge" alt="AGPL-3.0"></a>
+  <a href="PRIVACY.md"><img src="https://img.shields.io/badge/Privacidad-Política-lightgrey?style=for-the-badge" alt="Privacidad"></a>
+  <a href="TERMS.md"><img src="https://img.shields.io/badge/Términos-del_servicio-lightgrey?style=for-the-badge" alt="Términos"></a>
 </p>
 
-![Prism AAC main screen — toolbar, schedule banner, type-here bar, prediction tiles, and qwerty keyboard](../../docs/screenshots/app-hero.png)
+![Pantalla principal de Prism AAC en iPad — barra de herramientas, barra de escritura, cinco casillas de predicción y el teclado QWERTY completo (aplicación web de producción, 1.9.0)](../../docs/screenshots/app-hero.png)
 
 ### Aplicaciones nativas
 
@@ -28,85 +33,187 @@ Parte de la [plataforma Synalux](https://synalux.ai).
   <img src="../../docs/screenshots/watch-ultra.png" alt="PrismAAC en Apple Watch Ultra" width="120" />
 </p>
 
+<sub>Capturas de iPhone e iPad realizadas en la versión 1.9.0 (53) ejecutando la aplicación web de producción, 08/09/2026. Captura del reloj correspondiente a la versión 1.4.0.</sub>
+
 | Plataforma | Estado | IA en el dispositivo | Notas |
-|----------|--------|-------------|-------|
-| **Web** (PWA) | Producción | Descarga automáticamente el mejor modelo local | Cualquier navegador, instalable |
-| **iPad Pro 16GB** | Producción | IA en el dispositivo (14B) | Rápido, privado, seleccionado automáticamente por la RAM |
-| **iPhone / iPad 8GB** | Producción | IA en el dispositivo (8B → 1.7B de respaldo) | Reduce automáticamente el tamaño para adaptarse al dispositivo |
-| **iPhone / iPad <8GB** | Producción | IA en el dispositivo (1.7B) | Siempre se ajusta, 1.1 GB |
-| **Apple Watch** | Producción | Diccionario de frases sin conexión (1,261 × 20 idiomas) | Independiente — pictogramas, TTS, emergencia |
-| **Extensión de Chrome** | Producción | — | Asistente de lectura en cualquier campo de texto |
-| **WiFi a Mac** | Producción | 14B/32B vía Ollama | Ajustes → IA Local → introducir IP de Mac |
+|------------|--------|----------------------|-------|
+| **Web** (PWA) | ✅ Producción | Descarga automáticamente el mejor modelo local | Cualquier navegador, instalable; plan Cloud mediante Stripe |
+| **iPad Pro 16GB** | ✅ Producción | IA de 4B en el dispositivo (100 % de precisión) | Más rápido, totalmente privado; plan Cloud mediante compra dentro de la app de Apple |
+| **iPhone Pro 8GB** | ✅ Producción | 4B Q4_K_M en el dispositivo (100 % de precisión) | Seleccionado automáticamente según la RAM |
+| **Todos los iPhone** | ✅ Producción | 2B Q3_K_M en el dispositivo (99,1 % de precisión) | 2,3 GB — se adapta a cualquier iPhone |
+| **Apple Watch** | ✅ Producción | Frases sin conexión (1261 × 20 idiomas) | Independiente — pictogramas, TTS, emergencias |
+| **Extensión de Chrome** | ✅ Producción | — | Asistente de lectura en cualquier campo de texto |
+| **WiFi a Mac** | ✅ Producción | 9B/27B mediante Ollama | Ajustes → IA local → introducir IP de la Mac |
 
 ---
 
-## Video de vista previa en la App Store
+## Vídeo de presentación en la App Store
 
-Video de 30 segundos que muestra todas las características principales con narración TTS de Inworld:
+Vídeo de 30 segundos que muestra las principales funciones con narración de Inworld TTS:
 
 https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
 
-| Escena | Característica | Captura de pantalla |
+| Escena | Función | Captura de pantalla |
 |---|---|---|
 | **Inicio** — tocar frases | Tablero de pictogramas con 22 categorías, botón Hablar | <img src="../../docs/screenshots/appstore/ipad_home.png" width="200"> |
 | **Categorías** | Frases rápidas para Ayuda, Comida, Lugares, Sentimientos | <img src="../../docs/screenshots/appstore/ipad_categories.png" width="200"> |
-| **Chat con IA** | Componer mensajes, practicar conversaciones | <img src="../../docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
-| **Alerta de emergencia** | Llamada a cuidador/enfermera con un solo toque | <img src="../../docs/screenshots/appstore/video/frame_03.png" width="200"> |
+| **Chat IA** | Redactar mensajes, practicar conversaciones | <img src="../../docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
+| **Alerta de emergencia** | Llamada a cuidador/enfermero con un solo toque | <img src="../../docs/screenshots/appstore/video/frame_03.png" width="200"> |
 | **Horario** | Rutinas diarias visuales — mañana, escuela, almuerzo, hora de dormir | <img src="../../docs/screenshots/appstore/ipad_schedule.png" width="200"> |
-| **Juegos** | Bubble Pop, Color Hunt, Match It, Sí/No, Finish It | <img src="../../docs/screenshots/appstore/ipad_games.png" width="200"> |
-| **Matemáticas y Escuela** | Matemáticas adaptativas con Pista, Verificar, Resolver + teclado numérico | <img src="../../docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **Seguimiento de cabeza y ojos** | Cursor de permanencia basado en cámara, control de la mirada, calibración | <img src="../../docs/screenshots/appstore/video/frame_07.png" width="200"> |
-| **12 Idiomas** | Inglés, Español, Francés, Ruso, Japonés, Coreano, Chino, Árabe y más | <img src="../../docs/screenshots/appstore/video/frame_08.png" width="200"> |
+| **Juegos** | Explotar burbujas, Caza de colores, Emparejar, Sí/No, Completar | <img src="../../docs/screenshots/appstore/ipad_games.png" width="200"> |
+| **Matemáticas y escuela** | Matemáticas adaptativas con Pista, Comprobar, Resolver + teclado numérico | <img src="../../docs/screenshots/appstore/video/frame_06.png" width="200"> |
+| **Seguimiento cefálico y ocular** | Cursor por fijación basado en cámara, control ocular, calibración | <img src="../../docs/screenshots/appstore/video/frame_07.png" width="200"> |
+| **12 idiomas** | Inglés, español, francés, ruso, japonés, coreano, chino, árabe y más | <img src="../../docs/screenshots/appstore/video/frame_08.png" width="200"> |
 
 ---
 
-## Un vistazo rápido
+## De un vistazo
 
 | Módulo | Qué hace | Vista previa |
 |---|---|---|
-| 📂 **Categorías** | Fichas de imágenes estilo PECS para no lectores | <img src="../../docs/screenshots/panel-categories.png" width="120"> |
+| 📂 **Categorías** | Módulos de imágenes al estilo PECS para personas no lectoras | <img src="../../docs/screenshots/panel-categories.png" width="120"> |
 | ⌨️ **Escribir y hablar** | Teclado + predicción de palabras + voz neuronal | <img src="../../docs/screenshots/app-hero.png" width="120"> |
-| ✨ **Chat con IA** | Asistente en el dispositivo + en la nube, ajustado para usuarios de AAC | <img src="../../docs/screenshots/panel-ai-chat.png" width="120"> |
-| 💬 **Chat AAC** | Mensajes entrantes de cuidadores + contactos | <img src="../../docs/screenshots/panel-aac-chat.png" width="120"> |
-| 🧮 **Matemáticas + asignaturas** | Lienzo de cuadrícula de celdas con tutor consciente del dominio | <img src="../../docs/screenshots/math-canvas-typed.png" width="120"> |
-| 🗓 **Horario** | Rutinas visuales "primero-luego" | <img src="../../docs/screenshots/panel-schedule.png" width="120"> |
-| 🎮 **Juegos** | 12 juegos terapéuticos de AAC | <img src="../../docs/screenshots/panel-games.png" width="120"> |
-| 🏪 **Tienda** | Paquetes de voz, paquetes de vocabulario, paquetes de juegos | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
+| ✨ **Chat IA** | Asistente en el dispositivo y en la nube optimizado para usuarios de CAA | <img src="../../docs/screenshots/panel-ai-chat.png" width="120"> |
+| 💬 **Chat CAA** | Mensajes entrantes de cuidadores y contactos | <img src="../../docs/screenshots/panel-aac-chat.png" width="120"> |
+| 🧮 **Matemáticas y materias** | Lienzo en cuadrícula con tutor adaptado a cada materia | <img src="../../docs/screenshots/math-canvas-typed.png" width="120"> |
+| 🗓 **Horario** | Rutinas visuales de tipo «primero-después» | <img src="../../docs/screenshots/panel-schedule.png" width="120"> |
+| 🎮 **Juegos** | 12 juegos terapéuticos de CAA | <img src="../../docs/screenshots/panel-games.png" width="120"> |
+| 🏪 **Mercado** | Paquetes de voces, de vocabulario y de juegos | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Reproductor de confort** | Reproductor multimedia de cabecera para pacientes hospitalizados | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
-| 🛏 **Modo de cabecera** | Chat con IA a pantalla completa para uso con el teléfono en soporte / acostado | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👋 **Manos libres** | Reconocimiento de gestos de cabeza + manos | <img src="../../docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **Ajustes** | 23 idiomas, adaptaciones motoras, nivel de plan | <img src="../../docs/screenshots/panel-settings.png" width="120"> |
+| 🛏 **Modo de cabecera** | Chat IA a pantalla completa para uso en soporte de teléfono o tumbado | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
+| 👁 **Contexto visual** | La cámara detecta objetos → sugiere frases relevantes | <img src="../../docs/screenshots/vision-mealtime.png" width="120"> |
+| 👋 **Manos libres** | Reconocimiento de gestos de cabeza y manos | <img src="../../docs/screenshots/panel-settings-input-modes.png" width="120"> |
+| ⚙️ **Ajustes** | 25 idiomas, adaptaciones motoras, selector de voz + caché de voz | <img src="../../docs/screenshots/panel-settings.png" width="120"> |
+| ☁️ **Voz e IA en la nube** | Plan opcional de 4,99 US$/mes para voces naturales e IA en la nube | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
+
+---
+
+## Accesibilidad
+
+Prism AAC fue sometido a una [auditoría adversaria de accesibilidad de 70 puntos](ACCESSIBILITY.md) en junio de 2026, evaluado en iPhone vertical, iPhone horizontal, iPad vertical e iPad horizontal. Se solucionó cada problema y se verificó con pruebas automatizadas e2e.
+
+### Métodos de entrada — utiliza cualquier parte del cuerpo
+
+| Método | Cómo funciona | Configuración |
+|--------|---------------|---------------|
+| **Táctil** | Toque estándar + cuadrícula de pictogramas | Funciona de forma predeterminada |
+| **Seguimiento cefálico** | La cámara sigue el movimiento de la cabeza → clic por dwell (fijación) | Ajustes → Modos de entrada |
+| **Mirada ocular** | Ponderación de la posición ocular en el seguimiento cefálico | Ajustes → Modos de entrada |
+| **Escaneo por conmutador** | Escaneo automático/manual mediante conmutador Bluetooth, teclado o mando | Ajustes → Modos de entrada → Escaneo por conmutador |
+| **Reconocimiento de gestos** | Parpadeo, asentimiento, sonrisa, boca abierta → acciones asignadas | Ajustes → Modos de entrada → Gestos |
+| **Entrada por voz** | Dictado con autocorrección por IA, manos libres, palabra de activación | Botón de micrófono en la barra de herramientas |
+| **Teclado simplificado** | Las 15 letras más frecuentes en cuadrícula 3×5 (auto para tamaño 4) | Ajustes → Tamaño de cuadrícula → 4 |
+
+Navegación en el tablero de imágenes: desliza a izquierda o derecha en la cuadrícula de vocabulario o en la franja inferior de categorías para explorar las páginas. En una Mac, utiliza el desplazamiento horizontal del trackpad o haz clic y arrastra; las flechas laterales siguen disponibles. Cambiar de página no selecciona ninguna palabra — toca o haz clic de forma deliberada en una casilla para elegirla. El desplazamiento vertical y el gesto de pinza para zoom no cambian de página. Consulta [navegación por deslizamiento y límites de pruebas](docs/SWIPE_NAVIGATION.md).
+
+### Diseño adaptable — iPhone y iPad, vertical u horizontal
+
+<p align="center">
+  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone vertical" width="160" />
+  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone horizontal" width="280" />
+  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad vertical" width="240" />
+</p>
+
+### Modos visuales
+
+<p align="center">
+  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="Oscuro + alto contraste en iPhone" width="160" />
+  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="Oscuro + alto contraste en iPad horizontal" width="340" />
+</p>
+
+- Temas **Claro / Oscuro / Alto contraste**
+- Consultas de medios del sistema **`prefers-contrast: more`** y **`prefers-reduced-motion`**
+- **Gesto de pinza para zoom** habilitado (hasta 5×) — cumple con WCAG 1.4.4
+- **16 palabras de emergencia × 8 idiomas** en modo de recuperación tras fallos
+
+Para ver el informe completo de la auditoría con los 70 hallazgos, consulta [ACCESSIBILITY.md](ACCESSIBILITY.md).
+
+---
+
+## Seguridad y Privacidad
+
+PrismAAC es utilizado por niños, adultos no verbales y poblaciones clínicas. La seguridad no es una función; es una restricción que da forma a cada ruta de inferencia.
+
+### Arquitectura de seguridad por capas
+
+| Capa | Qué | Dónde se ejecuta | Latencia |
+|------|-----|------------------|----------|
+| **L1 — Control de seguridad determinista** | Intercepción médica/de crisis basada en Regex | Cliente + servidor (cada ruta) | 0 ms |
+| **L2 — Entrenamiento de seguridad del modelo** | Alineación RLHF de Qwen3.5 | En el dispositivo + nube | Integrada |
+| **L3 — Control de confianza** | Rechaza texto corto/corrompido/con texto de la plantilla filtrado | En el dispositivo + servidor | 0 ms |
+| **L4 — Verificador de fundamentación** | Verificación NLI: las afirmaciones deben deducirse lógicamente de la evidencia | Servidor (niveles de pago) | ~200 ms |
+
+### Detalles del control de seguridad L1
+
+El control L1 ejecuta verificaciones regex deterministas en **tanto la entrada como la salida** a través de todas las rutas de inferencia — incluyendo la ruta local offline de Ollama que omite el servidor por completo.
+
+**Lo que captura:** expresiones de crisis en primera persona (intención de autolesión), instrucciones peligrosas de dosificación médica.
+
+**Lo que NO captura (por diseño):** términos clínicos genéricos ("dose of risperidone", "milligrams", "suicide prevention training"). Estos aparecen en notas legítimas médicas/de BCBA y bloquearlos perjudicaría a los usuarios clínicos a los que sirve este producto. No se confía en absoluto en la propia alineación del modelo de 2B en el dispositivo para la seguridad (obtiene una puntuación de ~59% en BFCL V4 general). L1 es el mecanismo de seguridad determinista primario.
+
+**Limitaciones conocidas de L1:**
+- **Cobertura de idioma desigual.** Las frases de crisis se comparan en inglés y en otros idiomas, y los conjuntos difieren según la ruta. El control del chat de IA web (`services/crisisSafetyFilter.ts`) también compara frases en español, francés, portugués, rumano, ruso, ucraniano, árabe, alemán, japonés, coreano, chino y búlgaro. La verificación offline en el lado del cliente (`checkInputSafetyClient`) también compara en español, francés, portugués, ruso, árabe, alemán y ucraniano. El control de iOS tiene su propia lista integrada (inglés, español, francés, rumano, ruso, árabe y hebreo) y añade palabras clave desde el servidor al iniciarse cuando puede conectarse a él. Los patrones de dosificación médica son solo en inglés en cada ruta del cliente. Un idioma compatible sin patrones en una ruta determinada está protegido únicamente por el propio entrenamiento de seguridad del modelo (L2).
+- **Regex es un suelo, no un techo.** El malestar parafraseado ("I don't want to be here anymore") no se compara. L1 captura formulaciones definidas de alta señal; L2 (alineación del modelo) maneja la cola larga.
+
+**Cobertura por ruta:**
+
+| Ruta | L1 Entrada | L1 Salida | Notas |
+|------|:----------:|:---------:|-------|
+| Ollama local (offline, web) | ✅ en el lado del cliente | ✅ en el lado del cliente | `checkInputSafetyClient` + `checkOutputSafetyClient` |
+| iOS en el dispositivo (llama.cpp) | ✅ nativo | ✅ nativo | `SafetyFilter.swift` (`ios-native/PrismAAC/Sources/Safety/`); la verificación de salida intercepta únicamente contenido de jailbreak |
+| Portal `/prism-aac/chat` | ✅ | transmisión en tiempo real* | Entrada verificada antes de la llamada al modelo |
+| Portal `/prism-aac/infer` | ✅ | ✅ | Módulo de patrones de seguridad compartido |
+| Portal `/prism-aac/inference` | ✅ | ✅ | Módulo de patrones de seguridad compartido |
+
+*Las respuestas en la nube transmitidas en tiempo real confían en la seguridad del modelo (L2) para la salida; L1 no puede filtrar por regex un flujo de tokens en vuelo.
+
+### Cómo se ve una intercepción de crisis
+
+Si un usuario escribe angustia a través de la interfaz AAC, L1 responde inmediatamente (antes de que se ejecute cualquier modelo):
+
+> "I'm concerned about your safety. Please call or text 988 (Suicide & Crisis Lifeline) right now — available 24/7. If in immediate danger, call 911. You are not alone."
+
+### Privacidad
+
+- La IA en el dispositivo procesa las instrucciones localmente — ningún dato sale del dispositivo
+- Los servicios del habla en la nube y la IA en la nube (cuando se utilizan) van al portal de Synalux a través de TLS; el texto se procesa en memoria y no se almacena
+- Ninguna instrucción de usuario se almacena ni se utiliza para entrenamiento
+- No se requiere cuenta; la telemetría anónima de uso/errores (Datadog) nunca contiene texto escrito o hablado
+- Consulte [PRIVACY.md](../../PRIVACY.md) para ver la política de privacidad completa
 
 ---
 
 ## Alternativa gratuita a Read & Write
 
-Prism AAC incluye todas las funciones de asistente de lectura por las que la mayoría de los usuarios de AAC compran Read & Write, de forma gratuita, en el navegador y sin necesidad de cuenta para el nivel web. Consulta [Escribir y hablar](#%EF%B8%8F-type--speak) para la función de hablar al final de la frase + resaltado de palabras, [Lector de PDF](#-pdf-reader) y [Lector de capturas de pantalla (OCR)](#-screenshot-reader-ocr) para documentos, y la [extensión de Chrome](#-chrome-extension--same-reading-assistant-features-in-any-text-field) para cobertura entre aplicaciones en Gmail / Docs / Word Online / cualquier otro lugar.
+PrismAAC incluye de forma gratuita todas las funciones de asistencia a la lectura por las que la mayoría de usuarios de CAA compran Read & Write, desde el navegador y sin necesidad de crear una cuenta para el nivel web. Consulta [Escribir y hablar](#%EF%B8%8F-escribir-y-hablar) para la lectura al finalizar la frase y resaltado de palabras, [Lector de PDF](#-lector-de-pdf) y [Lector de capturas de pantalla (OCR)](#-lector-de-capturas-de-pantalla-ocr) para documentos, y la [Extensión de Chrome](#-extensión-de-chrome--mismas-funciones-de-asistencia-a-la-lectura-en-cualquier-campo-de-texto) para cobertura en otras aplicaciones como Gmail, Google Docs, Word Online o cualquier otra plataforma.
 
-## Cómo se compara Prism AAC
+## Comparativa de PrismAAC
 
-| | Prism AAC | TouchChat | Proloquo2Go | LAMP Words | TD Snap | CoughDrop | Snap Core First | Grid 3 | Tobii Dynavox |
+| | PrismAAC | TouchChat | Proloquo2Go | LAMP Words | TD Snap | CoughDrop | Snap Core First | Grid 3 | Tobii Dynavox |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Ruta de voz **en el dispositivo + segura para HIPAA** | ✅ | ❌ | ❌ | ❌ | parcial | parcial | ❌ | ❌ | parcial |
-| **Clasificación de frases por usuario** (se adapta a cada niño) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Las correcciones del cuidador **se convierten automáticamente en datos de entrenamiento** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Tutor de IA consciente del dominio** (matemáticas + otras 10 asignaturas) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Lienzo de matemáticas con cuadrícula de celdas** (sin LaTeX, sin pizarra) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Historial consciente de la configuración regional + región** (más de 280 regiones) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Modo de gestos de cabeza + manos **manos libres** | ✅ | parcial | parcial | ❌ | ✅ | parcial | parcial | ✅ | ✅ |
-| **Chat con IA manos libres** (bucle de voz + palabra de activación + superposición de cabecera) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Juegos terapéuticos de AAC** incorporados | ✅ (12) | ❌ | ❌ | ❌ | ❌ | parcial | parcial | ❌ | ❌ |
-| **Código abierto** (AGPL-3.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **Nivel gratuito** para acceso de seguridad vital | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **Tienda** de paquetes de voz | ✅ | ❌ | parcial | ❌ | parcial | ❌ | ❌ | parcial | parcial |
-| **Multilingüe** (23) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Notas del cuidador** que viajan a casa / escuela / clínica | ✅ | ❌ | ❌ | ❌ | parcial | parcial | parcial | ❌ | parcial |
-| Modo independiente de **Apple Watch** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Asistente de lectura de **extensión de Chrome** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Cámara → sugerencia de frases** (detecta objetos, sugiere palabras) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| **IA en el dispositivo** (enrutamiento 99–100 %, compatible con HIPAA) | 🟢 | 🔴 | 🔴 | 🔴 | 🟡 | 🟡 | 🔴 | 🔴 | 🟡 |
+| **Clasificación de frases por usuario** (se adapta a cada niño) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| Las correcciones del cuidador **se convierten en datos de entrenamiento** | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| **Tutor de IA** (matemáticas + otras 10 materias) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| **Lienzo de matemáticas en cuadrícula** | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| **Historial con adaptación regional** (+280 regiones) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| **Manos libres** cabeza + mano + gestos + escaneo conmutador | 🟢 | 🟡 | 🟡 | 🔴 | 🟢 | 🟡 | 🟡 | 🟢 | 🟢 |
+| **Chat IA manos libres** (bucle de voz + palabra de activación + cabecera) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| **Juegos de CAA** terapéuticos (12 integrados) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟡 | 🟡 | 🔴 | 🔴 |
+| **Código abierto** (AGPL-3.0) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 | 🔴 | 🔴 | 🔴 |
+| **Nivel gratuito** (acceso para seguridad vital) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 | 🔴 | 🔴 | 🔴 |
+| **Mercado** de paquetes de voces | 🟢 | 🔴 | 🟡 | 🔴 | 🟡 | 🔴 | 🔴 | 🟡 | 🟡 |
+| **Multilingüe** (25 idiomas) | 🟢 | 🟢 | 🟢 | 🔴 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 |
+| **Notas del cuidador** (hogar / escuela / clínica) | 🟢 | 🔴 | 🔴 | 🔴 | 🟡 | 🟡 | 🟡 | 🔴 | 🟡 |
+| Modo independiente en **Apple Watch** | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| Asistente de lectura mediante **extensión de Chrome** | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 
-> La comparación refleja la información de productos disponible públicamente a partir de mayo de 2026. Prism AAC está en desarrollo activo; los competidores pueden añadir funciones con el tiempo. Las PR son bienvenidas para mantener esto honesto — ver `CONTRIBUTING.md`.
+🟢 = compatibilidad total &nbsp;&nbsp; 🟡 = parcial &nbsp;&nbsp; 🔴 = no disponible
+
+> La comparativa refleja la información de producto disponible públicamente a fecha de 05/2026. PrismAAC se encuentra en desarrollo activo; los competidores pueden añadir funciones con el tiempo. Las contribuciones son bienvenidas para mantener esta lista actualizada — consulta `CONTRIBUTING.md`.
 >
-> Grid 3 y Tobii Dynavox tienen fuertes integraciones de hardware de seguimiento ocular + escaneo por interruptor no reflejadas arriba (dependientes del hardware, configuraciones de clínicas especializadas).
+> Grid 3 y Tobii Dynavox ofrecen integraciones avanzadas de hardware para control ocular y escaneo con conmutadores no detalladas arriba (dependientes de hardware y configuraciones clínicas especializadas).
 
 ---
 
@@ -114,640 +221,790 @@ Prism AAC incluye todas las funciones de asistente de lectura por las que la may
 
 ### iPhone / iPad
 
-Aplicación nativa Swift que envuelve la interfaz de usuario web en WKWebView + IA en el dispositivo a través de llama.cpp Metal. Selecciona automáticamente el mejor modelo según la RAM del dispositivo:
+Aplicación nativa en Swift que envuelve la interfaz web en WKWebView con una arquitectura de **IA de doble motor en el dispositivo** mediante llama.cpp Metal.
 
-| Dispositivo | RAM | Modelo | Descarga |
+Para garantizar un acceso a la IA instantáneo y sin conexión en todos los dispositivos, la aplicación ejecuta automáticamente dos modelos diferentes de forma simultánea en función de la memoria disponible en el dispositivo:
+
+| Dispositivo | RAM | IA conversacional | Precisión de enrutamiento | Autocompletado |
+|---|---|---|---|---|
+| iPad Pro M1/M2/M4 | ≥ 16 GB | 4B Q4_K_M (3,4 GB) | **100 %** | 360M (integrado) |
+| iPhone 15/16 Pro, iPad Air | 8–15 GB | 4B Q4_K_M (3,4 GB) | **100 %** | 360M (integrado) |
+| Todos los demás iPhone / iPad | < 8 GB | 2B Q3_K_M (2,3 GB) | **99,1 %** | 360M (integrado) |
+
+> Precisión: prueba de referencia BFCL, 115 casos de enrutamiento de herramientas × 3 semillas aleatorias, temperatura=0, junio de 2026.
+
+#### IA en el dispositivo — funciona sin conexión desde el primer inicio
+
+Todos los dispositivos incluyen un modelo de IA integrado en la aplicación. Sin descargas, sin WiFi y sin necesidad de cuenta — abre la aplicación y empieza a comunicarte.
+
+| Dispositivo | Modelo incluido | Tamaño | Qué hace |
 |---|---|---|---|
-| iPad Pro M1/M2/M4 | 16 GB | 14B Q4_K_M | 8.4 GB desde HF CDN |
-| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B (respaldo por OOM) | 4.7 GB / 1.1 GB |
-| iPhone 12-14, iPads más antiguos | <8 GB | 1.7B Q4_K_M | 1.1 GB |
+| **iPhone / iPad** | Qwen3.5-4B Q3_K_M | 2,3 GB | Enrutamiento de herramientas, Manos libres, Modo cabecera, Palabra de activación (99,1 % de precisión) |
+| **Apple Watch** | SmolLM2-360M | 207 MB | Expansión de símbolos, frases de emergencia, texto predictivo (100 % de precisión) |
 
-Seguridad de tres capas: filtro de crisis síncrono → IA en el dispositivo → respaldo en la nube. La gestión de memoria degrada elegantemente: IA completa → IA en la nube → solo núcleo → modo de emergencia.
+Modelos más grandes (9B, 27B) disponibles en Ajustes → IA local para enrutamiento por WiFi a Mac (100 % de precisión en BFCL).
 
-- Margen de área segura para Dynamic Island / notch
-- Puente WCSession para el envío de emergencias del Apple Watch
-- Tokens de autenticación respaldados por Keychain
-- Respaldo por OOM: si el modelo más grande no cabe, carga automáticamente el siguiente más pequeño
+<details>
+<summary><strong>Detalles técnicos</strong></summary>
 
-**Ajustes → 🤖 Modelos de IA Local** — descarga y gestiona los modelos de Prism:
-- Detecta Ollama automáticamente en `localhost:11434`
-- Conexiones WiFi: iPad/iPhone → Mac Ollama (14B/32B con máxima precisión)
-- Descarga por modelo con barra de progreso en vivo
-- Modelos: `:1b7` (1.1 GB) · `:8b` (4.7 GB) · `:14b` (8.4 GB) · `:32b` (16 GB)
+- **Filtro de seguridad determinista L1:** intercepción médica/de crisis por regex tanto en la entrada (antes de ejecutar ningún modelo) como en la salida (antes de mostrarla al usuario). Los patrones se centran específicamente en la intención de autolesión — los términos clínicos/farmacológicos genéricos («dosis de», «miligramos») NO se interceptan para evitar bloquear el uso clínico legítimo de la CAA.
+- **Seguridad de salida en el cliente:** los resultados de Ollama local pasan por `checkOutputSafetyClient` antes de mostrarse — los usuarios sin conexión obtienen la misma protección L1 que los usuarios en la nube.
+- **Umbral de confianza:** las respuestas en el dispositivo por debajo de los umbrales de longitud/calidad se rechazan y se derivan a la nube (niveles de pago) o se reducen progresivamente (nivel gratuito).
+- La gestión basada en la memoria se reduce de forma progresiva: IA completa → IA en la nube → solo funciones básicas → modo de emergencia
+- Recuperación ante falta de memoria (OOM): 4B Q4_K_M → 2B Q3_K_M → 360M
+- Ajuste de área segura para Dynamic Island / notch
+- Enlace WCSession para alertas de emergencia en Apple Watch
+- Tokens de autenticación protegidos con Keychain
+
+</details>
+
+**Ajustes → 🤖 Modelos de IA local** — descarga y gestiona modelos en el dispositivo:
+- Detecta automáticamente Ollama en `localhost:11434`
+- WiFi a Mac: iPad/iPhone → Ollama en Mac (9B/27B con 100 % de precisión BFCL)
+- Descarga por modelo con barra de progreso en tiempo real
+- Modelos: `:2b` (2,3 GB) · `:4b` (3,4 GB) · `:9b` (5,8 GB) · `:27b` (16,8 GB)
+
 
 ### Apple Watch (independiente)
 
-Funciona sin iPhone — independiente con diccionario de frases sin conexión.
+Funciona sin iPhone — de forma independiente con un diccionario de frases sin conexión.
 
 <p align="center">
   <img src="../../docs/screenshots/watch-series.png" alt="Watch Series 11" width="140" />
   <img src="../../docs/screenshots/watch-ultra.png" alt="Watch Ultra 3" width="140" />
 </p>
 
-- **Traducción sin conexión:** 1,261 frases × 20 idiomas incluidos (411 KB JSON) — búsqueda instantánea, 100% precisa, sin red
+- **Traducción sin conexión:** 1261 frases × 20 idiomas incluidos (JSON de 411 KB) — búsqueda instantánea, 100 % precisa, sin red
 - Cuadrícula de pictogramas de 2 columnas con imágenes de ARASAAC
-- Chat con IA con dictado + entrada de teclado (en la nube cuando está en línea, diccionario de frases cuando está sin conexión)
-- Sistema de emergencia: cuenta regresiva → WCSession → respaldo celular → TTS
-- Traducción con salida TTS (primero diccionario sin conexión, luego respaldo en la nube)
-- Bandeja de entrada: recibe y responde mensajes de cuidadores
-- Fijación de certificados (SPKI SHA-256) en el envío de emergencias
-- NFKC + sanitización de inyección de 23 tokens en todas las rutas de IA
+- Chat IA con dictado + entrada por teclado (nube con conexión, diccionario de frases sin conexión)
+- Sistema de emergencia: cuenta atrás → WCSession → respaldo celular → TTS
+- Traducción con salida por voz TTS (diccionario sin conexión primero, respaldo en la nube)
+- Bandeja de entrada: recibe y responde mensajes de los cuidadores
+- Anclaje de certificados (SPKI SHA-256) en el envío de emergencias
+- Saneamiento NFKC + inyección de 23 tokens en todas las rutas de IA
+
+---
+
+## 📊 Panel de información para el cuidador (v1.8)
+
+La aplicación recopila datos de comportamiento internamente — precisión de predicción, tendencias motoras, fiabilidad de voz, estabilidad del seguimiento de cabeza, patrones de comunicación, correcciones del cuidador. Anteriormente, **nada de esto llegaba a los cuidadores**. La única interfaz para el cuidador era un bloc de notas de texto.
+
+Ahora hay una **pestaña de Información** en el Panel del Cuidador con 7 módulos de supervisión en tiempo real, cada uno respaldado por un recolector de métricas en segundo plano que se ejecuta cada 5 minutos sin afectar a la ruta de predicción.
+
+### Qué ven los cuidadores
+
+| Módulo | Qué información aporta | Valor clínico |
+|---|---|---|
+| **Efectividad de predicción** | «72 % de aciertos ↑ vs 24h previas» | El conjunto de vocabulario funciona — o no |
+| **Adopción de vocabulario** | «45 activas · 12 nuevas · 8 sin uso» | Qué frases se han adoptado y cuáles deben retirarse |
+| **Temas de comunicación** | «Principal: escuela (35 %), comida (22 %)» | Los cambios en los temas pueden señalar regresión o un cambio de entorno |
+| **Tendencia motora** | «Fijación 850ms ↓ (mejorando)» | Mejor control motor → menor tiempo de fijación; empeoramiento → derivar a Terapia Ocupacional |
+| **Fiabilidad del seguimiento** | «2 desviaciones · 98 % de actividad» | Desviaciones frecuentes → revisar postura, fatiga o calibración |
+| **Fiabilidad de voz** | «97 % de éxito · 1 alternativa» | ¿Falla Azure TTS? ¿Clave API caducada? ¿Problema de conexión? |
+| **Carga de correcciones** | «47 correcciones totales» | Una tasa de corrección en aumento = el modelo necesita reentrenamiento para este niño |
+
+### Diseño del panel
+
+| Panel del Cuidador | | ✕ |
+|:---|:---|---:|
+
+| + Nota | Registro | **Información** |
+|:---:|:---:|:---:|
+
+> **Efectividad de predicción**
+> `72 % aciertos` &nbsp;&nbsp; ↑ vs 24h
+> ![sparkline](https://img.shields.io/badge/tendencia-72%25_____85%25_____78%25_____72%25-4CAF50?style=flat-square)
+
+> **Adopción de vocabulario**
+> `45 activas` · `12 nuevas` · `8 sin uso`
+> `████████████████░░░░░░` adoptadas 69 % / probadas 18 % / sin uso 13 %
+
+> **Temas de comunicación**
+> `escuela` 35 % · `comida` 22 % · `juego` 18 %
+> ![sparkline](https://img.shields.io/badge/escuela-35%25-9C27B0?style=flat-square) ![sparkline](https://img.shields.io/badge/comida-22%25-FF9800?style=flat-square) ![sparkline](https://img.shields.io/badge/juego-18%25-2196F3?style=flat-square)
+
+> **Tendencia motora**
+> `Fijación 850ms` &nbsp;&nbsp; ↓ mejorando
+> ![sparkline](https://img.shields.io/badge/tendencia-1200____1100____950_____850ms-FF9800?style=flat-square)
+
+> **Fiabilidad del seguimiento**
+> `2 desviaciones hoy` · `98 % de actividad`
+> ![sparkline](https://img.shields.io/badge/actividad-98%25-4CAF50?style=flat-square)
+
+> **Fiabilidad de voz**
+> `97 % de éxito` · `1 alternativa`
+> `██████████████████████████████░` Azure 94 % / Web Speech 3 % / error 3 %
+
+> **Carga de correcciones**
+> `47 correcciones totales` &nbsp;&nbsp; +3 esta semana
+> ![sparkline](https://img.shields.io/badge/tendencia-38_____41_____44_____47-795548?style=flat-square)
+
+<sub>286 puntos de datos · últimos 7 días · actualización cada 5 min</sub>
+
+### Arquitectura
+
+```
+Toque en PredictionBar --> recordPredictionHit() (importación dinámica, ~0,01 ms)
+                                     |
+        +--------------------------------------------+
+        |      metricsCollector (temporizador 5 min)  |
+        |                                            |
+        |  subscribeTtsHealth() ------> ttsAccum     |
+        |  subscribeTrackingEvents() -> trackAccum   |
+        |  getAdaptiveSignals() ------> motor/temas  |
+        |  corpusHealth() ------------> correcciones |
+        |  phraseUsageStore ----------> vocabulario  |
+        |                                            |
+        |  flushBucket() -> metricsStore.buckets     |
+        +--------------------------------------------+
+                                     |
+        +--------------------------------------------+
+        |  metricsStore (zustand + localStorage)     |
+        |  rotación 7 días - bloques 5 min - 400 KB  |
+        +--------------------------------------------+
+                                     |
+        +--------------------------------------------+
+        |  CaregiverInsightsTab (carga diferida)     |
+        |  7 módulos InsightCard + SVG Sparkline     |
+        |  Se renderiza solo al tocar la pestaña     |
+        +--------------------------------------------+
+```
+
+### Garantías de rendimiento
+
+| Aspecto | Garantía |
+|---|---|
+| **Ruta de pulsaciones** | 0 ms añadidos — aciertos/fallos usan importaciones dinámicas e incrementos de contadores |
+| **Memoria** | ~400 KB en localStorage + ~50 KB en RAM durante 7 días |
+| **Paquete de código** | ~2 KB JS (sin bibliotecas de gráficos externas — gráficos SVG puros) |
+| **Sin conexión** | 100 % en localStorage — sin llamadas a la red |
+| **iPad** | Tarjetas con desplazamiento vertical, gráficos de 120×32px |
+| **Privacidad** | Sin datos de salud (PHI) — solo recuentos operativos, protegidos por el PIN del cuidador |
+
+### Ejemplo: lectura del módulo de efectividad de predicción
+
+```
+Efectividad de predicción
+78 % de aciertos               ↑ vs 24h previas
+╭──╮ ╭╮╭─╮
+│  ╰─╯╰╯ ╰──╮╭──
+```
+
+- **78 % de aciertos**: el 78 % de las veces, el niño tocó una palabra de la barra de predicción en lugar de escribirla manualmente. Esto indica que el vocabulario está bien adaptado a sus patrones de comunicación.
+- **↑ vs 24h previas**: la tasa de aciertos mejoró respecto a ayer — el motor adaptativo está aprendiendo.
+- **Gráfico de tendencia**: muestra la evolución del porcentaje de aciertos en las últimas 24 horas. Las bajadas pueden coincidir con la introducción de nuevos temas o cambios de entorno.
+
+Si la tasa de aciertos cae por debajo del 40 %, es probable que haya que actualizar el vocabulario — el niño está intentando comunicarse sobre temas que el motor de predicción no cubre.
+
+### Ejemplo: lectura del módulo de tendencia motora
+
+```
+Tendencia motora
+Fijación 1200ms                ↑ empeorando
+╭──╮
+│  ╰──╮╭──╮╭─
+```
+
+- **Fijación 1200ms**: el niño necesita mantener la mirada o el cursor durante 1,2 segundos para activar una selección. Rango habitual: 800–2000 ms.
+- **↑ empeorando**: el tiempo de fijación está aumentando (el niño necesita más tiempo). Esto puede indicar fatiga, un cambio en la medicación o una alteración motora progresiva.
+- **Acción a tomar**: si la tendencia se mantiene durante 3 días o más, se recomienda derivar el caso a Terapia Ocupacional. La aplicación adapta el tiempo de fijación automáticamente, pero es aconsejable que un profesional evalúe la causa subyacente.
 
 ---
 
 ## Módulos
 
 ### 📂 Categorías
-Fichas de imágenes estilo PECS. Toca una categoría, toca una ficha, escucha la palabra, mira cómo aparece en la barra de mensajes. Funciona para no lectores, pre-lectores y comunicadores emergentes por igual. Los conjuntos de fichas y su orden se personalizan con el tiempo mediante la activación de propagación: las fichas que tu hijo toca más suben; las que no se usan durante meses se desvanecen.
 
-**Diseño envolvente** — las categorías aparecen en una columna izquierda desplazable junto al teclado, para que el usuario de AAC pueda tocar las fichas de imágenes Y escribir simultáneamente sin cambiar de modo. La barra de predicción permanece visible; ambas entradas son siempre accesibles.
+En el modo Imagen, el Tamaño de cuadrícula determina el número de casillas por página de vocabulario (4 es 2 × 2; 6 es 3 × 2). Desliza hacia la izquierda o hacia la derecha por el tablero para explorar, o utiliza las flechas situadas junto al título de la categoría. Navegar no añade ninguna palabra ni la pronuncia; toca una casilla para seleccionarla. La posición de la página se indica a los lectores de pantalla sin mostrar un contador de páginas visible en el pie de página.
 
-![Categories in surround mode — scrollable category cards on the left, full keyboard on the right](../../docs/screenshots/categories-surround-v2.png)
+Casillas de imágenes estilo PECS. Toca una categoría, toca una casilla, escucha la palabra y observa cómo se añade a la barra de mensajes. Funciona para personas no lectoras, en etapa de prelectura o en desarrollo de la comunicación. Las colecciones de casillas y su orden se personalizan con el tiempo mediante activación por difusión: las casillas que el niño usa con más frecuencia suben de posición; las que no se utilizan durante meses se desvanecen.
+
+**Disposición envolvente** — las categorías aparecen en una columna desplazable a la izquierda junto al teclado, lo que permite al usuario interactuar con las casillas de imágenes Y escribir simultáneamente sin cambiar de modo. La barra de predicción permanece visible y ambas entradas están siempre accesibles.
+
+![Categorías en modo envolvente — tarjetas de categorías desplazables a la izquierda, teclado completo a la derecha](../../docs/screenshots/categories-surround-v2.png)
 
 <details>
-<summary><strong>Características + detalles técnicos</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
 - 22 categorías predeterminadas: personas, comida, sentimientos, cuerpo, ropa, animales, lugares, etc.
-- El cuidador puede añadir / eliminar / reordenar fichas por niño
-- Cada ficha lleva una `textKey` para i18n — cambiar el idioma de la aplicación reetiqueta cada ficha con un solo toque
-- Los pictogramas de las fichas provienen de ARASAAC + un conjunto curado; la clonación de voz permite que la voz de la ficha coincida con la de los hermanos o padres del niño (nivel de pago)
-- Aprendizaje de n-gramas por usuario: un niño que toca "Quiero comer" tres veces ve "comer" subir después de "quiero" en la siguiente sesión
-- Memoria holográfica HRR: predicciones contextuales sin búsqueda en ~0.2ms a través de WASM de Rust — +27% de precisión Top-1 en frases AAC centrales
+- El cuidador puede añadir / eliminar / reordenar casillas para cada niño
+- Cada casilla incluye una clave `textKey` para i18n — cambiar el idioma de la aplicación actualiza el texto de todas las casillas con un solo toque
+- Los pictogramas proceden de ARASAAC y de una selección optimizada; la clonación de voz permite adaptar la voz de la casilla a la de los hermanos o padres del niño (nivel de pago)
+- Aprendizaje de n-gramas por usuario: si un niño toca «Yo quiero comer» tres veces, «comer» aparecerá con mayor prioridad tras «quiero» en la siguiente sesión
+- Memoria holográfica HRR: predicciones contextuales sin búsqueda en ~0,2 ms mediante Rust WASM — +27 % de precisión Top-1 en frases básicas de CAA
 
-**Ruta de renderizado:** `components/CategoryPanel.tsx` → `useCategoryStore` → fichas extraídas de `constants/phrases.ts` (sistema) + anulaciones por usuario de Supabase (de pago). Los toques de ficha invocan `messageStore.appendText(phrase)` y se enrutan a través de `aacSpeak()` para TTS.
+**Ruta de renderizado:** `components/CategoryPanel.tsx` → `useCategoryStore` → casillas tomadas de `constants/phrases.ts` (sistema) + personalizaciones de Supabase por usuario (de pago). Los toques en las casillas invocan `messageStore.appendText(phrase)` y se envían mediante `aacSpeak()` a TTS.
 </details>
 
 ---
 
 ### ⌨️ Escribir y hablar
-Teclado en pantalla con **predicción de palabras**, **autocompletado con IA** y un botón **Hablar** de un solo toque que lee la barra de mensajes en voz alta con una voz neuronal natural. Escribir enseña al motor de predicción: las palabras que tu hijo escribe más aparecen antes en la siguiente sesión.
+Teclado en pantalla con **predicción de palabras**, **autocompletado por IA** y un botón **Hablar** con un solo toque que lee la barra de mensajes en voz alta con una voz neuronal natural. La escritura entrena al motor de predicción: las palabras que el niño escribe con más frecuencia aparecen antes en la siguiente sesión.
 
-![Prism AAC keyboard with "hello" typed, prediction tiles, and Speak button](../../docs/screenshots/keyboard-typing.png)
+![Teclado de Prism AAC con la palabra «hola» escrita, casillas de predicción y botón Hablar](../../docs/screenshots/keyboard-typing.png)
 
-**Funciones de asistente de lectura (paridad con Read & Write)** — para usuarios con necesidades de lectura / memoria / cognitivas:
+**Funciones de asistencia a la lectura (equivalencia con Read & Write)** — diseñadas para usuarios con necesidades de lectura, memoria o cognitivas:
 
-- **Hablar por palabra** — cada palabra se reproduce a través de TTS en el momento en que tocas espacio, para que escuches lo que escribiste sin esperar la frase completa.
-- **Hablar la frase al `.?!`** — terminar una frase con un punto, signo de interrogación o signo de exclamación lee la frase completa para que no pierdas el hilo de lo que escribiste (la brecha que descalifica a NVDA para usuarios videntes con discapacidades cognitivas). Activar/desactivar a través de Ajustes → `speakOnSentenceEnd` (activado por defecto).
-- **Resaltado palabra por palabra mientras se habla** — cada palabra hablada se ilumina con un fondo amarillo mientras el TTS la lee. Los usuarios videntes con discapacidades de lectura pueden seguir visualmente; el resaltado sigue el audio sin necesidad de un dispositivo de hardware especial.
+- **Lectura por palabra** — cada palabra se pronuncia mediante TTS en el momento en que se toca la barra espaciadora, permitiendo escuchar lo escrito sin esperar a completar la frase.
+- **Lectura de frase completa al usar `.?!`** — al finalizar una frase con punto, signo de interrogación o exclamación, se lee la frase completa para facilitar el seguimiento del texto escrito (una limitación común de los lectores de pantalla tradicionales para usuarios con discapacidad cognitiva). Se activa en Ajustes → `speakOnSentenceEnd` (activado por defecto).
+- **Resaltado palabra por palabra durante la lectura** — cada palabra leída se ilumina con un fondo amarillo a medida que el TTS la pronuncia. Permite un seguimiento visual cómodo a los usuarios con dificultades de lectura, sincronizando el resaltado con el audio sin requerir hardware adicional.
 
 <details>
-<summary><strong>Características + detalles técnicos</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
-- 5 ranuras de predicción encima del teclado qwerty, actualizadas con cada pulsación
-- Completado con IA ("hw" → "how", "togoso" → "to go so") a través de Synalux `text/correct` (Gemini 2.5 Flash-Lite, ~752ms de media, 4.3 veces más barato que 2.5 Flash)
-- Puerta de lenguaje cruzado: RO `eu` no se filtrará en la barra EN incluso cuando ambos corpus estén cargados (comparación de frecuencia entre corpus)
-- "Hablar" lee con adaptación automática de tono (declarativo / interrogativo / exclamativo inferido de la puntuación)
-- Nivel de voz 1: Inworld TTS-2 (natural/neuronal, los 23 idiomas de la aplicación); nivel 2: OS Web Speech (sin conexión, nativo del dispositivo); nivel 3: WASM espeak-ng (último recurso)
-- El resaltado de palabras se estima por duración (~60 ms/carácter a una velocidad de 0.5, escala con el deslizador de velocidad) — funciona en todos los niveles de TTS sin cambios de backend; la sincronización precisa a través de Azure `wordBoundary` es una futura función Pro.
-- Corpus de n-gramas SQLite de 1.5MB por idioma; unigramas + bigramas + trigramas; carga perezosa al cambiar de idioma
-- **Memoria contextual HRR** — recuperación holográfica sin búsqueda (229KB Rust WASM) que aprende de cada frase hablada. Codifica bigramas + trigramas en un vector holográfico; sondea en ~0.2ms en cada pulsación. Capa aditiva — impulsa las primeras 2 fichas de predicción con coincidencias contextuales sin eliminar las predicciones del corpus.
+- 5 casillas de predicción sobre el teclado QWERTY, actualizadas con cada pulsación
+- Autocompletado con IA («hola c» → «hola cómo», «quiero i» → «quiero ir») mediante Synalux `text/correct` (Gemini 2.5 Flash-Lite, promedio de ~752 ms, 4,3 veces más económico que 2.5 Flash)
+- Aislamiento entre idiomas: los n-gramas de un idioma no se filtran en la barra de otro aunque ambos estén cargados (comparación de frecuencias entre corpus)
+- El botón «Hablar» lee con adaptación automática de entonación (declarativa / interrogativa / exclamativa inferida por la puntuación)
+- Cadena de síntesis de voz: caché de voz persistente (reproduce sin realizar una nueva petición) → voz en la nube a través del portal (Inworld TTS-2; Azure Neural para idiomas no disponibles en Inworld; Gemini TTS como último recurso en la nube) → Web Speech del sistema operativo (sin conexión) → WASM espeak-ng (último recurso local). Consulta [`docs/TTS-ARCHITECTURE.md`](docs/TTS-ARCHITECTURE.md) y [`docs/SPEECH_CACHE.md`](docs/SPEECH_CACHE.md)
+- El resaltado de palabras se calcula por estimación de duración (~60 ms/carácter a velocidad=0,5, escalable con el control de velocidad) — funciona en todos los niveles de TTS sin cambios en el servidor; la sincronización precisa mediante `wordBoundary` de Azure se integrará como función Pro.
+- Corpus de n-gramas en SQLite de 1,5 MB por idioma; unigramas + bigramas + trigramas; carga diferida al cambiar de idioma
+- **Memoria contextual HRR** — recuperación holográfica sin búsqueda (Rust WASM de 229 KB) que aprende de cada frase pronunciada. Codifica bigramas y trigramas en un vector holográfico; realiza búsquedas en ~0,2 ms en cada pulsación. Capa aditiva: prioriza las 2 primeras casillas de predicción con coincidencias contextuales sin eliminar las predicciones del corpus general.
 
-**Benchmark de predicción HRR** (54 pruebas unitarias + suite de precisión de 10 escenarios):
+**Evaluación de predicción HRR** (54 pruebas unitarias + conjunto de precisión de 10 escenarios):
 
-| Escenario | Top-1 Base | Top-1 HRR+ | Mejora | MRR Base | MRR HRR+ | Mejora MRR |
+| Escenario | Base Top-1 | HRR+ Top-1 | Incremento | Base MRR | HRR+ MRR | Incremento MRR |
 |----------|---------------|------------|------|-------------|---------|----------|
-| Frases AAC centrales (1x) | 36.7% | 46.7% | **+27.3%** | 0.634 | 0.672 | +6.0% |
-| Frases AAC centrales (5x diarias) | 36.7% | 46.7% | **+27.3%** | 0.634 | 0.672 | +6.0% |
-| Vocabulario personal | 70.4% | 81.5% | **+15.8%** | 0.809 | 0.883 | +9.2% |
-| Mixto (todas las frases) | 47.2% | 56.9% | **+20.6%** | 0.669 | 0.707 | +5.7% |
-| Recuperación entre sesiones | 80.0% | 80.0% | +0.0% | 0.900 | 0.900 | +0.0% |
-| Prefijos ambiguos | 66.7% | 66.7% | +0.0% | 0.738 | 0.738 | +0.0% |
+| Frases base de CAA (1x) | 36,7 % | 46,7 % | **+27,3 %** | 0,634 | 0,672 | +6,0 % |
+| Frases base de CAA (5x al día) | 36,7 % | 46,7 % | **+27,3 %** | 0,634 | 0,672 | +6,0 % |
+| Vocabulario personal | 70,4 % | 81,5 % | **+15,8 %** | 0,809 | 0,883 | +9,2 % |
+| Mixto (todas las frases) | 47,2 % | 56,9 % | **+20,6 %** | 0,669 | 0,707 | +5,7 % |
+| Retención entre sesiones | 80,0 % | 80,0 % | +0,0 % | 0,900 | 0,900 | +0,0 % |
+| Prefijos ambiguos | 66,7 % | 66,7 % | +0,0 % | 0,738 | 0,738 | +0,0 % |
 
-Top-1 = palabra correcta es la ficha #1. Top-5 = palabra correcta en cualquier ficha. MRR = Mean Reciprocal Rank (más alto = palabra correcta aparece antes). HRR nunca reduce la precisión Top-5 en ningún escenario — cero regresiones. Las mayores ganancias en vocabulario personal (+9.2% MRR) y frases AAC centrales (+27.3% Top-1).
+Top-1 = la palabra correcta aparece en la casilla #1. Top-5 = la palabra correcta aparece en cualquier casilla. MRR = Rango Recíproco Medio (un valor más alto indica que la palabra correcta aparece antes). HRR no reduce la precisión Top-5 en ningún escenario — cero regresiones. Las mayores mejoras se obtienen en vocabulario personal (+9,2 % MRR) y frases base de CAA (+27,3 % Top-1).
 
-**Ruta de renderizado:** `components/Keyboard.tsx` → `messageStore.appendChar` → `predictionStore.updatePredictions(text, lang)` → `engine/predictionEngine.ts` (recencia × frecuencia × impulso de n-gramas) + superposición opcional de IA de `services/textCorrectService.ts` + sondeo de bigramas/trigramas HRR de `services/hrrContext.ts`. Resaltado: `services/aacSpeak.ts` emite eventos `tts-highlight-start` en el `ttsHighlightBus`; `components/MessageBar.tsx` se suscribe y pasa `activeWordIndex` a `ColoredText`.
+**Ruta de renderizado:** `components/Keyboard.tsx` → `messageStore.appendChar` → `predictionStore.updatePredictions(text, lang)` → `engine/predictionEngine.ts` (recencia × frecuencia × impulso de n-gramas) + capa opcional de IA `services/textCorrectService.ts` + consulta de bigramas/trigramas HRR `services/hrrContext.ts`. Resaltado: `services/aacSpeak.ts` emite eventos `tts-highlight-start` en el bus `ttsHighlightBus`; `components/MessageBar.tsx` se suscribe y pasa `activeWordIndex` a `ColoredText`.
 </details>
 
 ---
 
-### ✨ Chat con IA
-Asistente en el dispositivo + en la nube ajustado a la voz del usuario de AAC. Respuestas transmitidas, cada línea se puede tocar para insertar en la barra de mensajes, de modo que la autoría permanezca en el niño. El nivel gratuito funciona a través de Gemini 2.5 Flash; los niveles de pago se enrutan a Claude Sonnet 4 con la flota prism-coder para consultas cortas.
+### ✨ Chat IA
+Asistente en el dispositivo y en la nube adaptado a la forma de comunicarse del usuario de CAA. Respuestas en tiempo real con opción de insertar cualquier línea en la barra de mensajes para preservar la autoría del usuario. El nivel gratuito utiliza Gemini 2.5 Flash; los niveles de pago derivan las consultas a Claude Sonnet 4 mediante la infraestructura prism-coder.
 
-**Modo IA Limpio** — la barra de predicción de palabras se oculta automáticamente cuando el Chat con IA está abierto (las predicciones son irrelevantes al componer una pregunta), manteniendo el enfoque en la respuesta de la IA y el botón de enviar.
+**Modo IA despejado** — la barra de predicción de palabras se oculta automáticamente cuando el Chat IA está abierto (las predicciones no son necesarias al redactar una pregunta), manteniendo la atención en la respuesta de la IA y el botón de envío.
 
-**Chat con IA manos libres** — activa el botón 🔁 en el encabezado del chat para entrar en un bucle de voz continuo: el micrófono se abre automáticamente después de cada respuesta de la IA, para que el niño pueda mantener una conversación completa sin tocar la pantalla. Una barra de estado debajo del encabezado del chat confirma que el modo está activado.
+**Chat IA manos libres** — activa el botón 🔁 en la cabecera del chat para entrar en un bucle de voz continuo: el micrófono se abre automáticamente tras cada respuesta de la IA, permitiendo mantener una conversación fluida sin tocar la pantalla. Una barra de estado bajo la cabecera confirma que el modo está activo.
 
-**Modo de traducción** — cuando el idioma de la aplicación y el idioma de salida difieren (por ejemplo, entrada en portugués, salida en inglés), cada intercambio de IA se enruta automáticamente a través de la ruta de traducción con la transmisión habilitada, por lo que no hay penalización de velocidad en comparación con el modo monolingüe.
+**Modo de traducción** — cuando el idioma de la aplicación y el de salida son diferentes (por ejemplo, entrada en portugués y salida en español), cada intercambio con la IA se redirige automáticamente mediante la ruta de traducción con emisión en tiempo real, manteniendo la misma velocidad que en modo monolingüe.
 
-![AI Chat panel — prediction bar hidden in AI mode, full keyboard accessible below](../../docs/screenshots/panel-ai-chat-v2.png)
+![Panel de Chat IA — barra de predicción oculta en modo IA, teclado completo accesible debajo](../../docs/screenshots/panel-ai-chat-v2.png)
 
 <details>
-<summary><strong>Características + detalles técnicos</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
-- Panel en línea acoplado encima del teclado — nunca un modal que oculte la barra de mensajes
-- Entrada de voz a través de la API Web Speech; el botón del micrófono muestra la transcripción provisional en vivo
-- Toca cualquier línea de IA para copiarla en la barra de mensajes (conserva la autoría — Valencia et al., CHI 2023)
-- **Bucle manos libres** — botón 🔁 en el encabezado; reinicia automáticamente el micrófono 1 s después de que finaliza cada respuesta de la IA; `aria-pressed` + fondo verde confirman el estado; barra de estado debajo del encabezado mientras está activo
-- **Palabra de activación "Hey Prism"** — disponible dentro de la superposición de cabecera; la sesión continua de `SpeechRecognition` detecta la frase y activa el micrófono; no disponible cuando el puente nativo de iOS posee la sesión de audio
-- Tiempo de espera forzado de 15s en el cliente + botón Reintentar (para que el panel no se quede atascado en "Pensando…" si la red se cae)
-- 401 / red / tiempo de espera / otros → mapeo de errores amigable; nunca muestra "Sesión caducada" en bruto
-- Respaldo local de Ollama (`prism-coder:1b7`) cuando está sin conexión; el contenido mixto se bloquea desde el origen del navegador `synalux.ai` en la práctica, por lo que se activa el error amigable
+- Panel integrado situado sobre el teclado — sin ventanas emergentes que oculten la barra de mensajes
+- Entrada por voz mediante Web Speech API; el botón del micrófono muestra la transcripción en tiempo real
+- Toca cualquier línea generada por la IA para copiarla a la barra de mensajes (preserva la autoría del usuario — Valencia et al., CHI 2023)
+- **Bucle manos libres** — botón 🔁 en la cabecera; reactiva el micrófono 1 s después de que la IA termine de responder; `aria-pressed` + fondo verde confirman el estado; barra de estado visible bajo la cabecera mientras está activo
+- **Palabra de activación «Oye Prism»** — disponible dentro del Modo de cabecera; una sesión continua de `SpeechRecognition` detecta la frase y activa el micrófono; no disponible cuando el puente nativo de iOS controla la sesión de audio
+- Tiempo límite de 15s en el cliente + botón Reintentar (evita que el panel se quede bloqueado en «Pensando...» si se pierde la conexión)
+- Gestión de errores clara para fallos de red, autenticación o tiempo de espera
+- Respaldo en Ollama local (`prism-coder:2b`) en modo sin conexión
 
-**Ruta de renderizado:** `components/AIChatPanel.tsx` → `services/aiService.askAI()` (o `translateAI()` en modo traducción) → flujo SSE desde Synalux `/api/v1/chat` con `credentials: 'include'`. CORS permite `synalux.ai` + orígenes de desarrollo de localhost.
+**Ruta de renderizado:** `components/AIChatPanel.tsx` → `services/aiService.askAI()` (o `translateAI()` en modo traducción) → transmisión SSE desde Synalux `/api/v1/chat` con `credentials: 'include'`. Las reglas CORS permiten el origen `synalux.ai` y desarrollos en localhost.
 </details>
 
 ---
 
 ### 🛏 Modo de cabecera
 
-> **Característica de accesibilidad crítica.** El Modo de cabecera existe porque algunos usuarios no tienen una forma fiable de hablar, escribir o tocar una pantalla. El diseño debe funcionar primero para el caso más difícil: un paciente acostado en una cama de UCI, con los brazos a los lados, ventilado, incapaz de producir ningún sonido — comunicándose solo a través de la mirada o un único interruptor de hardware sostenido entre dos dedos.
+> **Función esencial de accesibilidad.** El Modo de cabecera se ha diseñado para usuarios que no disponen de una forma habitual de hablar, escribir o tocar una pantalla. Su diseño contempla desde el inicio los casos de mayor necesidad: un paciente en una unidad de cuidados intensivos, en cama, con ventilación asistida y sin emisión de voz, que se comunica exclusivamente mediante la mirada o un conmutador accionado con los dedos.
 
-Superposición de comunicación con IA a pantalla completa optimizada para usuarios que no pueden alcanzar la pantalla o hablar de forma fiable. Cada objetivo táctil es de gran tamaño. La voz es una vía de entrada entre varias, no la única. La interfaz es operable completamente a través de tecnología de asistencia: escaneo por interruptor, seguimiento ocular, Control por Voz de iOS, seguimiento de cabeza o un teclado en pantalla navegado con un solo interruptor.
+Pantalla completa de comunicación con IA optimizada para usuarios con acceso táctil o vocal limitado. Todos los botones presentan dimensiones amplias. La voz es una opción de entrada más, no la única. Toda la interfaz es compatible con tecnologías de apoyo: escaneo por conmutador, control ocular, Control por voz de iOS, seguimiento cefálico o teclado en pantalla accionado mediante un único conmutador.
 
-Inspirado en la retroalimentación directa de la comunidad AAC (r/AssistiveTechnology, mayo de 2025) de usuarios que se comunican desde camas de hospital, recuperación postquirúrgica y entornos de cuidados paliativos.
+Desarrollado a partir de aportaciones de la comunidad de CAA (r/AssistiveTechnology, mayo de 2025) por usuarios en entornos de hospitalización, recuperación quirúrgica y cuidados paliativos.
 
-**¿Funciona en Mac / Windows?** Sí. El Modo de cabecera es una característica de aplicación web progresiva — se ejecuta en cualquier navegador en cualquier dispositivo. No es solo para iOS.
+**¿Funciona en Mac / Windows?** Sí. El Modo de cabecera es una función de la aplicación web progresiva (PWA) — se ejecuta en cualquier navegador y dispositivo. No es exclusivo de iOS.
 
 ---
 
-#### ¿Para quién es esto?
+#### ¿A quién va dirigido?
 
-El Modo de cabecera está diseñado para usuarios con un amplio espectro de habilidades motoras y del habla. Las Tarjetas de Frases Rápidas (descritas a continuación) están específicamente diseñadas para usuarios en el extremo más severo — aquellos que no pueden hablar en absoluto y tienen un movimiento de manos muy limitado o nulo.
+El Modo de cabecera está diseñado para adaptarse a diversos niveles de movilidad y habla. Las Tarjetas de Frases Rápidas (detalladas a continuación) están orientadas a situaciones de alta necesidad — personas sin habla y con movilidad de manos reducida o nula.
 
 | Perfil de usuario | Método de entrada recomendado |
 |---|---|
-| Puede hablar, brazos restringidos | Voz (🎙 botón de micrófono) + bucle manos libres |
-| Algunas vocalizaciones, habla poco fiable | Palabra de activación "Hey Prism" + bucle manos libres |
-| Sin habla, puede tocar la pantalla | Tarjetas de Frases Rápidas (un solo toque) |
-| Sin habla, movimiento limitado — un interruptor | Control por Interruptor de iOS o Escaneo de Acceso por Interruptor de Android sobre Tarjetas de Frases Rápidas |
-| Sin habla, sin movimiento de manos — dispositivo de seguimiento ocular | El hardware de seguimiento ocular (Tobii, EyeGaze Edge, etc.) se presenta como un puntero de ratón — todas las tarjetas son navegables |
-| Sin habla, puede mover la cabeza | Seguimiento de cabeza (por ejemplo, Puntero de Cabeza de iOS, Control de Cámara en iPhone 16) — las tarjetas son objetivos de navegación de tamaño completo |
-| Traqueotomía / ventilado, sin vocalización | Tarjetas de Frases Rápidas mediante seguimiento ocular o interruptor + modo asistido por cuidador |
+| Capacidad de habla, movilidad de brazos reducida | Voz (botón 🎙 micrófono) + Bucle manos libres |
+| Vocalización parcial, habla poco precisa | Palabra de activación «Oye Prism» + Bucle manos libres |
+| Sin habla, con acceso táctil | Tarjetas de Frases Rápidas (un solo toque) |
+| Sin habla, movilidad reducida — un conmutador | Escaneo por conmutador (iOS Switch Control o Android Switch Access) sobre las tarjetas |
+| Sin habla, sin movilidad manual — dispositivo de mirada | El hardware de seguimiento ocular (Tobii, EyeGaze Edge, etc.) actúa como puntero de ratón — todas las tarjetas son navegables |
+| Sin habla, con movilidad cefálica | Seguimiento cefálico (ej. Puntero cefálico de iOS, Control de cámara en iPhone 16) — las tarjetas ofrecen superficies de selección amplias |
+| Traqueostomía / ventilación asistida, sin vocalización | Tarjetas de Frases Rápidas mediante mirada ocular o conmutador + modo asistido por cuidador |
 
 ---
 
-#### Soporte de plataforma
+#### Compatibilidad por plataforma
 
-| Plataforma | Modo de cabecera | Tarjetas rápidas | Bucle manos libres 🔁 | Palabra de activación 🎯 |
+| Plataforma | Modo cabecera | Tarjetas rápidas | Bucle manos libres 🔁 | Palabra de activación 🎯 |
 |---|:---:|:---:|:---:|:---:|
 | Web — Mac / Windows / Linux (cualquier navegador) | ✅ | ✅ | ✅ | ✅ |
 | Web — iPhone / iPad (Safari) | ✅ | ✅ | ✅ | ⚠️ Solo Safari |
-| Aplicación nativa de iOS (App Store) | ✅ | ✅ | ✅ | ❌ usar Manos Libres |
+| Aplicación nativa iOS (App Store) | ✅ | ✅ | ✅ | ❌ usar Manos libres |
 | Android (Chrome / Edge) | ✅ | ✅ | ✅ | ✅ |
-| Dispositivo de seguimiento ocular (cualquiera — se presenta como ratón) | ✅ | ✅ | ✅ | ✅ |
-| Escaneo por interruptor (Control por Interruptor de iOS) | ✅ | ✅ | ✅ | ❌ |
+| Dispositivo de seguimiento ocular (actúa como ratón) | ✅ | ✅ | ✅ | ✅ |
+| Escaneo por conmutador (iOS Switch Control) | ✅ | ✅ | ✅ | ❌ |
 | Apple Watch | ❌ | ❌ | ❌ | ❌ |
 
-> **¿Por qué no hay palabra de activación en la aplicación nativa de iOS?** El puente nativo toma posesión de la sesión de audio (`prismNativeBridge.startVoice`), lo que entra en conflicto con la API `SpeechRecognition` del navegador que utiliza el servicio de palabra de activación. Utiliza el **bucle manos libres** (🔁) en su lugar — reinicia el micrófono automáticamente 1 segundo después de que finaliza cada respuesta de la IA sin requerir ninguna entrada continua.
+> **¿Por qué no hay palabra de activación en la app nativa de iOS?** El puente nativo gestiona la sesión de audio (`prismNativeBridge.startVoice`), lo que entra en conflicto con la API `SpeechRecognition` del navegador que utiliza la palabra de activación. Se recomienda utilizar el **Bucle manos libres** (🔁) en su lugar — reactiva el micrófono automáticamente 1 segundo después de cada respuesta de la IA sin requerir interacción continua.
 
 ---
 
-#### Cómo empezar
+#### Cómo iniciar
 
-1.  Abre el panel **Chat con IA** — toca el icono 🤖 en la barra de herramientas.
-2.  Toca **🛏** en el encabezado del panel — la superposición a pantalla completa se abre inmediatamente.
-3.  Elige tu método de entrada (ver secciones siguientes).
+1. Abre el panel de **Chat IA** — toca el icono 🤖 en la barra de herramientas.
+2. Toca **🛏** en la cabecera del panel — la pantalla completa se abrirá inmediatamente.
+3. Selecciona tu método de entrada (consulta las secciones siguientes).
 
 <p align="center">
-  <img src="../../e2e/_screenshots/bedside-overlay-open.png" alt="Superposición del Modo de cabecera abierta — interfaz de usuario negra a pantalla completa. La franja superior muestra las Tarjetas de Frases Rápidas. El área central muestra las respuestas de la IA. La parte inferior muestra un gran botón rojo de micrófono y la fila de controles." width="260">
-  <img src="../../e2e/_screenshots/bedside-overlay-handsfree-on.png" alt="Modo de cabecera con Manos Libres activo — botón 🔁 resaltado en verde, texto de estado 'Manos Libres ACTIVADO' visible" width="260">
-  <img src="../../e2e/_screenshots/bedside-hands-free-on.png" alt="Botón de alternancia de Manos Libres en estado activado — fondo verde, aria-pressed=true" width="260">
+  <img src="../../e2e/_screenshots/bedside-overlay-open.png" alt="Modo de cabecera abierto — interfaz de pantalla completa sobre fondo oscuro. La franja superior muestra las Tarjetas de Frases Rápidas. El área central muestra las respuestas de la IA. La parte inferior incluye un botón de micrófono amplio y los controles." width="260">
+  <img src="../../e2e/_screenshots/bedside-overlay-handsfree-on.png" alt="Modo de cabecera con Manos libres activo — botón 🔁 destacado en verde, texto de estado 'Manos libres ACTIVADO' visible" width="260">
+  <img src="../../e2e/_screenshots/bedside-hands-free-on.png" alt="Botón de activación del modo Manos libres en estado activo — fondo verde, aria-pressed=true" width="260">
 </p>
 
-#### Cómo detener / salir
+#### Cómo salir / cerrar
 
--   **Tocar / pulsar:** toca **✕** en la esquina superior derecha de la superposición (objetivo de 48 × 48 px).
--   **Teclado / interruptor:** pulsa **Escape**.
--   **Voz:** di cualquier comando a través del Control por Voz de iOS mientras la superposición está abierta.
+- **Táctil:** toca **✕** en la esquina superior derecha (área de toque de 48 × 48 px).
+- **Teclado / conmutador:** pulsa **Escape**.
+- **Voz:** indica cualquier comando mediante el Control por voz de iOS con la interfaz abierta.
 
-Tu historial de chat completo y el estado de la sesión de IA se conservan al salir. La superposición se sitúa encima del panel principal como una capa de renderizado separada — nada se pierde al cerrarla.
+El historial de conversación y el estado de la IA se mantienen al salir. La pantalla de cabecera se superpone al panel principal como una capa independiente sin alterar la sesión en curso.
 
 <p align="center">
-  <img src="../../e2e/_screenshots/bedside-overlay-closed.png" alt="Después de cerrar el Modo de cabecera — de vuelta al panel principal de chat con IA con el historial de conversación intacto" width="260">
-  <img src="../../e2e/_screenshots/bedside-wakeword-statusbar.png" alt="Barra de estado del panel principal mostrando 'Hey Prism activo' con indicador azul después de regresar del Modo de cabecera" width="260">
+  <img src="../../e2e/_screenshots/bedside-overlay-closed.png" alt="Tras cerrar el Modo de cabecera — retorno al panel principal de chat IA conservando el historial de conversación" width="260">
+  <img src="../../e2e/_screenshots/bedside-wakeword-statusbar.png" alt="Barra de estado del panel principal mostrando 'Oye Prism activo' con indicador azul tras salir del Modo de cabecera" width="260">
 </p>
 
 ---
 
 ### 🃏 Tarjetas de Frases Rápidas — para usuarios no verbales y con movilidad reducida
 
-> **Esta es la ruta crítica para usuarios que no pueden hablar o tocar la pantalla libremente.** Las Tarjetas de Frases Rápidas son botones de comunicación preprogramados que se pueden activar con un solo toque, una permanencia de la mirada o una selección por escaneo de interruptor. Sin escribir. Sin voz. No se requiere internet para usarlas.
+> **Ruta principal de interacción para usuarios que no pueden hablar ni tocar la pantalla con facilidad.** Las Tarjetas de Frases Rápidas son botones de comunicación preconfigurados que se activan mediante un único toque, fijación de la mirada o escaneo por conmutador. Sin necesidad de escritura, voz ni conexión a internet para su uso.
 
-Cada tarjeta muestra un gran icono de emoji y una frase corta. Al tocar una tarjeta, esa frase se carga inmediatamente en la barra de mensajes. Si el **modo Manos Libres** está activado, la frase se envía a la IA automáticamente.
+Cada tarjeta muestra un icono emoji de gran tamaño y una frase breve. Al seleccionar una tarjeta, su texto se añade inmediatamente a la barra de mensajes. Con el **Modo manos libres** activo, la frase se envía automáticamente a la IA.
 
-#### Tarjetas incorporadas
+#### Tarjetas integradas
 
-Quince tarjetas se precargan en el primer uso, agrupadas por urgencia. No se pueden eliminar. Funcionan sin conexión.
+Se incluyen quince tarjetas predeterminadas clasificadas por nivel de necesidad. No se pueden eliminar y funcionan sin conexión.
 
-**Urgente (máxima prioridad — comunicar estas primero en una emergencia médica):**
+**Prioridad alta (atención inmediata en situaciones médicas):**
 
 | Icono | Frase | Cuándo usar |
 |:---:|---|---|
-| 🆘 | AYUDA — EMERGENCIA | Peligro inmediato, llamada de código, cualquier situación que requiera personal ahora |
-| 😢 | Tengo dolor | Dolor de cualquier tipo — la ubicación/gravedad puede seguir en texto libre |
-| 🫁 | No puedo respirar | Dificultad respiratoria, preocupación por las vías respiratorias, ataque de pánico |
-| 🔔 | Llamar a la enfermera | Solicitud de personal no urgente |
+| 🆘 | AYUDA — EMERGENCIA | Peligro inminente, llamada de aviso, necesidad de atención inmediata |
+| 😢 | Tengo dolor | Expresión de dolor — se pueden añadir detalles de ubicación/intensidad |
+| 🫁 | No puedo respirar | Dificultad respiratoria, molestia en la vía aérea, malestar intenso |
+| 🔔 | Llamar a enfermería | Solicitud de asistencia habitual |
 
 **Necesidades físicas:**
 
 | Icono | Frase | Cuándo usar |
 |:---:|---|---|
-| 💧 | Agua por favor | Sed, boca seca, dificultad para tragar medicamentos |
-| 🔥 | Tengo mucho calor | Fiebre, manta, regulación de la temperatura |
+| 💧 | Agua por favor | Sed, boca seca, ayuda para tomar medicación |
+| 🔥 | Tengo mucho calor | Fiebre, ajuste de ropa de cama, temperatura |
 | 🥶 | Tengo mucho frío | Escalofríos, manta, temperatura ambiente |
-| ↔️ | Por favor, reposicióname | Alivio de presión, comodidad, posicionamiento postquirúrgico |
-| 💊 | Necesito mi medicación | Dosis programada, solicitud PRN, medicación para el dolor |
+| ↔️ | Por favor cámbiame de postura | Alivio de presión, comodidad, cambios posturales |
+| 💊 | Necesito mi medicina | Toma de medicación programada o pautada |
 
 **Comunicación:**
 
 | Icono | Frase | Cuándo usar |
 |:---:|---|---|
-| ✅ | Sí | Confirmación — responder preguntas de sí/no del cuidador |
-| ❌ | No | Negación — responder preguntas de sí/no del cuidador |
-| ⏳ | Por favor, espera | Necesita un momento — no proceder todavía |
+| ✅ | Sí | Confirmación — respuesta a preguntas del cuidador |
+| ❌ | No | Rechazo — respuesta a preguntas del cuidador |
+| ⏳ | Por favor espera | Petición de tiempo antes de continuar |
 
-**Emocional:**
+**Expresión emocional:**
 
 | Icono | Frase | Cuándo usar |
 |:---:|---|---|
-| ❤️ | Te quiero | Familia, conexión emocional |
-| 🙏 | Gracias | Gratitud |
-| 😨 | Tengo miedo | Ansiedad, miedo, angustia — activa una respuesta empática de la IA |
+| ❤️ | Te quiero | Afecto, apoyo familiar |
+| 🙏 | Gracias | Agradecimiento |
+| 😨 | Tengo miedo | Ansiedad, temor o malestar — genera una respuesta de apoyo por la IA |
 
-#### Cómo usar las Tarjetas de Frases Rápidas
+#### Uso de las Tarjetas de Frases Rápidas
 
-**Un solo toque / seguimiento ocular / selección por interruptor:**
-Activar una tarjeta coloca su texto en la barra de mensajes. La frase puede entonces ser:
-- Enviada a la IA para una respuesta contextual (por ejemplo, tocar "Tengo miedo" → la IA responde con tranquilidad y hace preguntas de seguimiento)
-- Leída tal cual — los cuidadores en la habitación pueden ver la tarjeta que se tocó en la pantalla
+**Toque único / mirada ocular / conmutador:**
+Al activar una tarjeta, su texto se transfiere a la barra de mensajes. A continuación, la frase permite:
+- Enviarse a la IA para obtener una respuesta adaptada al contexto (ej. tocar «Tengo miedo» → la IA ofrece palabras de tranquilidad y preguntas de seguimiento)
+- Leerse directamente — los cuidadores presentes pueden ver la tarjeta seleccionada en la pantalla
 
-**Con el modo Manos Libres activado:**
-La frase se envía a la IA automáticamente en el momento en que se toca la tarjeta. El micrófono se reinicia 1 segundo después de que la IA responde — creando un bucle continuo sin ninguna otra entrada.
+**Con el Modo manos libres activo:**
+La frase se envía a la IA en cuanto se selecciona la tarjeta. El micrófono se reactiva 1 segundo después de la respuesta de la IA, manteniendo la conversación sin requerir más acciones.
 
-**Con la palabra de activación "Hey Prism" activa (web / escritorio):**
-La palabra de activación + Tarjeta Rápida se pueden combinar: el usuario dice "Hey Prism" para abrir el micrófono, la IA responde, y el usuario puede entonces tocar una tarjeta para continuar la conversación en una dirección diferente sin volver a hablar.
+**Con la palabra de activación «Oye Prism» activa (web / escritorio):**
+Permite combinar la palabra de activación y las tarjetas: el usuario dice «Oye Prism» para abrir el micrófono, recibe la respuesta de la IA y puede seleccionar una tarjeta para continuar la interacción sin necesidad de hablar de nuevo.
 
 #### Cómo añadir tarjetas personalizadas
 
-Los cuidadores, BCBA y miembros de la familia pueden añadir tarjetas personalizadas adaptadas a las necesidades de comunicación específicas del usuario — los nombres de sus médicos, frases favoritas, descripciones específicas del dolor, expresiones religiosas o cualquier otra cosa.
+Cuidadores, terapeutas y familiares pueden incluir tarjetas personalizadas según las necesidades del usuario — nombres de médicos, expresiones habituales, descripciones de dolor específicas u otras indicaciones.
 
 **Pasos:**
 
-1.  Dentro del Modo de cabecera, toca **＋ Añadir** al final de la tira de Frases Rápidas.
-2.  Escribe la frase que quieres en la tarjeta (hasta 80 caracteres).
-3.  Toca **Añadir Tarjeta** — la IA genera automáticamente un icono de emoji que coincide con el significado de la frase (por ejemplo, "Dame más mantas" → 🛏, "Quiero rezar" → 🤲).
-4.  El icono aparece con una breve animación "✨ Generando…", luego la tarjeta se guarda.
+1. En el Modo de cabecera, toca **＋ Añadir** al final de la barra de Frases Rápidas.
+2. Escribe la frase deseada para la tarjeta (hasta 80 caracteres).
+3. Toca **Añadir tarjeta** — la IA asignará automáticamente un icono emoji acorde al significado del texto (ej. «Quiero más mantas» → 🛏, «Quiero rezar» → 🤲).
+4. El icono se muestra tras una breve animación «✨ Generando...» y la tarjeta queda guardada.
 
-Las tarjetas personalizadas se guardan localmente en el dispositivo (localStorage). Persisten entre sesiones y reinicios de la aplicación. No se requiere una cuenta o conexión a internet para usar las tarjetas guardadas — solo la generación inicial del icono requiere una llamada de red.
+Las tarjetas personalizadas se conservan localmente en el dispositivo (localStorage). Se mantienen entre sesiones y tras reiniciar la aplicación. No requieren cuenta ni conexión a internet para su uso — solo la asignación inicial del icono realiza una consulta a la red.
 
-**Ejemplos de tarjetas personalizadas a considerar añadir:**
+**Ejemplos de tarjetas personalizadas recomendadas:**
 
-| Frase sugerida | Por qué |
+| Frase sugerida | Motivo |
 |---|---|
-| `[Nombre del médico], por favor, venga` | Más rápido que el genérico "llamar a la enfermera" para un clínico específico |
-| `Necesito hablar con mi familia` | Situaciones emocionales/legales que requieren al pariente más cercano |
-| `Por favor, apague las luces` | Sensibilidad sensorial, migraña, sueño |
-| `Quiero rezar` | Cuidado espiritual — dignidad en entornos de fin de vida |
-| `Algo no está bien` | Señal de angustia vaga — incita a la IA a hacer preguntas aclaratorias |
-| `Necesito la succión` | Pacientes con traqueotomía / ventilador |
-| `Mi vía intravenosa me duele` | Infiltración, alerta de flebitis |
-| `Quiero ir a casa` | Conversaciones sobre cuidados paliativos/alta |
+| `Por favor que venga [Nombre del médico]` | Permite avisar a un profesional concreto de forma directa |
+| `Necesito hablar con mi familia` | Comunicación con familiares o allegados |
+| `Por favor apaga la luz` | Sensibilidad a la luz, descanso o malestar |
+| `Quiero rezar` | Apoyo espiritual y acompañamiento |
+| `Siento algo raro` | Indicación de malestar general — permite a la IA hacer preguntas de aclaración |
+| `Necesito la aspiración` | Pacientes con traqueostomía o ventilación |
+| `Me duele la vía` | Avisos relacionados con la canalización o suero |
+| `Quiero irme a casa` | Conversaciones sobre alta o preferencias de estancia |
 
 #### Cómo eliminar tarjetas personalizadas
 
-1.  Toca **✏️ Editar** en el encabezado de la tira de Frases Rápidas.
-2.  Aparece una insignia roja **✕** en cada tarjeta personalizada (las tarjetas incorporadas están protegidas y no se pueden eliminar).
-3.  Toca ✕ en cualquier tarjeta para eliminarla.
-4.  Toca **Hecho** para salir del modo de edición.
+1. Toca **✏️ Editar** en la cabecera de la franja de Frases Rápidas.
+2. Aparecerá un distintivo **✕** rojo en las tarjetas personalizadas (las tarjetas integradas del sistema están protegidas y no se pueden eliminar).
+3. Toca ✕ en la tarjeta que desees retirar.
+4. Toca **Hecho** para salir del modo de edición.
 
-#### Configuración de escaneo por interruptor (iOS)
+#### Configuración para escaneo por conmutador (iOS)
 
-Para usuarios que solo pueden activar un único interruptor externo (sorber y soplar, interruptor de cabeza, interruptor de pie, interruptor de almohada):
+Para usuarios que utilicen un único conmutador externo (pulsador de soplo/aspiración, conmutador de cabeza, de pie o de almohada):
 
-1.  Conecta el interruptor al iPhone/iPad a través de Bluetooth o el puerto Lightning/USB-C.
-2.  Ve a **Ajustes → Accesibilidad → Control por Interruptor → Interruptores** y asigna el interruptor a "Seleccionar elemento".
-3.  Ve a **Control por Interruptor → Estilo de Escaneo** y elige "Escaneo Automático" — el dispositivo resaltará automáticamente los elementos uno por uno.
-4.  Abre Prism AAC en Modo de cabecera. El Control por Interruptor escaneará automáticamente las Tarjetas de Frases Rápidas. Activa tu interruptor cuando la tarjeta deseada esté resaltada.
-5.  La frase se envía inmediatamente — no se requiere una segunda acción.
+1. Conecta el conmutador al iPhone/iPad por Bluetooth o mediante el puerto Lightning/USB-C.
+2. Ve a **Ajustes → Accesibilidad → Control por botón → Botones** y asigna el dispositivo a «Seleccionar elemento».
+3. Ve a **Control por botón → Modo de exploración** y elige «Exploración automática» — el sistema resaltará los elementos de forma secuencial.
+4. Abre Prism AAC en Modo de cabecera. El control por botón recorrerá las Tarjetas de Frases Rápidas. Acciona el conmutador cuando se resalte la tarjeta deseada.
+5. La frase se enviará directamente — sin requerir acciones adicionales.
 
-> Todas las Tarjetas de Frases Rápidas llevan `data-scan-group="quick-cards"` para que la tecnología de asistencia pueda escanear en grupo toda la tira antes de pasar a otras regiones de la interfaz de usuario.
+> Todas las Tarjetas de Frases Rápidas incluyen el atributo `data-scan-group="quick-cards"` para facilitar que las tecnologías de apoyo escaneen la franja como un grupo completo.
 
-#### Configuración de seguimiento ocular
+#### Configuración para seguimiento ocular
 
-El hardware de seguimiento ocular (Tobii Dynavox, EyeGaze Edge, PCEye, MyTobii P10, etc.) se presenta al sistema operativo como un puntero de ratón estándar con clic por permanencia. No se necesita una configuración especial en Prism AAC:
+Los dispositivos de seguimiento ocular (Tobii Dynavox, EyeGaze Edge, PCEye, MyTobii P10, etc.) funcionan en el sistema operativo como un puntero de ratón estándar con clic por fijación. No requieren ajustes especiales en Prism AAC:
 
-1.  Configura el tiempo de permanencia en el software de tu dispositivo de seguimiento ocular (recomendado: 800–1200 ms para usuarios primerizos).
-2.  Abre Prism AAC en Modo de cabecera en cualquier navegador.
-3.  Permanece sobre una Tarjeta de Frases Rápidas para activarla.
+1. Configura el tiempo de fijación en el software de tu dispositivo de mirada (recomendado: 800–1200 ms para primeros usuarios).
+2. Abre Prism AAC en Modo de cabecera desde cualquier navegador.
+3. Mantén la mirada sobre una Tarjeta de Frase Rápida para activarla.
 
-El tamaño mínimo de la tarjeta (88 × 80 px) cumple con el requisito de tamaño objetivo AAA de WCAG 2.5.5 de 44 × 44 CSS px, y supera el mínimo típico recomendado para la interacción con la mirada (60 × 60 px).
+El tamaño mínimo de las tarjetas (88 × 80 px) cumple con los requisitos de dimensión de objetivo WCAG 2.5.5 AAA (44 × 44 px CSS), superando la recomendación habitual para interacción por mirada ocular (60 × 60 px).
 
 ---
 
 <details>
-<summary><strong>Todas las características + detalles de implementación técnica</strong></summary>
+<summary><strong>Todas las funciones + detalles técnicos de implementación</strong></summary>
 
-**Cinco subsistemas entregados como una sola característica:**
+**Cinco subsistemas integrados en un mismo módulo:**
 
-1.  **Tarjetas de Frases Rápidas** — `services/bedsideCards.ts` + UI de la tira en `components/BedsideOverlay.tsx`.
+1. **Tarjetas de Frases Rápidas** — `services/bedsideCards.ts` + interfaz de franja en `components/BedsideOverlay.tsx`.
 
-    -   Almacenamiento: clave `localStorage` `prism_bedside_cards_v1`. Validado por esquema en cada carga — las entradas mal formadas se eliminan silenciosamente.
-    -   Límite: máximo 50 tarjetas personalizadas (evita el crecimiento ilimitado del almacenamiento).
-    -   Tarjetas incorporadas: 15 entradas con `id` prefijado `builtin-`; la guardia de la UI de eliminación verifica este prefijo antes de mostrar la insignia ✕, asegurando que los valores predeterminados nunca se eliminen.
-    -   Generación de iconos de IA: `services/aiService.ts → inferCardIcon(text)`. Utiliza la misma cadena de enrutamiento local-Ollama → nube Synalux que el resto de la aplicación. Envía la frase como un mensaje de usuario con un prompt de sistema bloqueado ("Responde con exactamente un emoji…"). Extrae el primer punto de código Unicode de la respuesta. Siempre se resuelve — recurre a 💬 en caso de error de red o respuesta no emoji.
-    -   Sin conexión: las tarjetas funcionan completamente sin conexión; solo añadir una nueva tarjeta requiere red (para la generación de iconos — recurre a 💬 si está sin conexión).
+   - Almacenamiento: `localStorage` con la clave `prism_bedside_cards_v1`. Estructura validada en cada carga — las entradas con errores se omiten de forma transparente.
+   - Límite: máximo de 50 tarjetas personalizadas (evita un crecimiento desmedido del almacenamiento).
+   - Tarjetas integradas: 15 entradas con `id` con prefijo `builtin-`; el control de la interfaz de eliminación verifica este prefijo antes de mostrar el distintivo ✕, asegurando que las tarjetas por defecto no se borren.
+   - Generación de iconos por IA: `services/aiService.ts → inferCardIcon(text)`. Utiliza la misma cadena de enrutamiento de Ollama local → nube Synalux que el resto de la aplicación. Envía la frase como mensaje de usuario con una instrucción de sistema predefinida («Responde únicamente con un emoji...»). Extrae el primer punto de código Unicode de la respuesta. Siempre se resuelve — utiliza 💬 como valor por defecto en caso de error de red o respuesta no válida.
+   - Sin conexión: las tarjetas funcionan completamente sin conexión; solo añadir una tarjeta nueva requiere red (para asignar el icono — usa 💬 si no hay conexión).
 
-2.  **Bucle de IA manos libres (🔁)** — también accesible desde el encabezado del chat de IA principal. Después de cada respuesta de la IA, el micrófono se reinicia automáticamente (retraso de 1 s). Un patrón de referencia `handsFreeRef` / `startListeningRef` asegura que el efecto siempre llama a la devolución de llamada actual sin volver a ejecutarse en cada renderizado.
+2. **Bucle de IA manos libres (🔁)** — accesible también desde la cabecera principal de chat IA. Tras cada respuesta de la IA, el micrófono se reactiva automáticamente (retraso de 1 s). Se utiliza una estructura de referencias con `handsFreeRef` / `startListeningRef` para garantizar que la llamada ejecute el estado actualizado sin forzar renderizados innecesarios.
 
-    ![Hands-free status bar in main AI panel](../../e2e/_screenshots/bedside-hands-free-statusbar.png)
+   ![Barra de estado manos libres en el panel principal de chat IA](../../e2e/_screenshots/bedside-hands-free-statusbar.png)
 
-3.  **Superposición de cabecera** — `fixed inset-0 z-50 bg-black` UI oscura a pantalla completa renderizada como un `<Fragment>` hermano junto al panel de IA principal para que el estado del panel se conserve entre ciclos de apertura/cierre. Accesibilidad: `role="dialog"`, `aria-modal="true"`, `aria-label="Bedside Mode"`, trampa de enfoque WCAG 2.1 SC 2.1.2 (Tab/Shift+Tab cicla dentro de la superposición, `Escape` cierra). Cobertura de la ventana gráfica verificada de forma independiente E2E (tolerancia ≤ 4 px).
+3. **Superposición de cabecera** — interfaz oscura a pantalla completa en `components/BedsideOverlay.tsx` (`fixed inset-0 z-50 bg-black`) renderizada como un `<Fragment>` hermano junto al panel principal de IA para conservar el estado de la conversación. Accesibilidad: `role="dialog"`, `aria-modal="true"`, `aria-label="Modo de cabecera"`, captura de foco WCAG 2.1 SC 2.1.2 (Tab/Shift+Tab navega dentro de la superposición, `Escape` cierra). Cobertura de pantalla verificada mediante pruebas E2E (tolerancia ≤ 4 px).
 
-    -   **Botón de micrófono grande** — 112 × 112 px (`w-28 h-28`), rojo + pulsante mientras escucha, borde blanco en reposo. Verificado ≥ 96 px por `boundingBox()` de Playwright.
-    -   **Tira de Tarjetas Rápidas** — fila de desplazamiento horizontal, cada tarjeta `88 × 80 px`, `data-scan-group="quick-cards"` para agrupación de escaneo por interruptor, `role="list"` / `role="listitem"` para semántica de lector de pantalla.
-    -   **Fila de controles** — Manos Libres (verde cuando está activado), palabra de activación "Hey Prism" (azul cuando está activado, oculto cuando `!wakeWordSupported`), acceso directo al Control por Voz de iOS.
-    -   **Salir** — botón ✕ (`w-12 h-12`) o `Escape` → `onClose()` → `bedsideModeActive = false` en `AIChatPanel` → WCAG 2.4.3 el enfoque se devuelve al botón 🛏 que abrió el diálogo.
+   - **Botón de micrófono amplio** — 112 × 112 px (`w-28 h-28`), rojo y con efecto de pulsación mientras escucha, borde blanco en reposo. Dimensiones verificadas ≥ 96 px mediante `boundingBox()` de Playwright.
+   - **Franja de tarjetas rápidas** — fila con desplazamiento horizontal, cada tarjeta de `88 × 80 px`, `data-scan-group="quick-cards"` para agrupación en escaneo por conmutador, semántica de lectores de pantalla mediante `role="list"` / `role="listitem"`.
+   - **Fila de controles** — Manos libres (verde cuando está activo), palabra de activación «Oye Prism» (azul cuando está activa, oculta si `!wakeWordSupported`), acceso directo a Control por voz de iOS.
+   - **Cerrar** — botón ✕ (`w-12 h-12`) o `Escape` → `onClose()` → `bedsideModeActive = false` en `AIChatPanel` → retorno de foco WCAG 2.4.3 al botón 🛏 que abrió la vista.
 
-    ![Bedside overlay — closed, back to main AI panel](../../e2e/_screenshots/bedside-overlay-closed.png)
+   ![Superposición de cabecera — cerrada, retorno al panel principal de IA](../../e2e/_screenshots/bedside-overlay-closed.png)
 
-4.  **Palabra de activación "Hey Prism"** — `services/wakeWordService.ts`. Ejecuta una sesión continua de `SpeechRecognition` en segundo plano. Detecta cualquier transcripción que contenga "hey prism", activa el micrófono una vez y luego se reinicia para el siguiente ciclo. Guardia: no se inicia cuando el puente nativo de iOS posee el micrófono (`prismNativeBridge?.startVoice` presente). El estado activo de la palabra de activación se muestra en la barra de estado del panel principal después de cerrar la superposición.
+4. **Palabra de activación «Oye Prism»** — `services/wakeWordService.ts`. Ejecuta una sesión continua de `SpeechRecognition` en segundo plano. Detecta transcripciones que contengan «oye prism», activa el micrófono una vez y se reinicia para el siguiente ciclo. Protección: no se inicia si el puente nativo de iOS controla el micrófono (`prismNativeBridge?.startVoice` presente). El estado de la palabra de activación se muestra en la barra de estado del panel principal al salir de la pantalla de cabecera.
 
-    ![Status bar showing "Hey Prism" active](../../e2e/_screenshots/bedside-wakeword-statusbar.png)
+   ![Barra de estado mostrando «Oye Prism» activo](../../e2e/_screenshots/bedside-wakeword-statusbar.png)
 
-5.  **Guía de Control por Voz de iOS** — al tocar 📱 en la fila de controles, intenta `prismNativeBridge.openSettings('accessibility')` (enlaza directamente a Accesibilidad en compilaciones nativas compatibles). En la web / escritorio, recurre a una tarjeta de instrucciones en la superposición que guía a través de `Ajustes → Accesibilidad → Control por Voz → Activado`.
+5. **Guía de Control por voz de iOS** — al tocar 📱 en la fila de controles se intenta la llamada `prismNativeBridge.openSettings('accessibility')` (acceso directo a Accesibilidad en compilaciones nativas compatibles). En web y escritorio muestra una tarjeta informativa con los pasos: `Ajustes → Accesibilidad → Control por voz → Activar`.
 
-    <p align="center">
-      <img src="../../e2e/_screenshots/bedside-voice-control-card.png" alt="Tarjeta de instrucciones de Control por Voz de iOS — guía paso a paso mostrada dentro de la superposición de cabecera cuando se toca 📱 en la web/escritorio" width="260">
-      <img src="../../e2e/_screenshots/bedside-voice-control-dismissed.png" alt="Tarjeta de instrucciones de Control por Voz de iOS después de ser descartada — la superposición vuelve al diseño normal de cabecera" width="260">
-    </p>
+   <p align="center">
+     <img src="../../e2e/_screenshots/bedside-voice-control-card.png" alt="Tarjeta de instrucciones de Control por voz de iOS — guía paso a paso mostrada dentro de la superposición de cabecera al tocar 📱 en web/escritorio" width="260">
+     <img src="../../e2e/_screenshots/bedside-voice-control-dismissed.png" alt="Tarjeta de instrucciones de Control por voz tras cerrarla — la superposición vuelve a la vista normal" width="260">
+   </p>
 
 **Cobertura de pruebas:**
--   `services/bedsideCards.test.ts` — 22 pruebas unitarias: conjunto de tarjetas predeterminadas, ida y vuelta de localStorage, respaldo de JSON mal formado, filtrado de tarjetas inválidas, límite de 50 tarjetas, restricciones de campo `createCard`.
--   `e2e/bedside-mode.spec.ts` — 17 pruebas E2E de Playwright: visibilidad de botones, alternancia `aria-pressed`, clases de estado verde/azul, texto de la barra de estado, atributos de accesibilidad de la superposición, tamaño de `boundingBox` del micrófono, cobertura de la ventana gráfica, mostrar/descartar tarjeta de instrucciones.
+- `services/bedsideCards.test.ts` — 22 pruebas unitarias: conjunto de tarjetas por defecto, persistencia en localStorage, recuperación ante JSON erróneo, filtrado de tarjetas no válidas, límite de 50 tarjetas, restricciones en `createCard`.
+- `e2e/bedside-mode.spec.ts` — 17 pruebas E2E con Playwright: visibilidad de botones, alternancia de `aria-pressed`, clases de estado verde/azul, texto en la barra de estado, atributos de accesibilidad, dimensión del micrófono mediante `boundingBox`, cobertura de pantalla y apertura/cierre de la tarjeta de instrucciones.
 
-**Archivos clave:**
--   `components/AIChatPanel.tsx` — estado de cabecera, estado de tarjetas (`bedsideCards`), `handleAddBedsideCard`, `handleDeleteBedsideCard`, bucle manos libres, ciclo de vida de la palabra de activación, botones de encabezado
--   `components/BedsideOverlay.tsx` — UI de superposición, tira de Tarjetas Rápidas, diálogo de añadir tarjeta, modo de edición, trampa de enfoque, tarjeta de instrucciones de control por voz
--   `services/bedsideCards.ts` — tipo `BedsideCard`, `DEFAULT_BEDSIDE_CARDS`, `loadCards`, `saveCards`, `createCard`
--   `services/aiService.ts` → `inferCardIcon(text)` — inferencia de emoji de IA
--   `services/wakeWordService.ts` — detección continua de frase de activación
+**Archivos principales:**
+- `components/AIChatPanel.tsx` — estado de cabecera, tarjetas (`bedsideCards`), `handleAddBedsideCard`, `handleDeleteBedsideCard`, bucle manos libres, ciclo de vida de la palabra de activación, botones de cabecera
+- `components/BedsideOverlay.tsx` — interfaz de cabecera, franja de tarjetas rápidas, diálogo para añadir tarjetas, modo de edición, captura de foco, tarjeta de Control por voz
+- `services/bedsideCards.ts` — tipo `BedsideCard`, `DEFAULT_BEDSIDE_CARDS`, `loadCards`, `saveCards`, `createCard`
+- `services/aiService.ts` → `inferCardIcon(text)` — asignación de emojis por IA
+- `services/wakeWordService.ts` — detección continua de la frase de activación
 </details>
 
 ---
 
 ### 📨 Enviar un mensaje — selector de proveedor
-Cuando un contacto tiene múltiples proveedores configurados (por ejemplo, tanto Correo como SMS), aparece una sección **"Enviar vía"** encima del área de composición. Un solo toque cambia de proveedor antes de componer — no es necesario salir del panel.
+Cuando un contacto tiene varios proveedores configurados (por ejemplo, correo y SMS), aparece la sección **«Enviar mediante»** sobre el área de redacción. Un toque permite cambiar de proveedor antes de enviar — sin salir del panel.
 
-![Contact provider picker — 'Send via' row with Mail highlighted green, SMS available](../../docs/screenshots/contact-provider-picker.png)
-
----
-
-### 💬 Chat AAC
-Los mensajes entrantes de proveedores conectados (Telegram, WhatsApp, Email, Slack, etc.) llegan a este panel. La insignia de no leídos en la barra de herramientas muestra el recuento, la alarma + la notificación entre pestañas se activa cuando llega un nuevo mensaje, y tocar una línea de mensaje la copia en la barra para que el niño pueda componer una respuesta con su propia voz.
-
-![AAC Chat panel showing inbound caregiver messages with unread badge](../../docs/screenshots/panel-aac-chat.png)
-
-<details>
-<summary><strong>Características + detalles técnicos</strong></summary>
-
-- Bandeja de entrada consultada a través del portal Synalux `/api/v1/prism-aac/inbox/poll` (no-op en 404 si el portal no está configurado)
-- Notificación `BroadcastChannel` entre pestañas en caso de nuevo mensaje
-- Abstracción de proveedor: añadir Outlook / Slack / Discord = ~30 LOC cada uno
-- El estado de lectura se sincroniza para que los cuidadores vean cuándo el niño ha visto su mensaje
-- Nivel gratuito: 1 proveedor conectado; nivel de pago: ilimitado
-- TTS por mensaje para que el niño pueda escuchar el texto entrante con su voz preferida
-
-**Ruta de renderizado:** `components/AACChatPanel.tsx` → `services/inboxPolling.ts` (sondeo de 5s cuando sidePanel === 'aac-chat', 60s en caso contrario) → `useScheduleStore.setIncomingMessages()`. Cada mensaje también se añade a la pista "Mensajes de cuidadores" del horario.
-</details>
+![Selector de proveedor de contacto — fila 'Enviar mediante' con Correo destacado en verde, SMS disponible](../../docs/screenshots/contact-provider-picker.png)
 
 ---
 
-### 🧮 Asignaturas escolares
-Lienzo de cuadrícula de celdas que alberga **19 teclados de asignaturas** que cubren el programa completo de secundaria: matemáticas + ciencias + programación + artes + humanidades. Cada pestaña enruta al tutor de IA a través de una plantilla de prompt específica del dominio (33 plantillas en total) para que el modelo no aplique el razonamiento algebraico a un cuadro de Punnett o confunda una dinámica musical con un literal de programación. **El historial es consciente de la configuración regional + región** hasta el nivel de estado / provincia / Land / comunidad autónoma — más de 280 regiones en 23 países.
+### 💬 Chat CAA
+Los mensajes entrantes de proveedores conectados (Telegram, WhatsApp, correo electrónico, Slack, etc.) se reciben en este panel. El indicador de no leídos en la barra de herramientas muestra la cantidad, una alerta y notificación entre pestañas se activa al recibir un nuevo mensaje, y tocar una línea del mensaje la copia a la barra para que el usuario pueda redactar una respuesta con su propia voz.
 
-![Cell-grid canvas with 5 + 7 = 12 typed across cells](../../docs/screenshots/math-canvas-typed.png)
+![Panel de Chat CAA mostrando mensajes entrantes del cuidador con distintivo de no leídos](../../docs/screenshots/panel-aac-chat.png)
 
 <details>
-<summary><strong>Pestañas de asignaturas (19 en total)</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
-**Matemáticas (9 teclados)** — Principal, Matemáticas Avanzadas (π √ exponentes + 5 herramientas de decoración: caja de fracciones, casa de división larga, barra de raíz, línea de sumatoria, barra de fracción), a–z, Matemáticas Varias (teoría de conjuntos + lógica), Tiempo y Distancia, Peso, Volumen, Geometría, Dinero.
+- Consulta periódica de la bandeja de entrada a través del portal Synalux `/api/v1/prism-aac/inbox/poll` (sin acción si devuelve 404 o el portal no está configurado)
+- Notificación entre pestañas mediante `BroadcastChannel` al recibir un nuevo mensaje
+- Estructura modular de proveedores: añadir Outlook / Slack / Discord requiere ~30 líneas de código por servicio
+- El estado de lectura se sincroniza para que los cuidadores sepan cuándo se ha visto el mensaje
+- Nivel gratuito: 1 proveedor conectado; nivel de pago: sin límite
+- Lectura individual por mensaje mediante TTS para escuchar el texto en la voz seleccionada
 
-**Ciencias (4)** — Química (24 elementos + flechas de reacción + cargas + subíndices + marcadores de fase), Física (griego completo + 16 unidades SI + ∫/∂/∇/∑/∏ + constantes), Biología (ADN/ARN + genética + 8 rangos de taxonomía + 12 orgánulos), Estadística (μ σ x̄ + 12 operaciones + distribuciones).
+**Ruta de renderizado:** `components/AACChatPanel.tsx` → `services/inboxPolling.ts` (consulta cada 5s cuando sidePanel === 'aac-chat', cada 60s en caso contrario) → `useScheduleStore.setIncomingMessages()`. Cada mensaje se añade también al canal de «Mensajes de cuidadores» dentro del horario.
+</details>
 
-**Programación (2)** — Python (24 operaciones + 26 palabras clave) y Java (24 operaciones + 26 palabras clave). El código se envía un carácter por celda para que se disponga de forma natural en la cuadrícula monoespaciada.
+---
 
-**Artes + Humanidades (4)** — Música (3 claves + 6 notas + 5 silencios + 5 alteraciones + 8 dinámicas), Ciencias de la Tierra (clima + placas + 10 planetas + UA/al/pc/Mya/Gya), Historia (consciente de la configuración regional + región), Lenguaje y Literatura (12 etiquetas POS + 6 tipos de oraciones + puntuación + estilos de citación).
+### 🧮 Materias escolares
+Lienzo en cuadrícula con **19 teclados temáticos** que abarcan el programa de educación secundaria y bachillerato: matemáticas, ciencias, programación, artes y humanidades. Cada pestaña orienta al tutor de IA mediante plantillas de consulta específicas por materia (33 plantillas en total) para evitar razonamientos algebraicos en un cuadro de Punnett o confusiones entre acotaciones musicales y código de programación. **El módulo de Historia cuenta con adaptación regional por país, provincia o comunidad autónoma** — más de 280 regiones en 23 países.
+
+![Lienzo en cuadrícula con la operación 5 + 7 = 12 escrita en las casillas](../../docs/screenshots/math-canvas-typed.png)
+
+<details>
+<summary><strong>Pestañas por materia (19 en total)</strong></summary>
+
+**Matemáticas (9 teclados)** — Principal, Mat. Avanzadas (π √ exponentes + 5 herramientas de edición: división, fracciones, raíz, sumatorio), a–z, Mat. Varias (teoría de conjuntos + lógica), Tiempo y Distancia, Peso, Volumen, Geometría, Moneda.
+
+**Ciencias (4)** — Química (24 elementos + flechas de reacción + cargas + subíndices + estados de agregación), Física (alfabeto griego completo + 16 unidades del SI + ∫/∂/∇/∑/∏ + constantes), Biología (ADN/ARN + genética + 8 rangos taxonómicos + 12 orgánulos), Estadística (μ σ x̄ + 12 operadores + distribuciones).
+
+**Programación (2)** — Python (24 operadores + 26 palabras clave) y Java (24 operadores + 26 palabras clave). El código asigna un carácter por casilla para mantener una distribución clara en la cuadrícula.
+
+**Artes y Humanidades (4)** — Música (3 claves + 6 notas + 5 silencios + 5 alterativas + 8 dinámicas), Ciencias de la Tierra (meteorología + tectónica + 10 cuerpos celestes + UA/al/pc/Ma/Ga), Historia (con adaptación local y regional), Lengua y Literatura (12 categorías gramaticales + 6 tipos de oraciones + puntuación + estilos de cita).
 
 </details>
 
 <details>
-<summary><strong>Tutor de IA — 11 dominios × 3 modos = 33 prompts</strong></summary>
+<summary><strong>Tutor de IA — 11 materias × 3 modos = 33 plantillas de consulta</strong></summary>
 
-![AI tutor overlay with mocked hint above the canvas](../../docs/screenshots/math-tutor-hint.png)
+![Superposición del tutor de IA con una pista sobre el lienzo](../../docs/screenshots/math-tutor-hint.png)
 
-Tres modos por asignatura: 💡 **Pista** (sugerencia suave del siguiente paso, nunca resuelve), ✓ **Verificar** (valida la respuesta del niño, celebra si es correcta), 🎓 **Resolver** (explicación completa paso a paso, máximo 4 pasos). La pestaña activa le dice al tutor en qué asignatura está el niño. Tiempo de espera forzado de 15 s + botón Reintentar para que la superposición nunca se quede atascada.
+Tres modos por materia: 💡 **Pista** (orientación paso a paso, sin dar la solución), ✓ **Comprobar** (valida la respuesta del usuario y confirma los aciertos), 🎓 **Resolver** (explicación detallada en un máximo de 4 pasos). La pestaña activa indica la materia al tutor. Tiempo límite de 15 s + botón Reintentar para mantener la fluidez de uso.
 </details>
 
 <details>
-<summary><strong>Historia — consciente de la configuración regional + región</strong></summary>
+<summary><strong>Historia — adaptación por idioma y región</strong></summary>
 
-![History keyboard in en locale (no region) — universal + national tiers](../../docs/screenshots/math-keyboard-history-en.png)
-![History keyboard with US-TX region — Alamo, Texas annexation, JFK appear](../../docs/screenshots/math-keyboard-history-us-tx.png)
+![Teclado de historia en idioma inglés sin región — niveles universal y nacional](../../docs/screenshots/math-keyboard-history-en.png)
+![Teclado de historia con región US-TX — eventos locales de Texas](../../docs/screenshots/math-keyboard-history-us-tx.png)
 
-Tres niveles apilados:
-1.  Eventos **universales** enseñados en todos los currículos (476, 1914 Primera Guerra Mundial, 1939 Segunda Guerra Mundial, 1969 luna)
-2.  Eventos **nacionales** seleccionados por `language` (en, es, fr, de, ro, ru, uk, ja, ko, zh, ar, it, pl, nl, he, hi, vi, tr, pt) — 19 idiomas compatibles
-3.  Eventos **subnacionales** seleccionados por `historyRegion` (US-TX, CA-QC, UK-SCT, ES-CT, IN-MH, DE-BY, …) — **más de 280 regiones en 23 países**, incluyendo los 50 estados de EE. UU. + DC, 13 provincias / territorios canadienses, las 4 naciones del Reino Unido, Irlanda (República + 4 provincias históricas), los 16 Länder alemanes, las 17 comunidades autónomas españolas, las 20 regiones italianas, además de AU, FR, MX, BR, IN, CN, RU, BE, CH, NL, AR, ZA, KR, PK, NZ, PL.
+Estructura en tres niveles:
+1. **Universal** — acontecimientos presentes en planes de estudio globales (476, Primera Guerra Mundial 1914, Segunda Guerra Mundial 1939, llegada a la Luna 1969)
+2. **Nacional** — eventos seleccionados según el `idioma` (es, en, fr, de, ro, ru, uk, ja, ko, zh, ar, it, pl, nl, he, hi, vi, tr, pt) — 19 idiomas compatibles
+3. **Regional** — acontecimientos específicos definidos por `historyRegion` (ES-CT, ES-AN, MX-DIF, US-TX, CA-QC, ARG, ...) — **más de 280 regiones en 23 países** incluyendo las 17 comunidades autónomas de España, los 50 estados de EE. UU., provincias de Canadá, naciones del Reino Unido, estados de México, Argentina, Colombia, regiones de Italia, Alemania, entre otros.
 
-El prompt del tutor lleva la configuración regional + región para que una fecha ambigua como 1836 en `US-TX` se resuelva como el Álamo (no la estadidad de Alabama); 1759 en `CA-QC` se ancle a las Llanuras de Abraham; 1714 en `ES-CT` a la caída de Barcelona.
-
-</details>
-
-<details>
-<summary><strong>Flujos de trabajo de prueba — 12 asignaturas × problemas de palabras de Grado 8-12 × 72 pruebas de Playwright</strong></summary>
-
-Hojas de problemas paso a paso que ejercitan cada teclado de asignatura, además de una prueba ejecutable de Playwright por problema que controla el panel de matemáticas en vivo y verifica que los glifos de cada paso caigan en la cuadrícula de celdas. Modelado directamente a partir de una página de referencia de álgebra de Grado 9 real.
-
--   **Capa 1 — paso a paso genérico:** [`tests/workflows/`](tests/workflows/) — 12 documentos markdown (matemáticas avanzadas, biología, química, ciencias de la tierra, geometría, historia, lenguaje y literatura, matemáticas varias, física, programación-java, programación-python, estadística).
--   **Capa 2 — aula real por nivel de grado:** [`tests/workflows/grade-8-12/`](tests/workflows/grade-8-12/) — 12 documentos markdown con problemas de palabras con variables nombradas (álgebra-grado-9, geometría-grado-10, física-grado-11, química-grado-10, biología-grado-9, estadística-grado-11, programación-python-grado-9, programación-java-grado-11, precálculo-grado-12, ciencias de la tierra-grado-9, lenguaje y literatura-grado-8, historia mundial-grado-10) + [`REPORT.md`](tests/workflows/grade-8-12/REPORT.md) de brecha de teclado por asignatura.
--   **Capa 3 — Playwright e2e:** [`e2e/math-workflows/`](e2e/math-workflows/) — 72 pruebas (`npx playwright test --project=desktop e2e/math-workflows`).
-
-Índice completo, asignaturas con menos soporte clasificadas y el manual "cómo añadir un nuevo flujo de trabajo" → **[`docs/WORKFLOWS.md`](docs/WORKFLOWS.md)**.
+El tutor adapta las referencias históricas según la región seleccionada: el año 1810 en `MX` prioriza el inicio de la Independencia de México, mientras que en `ARG` se orienta a la Revolución de Mayo; el año 1714 en `ES-CT` hace referencia a los hechos de Barcelona.
 
 </details>
 
 <details>
-<summary><strong>Otras funciones de matemáticas (herramienta de bloqueo, magnificación de dos toques, guardar / sincronizar)</strong></summary>
+<summary><strong>Flujos de prueba — 12 materias × ejercicios prácticos × 72 pruebas automatizadas</strong></summary>
 
--   **Herramienta de bloqueo** — después de que el niño termina un problema, bloquea la región. Las celdas bloqueadas se muestran ligeramente atenuadas y rechazan las ediciones.
--   **Magnificación de dos toques** — el primer toque arma la tecla (escala 1.4× + halo verde), el segundo toque la confirma. Desarmado automático en 2 s. Para usuarios con imprecisión motora.
--   **Guardar + sincronizar** — primero localmente en `localStorage`; sincronización de mejor esfuerzo con el portal Synalux a través del botón `↻ Sincronizar`. Límite de 100 documentos / 200 KB de cuerpo; los más antiguos se eliminan.
--   **Permanencia de pulsación** — permanencia configurable por tecla (0–1500ms) con anillo de progreso verde.
+Conjuntos de ejercicios ordenados por pasos para cada teclado temático, junto con pruebas ejecutables en Playwright que interactúan con el panel de matemáticas y verifican los caracteres ingresados en la cuadrícula.
 
-![Saved docs overlay showing one entry and a Sync button](../../docs/screenshots/math-docs-overlay.png)
-![A digit key armed in the green-halo magnified state](../../docs/screenshots/math-two-hit-armed.png)
-![Lock tool armed, prompting the user to tap a corner of the region](../../docs/screenshots/math-lock-armed.png)
+- **Nivel 1 — pasos estructurados:** [`tests/workflows/`](tests/workflows/) — 12 documentos de referencia (matemáticas avanzadas, biología, química, ciencias de la tierra, geometría, historia, lengua, matemáticas varias, física, programación Java, programación Python, estadística).
+- **Nivel 2 — ejercicios por curso:** [`tests/workflows/grade-8-12/`](tests/workflows/grade-8-12/) — 12 documentos con problemas aplicados por materia + informe de cobertura [`REPORT.md`](tests/workflows/grade-8-12/REPORT.md).
+- **Nivel 3 — pruebas E2E:** [`e2e/math-workflows/`](e2e/math-workflows/) — 72 pruebas automáticas (`npx playwright test --project=desktop e2e/math-workflows`).
+
+Índice completo y guía de desarrollo de pruebas → **[`docs/WORKFLOWS.md`](docs/WORKFLOWS.md)**.
 
 </details>
 
 <details>
-<summary><strong>Teclados de asignaturas — imágenes adicionales</strong></summary>
+<summary><strong>Otras funciones de matemáticas (bloqueo de área, ampliación en dos toques, guardado y sincronización)</strong></summary>
 
-![Chemistry keyboard with H₂O](../../docs/screenshots/math-keyboard-chemistry.png)
-![Biology keyboard with A T G](../../docs/screenshots/math-keyboard-biology.png)
-![Java keyboard with `private String`](../../docs/screenshots/math-keyboard-java.png)
-![Music keyboard](../../docs/screenshots/math-keyboard-music.png)
-![Statistics keyboard](../../docs/screenshots/math-keyboard-statistics.png)
-![Earth Science keyboard](../../docs/screenshots/math-keyboard-earth-science.png)
-![Language Arts keyboard](../../docs/screenshots/math-keyboard-language-arts.png)
-![Romanian-locale history](../../docs/screenshots/math-keyboard-history-ro.png)
+- **Herramienta de bloqueo** — permite fijar un área del lienzo al terminar un ejercicio. Las casillas protegidas se muestran con tono atenuado y no admiten cambios.
+- **Ampliación en dos toques** — el primer toque resalta la casilla (escala 1,4× y borde verde), el segundo confirma la selección. Desactivación automática tras 2 s. Diseñado para facilitar la precisión táctil.
+- **Guardado y sincronización** — almacenamiento local en `localStorage`; opción de sincronización con el portal Synalux mediante el botón `↻ Sincronizar`. Capacidad para 100 documentos / 200 KB; sustitución automática de las entradas más antiguas.
+- **Tiempo de fijación** — ajuste de permanencia por casilla (0–1500 ms) con indicador circular de progreso.
+
+![Superposición de documentos guardados mostrando una entrada y el botón Sincronizar](../../docs/screenshots/math-docs-overlay.png)
+![Teclado numérico con una tecla resaltada mediante el sistema de dos toques](../../docs/screenshots/math-two-hit-armed.png)
+![Herramienta de bloqueo activa pidiendo seleccionar la esquina de un área](../../docs/screenshots/math-lock-armed.png)
+
+</details>
+
+<details>
+<summary><strong>Teclados temáticos — imágenes adicionales</strong></summary>
+
+![Teclado de química con H₂O](../../docs/screenshots/math-keyboard-chemistry.png)
+![Teclado de biología con bases A T G](../../docs/screenshots/math-keyboard-biology.png)
+![Teclado de Java con sintaxis `private String`](../../docs/screenshots/math-keyboard-java.png)
+![Teclado de música](../../docs/screenshots/math-keyboard-music.png)
+![Teclado de estadística](../../docs/screenshots/math-keyboard-statistics.png)
+![Teclado de ciencias de la tierra](../../docs/screenshots/math-keyboard-earth-science.png)
+![Teclado de lengua y literatura](../../docs/screenshots/math-keyboard-language-arts.png)
+![Teclado de historia en variante regional](../../docs/screenshots/math-keyboard-history-ro.png)
 
 </details>
 
 ---
 
 ### 🗓 Horario
-Horario visual "primero-luego" para apoyo a la rutina y la transición. Cada paso es una ficha de imagen + etiqueta; al finalizar una ficha, suena un timbre + una marca de progreso visual. La tienda de recompensas (nivel de pago) se desbloquea al final de una rutina.
+Horario visual «primero-después» para el seguimiento de rutinas y transiciones. Cada paso se compone de una imagen y un texto; al completar una tarea se emite un tono indicador y una marca visual de progreso. La sección de logros (nivel de pago) se activa al finalizar una secuencia de actividades.
 
-![Schedule panel with first-then board + activity list](../../docs/screenshots/panel-schedule.png)
+![Panel de horario con tablero primero-después y lista de actividades](../../docs/screenshots/panel-schedule.png)
 
 <details>
-<summary><strong>Características + detalles técnicos</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
-- Cuadrícula preestablecida de 24 fichas para añadir actividades con un solo toque: despertarse, cepillarse los dientes, desayunar, escuela, merienda, almuerzo, jugar, leer, arte, caminar, cenar, bañarse, cuento para dormir, hora de dormir, medicación, usar hilo dental, ordenar, lavar la ropa, cuidado de mascotas, deportes, …
-- Reordenar arrastrando y soltando; edición en línea con icono de lápiz; las adiciones preestablecidas llevan `textKey` para que el cambio de idioma reetiquete
-- Máquina de estados "Primero-Luego": pulso de ficha armada, timbre ascendente de 3 notas al expirar el temporizador, seguro para el movimiento (`prefers-reduced-motion` → anillo estático), semántica `aria-pressed`
-- Calentamiento de audio: un oscilador de 1Hz casi silencioso mantiene el AudioContext "en funcionamiento" en iOS Safari para que el timbre del temporizador suene realmente después de un largo silencio (sin calentamiento, el timbre se dispara en un contexto suspendido = sin sonido)
-- Los mensajes del cuidador se añaden al horario como una pista de "Mensajes" para que el niño vea lo que viene + quién envió el mensaje
+- Cuadrícula de 24 tareas predeterminadas accesibles con un toque: despertar, lavarse los dientes, desayuno, escuela, merienda, almuerzo, jugar, leer, plástica, paseo, cena, baño, cuento, dormir, medicación, hilo dental, recoger, colada, mascotas, deporte, …
+- Reordenación mediante arrastre; edición de texto directamente en la tarjeta; las tareas predeterminadas incluyen `textKey` para actualizar su idioma al cambiar los ajustes
+- Control de estados «primero-después»: destello en la tarjeta activa, tono progresivo al finalizar el tiempo, adaptación para movimiento reducido (`prefers-reduced-motion` → indicador estático), compatibilidad con `aria-pressed`
+- Mantenimiento de audio: señal de baja frecuencia constante para conservar la activación del AudioContext en Safari iOS, garantizando la reproducción de avisos sonoros tras periodos de inactividad
 
-**Ruta de renderizado:** `components/SchedulePanel.tsx` → `useScheduleStore` (24 actividades preestablecidas + personalizadas) → `services/feedback.ts:playTimerRing()` → AudioContext compartido a través de `services/azureTTS.ts:warmupAzureAudio()`.
+**Ruta de renderizado:** `components/SchedulePanel.tsx` → `useScheduleStore` (24 actividades predeterminadas + personalizadas) → `services/feedback.ts:playTimerRing()` → AudioContext compartido mediante `services/azureTTS.ts:warmupAzureAudio()`.
 </details>
 
 ---
 
 ### 🎮 Juegos
-12 juegos de AAC basados en evidencia. Construidos para enseñar comunicación, **no para tiempo de pantalla**. Cada juego registra las vocalizaciones + la precisión para que el motor adaptativo pueda sugerir el siguiente juego más adecuado.
+12 juegos orientados al aprendizaje de la comunicación mediante CAA, **enfocados en el desarrollo del lenguaje**. Cada juego registra el progreso y la precisión para permitir al sistema recomendar las actividades más convenientes.
 
-![Games panel with 9 game tiles](../../docs/screenshots/panel-games.png)
+![Panel de juegos con 9 tarjetas de acceso](../../docs/screenshots/panel-games.png)
 
 <details>
 <summary><strong>Los 12 juegos + detalles técnicos</strong></summary>
 
-| Juego | Habilidad objetivo |
+| Juego | Habilidad principal |
 |---|---|
-| Bubble Pop | Causa + efecto, comunicación intencional |
-| Color Hunt | Vocabulario receptivo (nombres de colores) |
-| My Story | Secuenciación narrativa |
-| Match It | Emparejamiento + pensamiento categórico |
-| Yes/No | Discriminación binaria, pedir/rechazar |
-| Finish It | Completar oraciones (cloze) |
-| Category Sort | Categorización semántica |
-| Emotion Match | Etiquetado de afectos, ToM |
-| What Comes Next | Razonamiento secuencial |
-| Same / Different | Discriminación visual — emparejar o contrastar |
-| I Hear It (Sound Match) | Discriminación auditiva + vocabulario |
-| Turn Taker | Práctica de toma de turnos sociales |
+| Explotar burbujas | Causa y efecto, intención comunicativa |
+| Caza de colores | Vocabulario comprensivo (nombres de colores) |
+| Mi historia | Secuenciación narrativa |
+| Emparejar | Identificación de conceptos y categorías |
+| Sí / No | Respuesta binaria, aceptación y rechazo |
+| Completar | Completar frases (ejercicios cloze) |
+| Clasificación | Categorización semántica |
+| Expresiones | Reconocimiento de emociones y estados |
+| Qué viene después | Razonamiento secuencial |
+| Igual / Diferente | Discriminación visual — semejanza y contraste |
+| Sonidos | Discriminación auditiva y vocabulario |
+| Turnos | Práctica de la alternancia en la comunicación |
 
-- Nivel gratuito: Bubble Pop, Color Hunt, My Story (3 juegos)
-- Nivel de pago: los 12
-- Los datos por juego alimentan `services/adaptiveEngine.ts` — longitud de la vocalización / categoría / hora del día / resultado → sugiere el siguiente juego
-- Todos los juegos deshabilitan las categorías de fichas AAC que no son relevantes para el vocabulario de ese juego, para que el niño no se distraiga
+- Los 12 juegos están disponibles sin coste; ningún juego requiere una suscripción
+- Los datos de cada partida alimentan `services/adaptiveEngine.ts` — longitud de la frase / categoría / franja horaria / resultado → sugiere el siguiente juego más adecuado
+- Durante el juego se ajustan temporalmente las categorías del tablero no vinculadas a la actividad para facilitar la concentración
 
-**Ruta de renderizado:** `components/GamesPanel.tsx` → componentes de juegos individuales en `components/games/`. Cada juego registra a través de `useScheduleStore.recordMessage(text, category)`.
+**Ruta de renderizado:** `components/GamesPanel.tsx` → componentes de juego individuales en `components/games/`. Cada juego registra datos a través de `useScheduleStore.recordMessage(text, category)`.
 </details>
 
 ---
 
-### 🏪 Tienda
-Paquetes de voz (voces de Inworld, voz personalizada clonada de un hermano/padre), paquetes de vocabulario (vocabulario central en español, habla con apoyo de signos), paquetes de juegos (juegos adicionales más allá de los 9). Las aplicaciones se instalan en la barra de herramientas a través del mismo registro que utilizan los paneles incorporados.
+### 🏪 Mercado
+Catálogo de paquetes de voces (voces de Inworld o voces personalizadas de familiares), paquetes de vocabulario (vocabulario de inicio, apoyos visuales) y módulos de juegos adicionales. Las aplicaciones instaladas se integran en la barra de herramientas a través del registro del sistema.
 
-![Marketplace panel with installable apps](../../docs/screenshots/panel-marketplace.png)
+![Panel del mercado con aplicaciones disponibles para instalar](../../docs/screenshots/panel-marketplace.png)
 
 <details>
-<summary><strong>Características + detalles técnicos</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
-- Las aplicaciones residen como entradas JSON (`lib/marketplace/manifests/local.ts`) + un `lib/marketplace/registry.ts` en tiempo de ejecución con `getHandler(appId)` que devuelve el componente del panel
-- Clonación de voz (nivel de pago): grabación de 90s → voz entrenada utilizable para cualquier TTS en la aplicación, incluyendo las fichas de categoría
-- Las aplicaciones instaladas se renderizan como botones de la barra de herramientas después de las incorporadas; `useSettingsStore.installedApps` es la fuente de verdad
-- Puerta por nivel: la tienda lista todo, pero los botones de instalación se deshabilitan para los elementos que superan el plan del usuario
+- Las aplicaciones se estructuran como manifiestos JSON (`lib/marketplace/manifests/local.ts`) con un registro de ejecución `lib/marketplace/registry.ts` donde `getHandler(appId)` devuelve el componente del panel
+- Clonación de voz (nivel de pago): una grabación de 90 segundos permite generar una voz utilizable en el TTS de la aplicación y en las casillas de categorías
+- Las aplicaciones instaladas se añaden como botones en la barra de herramientas a continuación de los módulos principales; el estado se gestiona en `useSettingsStore.installedApps`
+- El catálogo muestra todos los elementos disponibles, limitando la instalación según el plan del usuario
 
-**Ruta de renderizado:** `components/MarketplacePanel.tsx` → `useMarketplaceStore` → backend `synalux/api/v1/marketplace/...` para la compra, luego descarga de activos (archivos de voz, JSON de vocabulario) en IndexedDB.
+**Ruta de renderizado:** `components/MarketplacePanel.tsx` → `useMarketplaceStore` → backend `synalux/api/v1/marketplace/...` para la gestión de complementos, seguido de la descarga de componentes (archivos de voz, vocabulario JSON) en IndexedDB.
 </details>
 
 ---
 
 ### 📄 Lector de PDF
-Abre un PDF, ve una ficha por página, toca para escucharla en tu voz. Hojas de trabajo escolares, cartas para llevar a casa, artículos — introduce cualquier PDF y escucha en lugar de intentar leerlo. No se requiere Adobe Reader; toda la biblioteca se ejecuta en tu navegador.
+Abre un PDF, visualiza una tarjeta por página y toca para escuchar el texto leído con la voz configurada. Documentos escolares, lecturas o folletos — permite cargar archivos PDF y escucharlos en lugar de leerlos en pantalla. No requiere lectores externos; el proceso se realiza en el navegador.
 
-![PDF Reader panel — empty state with "+ Open PDF" prompt](../../docs/screenshots/panel-pdf-reader.png)
+![Panel del lector de PDF — estado inicial con la opción "+ Abrir PDF"](../../docs/screenshots/panel-pdf-reader.png)
 
 <details>
-<summary><strong>Características + detalles técnicos</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
-- Una ficha por página; cada una muestra las primeras 3 líneas + un botón `▶ Página N` que se envía a través de `aacSpeak()` (misma voz + tono + resaltado de palabras que todo lo demás)
-- `▶ Leer todo` concatena cada página en una vocalización continua
-- La detección de páginas vacías (PDFs de imágenes escaneadas) sugiere la herramienta OCR
-- `pdfjs-dist` importado dinámicamente en la primera apertura — un fragmento separado de ~3 MB del CDN, con versión fijada al paquete npm
-- El botón de la barra de herramientas (📄) es opcional a través de Ajustes → Barra de herramientas para que la barra de herramientas predeterminada mínima permanezca limpia
+- Una tarjeta por página con vista previa de las 3 primeras líneas y un botón `▶ Página N` conectado a `aacSpeak()` (mismo tono, voz y resaltado de palabras que en el resto de la aplicación)
+- La opción `▶ Leer todo` procesa las páginas en una secuencia continua
+- La detección de páginas sin texto editable (PDFs escaneados) sugiere utilizar la herramienta de OCR
+- La biblioteca `pdfjs-dist` se carga bajo demanda al abrir la función por primera vez desde CDN, vinculada a la versión del paquete npm
+- El acceso directo en la barra de herramientas (📄) se activa desde Ajustes → Barra de herramientas para mantener una interfaz sencilla
 
-**Ruta de renderizado:** `components/PdfReaderPanel.tsx` → `services/pdfReader.ts` (`getDocument` de pdfjs → `getTextContent` por página) → `services/aacSpeak.ts`.
+**Ruta de renderizado:** `components/PdfReaderPanel.tsx` → `services/pdfReader.ts` (pdfjs `getDocument` → obtención de texto por página `getTextContent`) → `services/aacSpeak.ts`.
 </details>
 
 ---
 
 ### 👁 Lector de capturas de pantalla (OCR)
-Pega o sube una foto de una hoja de trabajo, una captura de pantalla de una página web, una imagen de una página de libro de texto — el texto reconocido aparece junto a la imagen y puedes tocar **▶ Hablar** para escucharlo, o **↧ Enviar a la barra de mensajes** para editar antes de hablar.
+Sube o toma una fotografía de una ficha, una captura de pantalla o la página de un libro — el texto reconocido se muestra junto a la imagen con las opciones **▶ Hablar** para escucharlo o **↧ Enviar a la barra** para editarlo antes de reproducirlo.
 
-![Screenshot Reader (OCR) panel — empty state with "+ Open image" prompt](../../docs/screenshots/panel-ocr-capture.png)
+![Panel del lector de OCR — estado inicial con la opción "+ Abrir imagen"](../../docs/screenshots/panel-ocr-capture.png)
 
 <details>
-<summary><strong>Características + detalles técnicos</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
-- Matriz OCR de 20 idiomas mapeada desde las configuraciones regionales de Prism AAC a los códigos de Tesseract (eng / spa / fra / por / deu / ron / ukr / rus / jpn / kor / chi_sim / ara / ita / pol / nld / heb / hin / vie / tur / ind)
-- Archivos `traineddata` por idioma almacenados en caché después del primer uso (~10 MB para inglés, más para CJK) — la primera ejecución muestra "Leyendo la imagen… (la primera ejecución descarga el modelo OCR — puede tardar 10-30 s)"
-- Se muestra el porcentaje de confianza para que el usuario de AAC pueda saber si confiar en el resultado o volver a tomar la foto
-- El hook de limpieza `disposeOcr()` termina cada worker generado al descargar la página para liberar la memoria WASM
-- El botón de la barra de herramientas (👁) es opcional a través de Ajustes → Barra de herramientas
+- Compatibilidad con 20 idiomas mapeando la configuración regional de PrismAAC a códigos de Tesseract (spa / eng / fra / por / deu / ron / ukr / rus / jpn / kor / chi_sim / ara / ita / pol / nld / heb / hin / vie / tur / ind)
+- Los archivos de idioma de Tesseract se guardan en caché tras la primera descarga (~10 MB para español e inglés; mayor tamaño en idiomas CJK) — la primera ejecución muestra el aviso «Procesando imagen... (la primera descarga del modelo puede requerir entre 10 y 30 segundos)»
+- Indicador del porcentaje de precisión del reconocimiento para valorar el resultado
+- La función de limpieza `disposeOcr()` libera los procesos y la memoria WASM al cerrar el panel
+- El acceso directo en la barra de herramientas (👁) se activa desde Ajustes → Barra de herramientas
 
-**Ruta de renderizado:** `components/OcrCapturePanel.tsx` → `services/ocr.ts` (`createWorker` de `tesseract.js` → `recognize`) → `services/aacSpeak.ts` o `messageStore.setText`.
+**Ruta de renderizado:** `components/OcrCapturePanel.tsx` → `services/ocr.ts` (`tesseract.js` `createWorker` → `recognize`) → `services/aacSpeak.ts` o `messageStore.setText`.
 </details>
 
 ---
 
 ### 🎧 Reproductor de confort
 
-Reproductor multimedia de cabecera para pacientes hospitalizados — coma, UCI, no verbales o cualquier persona que necesite contenido de confort continuo junto a la cama.
+Reproductor multimedia de cabecera diseñado para acompañamiento continuo en entornos hospitalarios o de reposo.
 
 <details>
-<summary>Detalles de la característica</summary>
+<summary>Detalles de las funciones</summary>
 
-Familiares y amigos graban mensajes de voz, suben fotos y videos. La lista de reproducción se reproduce en bucle continuamente para que el paciente siempre tenga voces y caras familiares cerca.
+Familiares y allegados pueden grabar mensajes de voz y añadir fotografías o vídeos. La lista se reproduce de forma continua para ofrecer un entorno cercano al usuario.
 
--   **Grabar** mensajes de voz directamente en la aplicación (API MediaRecorder)
--   **Subir** archivos de audio, fotos y videoclips (100 MB por archivo, 500 MB en total)
--   **Bucle automático** a través de todos los elementos continuamente — configúralo y aléjate
--   Modo **pantalla completa** para fotos y video (pantalla de cabecera)
--   Integración **TTS nativa** — las frases tocadas se pronuncian a través de AVSpeechSynthesizer en iOS
--   **Sin conexión** — todos los medios almacenados en IndexedDB, funciona sin internet
--   **Accesible por teclado** — cada control tiene etiquetas ARIA y navegación por teclado
--   **Revisado con grado militar** — 27 hallazgos de seguridad corregidos (fugas de URL de blob, manejo de cuotas, validación de entrada, listas blancas MIME, limpieza al desmontar)
--   El botón de la barra de herramientas (🎧) es opcional a través de Ajustes → Barra de herramientas
+- **Grabar** mensajes de voz desde la propia aplicación (API MediaRecorder)
+- **Añadir** archivos de audio, fotos y vídeos (hasta 100 MB por archivo, 500 MB en total)
+- **Reproducción continua** en bucle de todos los elementos contenidos
+- Modo a **pantalla completa** para imágenes y vídeo
+- **Integración con TTS nativo** — reproducción de frases mediante AVSpeechSynthesizer en dispositivos iOS
+- **Sin conexión** — el contenido se almacena localmente en IndexedDB sin requerir red
+- **Accesibilidad mediante teclado** — controles etiquetados con atributos ARIA y navegación por teclado
+- Módulo revisado según criterios de seguridad (gestión de URLs temporales, límites de almacenamiento, validación de entrada y tipos MIME permitidos)
+- El acceso directo en la barra de herramientas (🎧) se activa desde Ajustes → Barra de herramientas
 
-**Límites de almacenamiento:** 50 elementos como máximo, 100 MB por archivo, 500 MB en total. Los tipos MIME están restringidos a audio (webm/mp4/mpeg/ogg/wav), imágenes (jpeg/png/gif/webp/heic) y video (mp4/webm/quicktime).
+**Límites de almacenamiento:** máximo 50 elementos, 100 MB por archivo, 500 MB en total. Formatos permitidos: audio (webm/mp4/mpeg/ogg/wav), imagen (jpeg/png/gif/webp/heic) y vídeo (mp4/webm/quicktime).
 
-**Ruta de renderizado:** `components/ComfortPlayerPanel.tsx` → `store/comfortPlayerStore.ts` (Zustand + persist) → `services/comfortMediaStorage.ts` (blobs de IndexedDB).
+**Ruta de renderizado:** `components/ComfortPlayerPanel.tsx` → `store/comfortPlayerStore.ts` (Zustand + persistencia) → `services/comfortMediaStorage.ts` (almacenamiento en IndexedDB).
 </details>
 
 ---
 
-### 🧩 Extensión de Chrome — las mismas funciones de asistente de lectura en cualquier campo de texto
-La aplicación web Prism AAC cubre el flujo del asistente de lectura dentro de su propia superficie. La extensión de Chrome (`chrome-extension/`) lleva el **mismo comportamiento a CUALQUIER campo de texto en CUALQUIER sitio** — Gmail, Google Docs, Word Online, portales escolares, formularios bancarios — cerrando la única brecha de Read & Write que no era accesible solo desde una página web.
+### 🧩 Extensión de Chrome — funciones de asistencia a la lectura en cualquier campo de texto
+Mientras la aplicación web de PrismAAC gestiona la lectura asistida en su propio entorno, la extensión de Chrome (`chrome-extension/`) lleva **estas mismas funciones a cualquier campo de texto en cualquier sitio web** — Gmail, Google Docs, Word Online, portales educativos o formularios — ofreciendo una alternativa completa para la asistencia a la lectura.
 
-![PrismAAC Reading Assistant — speak as you type, with word-by-word highlight, in any text field](../../docs/screenshots/extension-marquee.png)
+![Asistente de lectura de PrismAAC — lectura en tiempo real con resaltado palabra por palabra en cualquier campo de texto](../../docs/screenshots/extension-marquee.png)
 
-La superposición flotante se adjunta encima de cualquier campo de texto enfocado. Toca **▶ Hablar** para volver a leer, o simplemente sigue escribiendo — terminar una frase con `.?!` la lee automáticamente con cada palabra iluminándose en amarillo a medida que se pronuncia:
+El elemento flotante se sitúa sobre el campo de texto enfocado. Toca **▶ Hablar** para releer, o continúa escribiendo — al finalizar una frase con `.?!` se reproducirá automáticamente mientras cada palabra se ilumina en amarillo al ser pronunciada:
 
-![PrismAAC overlay above a compose page, mid-sentence with "school" highlighted yellow as TTS speaks it](../../docs/screenshots/extension-overlay.png)
+![Barra superpuesta de PrismAAC sobre una zona de escritura, con la palabra "escuela" resaltada en amarillo durante la lectura](../../docs/screenshots/extension-overlay.png)
 
-La traducción mientras se habla muestra AMBAS la línea de origen (cursiva pequeña) y la línea traducida (tamaño completo, con resaltado de palabra activa a medida que se pronuncia). Más de 50 idiomas a través del endpoint público gratuito de Google (sin clave API):
+La función de traducción en tiempo real muestra TANTO la frase original (en texto de menor tamaño e cursiva) COMO la traducción (a tamaño completo, con resaltado de la palabra activa). Compatible con más de 50 idiomas a través del servicio público de Google (sin necesidad de clave API):
 
-![PrismAAC overlay translating English to Romanian — source line "I had a really good day at school today" with translated "Am avut o zi foarte bună la școală astăzi" below, "foarte" highlighted](../../docs/screenshots/extension-translate.png)
+![Barra superpuesta traduciendo de inglés a español — frase original "I had a really good day at school today" con la traducción "Hoy he tenido un día muy bueno en la escuela" debajo, destacando la palabra activa](../../docs/screenshots/extension-translate.png)
 
-Página de opciones — la configuración se sincroniza en el perfil de Chrome del usuario a través de `chrome.storage.sync`. Lista de deshabilitación por sitio, selector de voz, deslizadores de velocidad / volumen / tono, selectores de idioma, todo opcional:
+Página de opciones — los ajustes se sincronizan entre dispositivos en el perfil de Chrome mediante `chrome.storage.sync`. Incluye lista de sitios excluidos, selector de voz, controles de velocidad, tono y volumen, e idioma de destino:
 
-![PrismAAC extension options page — speak triggers, target language Romanian, voice picker, rate/volume/pitch sliders](../../docs/screenshots/extension-options.png)
+![Página de opciones de la extensión PrismAAC — opciones de lectura, idioma de destino español, selector de voz y controles de síntesis](../../docs/screenshots/extension-options.png)
 
-**Instalar (modo desarrollador por ahora — listado en Chrome Web Store pendiente de revisión):**
+**Instalación (modo desarrollador):**
 
 ```sh
 cd chrome-extension
@@ -755,76 +1012,148 @@ npm install
 npm run build
 ```
 
-Abre `chrome://extensions`, habilita el **Modo de desarrollador**, haz clic en **Cargar descomprimida** y selecciona `chrome-extension/dist`.
+Abre `chrome://extensions`, activa el **Modo de desarrollador**, haz clic en **Cargar descomprimida** y selecciona la carpeta `chrome-extension/dist`.
 
-**Características:**
+**Funciones:**
 
--   Hablar la frase al `.?!`, hablar cada palabra al espacio, todo conmutable
--   **Resaltado palabra por palabra** impulsado por el evento `SpeechSynthesisUtterance.boundary` nativo del navegador (sincronización VERDADERA por palabra, frente a la heurística de ~60 ms/carácter de la aplicación web — la ruta del portal devuelve MP3 sin eventos de transmisión, pero Web Speech los expone de forma nativa)
--   **Traducir mientras se habla** — elige un idioma de destino (más de 50 compatibles a través del endpoint público gratuito de Google, sin clave API). La superposición muestra AMBAS la línea de origen (cursiva pequeña) Y la línea traducida (con resaltado de palabra activa); se selecciona automáticamente una voz de Web Speech que coincida con el idioma de destino
--   Superposición flotante de Shadow-DOM anclada encima del campo enfocado (▶ Hablar, 📌 Fijar, × Cerrar)
--   `Cmd / Ctrl + Shift + S` para hablar el campo enfocado bajo demanda; `Esc` cancela
--   Lista de deshabilitación por sitio para banca / formularios sensibles
--   La configuración se sincroniza en el perfil de Chrome del usuario a través de `chrome.storage.sync` — no se requiere una cuenta de Prism AAC
+- Lectura de frase al usar `.?!`, lectura de palabra al pulsar espacio (opciones configurables)
+- **Resaltado palabra por palabra** mediante el evento nativo del navegador `SpeechSynthesisUtterance.boundary` (sincronización directa por palabra)
+- **Traducción durante la lectura** — selección de idioma de destino (+50 idiomas mediante el servicio de traducción de Google, sin clave API). Muestra la frase original Y la traducción (con resaltado de la palabra leída); selecciona automáticamente una voz nativa en el idioma de destino
+- Interfaz flotante en Shadow-DOM situada sobre el campo enfocado (▶ Hablar, 📌 Fijar, × Cerrar)
+- Atajo `Cmd / Ctrl + Shift + S` para leer el texto enfocado; `Esc` para detener
+- Lista de exclusión por sitio web para formularios sensibles o de banca
+- Sincronización de preferencias en el perfil de Chrome a través de `chrome.storage.sync` — sin necesidad de cuenta en PrismAAC
 
-**Privacidad:** el modo sin traducción es completamente sin conexión (Web Speech se ejecuta de forma nativa). El modo de traducción realiza una llamada HTTPS por cada frase única a `translate.googleapis.com` (almacenada en caché después del primer acceso). Código fuente disponible en [`chrome-extension/`](chrome-extension/) — paquete TypeScript + esbuild (contenido 18 KB, opciones 7 KB, fondo 339 B).
+**Privacidad:** el modo sin traducción funciona completamente sin conexión (Web Speech de forma nativa). El modo de traducción realiza una consulta HTTPS por frase a `translate.googleapis.com` (guardada en caché tras la primera consulta). Código fuente accesible en [`chrome-extension/`](chrome-extension/) — desarrollado en TypeScript con compilación esbuild.
 
 ---
 
 ### 👋 Gestos manos libres
-Entrada opcional basada en cámara para usuarios que no pueden tocar de forma fiable. Perfiles de clic por permanencia de la postura de la cabeza + gestos de la postura de la mano. Se ejecuta localmente — ningún video sale del dispositivo.
+Entrada por cámara opcional para usuarios que no pueden interactuar mediante toques táctiles. Permite control por posición cefálica con clic por fijación y perfiles de gestos manuales. Proceso 100 % local — la señal de vídeo no sale del dispositivo.
 
 <details>
-<summary><strong>Características + detalles técnicos</strong></summary>
+<summary><strong>Funciones + detalles técnicos</strong></summary>
 
--   **Modo básico**: seguimiento de la postura de la cabeza (FaceLandmarker, Mediapipe). El usuario mira una tecla, mantiene la mirada durante `headTrackingDwellMs` (predeterminado 1200 ms) → clic. Un anillo de progreso visual se llena durante la permanencia.
--   **Modo avanzado**: seguimiento de la postura de la mano. Perfiles de gestos personalizados por usuario (palma abierta = enter, puño = retroceso, pellizco = espacio, etc.) configurados a través de `components/HandCalibration.tsx`.
--   Pila de seguridad contra la deriva: si la cabeza del usuario se desvía más de `headTrackingDriftThresholdPx` durante `headTrackingDriftWindowMs` fotogramas consecutivos, el seguimiento se desactiva automáticamente y muestra un mensaje de recalibración (informado por el usuario en mayo de 2026: el seguimiento seguiría silenciosamente la deriva durante una hora y perdería los objetivos de tecla reales).
--   **Vía de escape Esc** — presionar Esc en cualquier teclado desactiva inmediatamente el seguimiento y vuelve a mostrar el teclado qwerty sin perder la barra de mensajes.
--   Singleton de flujo de cámara (`services/cameraStream.ts`) para que el seguimiento de cabeza + mano compartan un flujo; cambiar de modo es gratuito.
--   La calibración por usuario persiste; el rastreador corporal se recupera automáticamente al reanudar la sesión.
+- **Modo básico**: seguimiento de la orientación de la cabeza (FaceLandmarker, MediaPipe). El usuario orienta la mirada hacia una casilla, mantiene la posición durante `headTrackingDwellMs` (por defecto 1200 ms) → realiza la selección. Un anillo visual muestra el progreso de la fijación.
+- **Modo avanzado**: seguimiento de la posición de la mano. Permite definir perfiles de gestos por usuario (mano abierta = enter, puño = borrar, pellizco = espacio, etc.) desde `components/HandCalibration.tsx`.
+- Control de desviación: si la cabeza se desplaza más de `headTrackingDriftThresholdPx` durante `headTrackingDriftWindowMs` fotogramas consecutivos, el seguimiento se pausa de forma automática y muestra una indicación de recalibración.
+- **Salida mediante tecla Esc** — pulsar la tecla Esc en cualquier teclado desactiva el seguimiento de inmediato y recupera la vista QWERTY habitual sin modificar el texto de la barra de mensajes.
+- Gestión única de cámara (`services/cameraStream.ts`) para compartir la captura entre el seguimiento de cabeza y de mano de forma eficiente.
+- La calibración del usuario se conserva localmente y el sistema se reanuda automáticamente al volver a la aplicación.
 
-**Documentación detallada:** [`docs/TRACKING_MATH.md`](docs/TRACKING_MATH.md) (matemáticas de calibración, aprendiz por percentiles, egomoción, filtro One Euro, ~30 parámetros ajustables), [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md), [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md).
+**Documentación de referencia:** [`docs/TRACKING_MATH.md`](docs/TRACKING_MATH.md) (cálculos de calibración, aprendizaje por percentiles, filtro One Euro), [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md), [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md).
+</details>
+
+---
+
+### 👁 Contexto visual — sugerencias de frases mediante cámara
+
+Orienta la cámara hacia objetos cotidianos para que la barra de predicción muestre frases relacionadas. Una taza y un tenedor sobre la mesa → «Quiero más», «Agua por favor», «Ya he terminado». Una cama → «Tengo sueño», «Buenas noches». Un libro → «Ayuda por favor», «No lo entiendo». **Una función exclusiva en aplicaciones de CAA.**
+
+| Escena | Objetos detectados | Frases sugeridas |
+|---|---|---|
+| 🍽️ Comida | taza, tenedor, cuchara, plato, botella | «Quiero más», «Agua por favor», «Ya he terminado», «Qué bueno», «Quema» |
+| 😴 Hora de dormir | cama, peluche | «Tengo sueño», «Buenas noches», «Léeme un cuento», «Un abrazo por favor» |
+| 📚 Tareas | libro, portátil, teclado | «Ayuda por favor», «No lo entiendo», «Terminado», «Más tiempo» |
+| 🎮 Juego | peluche, pelota | «Quiero jugar», «Mi turno», «¡Qué divertido!», «¡Otra vez!» |
+| 🛁 Aseo | inodoro, lavabo | «Necesito ir al baño», «Lavar las manos», «Ayúdame» |
+| 📺 Televisión | televisión, mando, sofá | «Quiero ver la tele», «Apágalo», «Está muy alto» |
+
+Frases disponibles en más de 12 idiomas (español, inglés, francés, portugués, rumano, ucraniano, ruso, alemán, japonés, coreano, chino, árabe, entre otros). El idioma se adapta automáticamente a la configuración de la aplicación.
+
+![Contexto visual — escena de comida detectada](../../docs/screenshots/vision-mealtime.png)
+
+<details>
+<summary><strong>Funcionamiento (detalles técnicos)</strong></summary>
+
+**Arquitectura:** Captura de cámara (`cameraStream.ts`) → MediaPipe ObjectDetector (EfficientDet-Lite0, 4 MB int8, WASM) → Inferencia de escena (reglas deterministas, 11 tipos de escena) → Inserción en barra de predicción (`setAiCompletion` + impulso de n-gramas en `learnWord`).
+
+**Rendimiento:**
+- Procesamiento a **2 FPS** (una detección cada 500 ms) — optimizado para objetos estáticos con bajo consumo de batería
+- Uso de CPU: **< 6 %** en dispositivos móviles
+- Tamaño del modelo: **4 MB** (EfficientDet-Lite0 cuantizado en int8, ejecutado sobre el entorno WASM de MediaPipe)
+- Uso de RAM adicional: **~5 MB** (modelo, búferes y vocabulario de frases)
+- Control térmico: reduce a 1 FPS y pausa 30 s si se detecta incremento de temperatura
+
+**Privacidad:**
+- Proceso 100 % local — los fotogramas de la cámara **nunca salen del dispositivo**
+- Los resultados de detección son **temporales** — no se guardan en localStorage ni en servicios en la nube
+- La categoría `person` se detecta pero **no se muestra** ni genera sugerencias
+- No se muestra vista previa de la cámara durante la detección de objetos
+
+**Seguridad:**
+- Función **desactivada por defecto** — el cuidador debe activarla en Ajustes → Modos de entrada → Contexto visual
+- Las frases sugeridas **no se leen automáticamente** — requieren selección voluntaria por parte del usuario
+- Las frases de emergencia se gestionan en una capa independiente y **nunca son desplazadas** por las sugerencias visuales
+- La escena debe permanecer estable durante **3 fotogramas consecutivos** (~1,5 s) para confirmarse — evita cambios bruscos
+
+**Modelo de detección:** [EfficientDet-Lite0](https://ai.google.dev/edge/mediapipe/solutions/vision/object_detector) — 80 categorías COCO, alojado en la red CDN junto a los modelos de cara y postura de MediaPipe.
+
+**Inferencia de escena:** Motor de reglas determinista (sin modelos ML adicionales). Asocia combinaciones de objetos con contextos según la hora del día: `taza + tenedor + cuchara` a mediodía = `comida` (confianza 0,90). 11 tipos de escenas configurables.
+
+**Integración en predicción:** Utiliza dos métodos de `predictionStore`:
+1. `setAiCompletion(phrase)` — coloca la frase principal en la primera casilla de predicción
+2. `learnWord(word, prev)` — prioriza el vocabulario del contexto mediante n-gramas sintéticos
+
+El impulso de contexto se atenúa tras 30 segundos si los objetos salen de la vista. La escritura activa en el teclado suspende temporalmente las sugerencias visuales para dar prioridad a la intención del usuario.
+
+**Archivos principales:**
+- `services/objectDetectionService.ts` — captura de cámara, bucle MediaPipe, control térmico
+- `services/sceneInference.ts` — motor de reglas, 11 tipos de escena, ponderación horaria
+- `services/visionPredictionBridge.ts` — conexión entre detección y barra de predicción
+- `constants/visionPhrases.ts` — vocabulario de frases por escena en +12 idiomas
+- `constants/objectVocabulary.ts` — etiquetas de objetos COCO → vocabulario localizado
+- `store/visionStore.ts` — almacén de estado temporal (Zustand)
+- `hooks/useVisionContext.ts` — enlace de React entre detección, predicción y ajustes
+
+**Pruebas:** 62 pruebas unitarias que cubren reglas de escena, vocabulario de objetos, traducciones de frases, ciclo de vida del estado e integración del flujo completo.
+
+**Verificación E2E en Safari:**
+```
+ESCENA=comida     CONF=0,90 FRASES=Quiero más|Agua por favor|Ya he terminado   BADGE=🍽️
+ESCENA=dormir     CONF=0,70 FRASES=Tengo sueño|Buenas noches|Léeme un cuento   BADGE=😴
+ESCENA=tareas     CONF=0,80 FRASES=Ayuda por favor|No lo entiendo|Terminado    BADGE=📚
+```
 </details>
 
 ---
 
 ### ⚙️ Ajustes
-23 idiomas, tema (claro / oscuro / alto contraste), tamaño de cuadrícula (4–20 fichas), adaptaciones motoras (permanencia de pulsación en matemáticas, magnificación de dos toques, permanencia de seguimiento de cabeza, sensibilidad de gestos, desactivación automática de deriva), selector de voz (de pago), autocorrección de IA activada/desactivada, notificaciones, personalización de la barra de herramientas, selector de región de historial.
+25 idiomas / 28 variantes regionales, tema (claro / oscuro / alto contraste), tamaño de cuadrícula (4 a 20 casillas), opciones de accesibilidad motora (tiempo de permanencia en matemáticas, ampliación en dos toques, tiempo de fijación en seguimiento de cabeza, sensibilidad de gestos, corrección de desviación), selector de voz (gratuito), gestión y uso de la caché de voz, autocorrección por IA, notificaciones, personalización de la barra de herramientas, región para el módulo de historia y gestión de la cuenta Synalux con el plan Cloud.
 
-![Settings — language picker + theme toggle](../../docs/screenshots/panel-settings.png)
+![Ajustes — selector de idioma y tema](../../docs/screenshots/panel-settings.png)
 
 <details>
-<summary><strong>Ajustes de matemáticas + accesibilidad</strong></summary>
+<summary><strong>Ajustes de matemáticas y accesibilidad</strong></summary>
 
-![Settings — math hold-time + two-hit magnify](../../docs/screenshots/panel-settings-math.png)
+![Ajustes — tiempo de permanencia en matemáticas y ampliación en dos toques](../../docs/screenshots/panel-settings-math.png)
 
--   **Permanencia de pulsación en matemáticas** — deslizador de 0–1500 ms; 0 = clic instantáneo, 200–1500 ms ayuda a usuarios con imprecisión motora (un anillo de progreso verde se llena durante la permanencia para que puedan verlo).
--   **Magnificación de dos toques** — el primer toque en cualquier tecla de matemáticas la arma (escala 1.4× + halo verde, sin confirmación), el segundo toque la confirma. Se desarma automáticamente en 2 s. Se combina con la permanencia de pulsación.
--   **Permanencia de seguimiento de cabeza** — 200–5000 ms.
--   **Sensibilidad** — 1–10.
--   **Desactivación automática de deriva** — alternar + umbral (px) + ventana (ms).
--   **Mostrar calibración de mano** — abre el editor de perfiles de postura de mano.
+- **Tiempo de permanencia en matemáticas** — control de 0 a 1500 ms; 0 = toque inmediato, 200–1500 ms facilita la selección a usuarios con temblor o movilidad reducida (un indicador verde muestra la progresión del tiempo).
+- **Ampliación en dos toques** — el primer toque resalta la tecla (escala 1,4× y borde verde sin seleccionar), el segundo toque la activa. Cancelación automática tras 2 s.
+- **Tiempo de fijación en seguimiento cefálico** — entre 200 y 5000 ms.
+- **Sensibilidad** — niveles de 1 a 10.
+- **Desactivación por desviación** — control mediante umbrales en píxeles y ventanas de tiempo en ms.
+- **Ver calibración de mano** — abre el panel de ajuste para perfiles de gestos manuales.
 
 </details>
 
 <details>
-<summary><strong>Modos de entrada — voz, gestos, autocorrección de IA</strong></summary>
+<summary><strong>Modos de entrada — voz, gestos, autocorrección por IA</strong></summary>
 
-![Settings — input modes panel](../../docs/screenshots/panel-settings-input-modes.png)
+![Ajustes — panel de modos de entrada](../../docs/screenshots/panel-settings-input-modes.png)
 
--   **Entrada de voz** — API Web Speech, consciente del idioma (inglés del Reino Unido vs inglés de EE. UU., etc.); nivel gratuito
--   **Autocorrección y completado de IA** — cada pausa de pulsación se enruta a través de la autocorrección en la nube (Gemini 2.5 Flash-Lite). Desactivado por defecto en escenarios de bajo ancho de banda.
--   **Notificaciones** — alarma + notificación entre pestañas en mensajes de chat AAC entrantes.
--   **Entrada de cámara** — interruptor maestro de seguimiento de cabeza + mano.
--   **Objetivo de seguimiento de cámara** — cabeza, mano o detección automática.
+- **Entrada por voz** — Web Speech API con reconocimiento por idioma; disponible en nivel gratuito
+- **Autocorrección y autocompletado por IA** — analiza las pausas de escritura a través del servicio en la nube (Gemini 2.5 Flash-Lite). Desactivado por defecto en conexiones de ancho de banda reducido.
+- **Notificaciones** — avisos sonoros y entre pestañas para mensajes de Chat CAA.
+- **Entrada por cámara** — control principal para seguimiento de cabeza y mano.
+- **Selección de seguimiento** — cabeza, mano o detección automática.
 
 </details>
 
 <details>
 <summary><strong>Personalización de la barra de herramientas</strong></summary>
 
-La barra de herramientas es completamente reordenable. La versión predeterminada 0.9.0 se envía con un conjunto mínimo (micrófono, chat AAC, alerta, categorías, ajustes) para que la pantalla permanezca despejada para los nuevos usuarios — cualquier otra función incorporada (matemáticas, chat de IA, horario, juegos, tienda, reproductor de confort, notas, historial, sonido) se puede volver a habilitar con un solo toque en Ajustes → Barra de herramientas. Las aplicaciones instaladas desde la tienda se insertan automáticamente después de las incorporadas.
+La barra de herramientas permite reordenar sus elementos. La versión 0.9.0 incluye una configuración inicial simplificada (micrófono, chat CAA, alertas, categorías, ajustes) para mantener un entorno despejado — todos los demás módulos (matemáticas, chat IA, horario, juegos, mercado, reproductor de confort, notas, historial, sonido) se pueden activar desde Ajustes → Barra de herramientas. Las aplicaciones instaladas desde el Mercado se añaden automáticamente a continuación de los módulos del sistema.
 
 </details>
 
@@ -834,134 +1163,174 @@ La barra de herramientas es completamente reordenable. La versión predeterminad
 
 | | |
 |---|---|
-| 🌐 **Aplicación web** | [synalux.ai/prism-aac](https://synalux.ai/prism-aac) — pruébala en cualquier navegador |
+| 🌐 **Aplicación web** | [synalux.ai/prism-aac](https://synalux.ai/prism-aac) — pruébalo en cualquier navegador |
 | 📱 **iOS** | [App Store](https://apps.apple.com/app/id6764692277) — iPhone, iPad, Apple Watch |
-| 💻 **Código fuente** | Este repositorio. AGPL-3.0 — bifurca libremente, comparte las modificaciones |
+| 💻 **Código fuente** | Este repositorio. Licencia AGPL-3.0 — libre para crear derivados y compartir modificaciones |
 
 ---
 
 ## Planes
 
-| | Gratuito | De pago |
+Dos opciones disponibles: **Gratuito** y **Prism AAC Cloud**. Sin periodos de prueba obligatorios, sin necesidad de tarjeta para la versión Gratuita y sin cobros automáticos por exceso de uso.
+
+| | Gratuito | Prism AAC Cloud — 4,99 US$/mes |
 |---|---|---|
-| Fichas de imágenes + 22 categorías | ✅ | ✅ |
-| Escribir para hablar | ✅ | ✅ |
-| Voz predeterminada (Inworld) | ✅ | ✅ |
-| Teclado escolar de 19 asignaturas + tutor de IA | ✅ básico | ✅ + modelos premium |
-| Horario | ✅ | ✅ + tienda de recompensas |
-| Juegos | 3 (Bubble Pop, Color Hunt, My Story) | Los 12 |
-| Selector de voz | — | ✅ todas las voces de Inworld |
-| Clonación de voz (tu propia voz) | — | ✅ |
-| Sincronización de notas del cuidador | — | ✅ |
-| Predicción de palabras (aprendizaje por usuario) | — | ✅ |
-| Historial de configuración regional + región | ✅ | ✅ |
-| Entrada de gestos manos libres | ✅ | ✅ |
+| Tableros de comunicación, teclado y frases guardadas | ✅ | ✅ |
+| Voces del dispositivo disponibles y voz en caché | ✅ | ✅ |
+| IA en el dispositivo y comunicación de emergencia | ✅ | ✅ |
+| iOS + Web (PWA) | ✅ | ✅ |
+| Generación de voz natural en la nube | no incluida (disponible en la ruta pública de voz hasta la implantación de límites) | 50.000 caracteres / mes |
+| Consultas de IA en la nube (chat, autocorrección, predicción, tutor) | — | 100 / mes |
+| Reinicio de límites mensuales | — | Día 1 de cada mes a las 00:00 UTC |
 
-[Ver precios de Synalux →](https://synalux.ai/pricing)
+- Adquisición a través de la aplicación iOS (compra dentro de la app mediante Apple StoreKit 2) o desde la web (Stripe); ambas opciones activan la suscripción en la misma cuenta. Cancelar en un canal no elimina el acceso configurado.
+- La reproducción de voces guardadas en caché y las voces nativas del dispositivo no consumen el límite mensual. Si se supera el límite, las voces e IA en la nube se pausan hasta el siguiente periodo — las funciones de comunicación principales en el dispositivo continúan operativas en todo momento.
+- Ajustes → Cuenta Synalux → **Voz e IA en la nube** muestra el estado del plan, los consumos y las opciones de gestión o renovación.
+- Notas de desarrollo: (1) las funciones de impulso en predicción, conectores de chat CAA, gestión de contactos y alertas SMS extendidas se asocian al plan AAC configurado mediante suscripción web (Stripe); (2) la generación de pictogramas por IA y la instalación de complementos del mercado se vinculan al plan general de Synalux. El selector de voz y los 12 juegos están disponibles para todos los usuarios.
 
----
+<p align="center">
+  <img src="../../docs/screenshots/cloud-subscription-iphone.png" alt="Aplicación iOS: Ajustes → Cuenta Synalux → Voz e IA en la nube — límites, renovación, Suscribirse con Apple · 4,99 $/mes, Restaurar compras de Apple" width="260" />
+  <img src="../../docs/screenshots/panel-account-cloud.png" alt="Aplicación web: misma sección con opción Suscribirse · 4,99 US$/mes mediante Stripe" width="260" />
+</p>
 
-## Seguridad clínica
-
--   **El acceso a AAC nunca se restringe como consecuencia.** Un niño siempre debe tener su voz.
--   **No hay PHI en la nube sin consentimiento.** Las notas del cuidador se cifran antes de subirse.
--   **El audio permanece local.** La entrada de voz se transcribe en el navegador a través de la API Web Speech.
--   **Diseñado por BCBA.** El seguimiento de operantes verbales coincide con la 5ª Edición de la Lista de Tareas de BACB.
--   **Valores predeterminados informados sobre el trauma.** Sin mecánicas de castigo. La tienda de recompensas es opcional.
-
-Leer más: [`ACCESSIBILITY.md`](ACCESSIBILITY.md), [`SECURITY.md`](SECURITY.md).
+[Página de precios →](https://synalux.ai/pricing) · [Términos](TERMS.md) · [Privacidad](PRIVACY.md)
 
 ---
 
-## Infraestructura y GDPR
+## Criterios de diseño clínico
 
-### Arquitectura multirregión
+- **El acceso a la CAA no se interrumpe bajo ninguna condición.** Garantiza que el usuario disponga siempre de su medio de comunicación.
+- **Protección de datos de salud en la nube.** Las notas de los cuidadores se cifran antes de cualquier transmisión.
+- **Procesamiento de audio local.** La entrada de voz se transcribe localmente en el navegador mediante la Web Speech API.
+- **Desarrollado con asesoramiento en análisis de conducta (BCBA).** El seguimiento del uso verbal se adapta a las directrices de la 5.ª edición de la lista de tareas del BACB.
+- **Interfaz adaptada a la diversidad de necesidades.** Sin dinámicas de penalización. La sección de logros se activa de forma opcional.
+
+Más información: [`ACCESSIBILITY.md`](ACCESSIBILITY.md), [`SECURITY.md`](SECURITY.md).
+
+---
+
+## Pruebas automatizadas
+
+**5.139 pruebas automatizadas** verifican las funciones en entorno web, iOS, análisis visual y enrutamiento de IA.
+
+| Ámbito de prueba | Pruebas | Resultado |
+|---|---|---|
+| Aplicación web completa (componentes, estados, servicios) | 4.971 | ✅ superado |
+| Reconocimiento de escena / cámara / objetos | 167 | ✅ superado |
+| Seguimiento de manos y precisión de postura corporal | 54 | ✅ superado |
+| Enrutamiento de IA local (instancia Ollama activa) | 8 | ✅ superado |
+| Pruebas nativas iOS (XCUITest) | 19 | ✅ superado |
+| Servidor Prism MCP | 2.679 | ✅ superado |
+
+**Precisión de la IA en el dispositivo** — nivel de acierto al seleccionar acciones de comunicación:
+
+| Dispositivo | Modelo | Tamaño | Precisión | Evaluación |
+|---|---|---|---|---|
+| **Apple Watch** | SmolLM2-360M | 207 MB | **100 %** (300/300) | Evaluación clínica de CAA (expansión de símbolos, emergencia, predicción) |
+| **Todos los iPhone** | Qwen3.5-4B Q3_K_M | 2,3 GB | **99,1 %** (114/115 × 3 ejecuciones) | Enrutamiento de funciones BFCL |
+| **iPhone Pro / iPad** | Qwen3.5-4B Q4_K_M | 3,4 GB | **100 %** (115/115 × 3 ejecuciones) | Enrutamiento de funciones BFCL |
+| **iPad Pro / Mac** | Prism-Coder 9B | 8,4 GB | **100 %** (115/115 × 3 ejecuciones) | Enrutamiento de funciones BFCL |
+
+<details>
+<summary><strong>¿Qué representa un «99,1 % de precisión en enrutamiento» en la práctica?</strong></summary>
+
+La IA en el dispositivo determina qué acción ejecutar cuando el usuario activa una función — guardar una nota, recuperar una sesión o consultar el historial. Esto se evalúa mediante 115 escenarios reales ejecutados en 3 secuencias aleatorias. El modelo de 2,3 GB resuelve correctamente 114 de 115 casos en cada iteración. La única variación identificada interpreta una consulta técnica como búsqueda de conocimiento en lugar de respuesta en texto plano — un caso que no se presenta en el uso habitual de la CAA.
+
+En comparación, el modelo anterior de 2B registraba un 90,4 % (11 desviaciones). El modelo actual reduce diez veces las variaciones de enrutamiento manteniendo el mismo tamaño de descarga.
+
+</details>
+
+---
+
+## Infraestructura y cumplimiento de la normativa de protección de datos (RGPD)
+
+### Arquitectura multirregional
 
 | Componente | Región | Propósito |
 |---|---|---|
-| **Supabase US** | Este de EE. UU. (Virginia) | Base de datos principal — autenticación, datos de usuario, notas del cuidador |
-| **Supabase EU** | Centro de la UE (Fráncfort) | Cumple con GDPR — los datos de usuarios de la UE nunca salen de la UE |
-| **Vercel** | Borde global | Aplicación web, rutas API, CDN |
-| **Inworld TTS** | EE. UU. | Síntesis de texto a voz neuronal |
-| **HuggingFace Hub** | EE. UU./UE | Pesos del modelo (1.7B, 8B, 14B, 32B) |
-| **En el dispositivo** | Dispositivo del usuario | Inferencia de llama.cpp (iPhone/iPad/Mac) |
+| **Supabase US** | US East (Virginia) | Base de datos principal — autenticación, datos de usuario, notas de cuidadores |
+| **Supabase EU** | EU Central (Frankfurt) | Cumplimiento del RGPD — los datos de usuarios de la UE se almacenan en Europa |
+| **Vercel** | Red global (Edge) | Aplicación web, rutas API, red de distribución de contenidos |
+| **Inworld TTS** | EE. UU. | Síntesis de voz por IA (neuronal) |
+| **HuggingFace Hub** | EE. UU. / UE | Alojamiento de modelos de IA (2B, 4B, 14B, 32B) |
+| **En el dispositivo** | Dispositivo del usuario | Inferencia local con llama.cpp (iPhone/iPad/Mac) |
 
-### Cumplimiento del GDPR
+### Cumplimiento del RGPD
 
-Los datos de los usuarios de la UE se almacenan exclusivamente en la región de Fráncfort (eu-central-1). El portal detecta la ubicación del usuario a través del encabezado `x-vercel-ip-country` de Vercel y enruta las operaciones de la base de datos a la instancia de Supabase adecuada:
+Los datos de los usuarios de la UE se almacenan en la región de Fráncfort (eu-central-1). El sistema identifica la ubicación mediante la cabecera `x-vercel-ip-country` de Vercel y asigna las operaciones a la instancia de Supabase correspondiente:
 
--   **Usuarios de la UE** → `supabase-eu` (Fráncfort) — datos personales, autenticación, preferencias, notas del cuidador
--   **Usuarios no pertenecientes a la UE** → `supabase-us` (Virginia) — mismas categorías de datos, jurisdicción de EE. UU.
--   **Inferencia de IA** → en el dispositivo (no salen datos del dispositivo) o API de Synalux (no se almacena PII)
--   **Audio TTS** → generado en el servidor, transmitido al cliente, no almacenado
+- **Usuarios de la UE** → `supabase-eu` (Fráncfort) — datos personales, autenticación, preferencias y notas de cuidadores
+- **Usuarios fuera de la UE** → `supabase-us` (Virginia) — mismas categorías de datos, bajo jurisdicción de EE. UU.
+- **Inferencia de IA** → en el dispositivo (sin salida de datos) o a través de la API Synalux (sin almacenamiento de datos de identificación personal)
+- **Audio de voz (TTS)** → generado en servidor y transmitido en tiempo real, sin almacenamiento permanente
 
 **Garantías de residencia de datos:**
--   Los datos personales de la UE nunca transitan por servidores de EE. UU.
--   Tokens de autenticación con ámbito en la instancia regional de Supabase
--   Notas del cuidador cifradas en reposo (Supabase AES-256)
--   Grabaciones de voz (Reproductor de confort) almacenadas en IndexedDB del navegador — nunca subidas
--   El modelo de IA en el dispositivo se ejecuta localmente — cero telemetría en la nube
+- Los datos personales de la UE no se transfieren a servidores fuera del territorio europeo
+- Tokens de autenticación asociados a la instancia regional de Supabase
+- Notas de cuidadores cifradas en reposo (Supabase AES-256)
+- Grabaciones de audio (Reproductor de confort) almacenadas en IndexedDB del navegador — sin subida a red
+- La IA local en el dispositivo opera completamente sin conexión
 
-**Derecho al borrado:** La eliminación de usuarios se propaga a través de la autenticación, perfiles, notas del cuidador y análisis de uso en la base de datos regional. Las instancias autoalojadas se pueden borrar con `supabase db reset`.
+**Derecho de supresión:** La solicitud de eliminación de un usuario elimina de forma transparente sus datos de autenticación, perfil, notas de cuidadores y métricas en la base de datos regional. Las instalaciones independientes se pueden reiniciar mediante el comando `supabase db reset`.
 
-### Costos a escala
+### Estimación de costes según escala de uso
 
-| Usuarios | Supabase | Vercel | TTS | Modelos de IA | Total |
+| Usuarios activos | Supabase | Vercel | Voz (TTS) | Modelos de IA | Total estimado |
 |---|---|---|---|---|---|
 | 0–1K | $50/mes (2 regiones) | $0 (Hobby) | ~$5/mes | $0 (en el dispositivo) | ~$55/mes |
 | 1K–10K | $50/mes | $20/mes (Pro) | ~$50/mes | $0 | ~$120/mes |
-| 10K–100K | $50/mes + complementos de cómputo | $20/mes | ~$200/mes | RunPod $125/mes | ~$395/mes |
+| 10K–100K | $50/mes + cómputo | $20/mes | ~$200/mes | RunPod $125/mes | ~$395/mes |
 
 ---
 
-## Modelos de IA y soporte de dispositivos
+## Modelos de IA y compatibilidad de dispositivos
 
-Funciona en todos los dispositivos Apple. Cero dependencia de la nube para la comunicación AAC central.
+Compatible con dispositivos del ecosistema Apple. Funciona sin dependencia de servicios en la nube para la comunicación básica de CAA.
 
-Prism AAC selecciona automáticamente el mejor modelo que tu hardware puede ejecutar, recurre elegantemente en dispositivos con limitaciones y nunca requiere una conexión a internet para la comunicación básica.
+PrismAAC selecciona el modelo más adecuado según la capacidad del hardware, adaptándose en dispositivos con recursos limitados sin requerir conexión a internet para la comunicación habitual.
 
-| Dispositivo | RAM | Modelo | Precisión | AAC | Tamaño | Costo |
+| Dispositivo | RAM | Modelo seleccionado | Precisión | CAA | Tamaño | Coste |
 |---|---|---|---|---|---|---|
-| **iPad Pro M1/M2/M4** | 16 GB | 14B Q4_K_M (v36) | **100%** | 100% | 8.4 GB | $0 |
-| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M (v36) → 1.7B (respaldo por OOM) | **100%** | 100% | 4.7 GB / 1.1 GB | $0 |
-| **iPhone 12–14, iPads más antiguos** | <8 GB | 1.7B Q4_K_M (v42) | **100%** | 100% | 1.1 GB | $0 |
-| **Mac M1+ vía WiFi** | 16+ GB | 14B vía Ollama (v36) | **100%** | 100% | 8.4 GB | $0 |
+| **iPad Pro M1/M2/M4** | 16 GB | 9B LoRA (v36) | **100 %** | 100 % | 8,4 GB | $0 |
+| **iPhone 15/16 Pro, iPad Air** | 8 GB | 4B Q4_K_M (v36) → 2B (recuperación OOM) | **100 %** | 100 % | 4,7 GB / 1,1 GB | $0 |
+| **iPhone 12–14, iPad anteriores** | <8 GB | 2B Q3_K_M (v43) | **99,1 %** | 100 % | 2,3 GB | $0 |
+| **Mac M1+ por WiFi** | 16+ GB | 9B/27B mediante Ollama (v36) | **100 %** | 100 % | 8,4 GB | $0 |
 
-### Cascada de la aplicación web
+### Esquema de selección en la aplicación web
 
-La aplicación web intenta primero la inferencia local, luego recurre a la nube, de modo que los usuarios con Ollama instalado pagan $0 y los usuarios sin él siguen obteniendo la funcionalidad completa.
+La aplicación web intenta utilizar en primer lugar la inferencia local y, si no está disponible, se conecta a los servicios en la nube — permitiendo un coste $0 a usuarios con Ollama local y manteniendo el servicio completo a quienes no lo tienen.
 
 <details>
-<summary>Diagrama de cascada</summary>
+<summary>Diagrama de selección</summary>
 
 ```
   El usuario envía un mensaje
         |
         v
-  +-- OLLAMA LOCAL (autodetectado en localhost:11434) --+
-  |                                                      |
-  |   14b (100%, ~1.1s) ─[fallo]─> 8b (100%, ~0.8s) ─[fallo]─> 1b7 (100%, ~1.6s)
-  +-------------------------------------------------------------------+
+  +-- OLLAMA LOCAL (detectado en localhost:11434) ---------------------+
+  |                                                                     |
+  |   14b (100%, ~1,1s) ─[error]─> 8b (100%, ~0,8s) ─[error]─> 2b (100%, ~1,6s)
+  +---------------------------------------------------------------------+
          |
-    [¿fallan todos los locales?]
+    [¿sin respuesta local?]
          |
          v
-  +-- RESPALDO EN LA NUBE (API de Synalux) --------+
-  |  Claude Sonnet 4 (de pago) / Gemini (gratuito) |
-  |  99% de precisión, ~3s                          |
+  +-- RESPALDO EN LA NUBE (API Synalux) ---+
+  |  Claude Sonnet 4 (pago) / Gemini (gratis)|
+  |  99% precisión, ~3s                     |
   +-----------------------------------------+
 
-  Carga lateral automática: el primer lanzamiento detecta Ollama → descarga el mejor modelo → local para siempre.
+  Detección automática: al iniciar localiza Ollama → descarga el modelo idóneo → uso local permanente.
 ```
 
 </details>
 
-### Cascada nativa de iOS
+### Esquema de selección en la aplicación nativa iOS
 
-La aplicación nativa sondea la RAM disponible al iniciar, descarga el modelo correcto desde HuggingFace CDN (una sola vez) y ejecuta la inferencia a través de llama.cpp Metal. Sin servidor. Sin suscripción. No salen datos del dispositivo.
+La aplicación nativa comprueba la memoria RAM disponible al iniciar, descarga el modelo correspondiente desde la red CDN de HuggingFace (una sola vez) y ejecuta la inferencia con llama.cpp Metal. Sin servidores externos. Sin suscripciones requeridas. Los datos no salen del dispositivo.
 
 <details>
-<summary>Diagrama de cascada</summary>
+<summary>Diagrama de selección</summary>
 
 ```
   Inicio de la aplicación
@@ -969,67 +1338,67 @@ La aplicación nativa sondea la RAM disponible al iniciar, descarga el modelo co
       v
   Detección de RAM (os_proc_available_memory)
       |
-      +── 16 GB+ (iPad Pro) ──> 14B Q4_K_M (8.4 GB) ──> 100%, ~1.1s
+      +── 16 GB+ (iPad Pro) ──> 9B LoRA (8,4 GB) ──> 100%, ~1,1s
       |
-      +── 8 GB (iPhone/iPad Air) ──> 8B Q4_K_M (4.7 GB) ──> 100%, ~0.8s
+      +── 8 GB (iPhone/iPad Air) ──> 4B Q4_K_M (4,7 GB) ──> 100%, ~0,8s
       |                                    |
-      |                               ¿OOM? → 1.7B Q4_K_M (1.1 GB) → 100%, ~1.6s
+      |                               ¿Sin RAM? → 2B Q4_K_M (1,1 GB) → 100%, ~1,6s
       |
-      +── <8 GB ──> 1.7B Q4_K_M (1.1 GB) ──> 100%, ~1.6s
+      +── <8 GB ──> 2B Q4_K_M (1,1 GB) ──> 100%, ~1,6s
 
-  Todas las rutas: llama.cpp Metal, $0 para siempre, no salen datos del dispositivo.
-  Actualización WiFi: Ajustes → IA Local → introducir IP de Mac para 14B/32B.
+  Todas las opciones: ejecución con llama.cpp Metal, coste $0, procesamiento local.
+  Conexión remota: Ajustes → IA local → introducir la IP de la Mac para usar modelos 9B/27B.
 ```
 
 </details>
 
-### Modos de diseño de teclado (persistentes)
+### Modos de visualización del teclado (con persistencia de opción)
 
-Tres modos se alternan con un solo toque — el diseño elegido se guarda y se restaura en cada inicio.
+Un toque permite alternar entre tres disposiciones de teclado, guardando la preferencia para siguientes usos.
 
--   **KB MÁX** — el teclado llena todo el espacio debajo de la barra de predicción
--   **KB MÍN** — categorías 75% / teclado 25%
--   **KB OCULTO** — categorías a pantalla completa, teclado oculto
+- **MAX KB** — el teclado ocupa todo el espacio inferior de la pantalla
+- **MIN KB** — distribución combinada: 75 % categorías / 25 % teclado
+- **HIDE KB** — categorías a pantalla completa, teclado oculto
 
 <details>
-<summary>Diagrama de diseño</summary>
+<summary>Esquema de distribución</summary>
 
 ```
-  KB MÁX                 KB MÍN                 KB OCULTO
+  MAX KB                 MIN KB                 HIDE KB
   +--------------------+ +--------------------+ +--------------------+
-  | Barra de herramientas | | Barra de herramientas | | Banner de bienvenida |
-  | Barra de predicción | | Barra de predicción | |                    |
+  | Barra herramientas | | Barra herramientas | | Barra herramientas |
+  | Barra predicción   | | Barra predicción   | | Frase de bienvenida|
   |                    | |                    | |                    |
   |  TECLADO           | | Categorías  (75%)  | | Categorías         |
-  |  llena todo el     | |                    | | (pantalla completa)|
-  |  espacio debajo    | |--------------------| |                    |
-  |  de la predicción  | | Teclado     (25%)  | |                    |
-  | [123][v][  espacio ]| |                    | |                    |
+  |  ocupa el espacio  | |                    | | (pantalla completa)|
+  |  inferior completo | |--------------------| |                    |
+  |                    | | Teclado     (25%)  | |                    |
+  | [123][v][ espacio ]| |                    | |                    |
   +--------------------+ +--------------------+ +--------------------+
         |                      |                      |
-        +-- botón [v] ------->+-- botón barra lateral -->+-- botón barra lateral --+
-        |                                                               |
-        +<--------------------------------------------------------------+
+        +-- botón [v] -------->+-- botón lateral ---->+-- botón lateral --+
+        |                                                                 |
+        +<----------------------------------------------------------------+
 ```
 
 </details>
 
-### Resumen de costos
+### Resumen de rendimiento y costes
 
-| Ruta | Modelo | Precisión | Latencia | Costo |
+| Ruta de ejecución | Modelo | Precisión | Latencia promedio | Coste |
 |---|---|---|---|---|
-| iPad Pro 16GB | 14B Q4_K_M (v36) | **100%** | ~1.1s | **$0** |
-| iPhone/iPad 8GB | 8B Q4_K_M (v36) → 1.7B (respaldo por OOM) | **100%** | ~0.8s | **$0** |
-| Cualquier dispositivo | 1.7B Q4_K_M (v42) | **100%** | ~1.6s | **$0** |
-| WiFi a Mac | 14B vía Ollama (v36) | **100%** | ~1.1s | **$0** |
-| Nube (gratuito) | Gemini 2.5 Flash | 99% | ~3s | Synalux lo absorbe |
-| Nube (de pago) | Claude Sonnet 4 | 99% | ~3s | Incluido en el plan |
+| iPad Pro 16GB | 9B LoRA (v36) | **100 %** | ~1,1s | **$0** |
+| iPhone/iPad 8GB | 4B Q4_K_M (v36) → 2B (recuperación OOM) | **100 %** | ~0,8s | **$0** |
+| Cualquier dispositivo | 2B Q4_K_M (v42) | **100 %** | ~1,6s | **$0** |
+| WiFi a Mac | 9B/27B mediante Ollama (v36) | **100 %** | ~1,1s | **$0** |
+| Nube (nivel gratuito) | Gemini 2.5 Flash | 99 % | ~3s | Incluido por Synalux |
+| Nube (nivel de pago) | Claude Sonnet 4 | 99 % | ~3s | Incluido en el plan |
 
-**La propuesta:** Cada niño obtiene una precisión de nivel Claude, ya sea que esté en un iPhone SE de $329 o en un iPad Pro de $2,000. "Local-first" significa cero dependencia de la nube, cero tarifas API mensuales, cero exposición de PHI y tiempos de respuesta de menos de un segundo. Los cuatro modelos prism-coder obtienen **100%** en el benchmark de enrutamiento de 102 casos (prompt del sistema v36/v7, media de 3 semillas, mayo de 2026), con cero llamadas a herramientas inventadas. El modelo 32B además obtiene **300/300 (100%)** en la suite extendida eval_300 (17 herramientas, 9 categorías, validado con 3 semillas).
+**Propuesta de valor:** Ofrece una precisión equivalente a modelos avanzados en cualquier equipo, desde un iPhone SE hasta un iPad Pro. La prioridad del procesamiento local elimina la dependencia de conexiones externas, costes recurrentes por API y transferencias de datos sensibles, manteniendo tiempos de respuesta inferiores a un segundo. La infraestructura prism-coder alcanza valores de precisión de entre **99,1 % y 100 %** en la prueba de evaluación de funciones BFCL (promedio de 3 ejecuciones, junio de 2026): los modelos 27B/9B/4B alcanzan el 100 %, y el modelo 2B registra un 99,1 %.
 
 ---
 
-## Autoalojamiento
+## Despliegue en servidor propio
 
 ```bash
 git clone https://github.com/dcostenco/prism-aac.git
@@ -1038,137 +1407,157 @@ npm install
 npm run dev    # http://localhost:3000
 ```
 
-Synalux opera la versión alojada canónica (gratuita + de pago). Los autoalojadores y las bifurcaciones deben liberar las modificaciones bajo AGPL-3.0.
+Synalux mantiene la versión principal alojada (con opciones gratuita y de pago). Quienes deseen realizar un despliegue propio o crear versiones derivadas deben publicar sus cambios bajo la licencia AGPL-3.0.
 
-### Modelos de IA locales (costo cero en la nube)
+### Modelos de IA locales (sin costes de red)
 
-**Opción A — En la aplicación (recomendado):** Ajustes → 🤖 Modelos de IA Local → haz clic en Descargar junto a cualquier modelo. Barra de progreso incluida. Funciona desde iPad/iPhone en la misma red WiFi que un Mac ejecutando Ollama.
+**Opción A — Desde la propia aplicación (recomendada):** Ajustes → 🤖 Modelos de IA local → seleccionar Descargar en el modelo deseado. Muestra la progresión del proceso. Funciona desde un iPad/iPhone conectado a la misma red WiFi que una Mac ejecutando Ollama.
 
-**Opción B — Línea de comandos:**
+**Opción B — Desde la línea de comandos:**
 
-Instala [Ollama](https://ollama.com), luego:
+Instala [Ollama](https://ollama.com) y ejecuta:
 
 ```bash
-ollama pull dcostenco/prism-coder:1b7   # 1.1 GB — cualquier máquina, iPhone 12+ — 100% de enrutamiento (v42)
-ollama pull dcostenco/prism-coder:8b    # 4.7 GB — iPhone/iPad 8GB, Mac M1+ — 100% de enrutamiento (v36)
-ollama pull dcostenco/prism-coder:14b   # 8.4 GB — Mac 16GB+, iPad Pro — 100% de enrutamiento (v36)
-ollama pull dcostenco/prism-coder:32b   # 16 GB  — Mac M2 Ultra+ (MoE) — 100% de enrutamiento (v7)
+ollama pull dcostenco/prism-coder:2b   # 1,1 GB — compatible con cualquier equipo, iPhone 12+ — 100% enrutamiento (v42)
+ollama pull dcostenco/prism-coder:4b    # 4,7 GB — iPhone/iPad 8GB, Mac M1+ — 100% enrutamiento (v36)
+ollama pull dcostenco/prism-coder:9b   # 8,4 GB — Mac 16GB+, iPad Pro — 100% enrutamiento (v36)
+ollama pull dcostenco/prism-coder:27b   # 16 GB  — Mac M2 Ultra+ (MoE) — 100% enrutamiento (v7)
 ```
 
-Añade a `.env.local`: `LOCAL_LLM_URL=http://localhost:11434`
+Añade al archivo `.env.local`: `LOCAL_LLM_URL=http://localhost:11434`
 
-**iPad Pro / iPhone en WiFi:**
+**Conexión desde iPad Pro / iPhone mediante WiFi:**
 ```bash
-OLLAMA_HOST=0.0.0.0 ollama serve   # en Mac
-# Luego en la aplicación Ajustes → IA Local → introducir: http://<mac-ip>:11434
+OLLAMA_HOST=0.0.0.0 ollama serve   # en la Mac
+# A continuación, en la app: Ajustes → IA local → introducir: http://<ip-de-la-mac>:11434
 ```
 
-Enrutamiento automático: 1.7B → cualquier dispositivo · 8B → móvil/borde · 14B → estándar · 32B → nube/empresa. Respaldo en la nube cuando Ollama no es accesible.
+Enrutamiento automático: 2B → cualquier dispositivo · 4B → móviles / verificación · 9B → uso estándar · 27B → alta precisión / entornos profesionales. Respaldo en la nube si Ollama no está disponible.
 
 ---
 
 <details>
-<summary><strong>📚 Arquitectura tecnológica (enrutamiento de modelos, voz, reconocimiento de gestos, detalles de construcción)</strong></summary>
+<summary><strong>📚 Arquitectura técnica (enrutamiento de modelos, voz, reconocimiento de gestos, detalles de compilación)</strong></summary>
 
-**Pila**: Next.js, Zustand, API Web Speech (transcripción), Inworld TTS-2 + respaldo Azure Neural (voz), FaceLandmarker (gestos).
+**Tecnologías principales**: Next.js, Zustand, Web Speech API (transcripción), Inworld TTS-2 + respaldo Azure Neural (síntesis de voz), FaceLandmarker (gestos).
 
-**Enrutamiento de modelos** (lado del servidor a través del portal Synalux):
--   **En el dispositivo** (toque de botón → frase): `prism-coder:1b7` (Qwen3-1.7B Q4_K_M, llama.cpp Metal) — cero red, cero costo, ~1.6s
--   **Nube simple** (chat, nivel gratuito): `prism-coder:14b` (Qwen3-14B ajustado) → respaldo Gemini 2.5 Flash
--   **Nube compleja** (razonamiento, nivel pro): `prism-coder:32b` (QwQ-32B ajustado) → respaldo Claude Sonnet 4
--   **Autocorrección + predicción de palabras**: Gemini 2.5 Flash-Lite — 752ms de media, multilingüe (ro/ru/es)
--   Las rutas críticas de velocidad (toque de botón → voz) evitan el enrutamiento — nunca se bloquean por la red
--   Precisión de enrutamiento ([evaluación Prism de 102 casos](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), prompt del sistema v36/v7, media de 3 semillas, mayo de 2026):
+**Enrutamiento de modelos** (gestión en servidor a través del portal Synalux):
+- **En el dispositivo** (toque de casilla → frase): `prism-coder:2b` (Qwen3-2B Q4_K_M, llama.cpp Metal) — procesamiento local, coste $0, ~1,6s
+- **Consultas estándar en la nube** (chat, nivel gratuito): `prism-coder:9b` (Qwen3-14B optimizado) → respaldo Gemini 2.5 Flash
+- **Consultas avanzadas en la nube** (razonamiento, nivel Pro): `prism-coder:27b` (QwQ-32B optimizado) → respaldo Claude Sonnet 4
+- **Autocorrección y predicción de palabras**: Gemini 2.5 Flash-Lite — tiempo medio 752 ms, soporte multilingüe (es/ro/ru)
+- Las operaciones principales de comunicación (toque → voz) no dependen del enrutamiento externo para no demorar la respuesta
+- Resultados de precisión en enrutamiento ([evaluación Prism de 102 casos](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), prompt v36/v7, promedio de 3 semillas, mayo de 2026):
 
-  | Modelo | Precisión | Latencia media | Herramientas inventadas |
+  | Modelo | Precisión | Latencia promedio | Herramientas no válidas |
   |---|---|---|---|
-  | prism-coder:32b swe14 (local) | **100.0%** | 1.4s | 0 |
-  | Cascada 14B→32B (local) | **100.0%** | ~1.1s | 0 |
-  | prism-coder:8b v36 (local) | **100.0%** | 0.8s | 0 |
-  | prism-coder:14b v36 (local) | **100.0%** | 1.1s | 0 |
-  | Sonnet 4 (nube) | **99%** | 3.2s | 0 |
-  | Opus 4.7 (nube) | **98.3%** | 3.0s | 0 |
-  | prism-coder:1b7 v42 (local) | **100.0%** | 1.6s | 0 |
+  | prism-coder:27b swe14 (local) | **100,0 %** | 1,4s | 0 |
+  | cascada 14B→32B (local) | **100,0 %** | ~1,1s | 0 |
+  | prism-coder:4b v36 (local) | **100,0 %** | 0,8s | 0 |
+  | prism-coder:9b v36 (local) | **100,0 %** | 1,1s | 0 |
+  | Sonnet 4 (nube) | **99 %** | 3,2s | 0 |
+  | Opus 4.7 (nube) | **98,3 %** | 3,0s | 0 |
+  | prism-coder:2b v42 (local) | **100,0 %** | 1,6s | 0 |
 
--   Evaluación extendida — eval_300 (300 casos, 17 herramientas, 9 categorías, 3 semillas): prism-coder:32b = **300/300 (100%)**
+- Evaluación extendida — eval_300 (300 casos, 17 herramientas, 9 categorías, 3 semillas): prism-coder:27b = **300/300 (100 %)**
 
-**Voz (TTS)** cadena de respaldo:
--   Nivel 1: Inworld TTS-2 (de pago en todos los idiomas; gratuito para ro/uk/ru/de/ko/ar donde Synalux absorbe el costo)
--   Nivel 2: Voces premium de la API Web Speech del SO (sin conexión)
--   Nivel 3: WASM espeak-ng (último recurso)
+**Cadena de respaldo de voz (TTS)**:
+- Nivel 1: Inworld TTS-2 (de pago en todos los idiomas; acceso sin coste en es/ro/uk/ru/de/ko/ar gestionado por Synalux)
+- Nivel 2: Voces de alta calidad de la API Web Speech del sistema operativo (sin conexión)
+- Nivel 3: WASM espeak-ng (recurso local final)
 
 **Reconocimiento de gestos**:
--   Básico: postura de la cabeza + clic por permanencia a través de FaceLandmarker
--   Avanzado: postura de la mano a través de MediaPipe; perfiles de gestos por usuario
+- Básico: posición de la cabeza + clic por fijación mediante FaceLandmarker
+- Avanzado: posición de la mano mediante MediaPipe; perfiles de gestos guardados por usuario
 
-**Arquitectura**: navegación solo modal (sin enrutador), tema a través de tokens.bg/text/border/accent.
+**Estructura**: navegación basada en paneles sin enrutador de páginas, gestión de temas mediante variables de diseño para fondo, texto, bordes y tonos de acento.
 
-**Documentación detallada en este repositorio:**
--   [`docs/TTS-ARCHITECTURE.md`](docs/TTS-ARCHITECTURE.md) — enrutamiento completo de voz
--   [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md) — detalles internos del modo de gestos
--   [`docs/ADAPTIVE-ENGINE-BEHAVIOR.md`](docs/ADAPTIVE-ENGINE-BEHAVIOR.md) — cambio automático de tono
--   [`docs/EMERGENCY-NATIVE-ARCHITECTURE.md`](docs/EMERGENCY-NATIVE-ARCHITECTURE.md) — ruta de alerta crítica para la vida
--   [`docs/SELF-LEARNING-SAFETY.md`](docs/SELF-LEARNING-SAFETY.md) — barandillas de aprendizaje por usuario
--   [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md) — arnés de fiabilidad de seguimiento de cabeza/mano
--   [`PRECISION_TOUCH.md`](PRECISION_TOUCH.md) — accesibilidad del objetivo táctil
--   [`ACCESSIBILITY.md`](ACCESSIBILITY.md) · [`SECURITY.md`](SECURITY.md) · [`GOVERNANCE.md`](GOVERNANCE.md) · [`AGENTS.md`](AGENTS.md)
--   [`RESEARCH.md`](RESEARCH.md) — base de evidencia
--   [`CHANGELOG.md`](CHANGELOG.md) — historial de versiones
+**Documentación técnica detallada en este repositorio:**
+- [`docs/TTS-ARCHITECTURE.md`](docs/TTS-ARCHITECTURE.md) — detalles del flujo de síntesis de voz
+- [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md) — funcionamiento interno del modo de gestos
+- [`docs/ADAPTIVE-ENGINE-BEHAVIOR.md`](docs/ADAPTIVE-ENGINE-BEHAVIOR.md) — ajuste automático del tono de voz
+- [`docs/EMERGENCY-NATIVE-ARCHITECTURE.md`](docs/EMERGENCY-NATIVE-ARCHITECTURE.md) — gestión de avisos de emergencia
+- [`docs/SELF-LEARNING-SAFETY.md`](docs/SELF-LEARNING-SAFETY.md) — salvaguardas de aprendizaje por usuario
+- [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md) — conjunto de pruebas para seguimiento cefálico y manual
+- [`PRECISION_TOUCH.md`](PRECISION_TOUCH.md) — especificaciones de accesibilidad para objetivos táctiles
+- [`ACCESSIBILITY.md`](ACCESSIBILITY.md) · [`SECURITY.md`](SECURITY.md) · [`GOVERNANCE.md`](GOVERNANCE.md) · [`AGENTS.md`](AGENTS.md)
+- [`RESEARCH.md`](RESEARCH.md) — bases de investigación y evidencias
+- [`CHANGELOG.md`](CHANGELOG.md) — historial de cambios por versión
 
 </details>
 
 <details>
-<summary><strong>🆕 Por qué Prism AAC es diferente (la pila de algoritmos subyacente)</strong></summary>
+<summary><strong>🆕 Aspectos diferenciales de PrismAAC (bases de su arquitectura de software)</strong></summary>
 
-**Tres cosas que ninguna otra aplicación AAC en el mercado hace juntas:**
+**Tres capacidades que diferencian a PrismAAC de otras aplicaciones del sector:**
 
-### 1. IA en el dispositivo + segura para HIPAA por defecto
+### 1. IA local en el dispositivo — adaptada a los requerimientos de protección de datos (HIPAA)
 
-**Por qué la IA local es importante para AAC — velocidad, seguridad y fiabilidad:**
+**Beneficios del procesamiento de IA local en la comunicación de CAA — velocidad, privacidad y disponibilidad:**
 
-| | Solo IA en la nube | Prism AAC (primero local) |
+| Aspecto | IA basada solo en la nube | PrismAAC (procesamiento local prioritario) |
 |--|---|---|
-| Toque de botón → voz | 2–30s (ida y vuelta de red) | **~0.5s** (en el dispositivo) |
-| Funciona sin conexión | ❌ No | ✅ Sí |
-| PHI sale del dispositivo | ✅ Siempre | ❌ Nunca (ruta de voz) |
-| Cumplimiento de HIPAA | Requiere BAA con cada proveedor | **En el dispositivo = no se necesita BAA** |
-| WiFi rural / deficiente | Roto | **Totalmente funcional** |
-| Costo mensual por usuario | $2–15 tarifas API | **$0 (local)** |
+| Selección de casilla → reproducción de voz | 2–30s (dependiente de red) | **~0,5s** (procesamiento en el dispositivo) |
+| Funcionamiento sin conexión a internet | ❌ No disponible | ✅ Disponible |
+| Salida de datos de salud (PHI) del equipo | ✅ Se envían a la red | ❌ Permanece local (ruta de comunicación de voz) |
+| Cumplimiento de HIPAA | Requiere acuerdos BAA con cada proveedor externo | **El procesamiento local conserva los datos en el equipo — facilita el cumplimiento de requisitos de seguridad** |
+| Uso en zonas de baja cobertura | Interrupciones en el servicio | **Funcionamiento completo** |
+| Coste mensual de infraestructura por usuario | $2–15 en tarifas de API | **$0 (en el dispositivo)** |
 
-**El modelo 1.7B se ejecuta completamente en tu dispositivo** — iPad M1+, Mac o portátil. Un niño que presiona un botón obtiene una respuesta en ~500ms con cero llamadas de red. Ningún PHI, ninguna vocalización, ningún patrón de comunicación sale del dispositivo durante el uso normal.
+**El modelo de 2B se ejecuta íntegramente en tu dispositivo** — iPad M1+, Mac o portátil. Al seleccionar una casilla se obtiene una respuesta en ~500 ms sin realizar consultas externas a la red. Ni las frases, ni los datos personales ni los hábitos de uso salen del dispositivo en las operaciones habituales.
 
-Las notas del cuidador se cifran localmente antes de cualquier sincronización opcional en la nube. Las plataformas AAC comparables solo en la nube (TouchChat, sincronización en la nube de Proloquo2Go) requieren cargas de cuenta para funcionar — Prism AAC no.
+Las notas escritas por los cuidadores se cifran en el equipo antes de realizar cualquier sincronización opcional. A diferencia de otras plataformas de CAA que requieren subir los datos a servidores externos para su uso, PrismAAC permite un funcionamiento autónomo.
 
-**Para implementaciones empresariales / clínicas (14B + 32B):** los modelos 14B y 32B se ejecutan en un Mac dedicado a través de Ollama en la red clínica. Los iPads se conectan a través de la red WiFi local — los datos nunca salen del edificio. No se necesitan acuerdos con proveedores de la nube para el cumplimiento de HIPAA.
+**Para despliegues institucionales o clínicos (modelos 9B y 27B):** los modelos 9B y 27B pueden ejecutarse en un equipo Mac dedicado mediante Ollama dentro de la red local del centro. Los iPad se conectan a través de la red WiFi interna — los datos se mantienen dentro de la instalación. Esta arquitectura facilita el cumplimiento de los controles técnicos de privacidad (como HIPAA) al conservar la información en la propia infraestructura; la conformidad regulatoria final depende de la entidad responsable del servicio mediante la aplicación de sus políticas, medidas de seguridad físicas y administrativas, y los acuerdos BAA que correspondan.
 
-**Cómo configurarlo:**
+**Procedimiento de configuración:**
 
 ```
-iPad / iPhone (en la misma red WiFi que el Mac)
+iPad / iPhone (conectado a la misma red WiFi que la Mac)
     ↓  se conecta a
 Mac ejecutando Ollama (OLLAMA_HOST=0.0.0.0)
-    ↓  sirve
-prism-coder:1b7 · :14b · :32b
-    ↓  toda la inferencia permanece en
-Red local — nada llega a internet
+    ↓  proporciona los modelos
+prism-coder:2b · :14b · :32b
+    ↓  todo el procesamiento permanece en la
+Red local — sin tráfico hacia internet
 ```
 
-Ajustes → 🤖 Modelos de IA Local → introducir IP de Mac → todos los modelos disponibles al instante. Sin costo en la nube. Sin exposición de PHI. Sin dependencia de la red para la comunicación AAC.
+Ajustes → 🤖 Modelos de IA local → introducir la IP de la Mac → disponibilidad inmediata de los modelos. Sin costes por servicios en la nube. Sin transferencia de datos de salud. Sin requerir conexión a internet para las funciones de comunicación de CAA.
 
-### 2. Clasificación de frases que se adapta a TU hijo
-Las listas de frecuencia estáticas están obsoletas. Prism AAC clasifica las frases sugeridas a través de la [**activación de propagación Prism v14.0.0**](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md) — el mismo modelo de memoria cognitiva ACT-R detrás de décadas de investigación de Carnegie Mellon. Recencia × frecuencia × historial por usuario, no una lista de popularidad estática. Las frases que el niño dice hoy suben; las frases no utilizadas durante un año se desvanecen (decaimiento de la tasa de lecciones `d=0.25`, vida media de ~1 año).
+### 2. Clasificación adaptativa de frases según el uso de cada usuario
+Las listas fijas de frecuencia no se adaptan a las necesidades cambiantes. PrismAAC clasifica las sugerencias mediante la **activación por difusión de Prism v14.0.0**, basada en el modelo de memoria cognitiva ACT-R desarrollado en investigaciones de la Universidad Carnegie Mellon. Evalúa la recencia, la frecuencia y el historial de uso individual en lugar de aplicar un orden estático. Las frases utilizadas recientemente ganan relevancia; las frases no utilizadas durante meses reducen su prioridad (tasa de atenuación `d=0,25`, con una vida media cercana a un año).
 
-### 3. Las correcciones del cuidador se convierten en datos de entrenamiento — automáticamente
-Cuando un cuidador corrige una sugerencia que el modelo hizo mal (por ejemplo, "no, la palabra es *comer*, no *querer*"), el [recolector post-vuelo de audit-hooks](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extrae el error y lo persiste. Después de ~50 sesiones, el sistema advierte *antes* de que el modelo cometa un error similar. No hay trabajo de etiquetado para los cuidadores, ni costosas ejecuciones de reentrenamiento — las correcciones son el currículo.
+### 3. Las correcciones de los cuidadores mejoran las sugerencias automáticamente
+Cuando un cuidador corrige una propuesta no adecuada (por ejemplo: «no, la palabra elegida es *comer*, no *querer*»), el [sistema de captura posterior de auditoría](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) registra la corrección. Tras unas 50 sesiones, el sistema identifica estas situaciones *antes* de volver a mostrar una opción similar. Sin necesidad de etiquetar datos de forma manual ni realizar costosos reentrenamientos — las propias correcciones adaptan el modelo.
 
-**Alcance honesto:** Precisión de enrutamiento en la [evaluación Prism de 102 casos](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (6 herramientas Prism, 12 categorías, prompt del sistema v36/v7, semillas 2027–2029): 32b v7 = 100.0%, 8b v36 = 100.0%, 14b v36 = 100.0%, 1.7b v42 = 100.0%. Cero nombres de herramientas inventados en todos los tamaños de modelo y todas las semillas. El 1.7B se ejecuta en el dispositivo para un enrutamiento rápido de frases (carga/guardado/compactación); el 14B/32B manejan sesiones complejas y flujos de trabajo clínicos. En la clasificación completa de Berkeley BFCL V4 (más de 2,000 casos, llamada a funciones generales), el 1.7B obtiene ~59% — comparable a otros modelos de menos de 2B. Lo que hace que Prism AAC sea defendible no es solo la puntuación del modelo, sino el modelo más la pila de algoritmos de activación de propagación de Prism que lo rodea.
+**Alcance de precisión:** La tasa de aciertos en la [evaluación Prism de 115 casos](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (7 herramientas de Prism, 12 categorías, promedio de 3 semillas, junio de 2026) registra: 27b = 100,0 %, 9b = 100,0 %, 4b = 100,0 %, 2b = 99,1 %. Sin nombres de herramientas inventados en ninguno de los modelos ni semillas probadas. El modelo 2B se ejecuta en el dispositivo para responder con rapidez; los modelos 9B y 27B gestionan interacciones complejas o flujos de trabajo profesionales mediante conexión WiFi a un equipo Mac. En la tabla de clasificación general de Berkeley BFCL V4 (con más de 2.000 casos de llamadas a funciones), el modelo 2B obtiene ~59 %, en la línea de otros modelos de tamaño inferior a 2B. El valor de PrismAAC radica en la combinación de estos modelos junto al motor de activación por difusión del sistema.
 
 </details>
+
+---
+
+## Información para desarrolladores
+
+```bash
+npm install && npm run dev   # http://localhost:3000/prism-aac
+npm run test                 # +4900 pruebas unitarias
+npm run e2e                  # Pruebas automatizadas en Playwright con 11 perfiles de dispositivos
+```
+
+### Métricas y seguimiento
+
+| Panel de control | Qué métricas supervisa |
+|-----------|---------------|
+| [Prism AAC — Análisis de usuario](https://app.datadoghq.com/dashboard/shk-8fb-qjk/prism-aac--user-analytics) | Sesiones, errores registrados, palabras predichas, casillas seleccionadas, eventos de reproducción de voz, idiomas, países de origen, tipos de dispositivo, planes de uso, métricas de seguimiento de cabeza |
+
+Integración con Datadog RUM: consulta `lib/datadog.ts` y `components/DatadogInit.tsx`. Incluye 7 pruebas de rendimiento E2E en `e2e/datadog-integration.spec.ts`.
 
 ---
 
 ## Licencia
 
-[AGPL-3.0](LICENSE) — código abierto, aprobado por la OSI, elegible para subvenciones.
+[AGPL-3.0](LICENSE) — código abierto, certificado por la OSI, compatible con proyectos de concesión de subvenciones.
 
-Eres libre de bifurcar y autoalojar. La licencia requiere que también compartas las modificaciones bajo AGPL-3.0 — ese es el trato que mantiene la innovación en AAC abierta y accesible para las familias.
+Eres libre de crear derivados y alojar tu propia instancia. La licencia requiere que compartas las modificaciones que realices bajo los términos de AGPL-3.0 — garantizando que los avances en comunicación de CAA permanezcan accesibles para todas las familias.
+
+© 2024–2026 Synalux LLC
