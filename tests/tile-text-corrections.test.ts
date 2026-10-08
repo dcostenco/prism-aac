@@ -297,7 +297,7 @@ describe('Amharic tile texts a full audit corrected', () => {
     ['ac-brush-hair', 'ፀጉር አበጥር'],
     ['ac-comb', 'አበጥር'],
     ['ac-wake-up', 'ንቃ'],
-    ['ac-pat', 'ቸብ ቸብ አድርግ'],
+    ['ac-pat', 'ደባብስ'],
     ['ac-dust', 'አቧራ አራግፍ'],
     ['ac-roll-it', 'አንከባልለው'],
     ['ac-floss', 'በክር ጥርስ አጽዳ'],
@@ -765,5 +765,30 @@ describe('Chinese tile texts a second full read corrected', () => {
     const hits = DEFAULT_PHRASES.filter((p) => /^(help-|hb-|hfs-)/.test(p.id))
       .map((p) => [p.id, getPhraseText(p.id, 'zh-HK', '')]).filter(([, t]) => t.replaceAll('疼痛', '').includes('疼'));
     expect(hits).toEqual([]);
+  });
+});
+
+describe('tile texts a final judgement pass corrected', () => {
+  // Each said something else: Ukrainian Cup said glass, Korean Guilty said I'm sorry, Arabic Point said he points, Japanese Tan read as
+  // beef tongue, Hebrew Snowy said snow, Tagalog Your said yours; Amharic Grapes and Wrap could be heard as wine and rap music.
+  it.each([
+    ['id', 'tc-early', 'Lebih awal'],
+    ['tl', 'cw-your', 'Iyong'],
+    ['he', 'we-snowy', 'מושלג'],
+    ['ar', 'ac-point', 'أشير'],
+    ['vi', 'fe-love', 'Yêu bạn'],
+    ['ko', 'fe-guilty', '죄책감이 들어요'],
+    ['ko', 'cw-any', '아무거나'],
+    ['ja', 'fd-wrap', 'ラップサンド'],
+    ['ja', 'co-tan', 'うすちゃいろ'],
+    ['uk', 'fd-cup', 'Чашка'],
+    ['am', 'ac-pat', 'ደባብስ'],
+    ['am', 'fd-grapes', 'የወይን ፍሬ'],
+    ['am', 'ff-grapes', 'የወይን ፍሬ'],
+    ['am', 'fd-wrap', 'ጥቅል ሳንድዊች'],
+    ['zh-Hant', 'plm-urgent', '急症門診'],
+    ['zh-HK', 'plm-urgent', '急症門診'],
+  ] as [SupportedLanguage, string, string][])('%s %s is %s', (lang, id, text) => {
+    expect(getPhraseText(id, lang, '')).toBe(text);
   });
 });
