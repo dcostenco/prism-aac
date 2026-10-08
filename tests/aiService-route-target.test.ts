@@ -10,7 +10,7 @@
  * "Couldn't reach the tutor. Check your internet." (May 2026 user
  * reports Image #29 / #30). The fix is to route through
  * /api/v1/prism-aac/chat — the dedicated AAC chat endpoint that
- * synalux-platform explicitly built as unauthenticated-by-design with
+ * the Synalux server explicitly built as unauthenticated-by-design with
  * per-IP rate limit + tier routing.
  *
  * Test asserts the URL the askAI service actually fetches.

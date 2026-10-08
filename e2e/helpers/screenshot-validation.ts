@@ -23,9 +23,9 @@
 import type { Page } from "@playwright/test";
 import { createRequire } from "node:module";
 
-// This validator is shared by Portal and POS screenshot specs. Resolve Sharp
-// from the package that launched Playwright, not from this file's directory;
-// POS-only installs intentionally do not create portal/node_modules.
+// This validator is shared by several screenshot specs. Resolve Sharp from the
+// package that launched Playwright, not from this file's directory; some
+// installs intentionally do not create node_modules next to this file.
 const requireFromActiveProject = createRequire(`${process.cwd()}/package.json`);
 const sharp = requireFromActiveProject("sharp") as typeof import("sharp");
 

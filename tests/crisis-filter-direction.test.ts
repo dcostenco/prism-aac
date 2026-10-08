@@ -67,7 +67,7 @@ describe('model output — the incident and its class', () => {
   });
 
   it('blocks second-person harm instruction the OLD filter also missed', () => {
-    // Adversarial review 2026-08-19: the pre-fix output check let ALL of
+    // The pre-fix output check let ALL of
     // these through as well — its keywords are FIRST-person distress
     // phrases ('hurt myself'), so it fired on benign AAC suggestions while
     // missing every second-person harm directive. Closing that hole is part

@@ -164,7 +164,7 @@ describe('canProbeInBackground (services on https only after the user connected)
   });
 });
 
-describe('Fable review follow-ups (2026-10-02)', () => {
+describe('local AI URL and platform edge cases', () => {
   it('[::1] is not offered: the page policy (connect-src) does not list it, so it would read "not running"', () => {
     expect(isLocalUrl('http://[::1]:11434')).toBe(false);
   });
@@ -174,7 +174,7 @@ describe('Fable review follow-ups (2026-10-02)', () => {
   });
 });
 
-describe('adversarial review follow-ups (2026-10-02)', () => {
+describe('local network permission query and unrecognised browsers', () => {
   it('queryLocalNetworkPermission asks for the exact Chrome permission names, in order, and survives unsupported ones', async () => {
     const asked: string[] = [];
     const perms = (answers: Record<string, string>) => ({

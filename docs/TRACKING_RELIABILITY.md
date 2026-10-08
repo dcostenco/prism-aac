@@ -87,14 +87,14 @@ workflow capability, not sign-in, cloud access, or physical-device reliability.
 <details>
 <summary><strong>📐 Full investigation, harness, and reliability ledger</strong></summary>
 
-> **Status**: Investigation 2026-05-05 by Dmitri + Claude. Critical gap.
+> **Status**: Investigation 2026-05-05. Critical gap.
 > Goal: head + gesture + hand tracking work *together* without interfering,
 > stay reliable in non-stationary contexts (moving car, lap-held laptop,
 > changing lighting), self-disable cleanly when reliability collapses,
 > and recover when conditions return.
 >
-> **Persistence**: This doc is committed; future Claude sessions and any
-> human picking up the campaign use it as the single source of truth.
+> **Persistence**: This doc is committed; anyone picking up the campaign
+> uses it as the single source of truth.
 
 ## TL;DR
 
@@ -323,8 +323,7 @@ shifted, it's ego-motion.
 
 ### F. Background recalibration — L1/L2/L3 auto-correction loop
 
-Implements the three-layer correction architecture from
-`training-corpus/PLAN_2026-05-09_THREE_LAYER_AAC.md`.
+Implements the three-layer correction architecture of the internal AAC training plan.
 
 Real-world drift sources:
 1. User shifts in chair (mostly Y drift)

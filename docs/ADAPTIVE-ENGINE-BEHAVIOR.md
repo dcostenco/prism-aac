@@ -20,7 +20,7 @@
 This document covers the change shipped in:
 
 - `prism-aac` `ef406a9` — engine rewrite, wiring, auto tone switch
-- `synalux-platform` `1e5aa77` — canonical schema mirror, sync API, prompt
+- Synalux server `1e5aa77` — canonical schema mirror, sync API, prompt
   injection
 - `prism-mcp` `871b8fe` — MCP tool definitions
 
@@ -129,7 +129,7 @@ The same `AdaptiveProfile` interface is defined in three places:
 | Repo | File | Role |
 |---|---|---|
 | `prism-aac` | `services/adaptiveEngine.ts` | Browser/native client, localStorage-backed |
-| `synalux-platform` | `portal/src/shared/adaptiveEngine.ts` | Server canonical, Supabase-backed |
+| Synalux server | server-side adaptive engine | Server canonical, Supabase-backed |
 | `prism-mcp` | `src/tools/adaptiveDefinitions.ts` | MCP tool surface |
 
 When evolving the schema, the change must land in all three places in
@@ -302,7 +302,7 @@ The fresh default profile is what the next read returns.
 | `localStorage.setItem` throws (quota / private mode) | Engine continues with in-memory profile; data lost on reload. No app crash. |
 | Synalux REST returns 5xx | AAC client logs, keeps using local profile; retries on next flush. |
 | Profile version > supported | Server REST returns 422 `malformed profile`. Client falls back to defaults. |
-| Adaptive table missing (RLS misconfig) | `system-prompt.ts` `try/catch` returns `DEFAULT_PROFILE` signals. Chat still works. |
+| Adaptive table missing (RLS misconfig) | The server's prompt builder (`try/catch`) returns `DEFAULT_PROFILE` signals. Chat still works. |
 | MediaPipe returns garbage `normX` outside [0,1] | `Math.max(0, Math.min(1, ...))` clamps before calibration learns from it. |
 | Caregiver records `'help' → 'helper'` | `recordMispronunciation` refuses to write. `correctPronunciation('help')` returns `'help'` regardless. |
 
@@ -325,9 +325,9 @@ The fresh default profile is what the next read returns.
 
 | Want to change | File |
 |---|---|
-| Tone detection algorithm | `prism-aac/services/adaptiveEngine.ts` (`detectTone`) — and mirror in `synalux-platform/portal/src/shared/adaptiveEngine.ts` |
+| Tone detection algorithm | `prism-aac/services/adaptiveEngine.ts` (`detectTone`) — and the server-side mirror |
 | Add a new behavioral signal | bump `PROFILE_VERSION`, add field, write `migrate()` branch, update `buildSignals()` |
-| Change how prism-coder sees signals | `synalux-platform/portal/src/shared/adaptiveEngine.ts` (`applyAdaptiveContext`) — affects every chat |
+| Change how prism-coder sees signals | the server-side adaptive engine (`applyAdaptiveContext`) — affects every chat |
 | Change how AAC routes voice | `prism-aac/services/speechService.ts` (`speak()`) |
 | Add new MCP tool | `prism/src/tools/adaptiveDefinitions.ts` + matching handler |
 

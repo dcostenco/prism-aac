@@ -176,7 +176,7 @@ function getAuthToken(): string | null {
 // pick the best Inworld voice that ACTUALLY exists on Inworld's server.
 //
 // Audit (probed via /api/v1/tts/public 2026-05-05): only 8 of the 23
-// "inworld" entries in portal/src/shared/voice-catalog.ts return 200
+// "inworld" entries in the server's voice catalog return 200
 // from Inworld's v1.5-mini model. The other 15 (Carmen, Camille, Hans,
 // Lena, Luana, Giulia, Lotte, Zofia, Sakura, Jisoo, Anya, Noa, Layla,
 // Lucas, Helia) return 502 — they're aspirational catalog entries that

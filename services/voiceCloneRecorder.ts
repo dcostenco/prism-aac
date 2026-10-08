@@ -1,7 +1,7 @@
 /**
  * voiceCloneRecorder — caregiver-side audio capture for voice cloning.
  *
- * CUSTOMER_FEEDBACK § #5 — caregivers want their child to hear their own
+ * Caregivers want their child to hear their own
  * voice through the AAC. This service handles the FRONT half of that
  * pipeline: capture clean audio, validate it meets the cloning provider's
  * minimum requirements, and produce a Blob the upload endpoint can post.

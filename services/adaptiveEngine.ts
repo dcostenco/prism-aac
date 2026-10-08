@@ -7,9 +7,7 @@
  * ⚠️  SINGLE SOURCE OF TRUTH = SYNALUX
  *
  * The canonical AdaptiveProfile schema, tone-detection algorithm, and
- * tone→TTS-style mappings live in:
- *
- *     synalux-platform/portal/src/shared/adaptiveEngine.ts
+ * tone→TTS-style mappings live in the server-side adaptive engine.
  *
  * This file is a CLIENT-SIDE MIRROR with the same algorithm so prism-aac
  * works offline (free tier, network loss). It must be kept structurally
@@ -23,8 +21,8 @@
  *   4. Add a migration branch in the migrate() function below.
  *   5. Tests in tests/adaptive-engine.test.ts should still pass.
  *
- * Run training/sync_adaptive_engine.sh to verify the two files are in
- * structural sync (compares constant sets + function signatures).
+ * Keep the two files in structural sync (same constant sets and function
+ * signatures).
  *
  * 5 adaptive systems:
  *   1. Tone — auto-routes TTS voice style based on detected message context

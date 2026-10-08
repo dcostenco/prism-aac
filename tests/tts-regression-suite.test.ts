@@ -25,14 +25,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { computeNormalizedRate } from '@/services/azureTTS';
 // NOTE: buildSSML is intentionally NOT imported here. It is dead code since
 // SSML assembly moved server-side (portal buildAzureSSML). Server-side coverage
-// lives in synalux-platform/portal/src/app/api/v1/tts/public/_helpers.test.ts.
+// lives in the Synalux server's public TTS helper tests.
 
 // ── Class 1: SSML rate scale (LIVE PATH via computeNormalizedRate) ───────────
 //
 // speakAzure sends computeNormalizedRate(storedRate) to the portal.
 // The portal's buildAzureSSML puts that value into <prosody rate="N">.
 // Testing computeNormalizedRate here catches client-side formula regressions.
-// The server-side buildAzureSSML is tested in portal/_helpers.test.ts.
+// The server-side buildAzureSSML is tested in the server's TTS helper tests.
 
 describe('Class 1 — rate scale: computeNormalizedRate (LIVE client-side path)', () => {
 
@@ -193,7 +193,7 @@ describe('Class 4 — bad stored rate values fall back to normalizedRate 1.00', 
 // ── Class 5: SSML format — no percent regression ─────────────────────────────
 // The portal emits SSML (not the client). The client-side invariant is that
 // normalizedRate is a decimal float, never a percent or string. Portal coverage
-// for the actual SSML format is in portal/_helpers.test.ts Class 1.
+// for the actual SSML format is in the server's TTS helper tests (Class 1).
 
 describe('Class 5 — normalizedRate is always a decimal float, never NaN or Infinity', () => {
   it('normalizedRate for any slider position is a finite decimal in [0.5, 1.4]', () => {

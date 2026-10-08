@@ -44,7 +44,7 @@ export type SupportedLanguage =
   | 'tr'        // Turkish — Emel / Ahmet (Azure)
   | 'id'        // Bahasa Indonesia — Gadis / Ardi (Azure)
   | 'bg'        // Bulgarian — Borislav / Kalina (Azure)
-  // Sprint 4 expansion — Azure neural voices; see portal shared/voice-catalog.ts
+  // Sprint 4 expansion — Azure neural voices; see the server's voice catalog
   | 'am'        // Amharic — Mekdes / Ameha (Azure), Ge'ez script
   | 'sw'        // Swahili — Rehema / Daudi (Azure)
   | 'bn';       // Bengali — Nabanita / Pradeep (Azure), Bengali script

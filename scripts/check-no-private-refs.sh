@@ -19,6 +19,10 @@ cd "$(dirname "$0")/.."
 
 PATTERNS=(
   'synalux-private'                       # the private platform repo, by name
+  'synalux[-_]platform'                   # the private server repo, by name
+  'portal/(src|shared|_helpers|vitest|node_modules)'  # paths inside the private portal tree
+  'synalux/(lib|src)/'                    # paths inside the private server source tree
+  'training-corpus/'                      # the private training-corpus directory
   'bcba-private'                          # internal engineering repo
   'prism-training'                        # private training repo
   'GT Independence'                       # FMS vendor — private commercial relationship

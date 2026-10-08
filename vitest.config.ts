@@ -22,7 +22,7 @@ export default defineConfig({
      * parallel editor session each spawn their own pool against the same 18
      * cores.
      *
-     * Half the cores mirrors portal/vitest.config.ts, so two concurrent
+     * Half the cores mirrors the portal's vitest config, so two concurrent
      * suites cannot oversubscribe the machine. Override with
      * VITEST_MAX_WORKERS on a bigger box or in CI.
      */
