@@ -1,6 +1,6 @@
 /**
- * Built-in tile texts are what a tile says aloud, so a wrong one puts the wrong word in a user's mouth. A review of every
- * visible word in 26 languages found tile texts that were another language's word (Dutch "Durst" is German), garbled
+ * Built-in tile texts are what a tile says aloud, so a wrong one puts the wrong word in a user's mouth. Some tile texts
+ * were another language's word (Dutch "Durst" is German), garbled
  * across two scripts (the Amharic Swing tile carried Tamil letters), a different meaning (the Swahili Taco tile said
  * "buttock"), or, for Traditional Chinese, a character-by-character conversion of the Simplified text that picked the
  * wrong character (the Dry tile said 幹, a profanity in Taiwan, for 乾).
@@ -19,7 +19,7 @@ const SCRIPTS: Record<string, RegExp> = {
 };
 const LATIN = ['es', 'fr', 'pt', 'ro', 'de', 'it', 'pl', 'nl', 'vi', 'tl', 'tr', 'id', 'sw'];
 
-describe('every tile is written in its own language\'s script', () => {
+describe('no tile contains a foreign script (Latin letters stay allowed in non-Latin languages)', () => {
   it.each([...Object.keys(SCRIPTS), ...LATIN])('%s', (lang) => {
     const own = SCRIPTS[lang] ?? /\p{Script=Latin}/u;
     const bad: string[] = [];
@@ -37,7 +37,7 @@ describe('every tile is written in its own language\'s script', () => {
   });
 });
 
-describe('tile texts the review corrected', () => {
+describe('tile texts that were corrected', () => {
   // [language, tile, text]. Each replaced another language's word, a garbled or misspelled text, or a different meaning:
   // nl Durst (German), sw Tako (buttock), hi बेवकूफ (idiot), zh 滚 alone ("get lost!"), zh-Hant/zh-HK 幹 (a Taiwan profanity,
   // converted from 干; dry is 乾), ja/zh Hip お尻/臀部 (buttocks), ko 새요 ("it leaks", on Sour).
@@ -132,7 +132,7 @@ describe('tile texts the review corrected', () => {
 });
 
 describe('Swahili tile texts a full audit corrected', () => {
-  // A read of all 1,503 Swahili tiles, each fix checked by a second reviewer. Among them, tiles shown by default (the
+  // Corrections from a full pass over the Swahili tile set. Among them, tiles shown by default (the
   // core set): My said "Mimi" (I), Empty "Mwenye utupu" (can be heard as "naked"), Yay "Yupi" (which person?), Cut
   // "Mshororo" (a line of verse); and elsewhere Hippo "Kibarua" (a day labourer), Rainbow "Mvua ya mawe" (hail).
   it.each([
@@ -239,7 +239,7 @@ describe('Swahili tile texts a full audit corrected', () => {
 });
 
 describe('Amharic tile texts a full audit corrected', () => {
-  // A read of all 1,503 Amharic tiles, each fix checked by a second reviewer. Among the tiles shown by default: Sad said
+  // Corrections from a full pass over the Amharic tile set. Among the tiles shown by default: Sad said
   // አዛን (the Islamic call to prayer), "I am confused" said ተረብሻለሁ (I am disturbed), Great said ታላቅ (elder); elsewhere
   // Crab said ካንሰር (cancer), Giraffe ቀጣፊ (liar), Cup ክብሪት (matches), Beach the city Bahir Dar.
   it.each([
@@ -374,7 +374,7 @@ describe('Amharic tile texts a full audit corrected', () => {
 });
 
 describe('Bengali tile texts a full audit corrected', () => {
-  // A read of all 1,503 Bengali tiles in the West Bengal (Kolkata) register, each fix checked by a second reviewer.
+  // Corrections from a full pass over the Bengali tile set, in the West Bengal (Kolkata) register.
   // Among the tiles shown by default: Whisper said ফুসফুস (lungs), "I feel sick" had the text of "I feel bad", Wait that
   // of Stand, Loved said "looks cute", Excited said "agitated"; elsewhere Cousin said "servant siblings" and
   // Bangladeshi forms (গোসল, দাদি, খালা, রংধনু) stood on tiles in a Kolkata set.
@@ -455,8 +455,8 @@ describe('Bengali tile texts a full audit corrected', () => {
   });
 });
 
-describe('over-corrections undone after a second model family reviewed them', () => {
-  // Reviewers had changed these and a cross-family check (OpenAI Codex, blind) disagreed; each was verified in the table.
+describe('first corrections that were themselves wrong and were restored', () => {
+  // Each was checked against the table after a second look.
   // Vietnamese On "Bật" pairs with Off "Tắt" (Off is the device-off sense in every language), so changing it to "Trên"
   // broke the pair; Pie is the dessert (Japanese パイ, Spanish Pay, Russian Пирог): 馅饼 is a savoury stuffed pie, 派 is
   // the pie word in Mainland and Taiwan Chinese and 批 in Hong Kong.
@@ -471,7 +471,7 @@ describe('over-corrections undone after a second model family reviewed them', ()
   });
 });
 
-describe('corrections from the gpt-6.1-sol cross-family review', () => {
+describe('regional wording corrections', () => {
   // Taiwan says 義大利麵 for pasta (generated 意大利麵 is the Mainland/Hong Kong form); Hong Kong says 捉 for the tag game.
   it.each([
     ['zh-Hant', 'fd-pasta', '義大利麵'],
@@ -483,7 +483,7 @@ describe('corrections from the gpt-6.1-sol cross-family review', () => {
 
 describe('why the Swahili Taco tile is a description', () => {
   // "Tako" is Swahili for buttock and "Taco" is spoken the same way by a Swahili voice, so the spelling alone does not
-  // keep the wrong word out of the user's mouth (gpt-6.1-sol, blind review). A description of the food has no sound-alike.
+  // keep the wrong word out of the user's mouth. A description of the food has no sound-alike.
   it.each(['fd-taco', 'fm-tacos'])('sw %s is neither "Tako" nor "Taco"', (id) => {
     expect(getPhraseText(id, 'sw', '').toLowerCase()).not.toMatch(/^(tako|taco)s?$/);
   });
