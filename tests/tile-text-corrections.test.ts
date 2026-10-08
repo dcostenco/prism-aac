@@ -66,8 +66,8 @@ describe('tile texts the review corrected', () => {
     ['tl', 'sw-test', 'Pagsusulit'],
     ['tl', 'ac-clap', 'Pumalakpak'],
     ['tl', 'ac-hum', 'Humuni'],
-    ['sw', 'fd-taco', 'Taco'],
-    ['sw', 'fm-tacos', 'Taco'],
+    ['sw', 'fd-taco', 'Tortila iliyokunjwa na kujazwa'],
+    ['sw', 'fm-tacos', 'Tortila zilizokunjwa na kujazwa'],
     ['sw', 'pp-family', 'Familia'],
     ['sw', 'tf-tablet', 'Tableti'],
     ['sw', 'fs-popcorn', 'Bisi'],
@@ -92,8 +92,6 @@ describe('tile texts the review corrected', () => {
     ['bn', 'qt-definitely', 'অবশ্যই'],
     ['bn', 'dw-hard', 'শক্ত'],
     ['bn', 'dw-salty', 'নোনতা'],
-    ['vi', 'cw-on', 'Trên'],
-    ['vi', 'cw-above', 'Phía trên'],
     ['ko', 'dw-sour', '셔요'],
     ['ko', 'help-thirsty', '목말라요'],
     ['ko', 'cw-let-me-try', '해볼게요'],
@@ -110,7 +108,6 @@ describe('tile texts the review corrected', () => {
     ['zh-Hans', 'hb-hip', '髋部'],
     ['zh-Hans', 'fd-taco', '塔可'],
     ['zh-Hans', 'chip-b3', '塔可'],
-    ['zh-Hans', 'fd-pie', '馅饼'],
     ['zh-Hans', 'ac-tag', '抓人游戏'],
     ['zh-Hans', 'sw-social-studies', '社会课'],
     ['zh-Hans', 'cw-versus', '对阵'],
@@ -154,7 +151,7 @@ describe('Swahili tile texts a full audit corrected', () => {
     ['qt-yay', 'Hoyee'],
     ['qt-i-missed-you', 'Nimekukosa'],
     ['fe-angry', 'Mwenye hasira'],
-    ['fe-anxious', 'Mwenye kuhangaika'],
+    ['fe-anxious', 'Mwenye wasiwasi'],
     ['fe-ticklish', 'Mwenye kutekenyeka'],
     ['fe-empty', 'Moyo mtupu'],
     ['qu-how-many', 'Ngapi?'],
@@ -234,7 +231,7 @@ describe('Swahili tile texts a full audit corrected', () => {
     ['dw-quiet', 'Kimya'],
     ['an-bug', 'Mdudu'],
     ['co-dark-blue', 'Bluu iliyokolea'],
-    ['fe-bored', 'Mwenye kuchoshwa'],
+    ['fe-bored', 'Nimeboeka'],
     ['ti-holiday', 'Sikukuu'],
   ] as [string, string][])('sw %s says "%s"', (id, text) => {
     expect(getPhraseText(id, 'sw', '')).toBe(text);
@@ -353,7 +350,7 @@ describe('Amharic tile texts a full audit corrected', () => {
     ['an-crab', 'ሸርጣን'],
     ['as-crab', 'ሸርጣን'],
     ['af-donkey', 'አህያ'],
-    ['aw-deer', 'ሚዳቋ'],
+    ['aw-deer', 'አጋዘን'],
     ['ab-sparrow', 'ድንቢጥ'],
     ['co-dark-blue', 'ጠቆር ያለ ሰማያዊ'],
     ['co-dark-green', 'ጠቆር ያለ አረንጓዴ'],
@@ -362,7 +359,7 @@ describe('Amharic tile texts a full audit corrected', () => {
     ['we-foggy', 'ጭጋጋማ'],
     ['tf-slide', 'መንሸራተቻ'],
     ['tf-coloring', 'ቀለም መቀባት'],
-    ['tf-crayons', 'ከለር እርሳሶች'],
+    ['tf-crayons', 'ከሪዮን'],
     ['cw-think', 'ይመስለኛል'],
     ['cw-everyone', 'ሁሉም ሰው'],
     ['cw-light', 'ቀላል'],
@@ -370,8 +367,124 @@ describe('Amharic tile texts a full audit corrected', () => {
     ['fe-relaxed', 'ዘና ብያለሁ'],
     ['fe-loved', 'ተወድጄአለሁ'],
     ['fd-knife', 'ቢላዋ'],
-    ['pl-dentist-office', 'የጥርስ ሕክምና'],
+    ['pl-dentist-office', 'የጥርስ ክሊኒክ'],
   ] as [string, string][])('am %s says "%s"', (id, text) => {
     expect(getPhraseText(id, 'am', '')).toBe(text);
+  });
+});
+
+describe('Bengali tile texts a full audit corrected', () => {
+  // A read of all 1,503 Bengali tiles in the West Bengal (Kolkata) register, each fix checked by a second reviewer.
+  // Among the tiles shown by default: Whisper said ফুসফুস (lungs), "I feel sick" had the text of "I feel bad", Wait that
+  // of Stand, Loved said "looks cute", Excited said "agitated"; elsewhere Cousin said "servant siblings" and
+  // Bangladeshi forms (গোসল, দাদি, খালা, রংধনু) stood on tiles in a Kolkata set.
+  it.each([
+    ['hb-runny-nose', 'নাক দিয়ে জল পড়া'],
+    ['cw-whisper', 'ফিসফিস করো'],
+    ['cw-every', 'প্রত্যেক'],
+    ['cw-too', 'এছাড়াও'],
+    ['cw-wait', 'অপেক্ষা করো'],
+    ['cw-look', 'তাকাও'],
+    ['cw-smile', 'মুচকি হাসো'],
+    ['cw-sit', 'বসো'],
+    ['cw-bring', 'আনো'],
+    ['cw-open', 'খোলো'],
+    ['cw-catch', 'লুফে নাও'],
+    ['cw-win', 'জেতো'],
+    ['cw-swallow', 'গিলে ফেলো'],
+    ['cw-smell', 'শুঁকে দেখো'],
+    ['cw-throw', 'ছুঁড়ে দাও'],
+    ['help-i-need-my-mom', 'মাকে চাই'],
+    ['help-i-need-my-dad', 'বাবাকে চাই'],
+    ['help-i-need-my-teacher', 'টিচারকে চাই'],
+    ['hb-sick', 'আমার শরীর খারাপ লাগছে'],
+    ['hb-chills', 'শীত শীত করা'],
+    ['hb-dull-pain', 'চাপা ব্যথা'],
+    ['hb-bruise', 'কালশিটে'],
+    ['hb-knuckle', 'আঙুলের গাঁট'],
+    ['fe-loved', 'ভালোবাসা পাচ্ছি'],
+    ['fe-thankful', 'কৃতজ্ঞ বোধ করছি'],
+    ['fe-comfortable', 'আরাম লাগছে'],
+    ['fe-ashamed', 'লজ্জা লাগছে'],
+    ['fe-excited', 'এক্সাইটেড'],
+    ['fe-frustrated', 'মেজাজ খারাপ'],
+    ['fe-mixed-up', 'সব গুলিয়ে যাচ্ছে'],
+    ['fe-hungry', 'খিদে পেয়েছে'],
+    ['qt-yay', 'হুররে'],
+    ['qt-i-think-so', 'আমার তাই মনে হয়'],
+    ['pf-cousin', 'কাজিন'],
+    ['fm-tacos', 'টাকো'],
+    ['an-turtle', 'কচ্ছপ'],
+    ['ap-turtle', 'কচ্ছপ'],
+    ['as-turtle', 'সমুদ্রের কচ্ছপ'],
+    ['tf-bubbles', 'সাবানের বুদবুদ'],
+    ['tf-train-set', 'ট্রেন সেট'],
+    ['ac-whisper', 'ফিসফিস করা'],
+    ['ac-stir', 'চামচ দিয়ে নাড়া'],
+    ['ac-pat', 'আলতো চাপড় দেওয়া'],
+    ['ac-tiptoe', 'পা টিপে টিপে হাঁটা'],
+    ['ac-tip-toe', 'পা টিপে টিপে হাঁটা'],
+    ['ac-mop', 'ঘর মোছা'],
+    ['ac-tag', 'ছোঁয়াছুঁয়ি খেলা'],
+    ['ac-spin', 'বনবন করে ঘোরা'],
+    ['ac-take-a-bath', 'স্নান করা'],
+    ['hr-bath', 'স্নান করা'],
+    ['pp-grandma', 'দিদা'],
+    ['pp-aunt', 'মাসি'],
+    ['pp-uncle', 'কাকু'],
+    ['pp-cousin', 'কাজিন'],
+    ['dw-bitter', 'তেতো'],
+    ['dw-cool', 'কুল'],
+    ['dw-funny', 'হাসির'],
+    ['fs-cheese', 'চিজ'],
+    ['fd-bread', 'পাউরুটি'],
+    ['fd-stir-fry', 'স্টির ফ্রাই'],
+    ['fd-jello', 'জেলি'],
+    ['sw-crayons', 'মোম রং'],
+    ['sw-tape', 'সেলোটেপ'],
+    ['tf-sandbox', 'বালির বাক্স'],
+    ['tf-music', 'মিউজিক'],
+    ['tf-sprinkler', 'জল ছিটানোর যন্ত্র'],
+    ['co-rainbow', 'রামধনু'],
+    ['we-rainbow', 'রামধনু'],
+    ['we-lightning', 'বিদ্যুৎ চমকানো'],
+    ['tc-noon', 'দুপুর বারোটা'],
+    ['ti-weekend', 'উইকেন্ড'],
+  ] as [string, string][])('bn %s says "%s"', (id, text) => {
+    expect(getPhraseText(id, 'bn', '')).toBe(text);
+  });
+});
+
+describe('over-corrections undone after a second model family reviewed them', () => {
+  // Reviewers had changed these and a cross-family check (OpenAI Codex, blind) disagreed; each was verified in the table.
+  // Vietnamese On "Bật" pairs with Off "Tắt" (Off is the device-off sense in every language), so changing it to "Trên"
+  // broke the pair; Pie is the dessert (Japanese パイ, Spanish Pay, Russian Пирог): 馅饼 is a savoury stuffed pie, 派 is
+  // the pie word in Mainland and Taiwan Chinese and 批 in Hong Kong.
+  it.each([
+    ['vi', 'cw-on', 'Bật'],
+    ['vi', 'cw-above', 'Trên'],
+    ['zh-Hans', 'fd-pie', '派'],
+    ['zh-Hant', 'fd-pie', '派'],
+    ['zh-HK', 'fd-pie', '批'],
+  ] as [SupportedLanguage, string, string][])('%s %s says "%s"', (lang, id, text) => {
+    expect(getPhraseText(id, lang, '')).toBe(text);
+  });
+});
+
+describe('corrections from the gpt-6.1-sol cross-family review', () => {
+  // Taiwan says 義大利麵 for pasta (generated 意大利麵 is the Mainland/Hong Kong form); Hong Kong says 捉 for the tag game.
+  it.each([
+    ['zh-Hant', 'fd-pasta', '義大利麵'],
+    ['zh-HK', 'ac-tag', '捉人遊戲'],
+  ] as [SupportedLanguage, string, string][])('%s %s says "%s"', (lang, id, text) => {
+    expect(getPhraseText(id, lang, '')).toBe(text);
+  });
+});
+
+describe('why the Swahili Taco tile is a description', () => {
+  // "Tako" is Swahili for buttock and "Taco" is spoken the same way by a Swahili voice, so the spelling alone does not
+  // keep the wrong word out of the user's mouth (gpt-6.1-sol, blind review). A description of the food has no sound-alike.
+  it.each(['fd-taco', 'fm-tacos'])('sw %s is neither "Tako" nor "Taco"', (id) => {
+    expect(getPhraseText(id, 'sw', '').toLowerCase()).not.toMatch(/^(tako|taco)s?$/);
   });
 });
