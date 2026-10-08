@@ -30,14 +30,14 @@
   "dependencies": {
     "@datadog/browser-logs": "^7.2.0",
     "@datadog/browser-rum": "^7.2.0",
-    "@huggingface/transformers": "^3.1.0",
+    "@huggingface/transformers": "^4.3.1",
     "@mediapipe/tasks-vision": "^0.10.35",
     "@serwist/next": "^9.5.8",
     "@supabase/supabase-js": "^2.105.1",
     "es-hangul": "^2.3.8",
-    "katex": "^0.16.45",
+    "katex": "^0.18.2",
     "mathjs": "^15.2.0",
-    "next": "16.3.3",
+    "next": "16.4.0",
     "pdfjs-dist": "^6.2.108",
     "pyodide": "^0.29.4",
     "react": "19.2.4",
@@ -83,7 +83,7 @@
     "protobufjs": "^7.6.5",
     "ws": "^8.20.1",
     "brace-expansion": "^5.0.8",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "tar": "^7.5.22",
     "minimatch": "^10.2.6"
   }
