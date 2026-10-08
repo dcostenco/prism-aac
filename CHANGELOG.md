@@ -472,7 +472,7 @@ PrismAAC consumes `/api/v1/prism-aac/chat`. Routing logic lives entirely in the 
 | `services/bodyPoseService.ts` calibration | Adaptive expand/decay gated on identity-lock anchor; 0.01 / 0.001 rates with `[0,1]` clamps |
 | `store/messageStore.ts` `addToHistory` | `recordMessage(text)` for every authored message |
 
-Schema mirrored from `synalux-platform/portal/src/shared/adaptiveEngine.ts`. Drift checked by `training/sync_adaptive_engine.sh` in the prism-mcp repo.
+Schema mirrored from the server-side adaptive engine. Drift checked by `training/sync_adaptive_engine.sh` in the prism-mcp repo.
 </details>
 
 <details>

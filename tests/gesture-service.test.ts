@@ -921,7 +921,7 @@ describe('GestureDetector — conversation mode', () => {
   });
 });
 
-describe('classifyViseme8B — local Ollama gate (Fable review 2026-10-02)', () => {
+describe('classifyViseme8B — local Ollama gate', () => {
   const origLocation = window.location;
   afterEach(() => {
     Object.defineProperty(window, 'location', { configurable: true, value: origLocation });

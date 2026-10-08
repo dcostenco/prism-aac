@@ -168,7 +168,7 @@ describe('LocalAISettings — platform-aware states', () => {
   });
 });
 
-describe('LocalAISettings — revoked permission clears the opt-in (Fable review 2026-10-02)', () => {
+describe('LocalAISettings — revoked permission clears the opt-in', () => {
   it('permission-denied removes the flag so background services stop probing', async () => {
     const origLocation = window.location;
     const origUA = navigator.userAgent;
@@ -191,7 +191,7 @@ describe('LocalAISettings — revoked permission clears the opt-in (Fable review
   });
 });
 
-describe('LocalAISettings — adversarial review follow-ups (2026-10-02)', () => {
+describe('LocalAISettings — stale checks and a permission prompt that never answers', () => {
   const origLocation = window.location;
   const origUA = navigator.userAgent;
   const origPerms = (navigator as unknown as { permissions?: unknown }).permissions;
