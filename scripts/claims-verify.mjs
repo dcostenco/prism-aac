@@ -5,10 +5,14 @@
 import { webkit } from '@playwright/test';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const URL = 'https://prism-aac.vercel.app/prism-aac';
 const SYNALUX = 'https://synalux.ai/prism-aac';
-const PDF = '/Users/admin/Downloads/Vineland-3-Comprehensive-Report_80259322_1778166067638.pdf';
+// Local clinical-assessment PDF to upload (PRISM_AAC_CLINICAL_PDF=/path/to/file.pdf); the check is skipped when unset.
+const PDF = process.env.PRISM_AAC_CLINICAL_PDF || '';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const results = [];
 const log = (n, pass, evidence) => results.push({ n, pass, evidence });
@@ -83,7 +87,7 @@ log('#3 translateService no-English-leak guard ships', grep(/getPhraseText[^,]+t
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Bug #4: Vineland-3 PDF reader
+// Bug #4: clinical-assessment PDF reader
 // ─────────────────────────────────────────────────────────────────
 log('#4 PDF reader disableNormalization ships', grep(/disableNormalization/), 'chunk grep');
 {
@@ -106,10 +110,10 @@ log('#4 PDF reader disableNormalization ships', grep(/disableNormalization/), 'c
     await page.waitForTimeout(8000);
     const tiles = await page.evaluate(() => Array.from(document.querySelectorAll('button')).filter(b => /Page \d/.test(b.textContent||'')).slice(0,3).map(b => (b.parentElement?.textContent||b.textContent||'').slice(0,200)));
     const errors = tiles.filter(t => /could not be read/.test(t)).length;
-    log('#4 Vineland-3 extracts cleanly (no per-page errors)', tiles.length > 0 && errors === 0, `${tiles.length} tiles, ${errors} errors`);
+    log('#4 clinical PDF extracts cleanly (no per-page errors)', tiles.length > 0 && errors === 0, `${tiles.length} tiles, ${errors} errors`);
     await ctx.close();
   } else {
-    log('#4 Vineland-3 extracts cleanly', null, 'PDF file not present, skipping');
+    log('#4 clinical PDF extracts cleanly', null, 'PDF file not present, skipping');
   }
 }
 
@@ -162,9 +166,9 @@ log('#8 Cross-cutting decor row (Δ + ≈) ships', grep(/Δ/) && grep(/≈/), 'c
 // Bug #9: Workflow files committed
 // ─────────────────────────────────────────────────────────────────
 {
-  const v1 = fs.readdirSync('/Users/admin/prism-aac/tests/workflows').filter(f=>f.endsWith('.md')).length;
-  const v2 = fs.readdirSync('/Users/admin/prism-aac/tests/workflows/grade-8-12').filter(f=>f.endsWith('.md')).length;
-  const e2e = fs.readdirSync('/Users/admin/prism-aac/e2e/math-workflows').filter(f=>f.endsWith('.spec.ts')).length;
+  const v1 = fs.readdirSync(path.join(ROOT, 'tests/workflows')).filter(f=>f.endsWith('.md')).length;
+  const v2 = fs.readdirSync(path.join(ROOT, 'tests/workflows/grade-8-12')).filter(f=>f.endsWith('.md')).length;
+  const e2e = fs.readdirSync(path.join(ROOT, 'e2e/math-workflows')).filter(f=>f.endsWith('.spec.ts')).length;
   log('#9 v1 workflows present', v1 >= 12, `${v1} files`);
   log('#9 grade-8-12 workflows present', v2 >= 12, `${v2} files`);
   log('#9 Playwright spec files present', e2e >= 12, `${e2e} specs`);

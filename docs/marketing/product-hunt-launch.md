@@ -233,7 +233,7 @@ Press kit / screenshots: [LINK TO PRESS KIT]
 Thank you for your time,
 Dmitri Costenco
 Founder, Prism AAC | Board Certified Behavior Analyst
-dmitri@synalux.ai
+[your work email]
 
 ---
 

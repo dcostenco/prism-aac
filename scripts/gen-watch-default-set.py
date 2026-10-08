@@ -11,8 +11,9 @@ import json, re, sys
 from collections import defaultdict
 from pathlib import Path
 
-PHRASES_TS = Path('/Users/admin/prism-aac/constants/phrases.ts')
-ARASAAC_CACHE = Path('/Users/admin/prism-aac/scripts/arasaac-id-cache.json')
+ROOT = Path(__file__).resolve().parent.parent
+PHRASES_TS = ROOT / 'constants' / 'phrases.ts'
+ARASAAC_CACHE = ROOT / 'scripts' / 'arasaac-id-cache.json'
 
 TOP_CATS = {
     'core-pronouns':     ('person.2.fill',                    'I / You / We',     'person.fill'),

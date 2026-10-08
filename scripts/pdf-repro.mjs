@@ -1,7 +1,8 @@
 import { webkit } from '@playwright/test';
 import fs from 'node:fs';
 
-const PDF_PATH = '/Users/admin/Downloads/g.r.9_09_15_16_092016_0831PM.pdf';
+const PDF_PATH = process.env.PRISM_AAC_ALGEBRA_PDF || '';
+if (!PDF_PATH) { console.error('Set PRISM_AAC_ALGEBRA_PDF to a local PDF.'); process.exit(2); }
 const URL = process.env.URL || 'https://prism-aac.vercel.app/prism-aac';
 console.log('Testing PDF reader against', URL, 'with', PDF_PATH);
 console.log('PDF size:', fs.statSync(PDF_PATH).size);

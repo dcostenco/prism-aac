@@ -114,8 +114,8 @@ claims verified by `scripts/claims-verify.mjs`. **28 new test cases.**
 - **Clinical-PDF support.** Pass `disableNormalization: true` +
   `includeMarkedContent: false` to `getTextContent()`. pdfjs 5.x
   default normalization walk trips `for…of` over an undefined
-  collection on tagged-PDF marked content (Vineland-3, Connors,
-  BASC) — surfaces in Safari as "undefined is not a function (near
+  collection on tagged-PDF marked content (clinical assessment forms
+  such as rating scales) — surfaces in Safari as "undefined is not a function (near
   '…t of e…')" on every page.
 - **Per-phase error reporting** — `[Page N could not be read at
   <phase>: <msg> @ <stack-frame>]` so future regressions are
@@ -177,7 +177,7 @@ keyboard gap report. **Index at
 
 ### Discipline (skill / process)
 
-- `~/.agent/skills/tts-live-diagnostic-mandatory/` extended to a
+- A diagnostic skill extended to a
   cross-repo trace discipline with a **10-item Definition of Done**.
   Cross-repo bugs verified at BOTH ends; verification regex must
   match a known-positive (local source) before being trusted on

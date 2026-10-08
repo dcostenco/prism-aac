@@ -10,11 +10,11 @@
 # to capture exactly which step in the dictation flow fails.
 #
 # Prereqs:
-#   • Watch sim booted (UDID below)
+#   • Watch sim booted (UDID in SIM_UDID or PRISM_AAC_WATCH_SIM_UDID; see `xcrun simctl list devices`)
 #   • Simulator app foregrounded (window visible, accessibility granted)
 #   • PrismAACWatch installed AND launched (script does NOT re-install)
 set -u
-SIM_UDID="${SIM_UDID:-E28A277D-52BC-4BD2-9A2E-9287B382B6CB}"
+SIM_UDID="${SIM_UDID:-${PRISM_AAC_WATCH_SIM_UDID:?set PRISM_AAC_WATCH_SIM_UDID (or SIM_UDID) to the Watch simulator UDID}}"
 OUT_DIR="${OUT_DIR:-/tmp/watch-ai-chat-diag-$(date +%s)}"
 mkdir -p "$OUT_DIR"
 echo "[diag] output dir: $OUT_DIR"

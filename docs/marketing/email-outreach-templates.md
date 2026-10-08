@@ -322,7 +322,7 @@ Dmitri
 | Guideline | Rule |
 |---|---|
 | **Send time** | Tuesday-Thursday, 8:00-9:30 AM recipient's local time |
-| **From address** | dmitri@synalux.ai (professional domain, not gmail) |
+| **From address** | your professional-domain address (not gmail) |
 | **Signature** | Name, title, email, phone — no logos or social links in cold email |
 | **Tracking** | Use UTM parameters on all links: `?utm_source=email&utm_campaign=[TEMPLATE_ID]` |
 | **Unsubscribe** | Include opt-out line in footer for CAN-SPAM compliance |

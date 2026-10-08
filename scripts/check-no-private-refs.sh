@@ -23,6 +23,9 @@ PATTERNS=(
   'portal/(src|shared|_helpers|vitest|node_modules)'  # paths inside the private portal tree
   'synalux/(lib|src)/'                    # paths inside the private server source tree
   'training-corpus/'                      # the private training-corpus directory
+  '/Users/[A-Za-z0-9._-]+/'              # a personal macOS home path
+  'Vineland-3-Comprehensive'              # a clinical report's file name
+  'AuthKey_[A-Z0-9]{8,}'                  # an App Store Connect key file name
   'bcba-private'                          # internal engineering repo
   'prism-training'                        # private training repo
   'GT Independence'                       # FMS vendor — private commercial relationship

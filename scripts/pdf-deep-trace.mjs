@@ -9,9 +9,10 @@ import fs from 'node:fs';
 
 const URL = 'https://prism-aac.vercel.app/prism-aac';
 const PDFS = [
-  { label: 'vineland-3', path: '/Users/admin/Downloads/Vineland-3-Comprehensive-Report_80259322_1778166067638.pdf' },
-  { label: 'algebra', path: '/Users/admin/Downloads/g.r.9_09_15_16_092016_0831PM.pdf' },
-];
+  { label: 'clinical', path: process.env.PRISM_AAC_CLINICAL_PDF || '' },
+  { label: 'algebra', path: process.env.PRISM_AAC_ALGEBRA_PDF || '' },
+].filter((p) => p.path); // set PRISM_AAC_CLINICAL_PDF / PRISM_AAC_ALGEBRA_PDF to local PDFs
+if (PDFS.length === 0) { console.error('Set PRISM_AAC_CLINICAL_PDF and/or PRISM_AAC_ALGEBRA_PDF to local PDFs.'); process.exit(2); }
 
 const browser = await webkit.launch({ headless: true });
 

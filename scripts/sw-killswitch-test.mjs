@@ -16,7 +16,8 @@ import { webkit } from '@playwright/test';
 import fs from 'node:fs';
 
 const URL = 'https://synalux.ai/prism-aac';
-const PDF = '/Users/admin/Downloads/Vineland-3-Comprehensive-Report_80259322_1778166067638.pdf';
+const PDF = process.env.PRISM_AAC_CLINICAL_PDF || ''; // local clinical-assessment PDF to upload
+if (!PDF) { console.error('Set PRISM_AAC_CLINICAL_PDF to a local PDF to upload.'); process.exit(2); }
 
 const browser = await webkit.launch({ headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -71,7 +72,7 @@ console.log('stale cache cleared:', !post.cacheKeys.includes('stale-precache-fro
 console.log('marker matches expected version:', post.ls === '2026-05-08-pdf-fix-1' ? '✅' : '❌');
 
 // Step 3: verify PDF reader works after self-heal
-console.log('\n[diag] opening PDF reader and uploading Vineland-3...');
+console.log('\n[diag] opening PDF reader and uploading the clinical-assessment PDF...');
 try {
   await page.locator('button[aria-label*="PDF" i]').first().click({ timeout: 3000 });
 } catch {
