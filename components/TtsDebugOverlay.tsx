@@ -12,8 +12,6 @@
  *
  * Mounted high in the React tree (PrismApp). When inactive, returns
  * null so end users see nothing — no DOM cost, no listeners.
- *
- * Plan ref: synalux-platform/docs/CUSTOMER_FEEDBACK_ENHANCEMENTS.md § #1.
  */
 
 import { useEffect, useState } from 'react';

@@ -7,7 +7,6 @@
   "scripts": {
     "build": "next build --webpack",
     "check:collisions": "node scripts/check-translation-collisions.mjs",
-    "check:meaning": "node scripts/check-back-translation.mjs",
     "check:spoken": "node scripts/check-spoken-collisions.mjs",
     "dev": "next dev",
     "e2e": "playwright test",

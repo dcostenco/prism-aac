@@ -12,8 +12,9 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from collections import defaultdict
 
-PHRASES_TS = Path('/Users/admin/prism-aac/constants/phrases.ts')
-CACHE = Path('/Users/admin/prism-aac/scripts/arasaac-id-cache.json')
+ROOT = Path(__file__).resolve().parent.parent
+PHRASES_TS = ROOT / 'constants' / 'phrases.ts'
+CACHE = ROOT / 'scripts' / 'arasaac-id-cache.json'
 
 # Same logic as the iOS pictogramService.ts pickHeadWord — try full phrase
 # first, then fall back to a shorter "head word" if no match.

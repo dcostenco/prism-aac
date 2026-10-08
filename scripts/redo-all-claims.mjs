@@ -10,11 +10,15 @@
 import { webkit } from '@playwright/test';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const URL_VERCEL = 'https://prism-aac.vercel.app/prism-aac';
 const URL_SYNALUX = 'https://synalux.ai/prism-aac';
-const PDF_VINELAND = '/Users/admin/Downloads/Vineland-3-Comprehensive-Report_80259322_1778166067638.pdf';
-const PDF_ALGEBRA = '/Users/admin/Downloads/g.r.9_09_15_16_092016_0831PM.pdf';
+// Local PDFs to upload (PRISM_AAC_CLINICAL_PDF, PRISM_AAC_ALGEBRA_PDF); each check is skipped when its variable is unset.
+const PDF_CLINICAL = process.env.PRISM_AAC_CLINICAL_PDF || '';
+const PDF_ALGEBRA = process.env.PRISM_AAC_ALGEBRA_PDF || '';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const REALISTIC_STATE = {
   state: {
@@ -61,7 +65,7 @@ const chunks = await Promise.all(chunkPaths.map(async p => {
 const grep = (re) => chunks.some(c => re.test(c.body));
 
 // ── Confirm latest commit shipped to deploy ────────────────────────
-const localHead = execSync('git rev-parse --short HEAD', { cwd: '/Users/admin/prism-aac' }).toString().trim();
+const localHead = execSync('git rev-parse --short HEAD', { cwd: ROOT }).toString().trim();
 // Function names get mangled by webpack but STRING LITERALS survive.
 // The PDF_UNREADABLE_PREFIX value '⛔ ' and 'getPage failed' / 'could
 // not be read' phrasing inside extractOnePage stay untouched. Per
@@ -113,7 +117,7 @@ try {
   log('#3 RU→IT no-leak unit tests', 'fail', e.message?.slice(0,100));
 }
 
-// ── #4 PDF Reader — Vineland-3 (clinical) AND algebra (image-only) ──
+// ── #4 PDF Reader — clinical assessment AND algebra (image-only) ──
 async function pdfTest(ctx, page, pdfPath, label) {
   await page.evaluate(() => {
     const b = Array.from(document.querySelectorAll('button')).find(x => /PDF/i.test(x.getAttribute('aria-label') || '') || /📄/.test(x.textContent || ''));
@@ -131,18 +135,18 @@ async function pdfTest(ctx, page, pdfPath, label) {
   return { tiles, errored, empty, total: tiles.length };
 }
 
-if (fs.existsSync(PDF_VINELAND)) {
+if (fs.existsSync(PDF_CLINICAL)) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   await seedState(ctx, 'en', 'en');
   const page = await ctx.newPage();
   await page.goto(URL_VERCEL, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 20000 });
   await page.waitForTimeout(800);
-  const r = await pdfTest(ctx, page, PDF_VINELAND, 'vineland');
-  log('#4 Vineland-3 extracts (no per-page errors)', r.total > 0 && r.errored === 0 ? 'pass' : 'fail', `${r.total} tiles, ${r.errored} errors, ${r.empty} empty/image-only`);
+  const r = await pdfTest(ctx, page, PDF_CLINICAL, 'clinical');
+  log('#4 clinical PDF extracts (no per-page errors)', r.total > 0 && r.errored === 0 ? 'pass' : 'fail', `${r.total} tiles, ${r.errored} errors, ${r.empty} empty/image-only`);
   await ctx.close();
 } else {
-  log('#4 Vineland-3 extracts', 'skip', 'PDF not present');
+  log('#4 clinical PDF extracts', 'skip', 'PDF not present');
 }
 
 if (fs.existsSync(PDF_ALGEBRA)) {
@@ -216,9 +220,9 @@ log('#8 System.out.println idiom', grep(/System\.out\.println/) ? 'pass' : 'fail
 
 // ── #9 Workflow files ──────────────────────────────────────────────
 {
-  const v1 = fs.readdirSync('/Users/admin/prism-aac/tests/workflows').filter(f=>f.endsWith('.md')).length;
-  const v2 = fs.readdirSync('/Users/admin/prism-aac/tests/workflows/grade-8-12').filter(f=>f.endsWith('.md')).length;
-  const e2e = fs.readdirSync('/Users/admin/prism-aac/e2e/math-workflows').filter(f=>f.endsWith('.spec.ts')).length;
+  const v1 = fs.readdirSync(path.join(ROOT, 'tests/workflows')).filter(f=>f.endsWith('.md')).length;
+  const v2 = fs.readdirSync(path.join(ROOT, 'tests/workflows/grade-8-12')).filter(f=>f.endsWith('.md')).length;
+  const e2e = fs.readdirSync(path.join(ROOT, 'e2e/math-workflows')).filter(f=>f.endsWith('.spec.ts')).length;
   log('#9 workflow files present', v1 >= 12 && v2 >= 12 && e2e >= 12 ? 'pass' : 'fail', `v1=${v1}, grade-8-12=${v2}, e2e=${e2e}`);
 }
 
@@ -250,7 +254,7 @@ log('#11 openCategories handles category-detail (chunk grep)', grep(/category-de
 {
   // Direct unit-style via state inspection
   try {
-    const out = execSync('cd /Users/admin/prism-aac && npx vitest run tests/uiStore-openCategories.test.ts 2>&1', { encoding: 'utf8' });
+    const out = execSync('npx vitest run tests/uiStore-openCategories.test.ts 2>&1', { encoding: 'utf8', cwd: ROOT });
     const pass = /Tests\s+\d+ passed/.test(out) && !/failed/i.test(out);
     log('#11 openCategories navigation tests', pass ? 'pass' : 'fail', out.split('\n').filter(l=>/Tests/.test(l))[0] || '?');
   } catch (e) {

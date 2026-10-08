@@ -22,7 +22,7 @@ KEY_ID="${ASC_KEY_ID:?ASC_KEY_ID not set}"
 KEY_PATH="${ASC_KEY_PATH:-$HOME/private_keys/AuthKey_${KEY_ID}.p8}"
 
 # Distribution/upload key — Admin level required for cloud signing
-ADMIN_KEY_ID="${ASC_ADMIN_KEY_ID:-P4BW79M9KU}"
+ADMIN_KEY_ID="${ASC_ADMIN_KEY_ID:?ASC_ADMIN_KEY_ID not set}"
 ADMIN_KEY_PATH="$HOME/private_keys/AuthKey_${ADMIN_KEY_ID}.p8"
 if [ ! -f "$ADMIN_KEY_PATH" ]; then
   echo "ERROR: Admin key not found at $ADMIN_KEY_PATH"

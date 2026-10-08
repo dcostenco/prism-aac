@@ -48,7 +48,7 @@ export interface TtsPlaybackResult {
  * 'friendly' default so the caller can opt into server-side auto-styling
  * via prism-coder instead of pinning an explicit style.
  *
- * Style enum on the portal side (synalux/lib/tts-inworld.ts):
+ * Style enum on the portal side:
  *   neutral | warm | cheerful | urgent | whisper | calm | clear
  */
 export function toneToInworldStyle(tone: ToneStyle): string | null {
@@ -78,8 +78,8 @@ export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }>
   { id: 'angry', label: 'Urgent', icon: '😤' },
 ];
 
-// SSML is now assembled server-side by buildAzureSSML() in
-// portal/src/app/api/v1/tts/public/_helpers.ts — the client sends
+// SSML is now assembled server-side by buildAzureSSML() in the Synalux
+// server's public TTS route — the client sends
 // {text, lang, rate, volume} and the portal returns audio directly.
 // AZURE_VOICES, escapeXml, and buildSSML have been deleted (May 2026).
 
@@ -773,8 +773,8 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       if (audioBytes) {
         // Rate is fully encoded in the SSML prosody. computeNormalizedRate()
         // converts the stored slider value (× 2, clamped 0.5–1.4) and sends
-        // it to the portal; buildAzureSSML() in portal/src/app/api/v1/tts/
-        // public/_helpers.ts assembles the SSML prosody attribute server-side.
+        // it to the portal; buildAzureSSML() on the server assembles the
+        // SSML prosody attribute.
         // Azure applies it natively; the portal converts it to an Inworld
         // steering hint via rateToSteering. Do NOT apply an additional Web
         // Audio playbackRate — that caused double-slow in translation mode:

@@ -1,7 +1,7 @@
 # Algebra — Grade 9
 
 Real-classroom word problems. Solution style mirrors the reference
-PDF `g.r.9_09_15_16_092016_0831PM.pdf`: every transformation on its
+worksheet: every transformation on its
 own line, final answer with units / labeled value.
 
 Math panel categories used: `main` (digits + - × ÷ = .), `adv-math`

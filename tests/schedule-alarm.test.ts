@@ -135,7 +135,7 @@ describe('schedule alarm — interval tuning', () => {
 });
 
 /**
- * Multimodal alarm escalation (CUSTOMER_FEEDBACK_ENHANCEMENTS.md #3).
+ * Multimodal alarm escalation.
  *
  * Replicates the *new* effect's body 1:1: every cycle fires three side
  * effects in sequence — chime, haptic vibration, visual flash. We test

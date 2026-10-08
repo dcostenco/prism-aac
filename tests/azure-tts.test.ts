@@ -512,7 +512,7 @@ describe('toneToInworldStyle — AAC tone → Inworld TTS-2 style', () => {
   });
 
   it('every mapped style is a value the server-side route accepts', async () => {
-    // Must stay in sync with VALID_STYLES in synalux/src/lib/prism-steering.ts
+    // Must stay in sync with VALID_STYLES on the server
     const VALID = new Set(['neutral', 'warm', 'cheerful', 'urgent', 'whisper', 'calm', 'clear']);
     const { toneToInworldStyle } = await import('@/services/azureTTS');
     const tones = ['friendly', 'cheerful', 'calm', 'serious', 'excited', 'hopeful', 'empathetic', 'sad', 'angry'] as const;

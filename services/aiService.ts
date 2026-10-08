@@ -404,7 +404,7 @@ async function callSynalux(
   let res: Response;
   try {
     // Route via /api/v1/prism-aac/chat — the dedicated AAC chat
-    // endpoint (synalux-platform commits 8607d33c → 05ef1d57).
+    // endpoint (server commits 8607d33c → 05ef1d57).
     // Public route — no session cookie required (AAC must work for every child, including those without a caregiver account). Rate-limited per IP on the server.
     // Tier-routed to local prism-coder:9b → 27b → Claude Sonnet / Gemini.
     //
@@ -662,7 +662,7 @@ export function stripModelControlTokens(text: string): string {
 }
 
 // ── Client-side L1 safety (offline path — no portal) ──
-// Mirrors server-side safety-patterns.ts. Both input and output checked
+// Mirrors the server-side safety patterns. Both input and output checked
 // so the offline child path has the same L1 protection as the cloud path.
 
 const CRISIS_RESPONSE_CLIENT = "I'm concerned about your safety. Please tell a trusted adult, or call or text 988 (Suicide & Crisis Lifeline) right now — available 24/7. If in immediate danger, call 911. International: findahelpline.com. You are not alone.";

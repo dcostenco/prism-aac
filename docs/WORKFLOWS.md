@@ -13,8 +13,8 @@ having to wait for a user to report it.
 
 ### Layer 1 — generic step-by-step (`tests/workflows/`)
 
-12 markdowns, 4–6 problems each, modeled directly on the algebra reference
-PDF (`/Users/admin/Downloads/g.r.9_09_15_16_092016_0831PM.pdf`). Each
+12 markdowns, 4–6 problems each, modeled directly on a grade 9 algebra
+reference worksheet. Each
 problem is a numbered transformation chain with the final answer on its
 own line. The HTML comment at the top declares the keys the workflow needs
 so test authors can verify keyboard coverage:

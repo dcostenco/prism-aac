@@ -34,7 +34,7 @@ Production app uses Inworld TTS-2 (natural voice) as Tier 1, with OS Web Speech 
 ## Regeneration
 
 ```bash
-cd ~/prism-aac
+cd prism-aac
 node record_full.cjs          # Record raw screen capture
 python3 /tmp/video_script.py  # Add text overlays + concat
 ```

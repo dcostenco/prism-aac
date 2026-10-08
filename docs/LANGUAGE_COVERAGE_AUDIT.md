@@ -29,7 +29,7 @@ language** (1512 − (1261 − 40)).
 | Grammar rules | `constants/languageRules.ts` | 25 | 28 |
 | Keyboard layouts | `constants/keyboardLayouts.ts` | 25 | 28 (+ Ge'ez vowel-order model) |
 | Prediction seeds | `constants/predictionSeeds/*.ts` | 14 full, 9 stubs, 1 partial | see below |
-| TTS voices | `portal/src/shared/voice-catalog.ts` | 25 langs | 28 (am/sw/bn verified live, see Finding 4) |
+| TTS voices | server-side voice catalog | 25 langs | 28 (am/sw/bn verified live, see Finding 4) |
 
 ## Finding 1 — nine corpus sections are empty in every single locale
 
@@ -84,7 +84,7 @@ corpus that is still missing its safety sections.
 
 ## Finding 2b — the seed generator in the repo is NOT the one that built the seeds
 
-`training-corpus/build_prediction_seeds.py` produces **1500** unigrams per
+`build_prediction_seeds.py` produces **1500** unigrams per
 locale from the corpus alone. The committed seeds for the 14 mature locales
 contain **19,940** (en), of which only ~5,000 are wordfreq top-5000 and ~15,000
 come from a vocabulary-expansion step present in neither that script nor
@@ -105,7 +105,7 @@ downgraded.
 
 **Follow-up needed:** recover the real generator, or reimplement the expansion
 step, before regenerating any mature seed. Until then
-`training-corpus/build_prediction_seeds.py` should be treated as safe only for
+`build_prediction_seeds.py` should be treated as safe only for
 locales that have no corpus-derived seed yet. Two fixes were made to it here —
 Ethiopic/danda punctuation stripping, and a guard so a locale with a seed but
 no corpus is no longer silently dropped from `SUPPORTED_SEED_LANGS`.
@@ -187,7 +187,7 @@ Noto Sans Ethiopic / Noto Sans Bengali webfont scoped to those locales.
 
 A model review pass (one agent per language, 424 highest-stakes strings each:
 safety/pain/help/refusal/body vocabulary, core words, UI chrome) was run over
-the machine translations. Results in `i18n/review/`:
+the machine translations. The detailed findings are kept outside this repository. Summary:
 
 | Language | flagged | critical | high |
 | --- | --- | --- | --- |
@@ -324,92 +324,9 @@ signal in itself:
 
 ### Checking MEANING as well as sound
 
-The acoustic check proves two tiles sound different. It cannot prove they mean
-the right thing. `npm run check:meaning` closes that gap by showing a model
-ONLY the foreign word — never the tile id, never the expected answer, with the
-words shuffled so neighbours cannot cue each other — and asking which English
-body part it names. Two failure classes:
-
-- **MISMATCH** — the tile speaks a word for a different body part
-- **SEMANTIC COLLISION** — two tiles land on the same concept, so the user
-  still cannot say which part hurts even though the words sound different
-
-This found a defect class the other checks were blind to. **All 14 English body
-words that appear on both tile sets disagreed in at least one language**, and
-those disagreements were where the bugs hid:
-
-| Lang | Was | Now | What it actually was |
-| --- | --- | --- | --- |
-| sw | Knee "Lutagamba" / "Lutagano" | **Goti** | neither was a Swahili word |
-| sw | Knuckle "Kipigo cha kidole" | **Kifundo cha kidole** | read back as "fingerprint" — kipigo means a beating |
-| sw | Wrist "Kipundo cha mkono" | **Kifundo cha mkono** | typo |
-| sw | Elbow "Kiwiko" | **Kisugudi** | read back as wrist, collided with the Wrist tile |
-| tl | Neck "Leig" | **Leeg** | letter-transposition typo |
-| pl | Arm and Shoulder both "Ramię" | **Ręka / Bark** | outright collision |
-| de | Knuckle and Ankle both "Knöchel" | **Fingerknöchel / Fußknöchel** | German uses one word for both |
-| bn | Knee "হাটু" | **হাঁটু** | missing candrabindu |
-| bn | Face "মুখ" | **চেহারা** | same word as Mouth |
-| bn | Neck / Toe | precomposed forms | Unicode normalization: precomposed ড়/য় vs decomposed base+nukta — the two tiles differed only in bytes |
-| hi | Leg "पैरों" | **टांग** | plural oblique ("feet"), not a singular leg |
-| am | Bottom "ቀንደብ" | **መቀመጫ** | read back as "eyebrow" |
-
-**One of these was a regression I introduced.** Setting Amharic Arm = ክንድ
-collided with Elbow, which was already ክንድ. Fixed to ክርን. Two checks in this
-suite were green while it was broken — distinctness only covered the pairs in
-the contract, and Arm/Elbow was not one of them.
-
-`tests/body-part-consistency.test.ts` now enforces the general rule (one English
-word, one translation) so this class cannot recur silently. That test is what
-would have caught `hbp-foot`, which stayed identical to `hbp-leg` in three
-languages while `hb-foot` — the same English word — was being fixed in ten.
-
-Two adjudications were **overridden** because they optimised consistency
-without the distinctness constraint: `ja` Foot → あし and `bn` Foot → পা would
-each have restored a collision with Leg that had just been fixed. `ja` Teeth was
-also kept as 歯 rather than kana, since bare は is the topic particle and
-ambiguous as a tile label.
-
-#### Accepted, not defects
-
-- **Hand reads back as "palm"** in ru/uk/bg/sw. Deliberate: those languages use
-  one word for hand+arm, so the Hand tile was moved to the palm-word to make the
-  pair distinguishable. The design working, not a fault.
-- **Hip** reads back as "waist" or "thigh" in he/bg/am/bn, and **hip ≈ bottom**
-  in ja/ko. Several languages have no distinct everyday word for the hip.
-  Forcing one would produce a word no child would say.
-- **am Leg reads as "foot"** — እግር genuinely covers both; the Foot tile is the
-  marked የእግር መዳፍ, so the pair is still distinct.
-
-#### A blind spot in the checks themselves
-
-Found by reviewing the tests rather than the data. Both the distinctness and
-consistency tests decided "is this tile translated?" by comparing the returned
-text to the English source. That proxy is wrong: German and Dutch legitimately
-render Hand as "Hand" and Arm as "Arm", so those pairs were classed as
-untranslated and **skipped entirely** — five pair/language combinations were
-never checked at all. A regression setting German Arm to "Hand" would have
-passed both tests.
-
-Fixed with `hasPhraseTranslation()`, which asks whether an entry exists rather
-than inferring it from the text. It also has to test presence rather than
-truthiness, because a translation may be a deliberate empty string (`cw-to` is
-'' for ru/uk, which have no infinitive particle).
-
-Verified by mutation: injecting `de hb-arm = "Hand"` now fails with
-`de: both speak "Hand"`, where before it passed silently.
-
-`hbp-foot`/`hbp-leg` was also added to the contract explicitly. It had been
-covered only transitively — consistency pins `hbp-foot` to `hb-foot`, and
-`hb-foot`/`hbp-leg` is enforced — which is precisely the chain that looked
-intact while that pair was broken in three languages.
-
-#### Limits of this check
-
-It queries the same model family that produced most of these translations, so
-for those, agreement is partly self-confirming — it catches gross errors and
-word-sense slips, not shared blind spots. Answers also vary slightly between
-runs, so a single clean run is not proof. It is genuinely independent only for
-words chosen by a different reviewer, which is the set it was built to settle.
+The acoustic check proves two tiles sound different. It cannot prove they mean the right thing,
+so meaning is checked by a separate model-assisted review whose method and results are kept outside this repository.
+Its findings are advisory only: they never replace a native-speaker pass.
 
 ### Word choices that still need a native speaker
 

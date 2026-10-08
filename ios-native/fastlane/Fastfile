@@ -4,9 +4,11 @@ platform :ios do
   lane :fix_my_app do
     require 'spaceship'
     token = Spaceship::ConnectAPI::Token.create(
-      key_id: "P4BW79M9KU",
-      issuer_id: "7dca478c-0430-4412-be32-17c5bdbcebd5",
-      filepath: File.expand_path("~/private_keys/AuthKey_P4BW79M9KU.p8"),
+      # Admin-level App Store Connect API key, from the environment: ASC_ADMIN_KEY_ID and ASC_ISSUER_ID.
+      # The .p8 is ~/private_keys/AuthKey_<id>.p8 unless ASC_ADMIN_KEY_PATH is set.
+      key_id: ENV.fetch("ASC_ADMIN_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      filepath: File.expand_path(ENV.fetch("ASC_ADMIN_KEY_PATH") { "~/private_keys/AuthKey_#{ENV.fetch('ASC_ADMIN_KEY_ID')}.p8" }),
       in_house: false
     )
     Spaceship::ConnectAPI.token = token
@@ -45,8 +47,8 @@ platform :ios do
       s.state == "REJECTED" || s.state == "UNRESOLVED_ISSUES" || s.state == "READY_FOR_REVIEW"
     end
     
-    # Try to find the specific one by ID if we got the error earlier
-    draft = submissions.find { |s| s.id == "d8c4abe0-242e-4f86-a4fd-738e478d41f9" } || draft
+    # Try to find the specific one by ID (ASC_REVIEW_SUBMISSION_ID) if we got the error earlier
+    draft = submissions.find { |s| s.id == ENV["ASC_REVIEW_SUBMISSION_ID"] } || draft
 
     if draft
       puts "Found existing submission #{draft.id} in state #{draft.state}. Submitting..."

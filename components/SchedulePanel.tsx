@@ -343,7 +343,7 @@ export default function SchedulePanel() {
   // ALARM_MAX_TICKS times (60s) before giving up so we never strand a
   // running tab beeping forever.
   //
-  // Multimodal escalation (CUSTOMER_FEEDBACK_ENHANCEMENTS.md #3):
+  // Multimodal escalation:
   //   - Auditory chime (existing) — ring every 2s
   //   - Haptic vibration via navigator.vibrate() — falls back silently
   //     on desktop / unsupported devices. iOS PWA + Android both honor.
@@ -745,8 +745,7 @@ export default function SchedulePanel() {
           first-armed / then-armed alarm cycle. Honors prefers-reduced-
           motion: with reduced motion, we render a static colored border
           instead of the flash so the visual cue is still present but
-          doesn't trigger photosensitivity reactions.
-          See CUSTOMER_FEEDBACK_ENHANCEMENTS.md #3. */}
+          doesn't trigger photosensitivity reactions. */}
       {alarmFlash && <AlarmFlashOverlay />}
     </PanelShell>
   );

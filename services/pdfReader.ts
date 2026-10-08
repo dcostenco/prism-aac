@@ -149,7 +149,7 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
   // (cdn.jsdelivr.net/pdfjs-dist/...pdf.worker.min.mjs) failed to
   // load OR fails on every getTextContent call — Safari + a stale SW
   // intercepting the worker fetch produced this exact pattern in the
-  // May 2026 user report (every page of Vineland-3 unreadable, even
+  // May 2026 user report (every page of a clinical assessment PDF unreadable, even
   // though pdfjs's main module loaded fine). Re-running getDocument
   // with `disableWorker: true` puts the parser on the main thread,
   // independent of the cross-origin worker entirely.

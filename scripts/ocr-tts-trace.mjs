@@ -9,7 +9,8 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 
 const URL = 'https://prism-aac.vercel.app/prism-aac';
-const PDF = '/Users/admin/Downloads/g.r.9_09_15_16_092016_0831PM.pdf';
+const PDF = process.env.PRISM_AAC_ALGEBRA_PDF || '';
+if (!PDF) { console.error('Set PRISM_AAC_ALGEBRA_PDF to a local PDF.'); process.exit(2); }
 
 const browser = await webkit.launch({ headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });

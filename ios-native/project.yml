@@ -224,7 +224,6 @@ schemes:
         PrismAAC: all
     run:
       config: Debug
-      simulatorId: 7B34EA17-9CDA-4403-BE92-CF1DAD6D5E1F  # iPhone 17 Pro
     test:
       config: Debug
       targets:

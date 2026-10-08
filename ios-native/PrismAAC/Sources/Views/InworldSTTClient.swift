@@ -2,7 +2,7 @@
  * InworldSTTClient — iOS WebSocket client for Inworld STT-1
  * ==========================================================
  * Streaming speech-to-text via bidirectional WebSocket (URLSessionWebSocketTask).
- * Mirrors the TypeScript InworldSTTClient in @synalux/shared-ui and the
+ * Mirrors the TypeScript InworldSTTClient in the Synalux shared UI package and the
  * Twilio ConversationRelay pattern from POS phone AI chat.
  *
  * Protocol:
