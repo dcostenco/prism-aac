@@ -306,9 +306,11 @@ describe('Phrase translations — script purity for non-Latin languages', () => 
 
     it(`${lang}: translations actually use ${spec.label} script`, () => {
       // Guards the inverse failure: a "translation" that is really English.
+      // A text with no letters at all is not English either: "-" marks a word the language has no standalone form for
+      // (the "The" tile in Amharic, as in Russian, Japanese, Hindi and the other article-less languages).
       const notNative = DEFAULT_PHRASES.filter((p) => {
         const v = getPhraseText(p.id, lang as never, p.text);
-        return v && v !== p.text && !spec.native.test(v);
+        return v && v !== p.text && /\p{L}/u.test(v) && !spec.native.test(v);
       }).map((p) => p.id);
       expect(notNative, `${notNative.length} entries with no ${spec.label} characters`).toEqual([]);
     });

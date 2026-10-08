@@ -35,8 +35,8 @@
       "zh-HK": "他們"
     },
     "cw-me": {
-      "zh-Hant": "我(賓)",
-      "zh-HK": "我(賓)"
+      "zh-Hant": "我",
+      "zh-HK": "我"
     },
     "cw-my": {
       "zh-Hant": "我的",
@@ -395,8 +395,8 @@
       "zh-HK": "咽"
     },
     "cw-spit": {
-      "zh-Hant": "吐",
-      "zh-HK": "吐"
+      "zh-Hant": "吐口水",
+      "zh-HK": "吐口水"
     },
     "cw-talk": {
       "zh-Hant": "說話",
@@ -1091,8 +1091,8 @@
       "zh-HK": "例如"
     },
     "cw-versus": {
-      "zh-Hant": "對比",
-      "zh-HK": "對比"
+      "zh-Hant": "對陣",
+      "zh-HK": "對陣"
     },
     "cw-since-then": {
       "zh-Hant": "從那以後",
@@ -1219,8 +1219,8 @@
       "zh-HK": "我沒事"
     },
     "help-i-am-not-okay": {
-      "zh-Hant": "我有事",
-      "zh-HK": "我有事"
+      "zh-Hant": "我不太好",
+      "zh-HK": "我不太好"
     },
     "help-i-am-ready": {
       "zh-Hant": "我準備好了",
@@ -1363,8 +1363,8 @@
       "zh-HK": "教教我"
     },
     "help-i-do-not-feel-good": {
-      "zh-Hant": "我舒服",
-      "zh-HK": "我舒服"
+      "zh-Hant": "我不舒服",
+      "zh-HK": "我不舒服"
     },
     "help-my-head-hurts": {
       "zh-Hant": "我頭疼",
@@ -1499,8 +1499,8 @@
       "zh-HK": "再見"
     },
     "qt-see-you-soon": {
-      "zh-Hant": "很快見",
-      "zh-HK": "很快見"
+      "zh-Hant": "回頭見",
+      "zh-HK": "回頭見"
     },
     "qt-see-you-tomorrow": {
       "zh-Hant": "明天見",
@@ -1759,8 +1759,8 @@
       "zh-HK": "我愛你"
     },
     "fe-hurt": {
-      "zh-Hant": "我受傷了",
-      "zh-HK": "我受傷了"
+      "zh-Hant": "我很傷心",
+      "zh-HK": "我很傷心"
     },
     "fe-calm": {
       "zh-Hant": "平靜",
@@ -2307,8 +2307,8 @@
       "zh-HK": "哼歌"
     },
     "ac-roll": {
-      "zh-Hant": "滾",
-      "zh-HK": "滾"
+      "zh-Hant": "打滾",
+      "zh-HK": "打滾"
     },
     "ac-slide": {
       "zh-Hant": "滑",
@@ -2491,8 +2491,8 @@
       "zh-HK": "尋"
     },
     "ac-tag": {
-      "zh-Hant": "抓人",
-      "zh-HK": "抓人"
+      "zh-Hant": "抓人遊戲",
+      "zh-HK": "抓人遊戲"
     },
     "ac-race": {
       "zh-Hant": "比賽",
@@ -2543,8 +2543,8 @@
       "zh-HK": "扔"
     },
     "ac-roll-it": {
-      "zh-Hant": "滾它",
-      "zh-HK": "滾它"
+      "zh-Hant": "讓它滾動",
+      "zh-HK": "讓它滾動"
     },
     "dw-big": {
       "zh-Hant": "大",
@@ -3091,8 +3091,8 @@
       "zh-HK": "冰沙"
     },
     "fd-pasta": {
-      "zh-Hant": "麵食",
-      "zh-HK": "麪食"
+      "zh-Hant": "意大利麵",
+      "zh-HK": "意大利麪"
     },
     "fd-noodles": {
       "zh-Hant": "麵條",
@@ -3111,8 +3111,8 @@
       "zh-HK": "沙拉"
     },
     "fd-wrap": {
-      "zh-Hant": "卷",
-      "zh-HK": "卷"
+      "zh-Hant": "捲餅",
+      "zh-HK": "捲餅"
     },
     "fd-hamburger": {
       "zh-Hant": "漢堡",
@@ -3123,8 +3123,8 @@
       "zh-HK": "熱狗"
     },
     "fd-taco": {
-      "zh-Hant": "玉米餅",
-      "zh-HK": "玉米餅"
+      "zh-Hant": "塔可",
+      "zh-HK": "塔可"
     },
     "fd-burrito": {
       "zh-Hant": "捲餅",
@@ -3675,8 +3675,8 @@
       "zh-HK": "科學"
     },
     "sw-social-studies": {
-      "zh-Hant": "社會學",
-      "zh-HK": "社會學"
+      "zh-Hant": "社會課",
+      "zh-HK": "社會課"
     },
     "sw-history": {
       "zh-Hant": "歷史",
@@ -3883,8 +3883,8 @@
       "zh-HK": "肚子"
     },
     "hb-hip": {
-      "zh-Hant": "臀部",
-      "zh-HK": "臀部"
+      "zh-Hant": "髖部",
+      "zh-HK": "髖部"
     },
     "hb-bottom": {
       "zh-Hant": "屁股",
@@ -4147,8 +4147,8 @@
       "zh-HK": "短時間"
     },
     "ti-a-while-ago": {
-      "zh-Hant": "一會兒前",
-      "zh-HK": "一會兒前"
+      "zh-Hant": "不久前",
+      "zh-HK": "不久前"
     },
     "ti-weekend": {
       "zh-Hant": "週末",
@@ -4771,8 +4771,8 @@
       "zh-HK": "外面涼快"
     },
     "we-freezing": {
-      "zh-Hant": "冰凍",
-      "zh-HK": "冰凍"
+      "zh-Hant": "非常冷",
+      "zh-HK": "非常冷"
     },
     "we-wear-a-coat": {
       "zh-Hant": "穿大衣",
@@ -4835,8 +4835,8 @@
       "zh-HK": "毛絨玩具"
     },
     "tf-action-figure": {
-      "zh-Hant": "動作玩偶",
-      "zh-HK": "動作玩偶"
+      "zh-Hant": "可動人偶",
+      "zh-HK": "可動人偶"
     },
     "tf-lego": {
       "zh-Hant": "樂高",
@@ -4903,8 +4903,8 @@
       "zh-HK": "晚上"
     },
     "tc-night": {
-      "zh-Hant": "半夜",
-      "zh-HK": "半夜"
+      "zh-Hant": "晚上",
+      "zh-HK": "晚上"
     },
     "tc-noon": {
       "zh-Hant": "中午",
@@ -5271,8 +5271,8 @@
       "zh-HK": "香蕉"
     },
     "ff-orange": {
-      "zh-Hant": "橘子",
-      "zh-HK": "橘子"
+      "zh-Hant": "橙子",
+      "zh-HK": "橙子"
     },
     "ff-grapes": {
       "zh-Hant": "葡萄",
@@ -5399,8 +5399,8 @@
       "zh-HK": "爆米花"
     },
     "fs-pretzels": {
-      "zh-Hant": "椒香捲餅",
-      "zh-HK": "椒香捲餅"
+      "zh-Hant": "椒鹽捲餅",
+      "zh-HK": "椒鹽捲餅"
     },
     "fs-nuts": {
       "zh-Hant": "堅果",
@@ -5679,8 +5679,8 @@
       "zh-HK": "冰袋"
     },
     "hm-inhaler": {
-      "zh-Hant": "吸入劑",
-      "zh-HK": "吸入劑"
+      "zh-Hant": "吸入器",
+      "zh-HK": "吸入器"
     },
     "hm-vitamin": {
       "zh-Hant": "維他命",
@@ -6079,8 +6079,8 @@
       "zh-HK": "碗"
     },
     "chip-b3": {
-      "zh-Hant": "玉米餅",
-      "zh-HK": "玉米餅"
+      "zh-Hant": "塔可",
+      "zh-HK": "塔可"
     },
     "chip-b4": {
       "zh-Hant": "芝士玉米餅",
