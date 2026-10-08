@@ -3,7 +3,8 @@
  * unreviewed tiles from the board and search, but their machine translations still fed the prediction bar: the
  * phrase seed was built from every tile. Swahili "shoroba" (a corridor, the text of the Sparrow tile) and "medu" (not
  * a word, the text of the Socks tile) were offered while typing. A hidden tile's text now stays out of predictions
- * until a caregiver turns on "show unreviewed words".
+ * until a caregiver turns on "show unreviewed words". Those two texts were later corrected (Shomoro, Soksi), so the
+ * tests below use the current texts of the same hidden tiles.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -23,12 +24,12 @@ describe('hidden tiles do not reach the prediction bar', () => {
     expect(isPhraseVisibleForLanguage('cl-socks', 'sw', false)).toBe(false);
   });
 
-  it.each([['shor', 'shoroba'], ['med', 'medu']])('Swahili "%s" does not offer "%s" by default', (prefix, word) => {
+  it.each([['shom', 'shomoro'], ['soks', 'soksi']])('Swahili "%s" does not offer "%s" by default', (prefix, word) => {
     useSettingsStore.setState({ showUnreviewedVocabulary: false });
     expect(predict(prefix)).not.toContain(word);
   });
 
-  it.each([['shor', 'shoroba'], ['med', 'medu']])('with "show unreviewed words" on, "%s" offers "%s" again', (prefix, word) => {
+  it.each([['shom', 'shomoro'], ['soks', 'soksi']])('with "show unreviewed words" on, "%s" offers "%s" again', (prefix, word) => {
     useSettingsStore.setState({ showUnreviewedVocabulary: true });
     expect(predict(prefix)).toContain(word);
   });
