@@ -151,7 +151,7 @@ The L1 gate runs deterministic regex checks on **both input and output** across 
 **What it does NOT catch (by design):** generic clinical terms ("dose of risperidone", "milligrams", "suicide prevention training"). These appear in legitimate BCBA/medical notes and blocking them would harm the clinical users this product serves. The on-device 2B model's own alignment is not relied upon for safety (it scores ~59% on general BFCL V4). L1 is the primary deterministic safety mechanism.
 
 **Known L1 limitations:**
-- **English-only patterns.** L1 crisis/medical regex is currently English only. Non-English users (the app supports 25 languages) are protected only by the model's own safety training (L2). Localized crisis patterns are a planned addition.
+- **Uneven language coverage.** Crisis phrases are matched in English and in other languages, and the sets differ by path. The web AI chat gate (`services/crisisSafetyFilter.ts`) also matches Spanish, French, Portuguese, Romanian, Russian, Ukrainian, Arabic, German, Japanese, Korean, Chinese and Bulgarian phrases. The offline client-side check (`checkInputSafetyClient`) also matches Spanish, French, Portuguese, Russian, Arabic, German and Ukrainian. The iOS gate has its own built-in list (English, Spanish, French, Romanian, Russian, Arabic and Hebrew) and adds keywords from the server at launch when it can reach it. Medical-dosing patterns are English only on every client path. A supported language without patterns on a given path is protected only by the model's own safety training (L2).
 - **Regex is a floor, not a ceiling.** Paraphrased distress ("I don't want to be here anymore") is not matched. L1 catches defined high-signal phrasings; L2 (model alignment) handles the long tail.
 
 **Coverage by path:**
@@ -159,7 +159,7 @@ The L1 gate runs deterministic regex checks on **both input and output** across 
 | Path | L1 Input | L1 Output | Notes |
 |------|:--------:|:---------:|-------|
 | Local Ollama (offline, web) | ✅ client-side | ✅ client-side | `checkInputSafetyClient` + `checkOutputSafetyClient` |
-| iOS on-device (llama.cpp) | ✅ native | ✅ native | `L1SafetyGate.swift` in SynaluxBase |
+| iOS on-device (llama.cpp) | ✅ native | ✅ native | `SafetyFilter.swift` (`ios-native/PrismAAC/Sources/Safety/`); the output check intercepts jailbreak content only |
 | Portal `/prism-aac/chat` | ✅ | streaming* | Input checked before model call |
 | Portal `/prism-aac/infer` | ✅ | ✅ | Shared safety-patterns module |
 | Portal `/prism-aac/inference` | ✅ | ✅ | Shared safety-patterns module |
