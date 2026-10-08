@@ -46,6 +46,10 @@ interface CategoryState {
   hideCategoryId: (id: string) => void;
   unhideCategoryId: (id: string) => void;
   getSequencesForCategory: (categoryId: string) => OrderingSequenceData[];
+  /** True when the review gate (constants/translationReviewStatus.ts) hides every built-in tile this folder has and
+   *  nothing else is left to say in it or its sub-folders (no ordering flow, no caregiver phrase). The folder keeps its
+   *  place, so tap positions never move, and opens to a note pointing to the Settings toggle instead of an empty grid. */
+  isCategoryLocked: (categoryId: string) => boolean;
   addCustomCategory: (name: string, icon: string) => void;
   removeCustomCategory: (id: string) => void;
   addCustomPhrase: (categoryId: string, text: string, customImageUrl?: string) => void;
@@ -123,6 +127,23 @@ export const useCategoryStore = create<CategoryState>()(
 
       getSequencesForCategory: (categoryId) =>
         get().orderingSequences.filter((s) => s.categoryId === categoryId).sort((a, b) => a.sortOrder - b.sortOrder),
+
+      isCategoryLocked: (categoryId) => {
+        const { language, showUnreviewedVocabulary } = useSettingsStore.getState();
+        if (showUnreviewedVocabulary) return false;
+        const hidden = new Set(get().hiddenPhraseIds);
+        let gated = false;
+        const hasContent = (id: string, depth: number): boolean => {
+          if (DEFAULT_PHRASES.some((p) => p.categoryId === id && !hidden.has(p.id)
+            && !isPhraseVisibleForLanguage(p.id, language, false))) gated = true;
+          return get().getPhrasesForCategory(id).length > 0
+            || get().getSequencesForCategory(id).length > 0
+            || (depth < 4 && get().getSubcategories(id).some((sub) => hasContent(sub.id, depth + 1)));
+        };
+        // when nothing is visible, some() walks every sub-folder, so `gated` covers the whole tree; a folder that is
+        // simply empty (a new custom folder) is never locked, and reviewed languages never gate a tile
+        return !hasContent(categoryId, 0) && gated;
+      },
 
       addCustomCategory: (name, icon) => {
         const cleanName = sanitizeString(name, MAX_NAME_LEN);

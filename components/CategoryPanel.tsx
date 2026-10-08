@@ -125,6 +125,9 @@ const HOME_TILE_H_COMPACT = 'min-h-[clamp(40px,9svh,60px)]';
 
 // Folder tile style — pure white background, clearly "drill in"
 const FOLDER_CLS = 'aac-btn bg-white text-gray-900 rounded-xl border-2 border-gray-300 flex flex-col items-center justify-center gap-1 font-bold select-none text-center hover:border-[#3e2a1a] active:scale-95 transition-transform';
+/** A folder whose tiles the review gate hides: dimmed in place (tap positions never move), with a lock badge. */
+const LOCKED_CLS = 'relative opacity-50';
+const LOCK_BADGE_CLS = 'absolute top-1 right-1 text-xs leading-none';
 
 // ── Sidebar button — MODULE LEVEL so React never remounts it ──────────────────
 interface SideBtnProps {
@@ -198,7 +201,7 @@ export default function CategoryPanel() {
     sidePanel, activeCategoryId, categoryPath, activeSequenceId, activeSequenceStep,
     categoryKeyboardOpen, keyboardMaximized,
     closeSidePanel, selectCategory, drillIntoCategory, navigateCategoryUp,
-    backToCategories, startOrdering, nextStep, prevStep, finishOrdering, cycleKeyboardMode,
+    backToCategories, startOrdering, nextStep, prevStep, finishOrdering, cycleKeyboardMode, toggleSettings,
   } = useUIStore();
   const typingMode = categoryKeyboardOpen && keyboardMaximized;
   const appendText = useMessageStore((s) => s.appendText);
@@ -208,6 +211,11 @@ export default function CategoryPanel() {
   const getSubcategories = useCategoryStore((s) => s.getSubcategories);
   const getRankedPhrasesForCategory = useCategoryStore((s) => s.getRankedPhrasesForCategory);
   const getSequencesForCategory = useCategoryStore((s) => s.getSequencesForCategory);
+  const isCategoryLocked = useCategoryStore((s) => s.isCategoryLocked);
+  // A folder whose tiles the review gate hides stays in place, dimmed, and opens to a note instead of an empty grid
+  // (constants/translationReviewStatus.ts). Subscribed so a caregiver's toggle re-renders the folders.
+  const showUnreviewed = useSettingsStore((s) => s.showUnreviewedVocabulary);
+  const locked = (categoryId: string) => !showUnreviewed && isCategoryLocked(categoryId);
   const recordPhraseUse = usePhraseUsageStore((s) => s.recordUse);
   const learnWord = usePredictionStore((s) => s.learnWord);
   const gridSize = useSettingsStore((s) => s.gridSize);
@@ -647,7 +655,16 @@ export default function CategoryPanel() {
                   ))}
                 </div>
               )}
-              {(() => {
+              {locked(activeCategoryId) ? (
+                <div data-testid="unreviewed-folder-note" className="flex-1 flex flex-col items-center justify-center gap-4 p-6 text-center">
+                  <span aria-hidden className="text-4xl leading-none">🔒</span>
+                  <p className="text-primary text-base max-w-md">{t('show_unreviewed_words_desc')}</p>
+                  <button type="button" data-testid="unreviewed-folder-settings" onClick={() => { tapFeedback(); toggleSettings(); }}
+                    className="aac-btn px-5 py-2.5 rounded-lg surface-key border border-theme text-primary font-bold">
+                    {t('settings')}
+                  </button>
+                </div>
+              ) : (() => {
                 const allItems = [
                   ...subcategories.map(sub => ({ type: 'folder' as const, data: sub })),
                   ...phrases.map(p => ({ type: 'phrase' as const, data: p })),
@@ -660,10 +677,13 @@ export default function CategoryPanel() {
                       {pageItems.map(item => {
                         if (item.type === 'folder') {
                           const sub = item.data;
+                          const subLocked = locked(sub.id);
                           return (
                             <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
                               aria-label={sub.nameKey ? t(sub.nameKey) : sub.name}
-                              className={`aac-picture-card ${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
+                              data-locked={subLocked || undefined}
+                              className={`aac-picture-card ${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]} ${subLocked ? LOCKED_CLS : ''}`}>
+                              {subLocked && <span aria-hidden className={LOCK_BADGE_CLS}>🔒</span>}
                               <span className="aac-tile-icon text-3xl leading-none">{sub.icon}</span>
                               <FittedTileLabel
                                 text={sub.nameKey ? t(sub.nameKey) : sub.name}
@@ -749,7 +769,9 @@ export default function CategoryPanel() {
                 return (
                 <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
                   aria-label={cat.nameKey ? t(cat.nameKey) : cat.name}
-                  className={`aac-picture-card ${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH}`}>
+                  data-locked={locked(cat.id) || undefined}
+                  className={`aac-picture-card ${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH} ${locked(cat.id) ? LOCKED_CLS : ''}`}>
+                  {locked(cat.id) && <span aria-hidden className={LOCK_BADGE_CLS}>🔒</span>}
                   <span className="aac-tile-icon text-2xl sm:text-3xl leading-none">{cat.icon}</span>
                   <FittedTileLabel
                     text={cat.nameKey ? t(cat.nameKey) : cat.name}
@@ -789,8 +811,10 @@ export default function CategoryPanel() {
                 return (
                   <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
                     data-testid="category-tile"
+                    data-locked={locked(cat.id) || undefined}
                     className={`aac-btn aac-category-tile min-w-0 w-full flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-lg
-                      border border-white/20 select-none text-center ${tabBg}`}>
+                      border border-white/20 select-none text-center ${tabBg} ${locked(cat.id) ? LOCKED_CLS : ''}`}>
+                    {locked(cat.id) && <span aria-hidden className={LOCK_BADGE_CLS}>🔒</span>}
                     <span className="aac-tile-icon aac-category-icon text-base leading-none">{cat.icon}</span>
                     <FittedTileLabel
                       text={cat.nameKey ? t(cat.nameKey) : cat.name}

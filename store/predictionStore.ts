@@ -5,6 +5,7 @@ import { getPredictions, recordWord, recordBigram, recordTrigram, decayPredictio
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
+import { isPhraseVisibleForLanguage } from '@/constants/translationReviewStatus';
 import { SupportedLanguage } from '@/engine/i18n';
 import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
 import { useAuthStore } from '@/store/authStore';
@@ -210,7 +211,7 @@ const SCRIPT_FILTER: Partial<Record<SupportedLanguage, RegExp>> = {
   id: /^[a-z'\-]+$/,
 };
 
-function buildSeedForLanguage(lang: SupportedLanguage): {
+function buildSeedForLanguage(lang: SupportedLanguage, showUnreviewed: boolean): {
   wordFreq: Record<string, WordFreqEntry>;
   bigrams: Record<string, WordFreqEntry>;
   trigrams: Record<string, WordFreqEntry>;
@@ -222,6 +223,9 @@ function buildSeedForLanguage(lang: SupportedLanguage): {
   // non-EN locale, those English words leak into the seed because the Latin
   // SCRIPT_FILTER for RO/ES/FR/etc. accepts any [a-z] word. Skip fallbacks.
   const phrases: string[] = DEFAULT_PHRASES.flatMap(p => {
+    // A tile the board hides (an unreviewed machine translation, constants/translationReviewStatus.ts) must not
+    // reach the prediction bar either: Swahili "shoroba" (a corridor, on the Sparrow tile) was offered for "shor".
+    if (!isPhraseVisibleForLanguage(p.id, lang, showUnreviewed)) return [];
     const text = getPhraseText(p.id, lang, p.text);
     return lang !== 'en' && text === p.text ? [] : [text];
   });
@@ -252,8 +256,11 @@ function buildSeedForLanguage(lang: SupportedLanguage): {
 
 const seedCache = new Map<string, { wordFreq: Record<string, WordFreqEntry>; bigrams: Record<string, WordFreqEntry>; trigrams: Record<string, WordFreqEntry> }>();
 function getSeed(lang: SupportedLanguage) {
-  if (!seedCache.has(lang)) seedCache.set(lang, buildSeedForLanguage(lang));
-  return seedCache.get(lang)!;
+  // keyed by the review toggle too: turning "show unreviewed words" on or off changes which tiles feed the seed
+  const showUnreviewed = useSettingsStore.getState().showUnreviewedVocabulary;
+  const key = `${lang}|${showUnreviewed}`;
+  if (!seedCache.has(key)) seedCache.set(key, buildSeedForLanguage(lang, showUnreviewed));
+  return seedCache.get(key)!;
 }
 
 const PAID_PLANS = new Set(['standard', 'advanced', 'enterprise']);
