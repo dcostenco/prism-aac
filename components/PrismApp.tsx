@@ -1,5 +1,7 @@
 'use client';
-import { useEffect, useState, Component, ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useState, Component, ReactNode } from 'react';
+import { loadConfig as loadSwitchConfig } from '@/services/switchScanService';
+import { stageSwitchScanOwnership, finishSwitchScanOwnershipStaging } from '@/services/cameraSelection';
 import Toolbar from './Toolbar';
 import MessageBar from './MessageBar';
 import PredictionBar from './PredictionBar';
@@ -25,6 +27,7 @@ const CategoryManagerModal = dynamic(() => import('./CategoryManagerModal'), { s
 const EmergencyCountdownModal = dynamic(() => import('./EmergencyCountdownModal'), { ssr: false });
 const AlertConfirmModal = dynamic(() => import('./AlertConfirmModal'), { ssr: false });
 const HeadTrackingOverlay = dynamic(() => import('./HeadTrackingOverlay'), { ssr: false });
+const SwitchScanningController = dynamic(() => import('./SwitchScanningController'), { ssr: false });
 import TrackingDebugOverlay from './TrackingDebugOverlay';
 import TtsDebugOverlay from './TtsDebugOverlay';
 import CameraInputOverlay from './CameraInputOverlay';
@@ -180,6 +183,12 @@ const PANELS_WITHOUT_QWERTY = new Set([
 ]);
 
 export default function PrismApp() {
+  useLayoutEffect(() => {
+    // Restore the explicit mode before camera passive effects can start;
+    // the deferred controller retires this fence after acquiring its lease.
+    stageSwitchScanOwnership(loadSwitchConfig().enabled);
+    return finishSwitchScanOwnershipStaging;
+  }, []);
   const runDecay = usePredictionStore((s) => s.runDecay);
   const ensureSeed = usePredictionStore((s) => s.ensureSeed);
   useVisionContext();
@@ -548,6 +557,7 @@ export default function PrismApp() {
             </div>
           )}
           <Toolbar />
+          <SwitchScanningController />
           {/* Math panel takes over the full viewport — hide AAC chrome
               (banner / message / predictions / categories) so the
               cell-grid canvas + bigger keyboards have room to breathe.

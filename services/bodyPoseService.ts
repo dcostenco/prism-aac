@@ -46,6 +46,8 @@ import {
 } from './egoMotion';
 import { BaselineTracker } from './recalibration';
 import { emitTrackingEvent } from './trackingTelemetry';
+import { readCameraSelectionState, canActivateCameraSelection } from './cameraSelection';
+import { resolveDwellTarget } from './dwellTarget';
 
 // ── MediaPipe Pose Landmark Indices ────────────────────────────────────────
 //  0: nose        1-4: eyes       5-6: ears      7-10: mouth
@@ -651,6 +653,10 @@ export function startPoseTracker(
   let dwellElement: Element | null = null;
   let dwellStart = 0;
   let dwellTriggered = false;
+  let selectionEpoch = readCameraSelectionState().epoch;
+  const pauseDwell = () => {
+    if (!dwellTriggered) { dwellElement = null; dwellStart = 0; }
+  };
   let lastFrameTime = 0;
 
   const loadedCal = loadPoseCalibration();
@@ -850,6 +856,7 @@ export function startPoseTracker(
 
     function tick(ts: number) {
       if (stopped) return;
+      const frameEpoch = readCameraSelectionState().epoch;
       rafId = requestAnimationFrame(tick);
 
       if (ts - lastFrameTime < FRAME_INTERVAL_MS) return;
@@ -1318,21 +1325,26 @@ export function startPoseTracker(
 
           // ── Dwell Detection ───────────────────────────────────────
           const elementUnder = document.elementFromPoint(sx, sy);
-          const interactiveEl = elementUnder?.closest(
-            'button, a, [role="button"], [data-dwell-target], .aac-btn'
-          ) ?? elementUnder;
+          const interactiveEl = resolveDwellTarget(elementUnder);
+          const selection = readCameraSelectionState();
+          if (selection.epoch !== selectionEpoch) { pauseDwell(); selectionEpoch = selection.epoch; }
 
-          if (interactiveEl && interactiveEl === dwellElement) {
+          if (suppressForEgoMotion || selection.blocked || !canActivateCameraSelection(frameEpoch)) {
+            pauseDwell();
+          } else if (interactiveEl && interactiveEl === dwellElement) {
             if (!dwellTriggered && Date.now() - dwellStart >= opts.dwellMs) {
               dwellTriggered = true;
+              if (stopped || !canActivateCameraSelection(frameEpoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { dwellTriggered = false; pauseDwell(); return; }
+              opts.onDwell(interactiveEl);
+              if (stopped || !canActivateCameraSelection(frameEpoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { dwellTriggered = false; pauseDwell(); return; }
+              const elapsedMs = Date.now() - dwellStart;
+              if (interactiveEl instanceof HTMLElement) interactiveEl.click();
               // Feed the adaptive engine: actual dwell-to-trigger latency teaches
               // the system the child's motor rhythm. Async require keeps the
               // hot path tight — module is tiny and already preloaded by speak().
               try {
-                import('./adaptiveEngine').then((m) => m.recordDwell(Date.now() - dwellStart));
+                import('./adaptiveEngine').then((m) => m.recordDwell(elapsedMs));
               } catch {}
-              opts.onDwell(interactiveEl);
-              if (interactiveEl instanceof HTMLElement) interactiveEl.click();
             }
           } else {
             dwellElement = interactiveEl ?? null;

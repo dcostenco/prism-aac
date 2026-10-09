@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "アカウントとWebプレビューを確認中。サインインは無料であり、有料登録にはなりません。",
   "web_signin_free_account": "Webアプリは1分間のプレビュー後、無料アカウントが必要です。クラウドサブスクリプションは任意です。",
   "web_signin_draft_fallback": "このブラウザではサインイン用に作成中のメッセージを保存できませんでした。Googleで続けると別のタブが開きます。メッセージを復元するため、このタブを開いたままサインイン後に戻ってください。",
-  "toolbar_browser": "ブラウザ"
+  "toolbar_browser": "ブラウザ",
+  "scan_active": "スキャン中",
+  "scan_stopped": "スキャン一時停止",
+  "scan_start": "スキャン開始",
+  "scan_stop": "スキャン停止",
+  "scan_keys": "Space/Enter: 選択 · Tab: 次へ"
 }

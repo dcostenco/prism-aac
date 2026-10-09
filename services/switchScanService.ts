@@ -1,6 +1,7 @@
 'use client';
 
 import { clampInt, clampNumber, isSafeCssColor } from '@/lib/safeValidation';
+import { stageSwitchScanOwnership, finishSwitchScanOwnershipStaging } from './cameraSelection';
 
 /* ─────────────────────────────────────────────────────────────────────────────
  *  Switch Scanning Accessibility Service for PrismAAC
@@ -62,7 +63,10 @@ export interface SwitchScanCallbacks {
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'prism-switch-scan';
+export const SWITCH_SCAN_CONFIG_EVENT = 'prism-switch-scan-config';
 const HIGHLIGHT_CLASS = 'switch-scan-active';
+const KEYBOARD_KEYS = new Set([' ', 'Enter', 'Tab']);
+const physicalKeys = new Set<string>();
 
 const INTERACTIVE_SELECTOR =
   'button, [role="button"], a, [data-dwell-target], .aac-btn, .aac-key';
@@ -110,13 +114,34 @@ export function loadConfig(): SwitchScanConfig {
 
 export function saveConfig(config: SwitchScanConfig): void {
   if (typeof window === 'undefined') return;
+  const next = sanitizeConfig(config);
+  stageSwitchScanOwnership(next.enabled);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   } catch { /* localStorage quota or disabled */ }
+  window.dispatchEvent(new CustomEvent(SWITCH_SCAN_CONFIG_EVENT, { detail: next }));
 }
 
 export function getDefaultConfig(): SwitchScanConfig {
   return { ...DEFAULT_CONFIG };
+}
+
+/** App-lifetime observation only: never consumes ordinary keyboard input.
+ * Starting/enabling a scanner can occur inside a native key activation;
+ * that already-held press must not become a second scanner selection. */
+export function observeKeyboardPresses(): () => void {
+  const down = (event: KeyboardEvent) => { if (KEYBOARD_KEYS.has(event.key)) physicalKeys.add(event.key); };
+  const up = (event: KeyboardEvent) => { physicalKeys.delete(event.key); };
+  const blur = () => physicalKeys.clear();
+  document.addEventListener('keydown', down, true);
+  document.addEventListener('keyup', up, true);
+  window.addEventListener('blur', blur);
+  return () => {
+    document.removeEventListener('keydown', down, true);
+    document.removeEventListener('keyup', up, true);
+    window.removeEventListener('blur', blur);
+    physicalKeys.clear();
+  };
 }
 
 // ── Feature Detection ───────────────────────────────────────────────────────
@@ -174,9 +199,22 @@ interface NavigatorWithHID extends Navigator {
  * Returns all visible interactive elements on the page in DOM order,
  * filtered to only those that are visible and not disabled.
  */
+function scanRoot(): Element {
+  const dialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"], [data-testid="tracking-setup-wizard"]');
+  let root: Element = document.body, highest = -Infinity;
+  for (const dialog of dialogs) {
+    if (dialog.closest('[hidden], [aria-hidden="true"]')) continue;
+    const style = getComputedStyle(dialog);
+    if (style.display === 'none' || style.visibility === 'hidden') continue;
+    const z = parseInt(style.zIndex) || 0;
+    if (z >= highest) { root = dialog; highest = z; }
+  }
+  return root;
+}
+
 function discoverElements(): Element[] {
   if (typeof document === 'undefined') return [];
-  const raw = document.querySelectorAll(INTERACTIVE_SELECTOR);
+  const raw = scanRoot().querySelectorAll(INTERACTIVE_SELECTOR);
   const elements: Element[] = [];
 
   for (let i = 0; i < raw.length; i++) {
@@ -184,8 +222,13 @@ function discoverElements(): Element[] {
     if (el instanceof HTMLElement) {
       // Skip hidden/disabled elements
       if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') continue;
-      if (el.hasAttribute('disabled')) continue;
-      if (el.getAttribute('aria-hidden') === 'true') continue;
+      if (!el.isConnected || el.matches(':disabled') || el.closest('[hidden], [aria-hidden="true"], [aria-disabled="true"], [inert]')) continue;
+      let hidden = false;
+      for (let node: HTMLElement | null = el; node; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse' || style.opacity === '0') { hidden = true; break; }
+      }
+      if (hidden) continue;
       if (el.tabIndex === -1) continue;
       elements.push(el);
     }
@@ -325,6 +368,7 @@ let scanTimer: ReturnType<typeof setInterval> | null = null;
 let gamepadRafId: number | null = null;
 let activeHIDDevices: HIDDevice[] = [];
 let domObserver: MutationObserver | null = null;
+let rescanDebounce: ReturnType<typeof setTimeout> | null = null;
 
 // State
 let state: SwitchScanState = {
@@ -337,6 +381,8 @@ let state: SwitchScanState = {
 
 let activeConfig: SwitchScanConfig = { ...DEFAULT_CONFIG };
 let activeCallbacks: SwitchScanCallbacks = {};
+let scanEpoch = 0;
+const heldKeys = new Set<string>();
 
 // Cached element structures (refreshed on each scan cycle)
 let flatElements: Element[] = [];
@@ -489,6 +535,13 @@ function selectCurrent(): void {
 
   // Group scanning: selecting a group enters item-scan within that group
   if (activeConfig.groupScan && state.phase === 'groups') {
+    const root = scanRoot();
+    if (!currentHighlighted?.isConnected || !root.contains(currentHighlighted)) { rescanElements(); return; }
+    const groups = discoverGroups();
+    const selected = groups.findIndex(group => currentHighlighted === (group[0]?.closest(`[${GROUP_ATTR}]`) || group[0]));
+    if (selected < 0) { rescanElements(); return; }
+    groupedElements = groups;
+    state.groupIndex = selected;
     state.phase = 'items';
     state.itemIndex = -1; // will advance to 0 on next tick
     clearHighlight();
@@ -499,15 +552,13 @@ function selectCurrent(): void {
   }
 
   // Item-level selection: click the highlighted element
-  const items = activeConfig.groupScan && state.phase === 'items'
-    ? groupedElements[state.groupIndex] || []
-    : flatElements;
-
-  if (state.itemIndex < 0 || state.itemIndex >= items.length) return;
-
-  const target = items[state.itemIndex];
+  // Select the visible highlighted identity, not a possibly shifted DOM slot.
+  const target = currentHighlighted;
+  if (!target || !discoverElements().includes(target)) { rescanElements(); return; }
+  const epoch = scanEpoch;
   if (target instanceof HTMLElement) {
     target.click();
+    if (epoch !== scanEpoch) return;
     activeCallbacks.onSelect?.(target);
   }
 
@@ -561,7 +612,12 @@ function isInputFocused(): boolean {
 }
 
 function onKeyDown(e: KeyboardEvent): void {
-  if (state.phase === 'idle') return;
+  if (state.phase === 'idle') {
+    // A retired scanner must still consume the tail of its physical press,
+    // not let that held key activate a newly focused ordinary control.
+    if (heldKeys.has(e.key)) { e.preventDefault(); e.stopPropagation(); }
+    return;
+  }
 
   // If an input is focused and the user presses Escape, blur it to
   // return scanner control. Don't let the input trap the switch user.
@@ -580,11 +636,15 @@ function onKeyDown(e: KeyboardEvent): void {
     case 'Enter':
       e.preventDefault();
       e.stopPropagation();
+      if (e.repeat || heldKeys.has(e.key)) return;
+      heldKeys.add(e.key);
       selectCurrent();
       break;
     case 'Tab':
       e.preventDefault();
       e.stopPropagation();
+      if (e.repeat || heldKeys.has(e.key)) return;
+      heldKeys.add(e.key);
       if (e.shiftKey) {
         advancePrevious();
       } else {
@@ -602,6 +662,21 @@ function onKeyDown(e: KeyboardEvent): void {
       }
       break;
   }
+}
+
+function onKeyUp(e: KeyboardEvent): void {
+  if (heldKeys.delete(e.key)) { e.preventDefault(); e.stopPropagation(); }
+  if (state.phase === 'idle' && !heldKeys.size) detachKeyboard();
+}
+function detachKeyboard(): void {
+  if (typeof document === 'undefined') return;
+  document.removeEventListener('keydown', onKeyDown, true);
+  document.removeEventListener('keyup', onKeyUp, true);
+  window.removeEventListener('blur', releaseKeyboard);
+}
+function releaseKeyboard(): void {
+  heldKeys.clear();
+  if (state.phase === 'idle') detachKeyboard();
 }
 
 // ── Gamepad Input ───────────────────────────────────────────────────────────
@@ -773,6 +848,7 @@ export function startScan(
   config?: Partial<SwitchScanConfig>,
   callbacks?: SwitchScanCallbacks,
 ): void {
+  scanEpoch++;
   // Stop any existing scan first
   if (state.phase !== 'idle') {
     stopScan();
@@ -795,6 +871,9 @@ export function startScan(
     : flatElements.length > 0;
 
   if (!hasElements) return;
+  // Only an admitted scanner owns a press/release latch. An empty startup
+  // installs no keyboard listener to retire a seeded latch on keyup.
+  for (const key of physicalKeys) heldKeys.add(key);
 
   // Initialize state
   state = {
@@ -815,6 +894,8 @@ export function startScan(
 
   // Keyboard listener (capture phase so we intercept before app handlers)
   document.addEventListener('keydown', onKeyDown, true);
+  document.addEventListener('keyup', onKeyUp, true);
+  window.addEventListener('blur', releaseKeyboard);
 
   // Start auto-timer if in auto mode
   if (activeConfig.mode === 'auto') {
@@ -830,7 +911,7 @@ export function startScan(
   // Auto-refresh on DOM changes. Must observe 'class' to detect Tailwind
   // visibility toggles (hidden, opacity-0) — but must ignore our own
   // switch-scan-active class to prevent infinite loops.
-  let rescanDebounce: ReturnType<typeof setTimeout> | null = null;
+  const observerEpoch = scanEpoch;
   if (typeof MutationObserver !== 'undefined') {
     domObserver = new MutationObserver((mutations) => {
       // Ignore mutations that ONLY add/remove our highlight class
@@ -847,7 +928,13 @@ export function startScan(
 
       if (rescanDebounce) clearTimeout(rescanDebounce);
       rescanDebounce = setTimeout(() => {
-        if (state.phase !== 'idle' && !state.paused) refreshElements();
+        rescanDebounce = null;
+        if (observerEpoch !== scanEpoch || state.phase === 'idle' || state.paused) return;
+        refreshElements();
+        const present = state.phase === 'groups'
+          ? groupedElements.some(group => currentHighlighted === (group[0]?.closest(`[${GROUP_ATTR}]`) || group[0]))
+          : !!currentHighlighted && flatElements.includes(currentHighlighted);
+        if (!present) rescanElements();
       }, 150);
     });
     domObserver.observe(document.body, {
@@ -863,19 +950,21 @@ export function startScan(
 }
 
 /**
- * Stop switch scanning entirely. Cleans up all listeners and timers.
+ * Stop scanning and its timers. An already-held press retains only its
+ * release guard until keyup/blur, including across configuration restarts.
  */
 export function stopScan(): void {
+  scanEpoch++;
+  finishSwitchScanOwnershipStaging();
   stopAutoTimer();
   stopGamepadPolling();
   disconnectHIDDevices();
   clearHighlight();
 
   if (domObserver) { domObserver.disconnect(); domObserver = null; }
+  if (rescanDebounce) { clearTimeout(rescanDebounce); rescanDebounce = null; }
 
-  if (typeof document !== 'undefined') {
-    document.removeEventListener('keydown', onKeyDown, true);
-  }
+  if (!heldKeys.size) detachKeyboard();
 
   removeHighlightStyle();
 

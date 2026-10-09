@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, useSyncExternalStore } from 'react';
+import { subscribeCameraSelection, readCameraSelectionState, canActivateCameraSelection } from '@/services/cameraSelection';
+import { resolveDwellTarget } from '@/services/dwellTarget';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
   startHeadTracker,
@@ -53,13 +55,16 @@ type TrackingStatus = 'starting' | 'tracking' | 'lost' | 'stopped';
  */
 function useSafeModeCaps(input: { sensitivity: number; dwellMs: number; gestureConfig: GestureConfig }) {
   const safeMode = isSafeMode();
+  const effectiveGestureConfig = useMemo(() => safeMode
+    ? { ...input.gestureConfig, enabled: false } : input.gestureConfig,
+  [safeMode, input.gestureConfig]);
   return {
     safeMode,
     effectiveSensitivity: safeMode
       ? Math.min(input.sensitivity, SAFE_MODE_EFFECTS.sensitivityCap)
       : input.sensitivity,
     effectiveDwellMs: safeMode ? input.dwellMs * SAFE_MODE_EFFECTS.dwellMultiplier : input.dwellMs,
-    effectiveGestureConfig: safeMode ? { ...input.gestureConfig, enabled: false } : input.gestureConfig,
+    effectiveGestureConfig,
   };
 }
 
@@ -71,6 +76,7 @@ function useSafeModeCaps(input: { sensitivity: number; dwellMs: number; gestureC
  */
 function useReliabilityProbe(
   active: boolean,
+  ownershipEpoch: number,
   onRecover: () => void,
 ): number {
   const [progress, setProgress] = useState(0);
@@ -81,17 +87,23 @@ function useReliabilityProbe(
   onRecoverRef.current = onRecover;
 
   useEffect(() => {
-    if (!active) {
+    if (!active || readCameraSelectionState().blocked) {
       probeRef.current?.stop();
       probeRef.current = null;
       setProgress(0);
       return;
     }
+    let current = true;
+    const probeEpoch = readCameraSelectionState().epoch;
     const probe = startReliabilityProbe({
       recoverFrames: 10,
       stableConfidenceFloor: 0.7,
-      onTick: ({ streak }) => setProgress(streak / 10),
+      onTick: ({ streak }) => {
+        if (current && canActivateCameraSelection(probeEpoch)) setProgress(streak / 10);
+      },
       onRecover: () => {
+        if (!current || !canActivateCameraSelection(probeEpoch)) return;
+        current = false;
         probeRef.current = null;
         setProgress(0);
         onRecoverRef.current();
@@ -99,11 +111,12 @@ function useReliabilityProbe(
     });
     probeRef.current = probe;
     return () => {
+      current = false;
       probe.stop();
       probeRef.current = null;
       setProgress(0);
     };
-  }, [active]);
+  }, [active, ownershipEpoch]);
 
   return progress;
 }
@@ -141,6 +154,9 @@ function useMotionMonitor(active: boolean): React.MutableRefObject<boolean> {
 
 export default function HeadTrackingOverlay() {
   const enabled = useSettingsStore((s) => s.headTrackingEnabled);
+  const ownershipEpoch = useSyncExternalStore(subscribeCameraSelection,
+    () => readCameraSelectionState().epoch, () => 0);
+  const selectionBlocked = readCameraSelectionState().blocked;
   const dwellMs = useSettingsStore((s) => s.headTrackingDwellMs);
   const sensitivity = useSettingsStore((s) => s.headTrackingSensitivity);
   const eyeGaze = useSettingsStore((s) => s.headTrackingEyeGaze);
@@ -168,7 +184,8 @@ export default function HeadTrackingOverlay() {
   const { safeMode, effectiveSensitivity, effectiveDwellMs, effectiveGestureConfig } =
     useSafeModeCaps({ sensitivity, dwellMs, gestureConfig });
   const probeProgress = useReliabilityProbe(
-    Boolean(driftToast) && driftAutoDisable,
+    Boolean(driftToast) && driftAutoDisable && !selectionBlocked,
+    ownershipEpoch,
     useCallback(() => {
       setDriftToast(null);
       setSettings({ headTrackingEnabled: true });
@@ -177,6 +194,7 @@ export default function HeadTrackingOverlay() {
   const isShakingRef = useMotionMonitor(enabled);
 
   const handleRef = useRef<HeadTrackerHandle | null>(null);
+  const [resumeGeneration, setResumeGeneration] = useState(0);
   const gestureDetectorRef = useRef<GestureDetector | null>(null);
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   const dwellStartRef = useRef(0);
@@ -197,31 +215,41 @@ export default function HeadTrackingOverlay() {
     }
   }, [dwellMs]);
 
-  // Start / stop tracker based on enabled flag
+  // Only gesture evidence is retired on ownership changes. The cursor tracker
+  // keeps its completed-control lock across selection suspension.
   useEffect(() => {
     let mounted = true;
-    if (!enabled || !isHeadTrackingSupported()) {
-      if (handleRef.current) { handleRef.current.stop(); handleRef.current = null; }
-      queueMicrotask(() => {
-        if (mounted) setStatus('stopped');
-      });
-      return;
-    }
-
-    // Create gesture detector if gesture recognition is enabled. Safe mode
-    // disables gestures so we use the effective config here too.
-    if (effectiveGestureConfig.enabled) {
+    const gestureEpoch = readCameraSelectionState().epoch;
+    if (enabled && !readCameraSelectionState().blocked && effectiveGestureConfig.enabled) {
       gestureDetectorRef.current = createGestureDetector(effectiveGestureConfig, (event) => {
+        if (!mounted || !canActivateCameraSelection(gestureEpoch)) return;
         const mapping = effectiveGestureConfig.mappings.find(m => m.gesture === event.gesture);
         if (mapping) {
           // Execute the mapped action — trigger a click on the matching button
           const target = document.querySelector(`[data-action="${mapping.action}"], [data-key="${mapping.action}"], #${mapping.action}`);
-          if (target instanceof HTMLElement) {
+          if (target instanceof HTMLElement && resolveDwellTarget(target) === target) {
             tapFeedback();
-            target.click();
+            if (mounted && canActivateCameraSelection(gestureEpoch) && resolveDwellTarget(target) === target) target.click();
           }
         }
       });
+    }
+    return () => {
+      mounted = false;
+      destroyGestureDetector();
+      gestureDetectorRef.current = null;
+    };
+  }, [enabled, ownershipEpoch, effectiveGestureConfig]);
+
+  // Start / stop tracker based on enabled flag and actual tracker settings.
+  useEffect(() => {
+    let mounted = true;
+    if (!enabled || readCameraSelectionState().blocked || !isHeadTrackingSupported()) {
+      if (handleRef.current) { handleRef.current.stop(); handleRef.current = null; }
+      queueMicrotask(() => {
+        if (mounted) setStatus('stopped');
+      });
+      return () => { mounted = false; };
     }
 
     const handle = startHeadTracker({
@@ -239,7 +267,7 @@ export default function HeadTrackingOverlay() {
       driftThresholdPx,
       driftWindowMs,
       onDrift: (reason) => {
-        if (!driftAutoDisable) return;
+        if (!mounted || readCameraSelectionState().blocked || !driftAutoDisable) return;
         setDriftToast({ reason, ts: Date.now() });
         // Record the drift event BEFORE flipping the toggle so a
         // re-mount caused by the setting change reads the updated
@@ -252,10 +280,13 @@ export default function HeadTrackingOverlay() {
         setSettings({ headTrackingEnabled: false });
       },
       onLandmarks: effectiveGestureConfig.enabled ? (data) => {
+        if (!mounted) return;
+        if (readCameraSelectionState().blocked) { gestureDetectorRef.current?.processFrame(null); return; }
         gestureDetectorRef.current?.processFrame(data);
       } : undefined,
       onMove(x, y) {
         setCursorPos({ x, y });
+        if (!mounted || readCameraSelectionState().blocked) return;
 
         // Track which element is under cursor for highlight
         const el = document.elementFromPoint(x, y);
@@ -305,11 +336,20 @@ export default function HeadTrackingOverlay() {
       cancelAnimationFrame(rafDwellRef.current);
       handle.stop();
       handleRef.current = null;
-      destroyGestureDetector();
-      gestureDetectorRef.current = null;
     };
     // Re-create tracker when key settings change
-  }, [enabled, effectiveDwellMs, effectiveSensitivity, eyeGaze, eyeGazeWeight, effectiveGestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);
+  }, [enabled, resumeGeneration, effectiveDwellMs, effectiveSensitivity, eyeGaze, eyeGazeWeight, effectiveGestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);
+
+  useEffect(() => {
+    cancelAnimationFrame(rafDwellRef.current);
+    dwellElementRef.current = null;
+    dwellStartRef.current = 0;
+    setDwellProgress(0);
+    setHighlightRect(null);
+    if (enabled && !readCameraSelectionState().blocked && !handleRef.current) {
+      setResumeGeneration(generation => generation + 1);
+    }
+  }, [ownershipEpoch, enabled]);
 
   // Render the drift recovery toast even when tracking is disabled, so the
   // user has a visible "Try again" path that doesn't depend on the cursor.

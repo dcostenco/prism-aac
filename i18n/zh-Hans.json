@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "正在检查你的账号和网页预览。登录是免费的，不会开启付费订阅。",
   "web_signin_free_account": "网页版在试用一分钟后需要登录免费账号。云端订阅为可选购买项目。",
   "web_signin_draft_fallback": "此浏览器无法保存尚未写完的信息以供登录。继续使用 Google 登录将打开新标签页。请保持此标签页打开，登录完成后返回此处即可找回信息。",
-  "toolbar_browser": "浏览器"
+  "toolbar_browser": "浏览器",
+  "scan_active": "扫描中",
+  "scan_stopped": "扫描已暂停",
+  "scan_start": "开始扫描",
+  "scan_stop": "停止扫描",
+  "scan_keys": "Space/Enter：选择 · Tab：下一个"
 }

@@ -35,6 +35,8 @@ import { BaselineTracker } from './recalibration';
 import { isValidCornerCalibration } from '@/lib/safeValidation';
 import { acquireCamera, type CameraLease } from './cameraStream';
 import { emitTrackingEvent } from './trackingTelemetry';
+import { readCameraSelectionState, canActivateCameraSelection } from './cameraSelection';
+import { resolveDwellTarget } from './dwellTarget';
 import {
   MEDIAPIPE_WASM_URL,
   FACE_DETECTOR_URL,
@@ -801,6 +803,10 @@ export function startHeadTracker(
   let dwellElement: Element | null = null;
   let dwellStart = 0;
   let dwellTriggered = false;
+  let selectionEpoch = readCameraSelectionState().epoch;
+  const pauseDwell = () => {
+    if (!dwellTriggered) { dwellElement = null; dwellStart = 0; }
+  };
   let lastFrameTime = 0;
 
   // Subscribe to gesture-claim AFTER dwell vars exist. When a gesture
@@ -984,8 +990,8 @@ export function startHeadTracker(
    * With sensitivity applied: shift_pre = (cursor_post - target_post) /
    * sensitivityScale, and δ = shift_pre * rangeX / W.
    */
-  function applyAnchorCorrection(targetEl: Element): void {
-    if (!(targetEl instanceof Element)) return;
+  function prepareAnchorCorrection(targetEl: Element) {
+    if (!(targetEl instanceof Element)) return null;
     const rect = targetEl.getBoundingClientRect();
     const tx = rect.left + rect.width / 2;
     const ty = rect.top + rect.height / 2;
@@ -994,17 +1000,23 @@ export function startHeadTracker(
     const offsetMag = Math.hypot(dx, dy);
     // Below noise floor: cursor was effectively on target — nothing to learn.
     // Above outlier ceiling: probably a missed click that bubbled to a parent.
-    if (offsetMag < ANCHOR_MIN_PIXEL_OFFSET || offsetMag > ANCHOR_MAX_PIXEL_OFFSET) return;
-    if (sensitivityScale <= 0) return;
+    if (offsetMag < ANCHOR_MIN_PIXEL_OFFSET || offsetMag > ANCHOR_MAX_PIXEL_OFFSET) return null;
+    if (sensitivityScale <= 0) return null;
 
     const W = window.innerWidth;
     const H = window.innerHeight;
     const rangeX = calibration.leftX - calibration.rightX;
     const rangeY = calibration.bottomY - calibration.topY;
-    if (rangeX === 0 || rangeY === 0) return;
+    if (rangeX === 0 || rangeY === 0) return null;
 
     const deltaX = (dx / sensitivityScale) * rangeX / W * ANCHOR_LEARNING_RATE;
     const deltaY = (dy / sensitivityScale) * rangeY / H * ANCHOR_LEARNING_RATE;
+    return { deltaX, deltaY, offsetMag };
+  }
+
+  function applyAnchorCorrection(correction: ReturnType<typeof prepareAnchorCorrection>): void {
+    if (!correction) return;
+    const { deltaX, deltaY, offsetMag } = correction;
     calibration.leftX  += deltaX;
     calibration.rightX += deltaX;
     calibration.topY   += deltaY;
@@ -1113,12 +1125,15 @@ export function startHeadTracker(
     // supplied the fused coordinates, including temporary failover. Raw
     // confidence fluctuates and can also be high on a stale cached result.
     const primarySource = activeSources.find(s => s.index === fused.cameraIndex)!;
+    const selection = readCameraSelectionState();
+    const selectionChanged = selection.epoch !== selectionEpoch;
+    if (selectionChanged) { pauseDwell(); selectionEpoch = selection.epoch; }
 
     // Emit face landmarks from the primary camera for gesture detection
     if (opts.onLandmarks) {
-      if (gestureSourceIndex !== null && gestureSourceIndex !== primarySource.index) opts.onLandmarks(null);
+      if (selectionChanged || (gestureSourceIndex !== null && gestureSourceIndex !== primarySource.index)) opts.onLandmarks(null);
       gestureSourceIndex = primarySource.index;
-      if (primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_DETECTION_MS) {
+      if (!selection.blocked && primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_DETECTION_MS) {
         opts.onLandmarks(primarySource.lastLandmarks);
       } else {
         opts.onLandmarks(null);
@@ -1185,22 +1200,29 @@ export function startHeadTracker(
     // gesture has just committed, the user's blink/smile is an
     // intentional gesture, not a dwell action.
     const nowTs = Date.now();
-    const dwellLocked = isLocked(lastGestureClaimTs, nowTs);
+    const dwellLocked = isLocked(lastGestureClaimTs, nowTs) || !canActivateCameraSelection(selection.epoch);
 
     const elementUnder = document.elementFromPoint(sx, sy);
-    const interactiveEl = elementUnder?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? elementUnder;
+    const interactiveEl = resolveDwellTarget(elementUnder);
 
     let dwellFiredThisFrame = false;
-    if (!dwellLocked && interactiveEl && interactiveEl === dwellElement) {
+    if (dwellLocked) {
+      pauseDwell();
+    } else if (interactiveEl && interactiveEl === dwellElement) {
       if (!dwellTriggered && nowTs - dwellStart >= opts.dwellMs) {
         dwellTriggered = true;
+        if (stopped || !canActivateCameraSelection(selection.epoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { dwellTriggered = false; pauseDwell(); return; }
         dwellFiredThisFrame = true;
+        const correction = prepareAnchorCorrection(interactiveEl);
         // Use this successful dwell as ground-truth for calibration —
         // the cursor was AT (sx,sy), the user wanted (tx,ty). Shift
         // anchors by a fraction of that offset.
-        applyAnchorCorrection(interactiveEl);
         opts.onDwell(interactiveEl);
+        if (stopped || !canActivateCameraSelection(selection.epoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { dwellTriggered = false; pauseDwell(); return; }
         if (interactiveEl instanceof HTMLElement) interactiveEl.click();
+        // Teach only an executed interaction, not a tentative callback cancelled
+        // by another selection owner. Do not update a retired tracker.
+        if (!stopped && canActivateCameraSelection(selection.epoch)) applyAnchorCorrection(correction);
       }
     } else {
       dwellElement = interactiveEl ?? null;
@@ -1220,6 +1242,7 @@ export function startHeadTracker(
     // jumping but it's environmental — auto-disabling would be wrong.
     // We still PUSH the sample so the rolling window stays continuous;
     // we just skip the `check()` while motion is active.
+    if (stopped || !canActivateCameraSelection(selection.epoch)) return;
     const deviceShaking = opts.isDeviceShaking?.() ?? false;
 
     // ── Recovery probe — uses the exported pure function so the REAL

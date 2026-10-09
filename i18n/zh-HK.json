@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "正在檢查你的帳戶及網頁預覽。登入為免費，且不會開始付費訂閱。",
   "web_signin_free_account": "一分鐘預覽結束後，網頁應用程式需要使用免費帳戶。雲端訂閱為額外自由選購項目。",
   "web_signin_draft_fallback": "此瀏覽器無法儲存你未完成的訊息以供登入使用。繼續前往 Google 將會開啟另一個分頁。請保持此分頁開啟，並在登入後返回此處以復原訊息。",
-  "toolbar_browser": "瀏覽器"
+  "toolbar_browser": "瀏覽器",
+  "scan_active": "掃描中",
+  "scan_stopped": "掃描已暫停",
+  "scan_start": "開始掃描",
+  "scan_stop": "停止掃描",
+  "scan_keys": "Space/Enter：選擇 · Tab：下一個"
 }

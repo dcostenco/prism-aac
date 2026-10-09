@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "Hesabınız ve web önizlemesi kontrol ediliyor. Giriş yapmak ücretsizdir ve paralı abonelik başlatmaz.",
   "web_signin_free_account": "Web uygulaması bir dakikalık önizlemeden sonra ücretsiz hesap gerektirir. Bulut abonelikleri isteğe bağlıdır.",
   "web_signin_draft_fallback": "Bu tarayıcı bitmemiş mesajınızı giriş için kaydedemedi. Google ile devam etmek başka sekme açar. Mesajınızı kurtarmak için bu sekmeyi açık tutun ve girişten sonra buraya dönün.",
-  "toolbar_browser": "Tarayıcı"
+  "toolbar_browser": "Tarayıcı",
+  "scan_active": "Tarama sürüyor",
+  "scan_stopped": "Tarama duraklatıldı",
+  "scan_start": "Taramayı başlat",
+  "scan_stop": "Taramayı durdur",
+  "scan_keys": "Space/Enter: seç · Tab: sonraki"
 }

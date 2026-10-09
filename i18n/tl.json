@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "Chine-check ang account at web preview mo. Libre ang mag-sign in at hindi ito magsisimula ng may bayad na subscription.",
   "web_signin_free_account": "Kailangan ng libreng account ng web app pagkatapos ng isang minutong preview. Opsyonal na pagbili lang ang mga cloud subscription.",
   "web_signin_draft_fallback": "Hindi ma-save ng browser na ito ang hindi mo tapos na mensahe para sa pag-sign in. Magbubukas ng bagong tab ang Pagpatuloy sa Google. Hayaan lang na nakabukas ang tab na ito at bumalik dito pagkatapos mag-sign in para makuha ulit ang mensahe mo.",
-  "toolbar_browser": "Browser"
+  "toolbar_browser": "Browser",
+  "scan_active": "Nag-i-scan",
+  "scan_stopped": "Naka-pause ang pag-scan",
+  "scan_start": "Simulan ang pag-scan",
+  "scan_stop": "Ihinto ang pag-scan",
+  "scan_keys": "Space/Enter: piliin · Tab: susunod"
 }

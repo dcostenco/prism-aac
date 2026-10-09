@@ -75,6 +75,17 @@ beforeEach(() => {
 // ── camera input toggle ───────────────────────────────────────────────────────
 
 describe('InputModesSettings — camera input toggle', () => {
+  it('keeps native toggle targets large and separated from wrapping descriptions', () => {
+    render(<InputModesSettings />);
+    const toggle = screen.getByRole('button', { name: 'Camera input', exact: true });
+    expect(toggle).toHaveClass('w-16', 'h-12');
+    expect(toggle).toHaveClass('rounded-none');
+    expect(toggle.querySelector('[aria-hidden="true"]')).toHaveClass('rounded-full', 'pointer-events-none');
+    expect(toggle.closest('label')).toHaveClass('gap-8');
+    expect(toggle.closest('label')?.querySelector(':scope > div')).toHaveClass('min-w-0', 'flex-1');
+    fireEvent.click(toggle);
+    expect(updateMock).toHaveBeenCalledExactlyOnceWith({ cameraInputEnabled: true });
+  });
   it('renders camera input toggle', () => {
     render(<InputModesSettings />);
     expect(screen.getByRole('button', { name: /camera input/i })).toBeInTheDocument();

@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "Verificando sua conta e a prévia na web. Entrar é grátis e não inicia uma assinatura paga.",
   "web_signin_free_account": "O app na web exige uma conta grátis após um minuto de prévia. Assinaturas na nuvem são opcionais.",
   "web_signin_draft_fallback": "Este navegador não pôde salvar sua mensagem em andamento. Continuar com o Google abrirá outra aba. Mantenha esta aba aberta e volte aqui após entrar para recuperar sua mensagem.",
-  "toolbar_browser": "Navegador"
+  "toolbar_browser": "Navegador",
+  "scan_active": "Varredura em andamento",
+  "scan_stopped": "Varredura pausada",
+  "scan_start": "Iniciar varredura",
+  "scan_stop": "Parar varredura",
+  "scan_keys": "Space/Enter: selecionar · Tab: próximo"
 }
