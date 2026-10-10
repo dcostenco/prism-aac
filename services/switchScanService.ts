@@ -65,7 +65,8 @@ export interface SwitchScanCallbacks {
 const STORAGE_KEY = 'prism-switch-scan';
 export const SWITCH_SCAN_CONFIG_EVENT = 'prism-switch-scan-config';
 const HIGHLIGHT_CLASS = 'switch-scan-active';
-const KEYBOARD_KEYS = new Set([' ', 'Enter', 'Tab']);
+const SELECT_KEYS = new Set([' ', 'Enter']);
+const KEYBOARD_KEYS = new Set([...SELECT_KEYS, 'Tab']);
 const physicalKeys = new Set<string>();
 
 const INTERACTIVE_SELECTOR =
@@ -126,11 +127,22 @@ export function getDefaultConfig(): SwitchScanConfig {
   return { ...DEFAULT_CONFIG };
 }
 
-/** App-lifetime observation only: never consumes ordinary keyboard input.
+/** App-lifetime press observation; an admitted idle-restart callback may
+ * consume a switch key only while its configured scanner remains enabled.
  * Starting/enabling a scanner can occur inside a native key activation;
  * that already-held press must not become a second scanner selection. */
-export function observeKeyboardPresses(): () => void {
-  const down = (event: KeyboardEvent) => { if (KEYBOARD_KEYS.has(event.key)) physicalKeys.add(event.key); };
+export function observeKeyboardPresses(onIdleSwitch?: (freshPress: boolean) => boolean): () => void {
+  const down = (event: KeyboardEvent) => {
+    if (!KEYBOARD_KEYS.has(event.key)) return;
+    const fresh = !event.repeat && !physicalKeys.has(event.key) && !heldKeys.has(event.key);
+    physicalKeys.add(event.key);
+    if (state.phase === 'idle' && SELECT_KEYS.has(event.key) && onIdleSwitch?.(fresh)) {
+      // The restart press belongs to the scanner, not the focused native
+      // button, nor a selection listener installed during this same event.
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  };
   const up = (event: KeyboardEvent) => { physicalKeys.delete(event.key); };
   const blur = () => physicalKeys.clear();
   document.addEventListener('keydown', down, true);

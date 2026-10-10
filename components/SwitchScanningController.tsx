@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/engine/useT';
 import { suspendCameraSelection, finishSwitchScanOwnershipStaging } from '@/services/cameraSelection';
 import { getState, loadConfig, saveConfig, startScan, stopScan, observeKeyboardPresses,
@@ -11,10 +11,19 @@ export default function SwitchScanningController() {
   const [config, setConfig] = useState(loadConfig);
   const [scan, setScan] = useState(getState);
   const [restart, setRestart] = useState(0);
+  const configRef = useRef(config);
   const { t } = useT();
   useEffect(() => {
-    const releaseKeyboard = observeKeyboardPresses();
-    const change = (event: Event) => setConfig((event as CustomEvent<SwitchScanConfig>).detail);
+    const releaseKeyboard = observeKeyboardPresses(freshPress => {
+      if (!configRef.current.enabled || getState().phase !== 'idle') return false;
+      if (freshPress) setRestart(value => value + 1);
+      return true;
+    });
+    const change = (event: Event) => {
+      const next = (event as CustomEvent<SwitchScanConfig>).detail;
+      configRef.current = next;
+      setConfig(next);
+    };
     window.addEventListener(SWITCH_SCAN_CONFIG_EVENT, change);
     return () => { window.removeEventListener(SWITCH_SCAN_CONFIG_EVENT, change); releaseKeyboard(); };
   }, []);

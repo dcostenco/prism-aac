@@ -6,6 +6,7 @@ const STEP_LIMIT = 150;
 const TEXT_EDGE_INSET = 2;
 const CAPTION_PROBE_WORDS = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
 const CAPTION_GUARD_MODES = ['hidden', 'clipped', 'covered'] as const;
+test.use({ serviceWorkers: 'block' });
 test.afterEach(async ({ page, context }) => { await page.close(); await context.close(); });
 
 async function assertVisiblePredictionText(page: Page) {
@@ -151,7 +152,9 @@ test('Settings to explicit board selection, held keys, reload and manual recover
     Object.assign(window, { __switchRestartAudit: audit });
     document.addEventListener('click', event => { if (!event.isTrusted) audit.clicks++; }, true);
   });
-  await restart.focus(); await page.keyboard.down('Enter');
+  // A single physical switch cannot move focus to Start. Its next fresh
+  // press must recover even when an unrelated ordinary control owns focus.
+  await unrelated.focus(); await page.keyboard.down('Enter');
   await expect(controller).toHaveAttribute('data-phase', 'items');
   // A switch driver may duplicate keydown without marking repeat. Starting
   // the scanner must not turn that same held activation press into selection.
@@ -159,6 +162,11 @@ test('Settings to explicit board selection, held keys, reload and manual recover
   expect(await page.evaluate(() => (window as unknown as { __switchRestartAudit: { clicks: number } }).__switchRestartAudit.clicks)).toBe(0);
   await page.keyboard.up('Enter');
   await expect(message).toHaveText(third);
+  await expect(page.locator('.switch-scan-active')).toHaveCount(1);
+  await safeScreenshot(page, info.outputPath('scanner-switch-restarted.png'), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="switch-scan-controller"]'],
+    criticalSelectors: ['[data-testid="switch-scan-controller"] button'],
+  });
   await page.getByRole('button', { name: 'Stop scanning', exact: true }).click();
   await expect(controller).toHaveCount(0); await expect(page.locator('.switch-scan-active')).toHaveCount(0);
   const manual = page.getByTestId('prediction-tile').nth(4);
