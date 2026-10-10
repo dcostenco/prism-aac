@@ -15,6 +15,8 @@ const PREDICTION_FONT_FLOOR_PX = 16;
 const EXPECTED_PREDICTION_COUNT = 5;
 const TEXT_PROBE_INSET_PX = 2;
 const MOTION_PERMISSION_GRANTED = 'granted' as const;
+const MAX_SCANNER_GROUP_STEPS = 12;
+const SCANNER_CONFIG_KEY = 'prism-switch-scan';
 type HeadEscapeAudit = { requests: number; motionRequests: number };
 const CAMERA_DENIAL = { message: 'Camera denied by test fixture', name: 'NotAllowedError' };
 const STARTUP_RETRY_MODES = [
@@ -154,6 +156,11 @@ test('Escape persists an explicit stop during scanning and requires user resume'
     expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="head-tracking-notice"]'],
     criticalSelectors: [KEYBOARD_CONTROL_ROW, PREDICTION_BAR_SELECTOR],
   });
+  const predictionGroup = page.locator('[data-scan-group="predictions"].switch-scan-active');
+  for (let step = 0; step < MAX_SCANNER_GROUP_STEPS && await predictionGroup.count() === 0; step++) {
+    await page.keyboard.press('Tab');
+  }
+  await expect(predictionGroup).toHaveCount(1);
   await page.keyboard.press('Escape');
   const toast = page.getByTestId('head-tracking-stop-toast');
   await expect(toast).toHaveAttribute('data-stop-reason', 'escape');
@@ -166,6 +173,33 @@ test('Escape persists an explicit stop during scanning and requires user resume'
   await assertReadablePredictionWords(page);
   await safeScreenshot(page, info.outputPath('escape-during-scanning.png'), {
     expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="head-tracking-stop-toast"]'],
+    criticalSelectors: [RESUME_LABEL_SELECTOR, KEYBOARD_CONTROL_ROW, PREDICTION_BAR_SELECTOR],
+  });
+  // The newly inserted recovery group precedes predictions. A fresh next
+  // switch must reach the keyboard, not repeat the same prediction group.
+  await page.keyboard.press('Tab');
+  await expect(page.locator('[data-scan-group="keyboard"].switch-scan-active')).toHaveCount(1);
+  const configuredColor = await page.evaluate(key => {
+    const raw = localStorage.getItem(key);
+    if (!raw) throw new Error('Scanner configuration was not persisted');
+    const probe = document.createElement('span'); probe.style.color = JSON.parse(raw).highlightColor;
+    return probe.style.color;
+  }, SCANNER_CONFIG_KEY);
+  await expect.poll(() => page.locator('[data-scan-group="keyboard"].switch-scan-active')
+    .evaluate(element => getComputedStyle(element).outlineColor)).toBe(configuredColor);
+  const keyboardPaint = await page.locator('[data-scan-group="keyboard"].switch-scan-active').evaluate(element => {
+    const style = getComputedStyle(element), rect = element.getBoundingClientRect();
+    return { outlineWidth: Number.parseFloat(style.outlineWidth), outlineOffset: Number.parseFloat(style.outlineOffset),
+      outlineColor: style.outlineColor, shadow: style.boxShadow, width: rect.width, height: rect.height };
+  });
+  console.log('SCANNER_GROUP_PAINT', JSON.stringify(keyboardPaint));
+  expect(keyboardPaint.width).toBeGreaterThan(0); expect(keyboardPaint.height).toBeGreaterThan(0);
+  expect(keyboardPaint.outlineWidth).toBeGreaterThan(0);
+  expect(keyboardPaint.outlineOffset).toBeLessThanOrEqual(-keyboardPaint.outlineWidth);
+  expect(keyboardPaint.shadow).toContain('inset');
+  await assertReadablePredictionWords(page);
+  await safeScreenshot(page, info.outputPath('navigation-after-recovery.png'), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-scan-group="keyboard"].switch-scan-active'],
     criticalSelectors: [RESUME_LABEL_SELECTOR, KEYBOARD_CONTROL_ROW, PREDICTION_BAR_SELECTOR],
   });
   await openInputSettings(page);

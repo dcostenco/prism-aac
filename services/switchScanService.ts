@@ -362,6 +362,14 @@ function injectHighlightStyle(color: string): void {
       z-index: 9000 !important;
       position: relative;
     }
+    .${HIGHLIGHT_CLASS}[${GROUP_ATTR}="keyboard"] {
+      /* The keyboard shell clips overflow. Keep its group cue inside the
+         frame without changing individual-key or other-group feedback. */
+      outline-offset: -4px !important;
+      outline-color: ${safeColor} !important;
+      box-shadow: inset 0 0 0 4px ${safeColor} !important;
+      animation: none !important;
+    }
   `;
   styleInjected = true;
 }
@@ -403,8 +411,22 @@ let groupedElements: Element[][] = [];
 /** Refresh element lists from the current DOM state. */
 function refreshElements(): void {
   flatElements = discoverElements();
+  const highlighted = currentHighlighted;
   if (activeConfig.groupScan) {
     groupedElements = discoverGroups();
+    // Rows can appear before the current group without changing its native
+    // identity. Navigation must step from that identity, not its old index.
+    if (!highlighted) return;
+    const groupIndex = groupedElements.findIndex(group => state.phase === 'groups'
+      ? highlighted === (group[0]?.closest(`[${GROUP_ATTR}]`) || group[0])
+      : group.includes(highlighted));
+    if (groupIndex >= 0) {
+      state.groupIndex = groupIndex;
+      if (state.phase === 'items') state.itemIndex = groupedElements[groupIndex].indexOf(highlighted);
+    }
+  } else if (highlighted) {
+    const itemIndex = flatElements.indexOf(highlighted);
+    if (itemIndex >= 0) state.itemIndex = itemIndex;
   }
 }
 
