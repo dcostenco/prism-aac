@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "ক্যামেরার নির্ভুলতার পরীক্ষা সফল হয়েছে।",
+  "tracking_accuracy_unverified": "ক্যালিব্রেশন সংরক্ষিত হয়েছে। ক্যামেরার নির্ভুলতা এখনও যাচাই করা হয়নি।",
+  "tracking_camera_hits": "ক্যামেরা দিয়ে নির্বাচন: {hits}/{total}।",
   "aac_chat_no_contacts": "কোনো পরিচিতি নেই।",
   "aac_chat_setup_hint": "অভিভাবক সেটটিংসে গিয়ে পরিচিতি যোগ করতে পারেন: Settings → Contacts।",
   "aac_chat_title": "বার্তা পাঠান",

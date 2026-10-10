@@ -22,7 +22,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StrictMode } from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import type {
   PoseTrackerHandle,
@@ -77,6 +77,7 @@ vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
 import TrackingSetupWizard from '@/components/TrackingSetupWizard';
 import { useSettingsStore } from '@/store/settingsStore';
 import { loadPoseCalibration, mapPoseToScreen } from '@/services/bodyPoseService';
+const BASE_SETTINGS = { ...useSettingsStore.getState() };
 
 const RANGE_DIAGNOSTIC_CASES = [
   { name: 'observed low-resolution range', x: 0.175, y: 0.178, accepted: true },
@@ -125,6 +126,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   // Settings — speech rate / volume must exist for aacSpeak's destructure.
   useSettingsStore.setState({
+    ...BASE_SETTINGS,
     speechRate: 1.0,
     speechVolume: 1.0,
   });
@@ -136,8 +138,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
+  useSettingsStore.setState(BASE_SETTINGS);
   vi.useRealTimers();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
   trackers.length = 0;
 });
 
@@ -158,6 +163,27 @@ it.each(RANGE_DIAGNOSTIC_CASES)('diagnostics agree with actual mapping for $name
 });
 
 describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners → test)', () => {
+  it.each([1, 5, 10])('calibrates the actual body-camera pipeline at chosen sensitivity %s', sensitivity => {
+    useSettingsStore.setState({ headTrackingSensitivity: sensitivity, headTrackingEyeGaze: true,
+      headTrackingEyeGazeWeight: 0.8 });
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    expect(latestTracker().opts.sensitivity).toBe(sensitivity);
+    // CameraInputOverlay does not blend the independent Head Tracking gaze
+    // setting into finger/hand control. Setup must test that same pipeline.
+    expect(latestTracker().opts.useEyeGaze).not.toBe(true);
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('right_index', 0.5, 0.5);
+      vi.advanceTimersByTime(5000);
+    });
+    // Let React commit the chosen part before the later auto-advance timer.
+    act(() => vi.advanceTimersByTime(1500));
+    expect(latestTracker().opts.trackingTarget).toBe('right_index');
+    expect(latestTracker().opts.sensitivity).toBe(sensitivity);
+    expect(latestTracker().opts.useEyeGaze).not.toBe(true);
+    expect(useSettingsStore.getState().headTrackingEyeGaze).toBe(true);
+  });
+
   it('intro → Get Started kicks off detecting phase + spins up a tracker', () => {
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
     expect(rootEl()).toHaveAttribute('data-phase', 'intro');
@@ -267,6 +293,130 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
     const cal = calls[calls.length - 1][0];
     expect(cal.leftX).toBeGreaterThan(cal.rightX);
     expect(cal.bottomY).toBeGreaterThan(cal.topY);
+  });
+});
+
+describe('TrackingSetupWizard — accuracy evidence', () => {
+  const TARGET_BOUNDS = { x: 464, y: 336, left: 464, top: 336, right: 560, bottom: 432,
+    width: 96, height: 96, toJSON: () => ({}) };
+  const EMPTY_BOUNDS = { x: 0, y: 0, left: 0, top: 0, right: 0, bottom: 0,
+    width: 0, height: 0, toJSON: () => ({}) };
+  const DRIFT_LEVELS = [0.003, 0.015];
+
+  function enterAccuracy() {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('nose', 0.5, 0.5);
+      vi.advanceTimersByTime(6500);
+    });
+    fireEvent.click(screen.getByTestId('tracking-calibrate-skip'));
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return this.dataset.testid?.startsWith('tracking-test-target-') ? TARGET_BOUNDS : EMPTY_BOUNDS;
+    });
+    Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: vi.fn(() =>
+      document.querySelector('[data-active="true"][data-testid^="tracking-test-target-"]')) });
+    act(() => latestTracker().opts.onStatusChange('tracking', 'nose'));
+  }
+
+  afterEach(() => { Reflect.deleteProperty(document, 'elementFromPoint'); });
+
+  it.each(DRIFT_LEVELS)('does not count a cursor visibly outside the circle, drift %s', drift => {
+    enterAccuracy();
+    act(() => latestTracker().opts.onMove(612 + drift * 1024, 384));
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.getByTestId('tracking-test-target-0')).toHaveAttribute('data-hit', 'false');
+  });
+
+  it('requires the entire cursor to fit, not just its center', () => {
+    enterAccuracy();
+    act(() => latestTracker().opts.onMove(552, 384));
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.getByTestId('tracking-test-target-0')).toHaveAttribute('data-hit', 'false');
+  });
+
+  it.each(DRIFT_LEVELS)('small continuous movements do not starve the pause timer, drift %s', drift => {
+    enterAccuracy();
+    for (let i = 0; i < 18; i++) {
+      act(() => latestTracker().opts.onMove(512 + drift * 1024 + Math.sin(i) * 2, 384));
+      act(() => vi.advanceTimersByTime(33));
+    }
+    expect(screen.getByTestId('tracking-test-target-0')).toHaveAttribute('data-hit', 'true');
+    expect(screen.getByTestId('tracking-test-target-0')).toHaveAttribute('data-camera-hit', 'true');
+  });
+
+  it('does not count a target covered by the diagnostics panel', () => {
+    enterAccuracy();
+    vi.mocked(document.elementFromPoint).mockReturnValue(screen.getByTestId('tracking-wizard-diag'));
+    act(() => latestTracker().opts.onMove(512, 384));
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.getByTestId('tracking-test-target-0')).toHaveAttribute('data-hit', 'false');
+  });
+
+  it('rejects a visually covering pointer-transparent diagnostic, even when native hit testing sees the button', () => {
+    enterAccuracy();
+    vi.mocked(HTMLElement.prototype.getBoundingClientRect).mockImplementation(function (this: HTMLElement) {
+      return this.dataset.testid?.startsWith('tracking-test-target-') || this.dataset.testid === 'tracking-wizard-diag'
+        ? TARGET_BOUNDS : EMPTY_BOUNDS;
+    });
+    act(() => latestTracker().opts.onMove(512, 384));
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.getByTestId('tracking-test-target-0')).toHaveAttribute('data-hit', 'false');
+  });
+
+  it('preserves manual target taps without presenting them as camera accuracy', () => {
+    enterAccuracy();
+    for (let i = 0; i < 5; i++) fireEvent.click(screen.getByTestId(`tracking-test-target-${i}`));
+    act(() => vi.advanceTimersByTime(600));
+    expect(rootEl()).toHaveAttribute('data-phase', 'complete');
+    expect(screen.getByTestId('tracking-accuracy-result')).toHaveAttribute('data-camera-hits', '0');
+    expect(screen.getByTestId('tracking-accuracy-result')).toHaveTextContent('not yet verified');
+  });
+
+  it('preserves skipping without silently certifying camera accuracy', () => {
+    enterAccuracy();
+    fireEvent.click(screen.getByTestId('tracking-test-skip'));
+    expect(rootEl()).toHaveAttribute('data-phase', 'complete');
+    expect(screen.getByTestId('tracking-accuracy-result')).toHaveAttribute('data-camera-hits', '0');
+    expect(screen.getByTestId('tracking-accuracy-result')).toHaveTextContent('not yet verified');
+  });
+
+  it('reports a pass only after all five camera-driven pause selections', () => {
+    enterAccuracy();
+    for (let target = 0; target < 5; target++) {
+      for (let frame = 0; frame < 18; frame++) {
+        act(() => latestTracker().opts.onMove(512 + Math.sin(frame) * 2, 384 + 0.015 * 768));
+        act(() => vi.advanceTimersByTime(33));
+      }
+      if (target < 4) expect(screen.getByTestId(`tracking-test-target-${target}`)).toHaveAttribute('data-camera-hit', 'true');
+    }
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.getByTestId('tracking-accuracy-result')).toHaveAttribute('data-accuracy-passed', 'true');
+    expect(screen.getByTestId('tracking-accuracy-result')).toHaveAttribute('data-camera-hits', '5');
+  });
+
+  it('resets a partial pause after tracking is lost', () => {
+    enterAccuracy();
+    act(() => latestTracker().opts.onMove(512, 384));
+    act(() => vi.advanceTimersByTime(240));
+    act(() => simulatePoseLost());
+    act(() => vi.advanceTimersByTime(600));
+    act(() => latestTracker().opts.onStatusChange('tracking', 'nose'));
+    act(() => vi.advanceTimersByTime(240));
+    expect(screen.getByTestId('tracking-test-target-0')).toHaveAttribute('data-camera-hit', 'false');
+    act(() => vi.advanceTimersByTime(400));
+    expect(screen.getByTestId('tracking-test-target-0')).toHaveAttribute('data-camera-hit', 'true');
+  });
+
+  it('keeps timeout completion available without manufacturing camera hits', () => {
+    enterAccuracy();
+    act(() => simulatePoseLost());
+    for (let target = 0; target < 5; target++) act(() => vi.advanceTimersByTime(10_000));
+    act(() => vi.advanceTimersByTime(600));
+    expect(rootEl()).toHaveAttribute('data-phase', 'complete');
+    expect(screen.getByTestId('tracking-accuracy-result')).toHaveAttribute('data-camera-hits', '0');
+    expect(screen.getByTestId('tracking-accuracy-result')).toHaveTextContent('not yet verified');
   });
 });
 

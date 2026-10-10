@@ -1312,3 +1312,29 @@ input[type="range"] {
   min-height: 48px;
   min-width: 48px;
 }
+
+/* Keep the accuracy result and its finish action together on short screens.
+   No status text or escape option is hidden to make the panel fit. */
+@media (max-height: 500px) {
+  .tracking-wizard-complete .tracking-wizard-result-icon {
+    font-size: 2rem;
+    line-height: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .tracking-wizard-complete h2 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  .tracking-wizard-complete > p {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  .tracking-wizard-complete > button {
+    min-height: 48px;
+    padding-block: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}

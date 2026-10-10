@@ -416,6 +416,9 @@
           "tone",
           "toolbar_browser",
           "tracking",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "try_again",
           "type_here",
@@ -509,6 +512,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -926,6 +941,9 @@
           "tone",
           "toolbar_browser",
           "tracking",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "try_again",
           "type_here",
@@ -1019,6 +1037,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -1436,6 +1466,9 @@
           "tone",
           "toolbar_browser",
           "tracking",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "try_again",
           "type_here",
@@ -1529,6 +1562,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -1581,6 +1626,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -1621,6 +1669,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -1673,6 +1733,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -1713,6 +1776,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -1765,6 +1840,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -1805,6 +1883,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -1857,6 +1947,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -1897,6 +1990,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -1949,6 +2054,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -1989,6 +2097,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2041,6 +2161,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2081,6 +2204,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2133,6 +2268,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2173,6 +2311,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2225,6 +2375,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2265,6 +2418,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2317,6 +2482,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2357,6 +2525,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2409,6 +2589,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2449,6 +2632,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2501,6 +2696,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2541,6 +2739,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2593,6 +2803,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2633,6 +2846,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2685,6 +2910,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2725,6 +2953,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2777,6 +3017,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2817,6 +3060,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2869,6 +3124,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -2909,6 +3167,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -2961,6 +3231,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -3001,6 +3274,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -3053,6 +3338,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -3093,6 +3381,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -3145,6 +3445,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -3185,6 +3488,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -3237,6 +3552,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -3277,6 +3595,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -3329,6 +3659,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -3369,6 +3702,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -3421,6 +3766,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -3461,6 +3809,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -3513,6 +3873,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -3553,6 +3916,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -3605,6 +3980,9 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
@@ -3645,6 +4023,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       },
@@ -3659,6 +4049,9 @@
           "scan_start",
           "scan_stop",
           "scan_stopped",
+          "tracking_accuracy_passed",
+          "tracking_accuracy_unverified",
+          "tracking_camera_hits",
           "tracking_unavailable"
         ],
         "generatorById": {
@@ -3689,6 +4082,18 @@
           "tracking_unavailable": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T09:27:49.802Z"
+          },
+          "tracking_accuracy_passed": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_accuracy_unverified": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_camera_hits": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-10T22:09:15.409Z"
           }
         }
       }

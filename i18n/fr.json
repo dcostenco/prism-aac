@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Test de précision de la caméra réussi.",
+  "tracking_accuracy_unverified": "Étalonnage enregistré. La précision de la caméra n’est pas encore vérifiée.",
+  "tracking_camera_hits": "Sélections par caméra : {hits}/{total}.",
   "aac_chat_no_contacts": "Aucun contact pour l'instant.",
   "aac_chat_setup_hint": "Un soignant peut ajouter des contacts dans Paramètres → Contacts.",
   "aac_chat_title": "Envoyer un message",

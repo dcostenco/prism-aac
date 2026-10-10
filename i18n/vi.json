@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Đã vượt qua kiểm tra độ chính xác của camera.",
+  "tracking_accuracy_unverified": "Đã lưu hiệu chuẩn. Độ chính xác của camera chưa được xác minh.",
+  "tracking_camera_hits": "Lựa chọn bằng camera: {hits}/{total}.",
   "aac_chat_no_contacts": "Chưa có liên hệ.",
   "aac_chat_setup_hint": "Người chăm sóc có thể thêm liên hệ trong Cài đặt → Liên hệ.",
   "aac_chat_title": "Gửi tin nhắn",

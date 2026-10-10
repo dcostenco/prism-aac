@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Тестът за точност на камерата е успешен.",
+  "tracking_accuracy_unverified": "Калибрирането е запазено. Точността на камерата все още не е потвърдена.",
+  "tracking_camera_hits": "Избори чрез камерата: {hits}/{total}.",
   "aac_chat_no_contacts": "Все още няма контакти.",
   "aac_chat_setup_hint": "Настойник може да добави контакти в Настройки → Контакти.",
   "aac_chat_title": "Изпрати съобщение",

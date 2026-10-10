@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "कैमरे की सटीकता का परीक्षण सफल रहा।",
+  "tracking_accuracy_unverified": "कैलिब्रेशन सहेज लिया गया है। कैमरे की सटीकता की अभी पुष्टि नहीं हुई है।",
+  "tracking_camera_hits": "कैमरे से चयन: {hits}/{total}।",
   "aac_chat_no_contacts": "अभी तक कोई संपर्क नहीं।",
   "aac_chat_setup_hint": "देखभालकर्ता सेटिंग्स → संपर्क में संपर्क जोड़ सकते हैं।",
   "aac_chat_title": "संदेश भेजें",

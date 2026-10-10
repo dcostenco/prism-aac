@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Kamera-Genauigkeitstest bestanden.",
+  "tracking_accuracy_unverified": "Kalibrierung gespeichert. Die Kameragenauigkeit ist noch nicht bestätigt.",
+  "tracking_camera_hits": "Auswahl per Kamera: {hits}/{total}.",
   "aac_chat_no_contacts": "Noch keine Kontakte.",
   "aac_chat_setup_hint": "Eine Betreuungsperson kann Kontakte in Einstellungen → Kontakte hinzufügen.",
   "aac_chat_title": "Nachricht senden",

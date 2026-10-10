@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Testul de precizie al camerei a fost trecut.",
+  "tracking_accuracy_unverified": "Calibrarea a fost salvată. Precizia camerei nu a fost încă verificată.",
+  "tracking_camera_hits": "Selecții prin cameră: {hits}/{total}.",
   "aac_chat_no_contacts": "Nu există contacte încă.",
   "aac_chat_setup_hint": "Un îngrijitor poate adăuga contacte din Setări → Contacte.",
   "aac_chat_title": "Trimite un mesaj",

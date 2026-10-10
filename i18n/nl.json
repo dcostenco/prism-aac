@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Nauwkeurigheidstest van de camera geslaagd.",
+  "tracking_accuracy_unverified": "Kalibratie opgeslagen. De nauwkeurigheid van de camera is nog niet bevestigd.",
+  "tracking_camera_hits": "Selecties via de camera: {hits}/{total}.",
   "aac_chat_no_contacts": "Nog geen contacten.",
   "aac_chat_setup_hint": "Een verzorger kan contacten toevoegen in Instellingen → Contacten.",
   "aac_chat_title": "Bericht versturen",

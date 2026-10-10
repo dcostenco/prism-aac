@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "የካሜራ ትክክለኛነት ሙከራ ተሳክቷል።",
+  "tracking_accuracy_unverified": "ማስተካከያው ተቀምጧል። የካሜራ ትክክለኛነት ገና አልተረጋገጠም።",
+  "tracking_camera_hits": "በካሜራ የተመረጡ፦ {hits}/{total}።",
   "aac_chat_no_contacts": "ምንም እውቂያዎች የሉም።",
   "aac_chat_setup_hint": "አሳዳጊው እውቂያዎችን በማስተካከያ → እውቂያዎች ማከል ይችላል።",
   "aac_chat_title": "መልእክት ላክ",

@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Kamera doğruluk testi başarılı.",
+  "tracking_accuracy_unverified": "Kalibrasyon kaydedildi. Kamera doğruluğu henüz doğrulanmadı.",
+  "tracking_camera_hits": "Kamera ile seçimler: {hits}/{total}.",
   "aac_chat_no_contacts": "Henüz kişi yok.",
   "aac_chat_setup_hint": "Bir bakıcı Ayarlar → Kişiler bölümünden kişi ekleyebilir.",
   "aac_chat_title": "Mesaj gönder",

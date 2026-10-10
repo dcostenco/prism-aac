@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "鏡頭準確度測試已通過。",
+  "tracking_accuracy_unverified": "校準已儲存。鏡頭準確度尚未驗證。",
+  "tracking_camera_hits": "鏡頭選擇：{hits}/{total}。",
   "aac_chat_no_contacts": "尚未有聯絡人。",
   "aac_chat_setup_hint": "照顧者可在設定 → 聯絡人中新增聯絡人。",
   "aac_chat_title": "發送訊息",

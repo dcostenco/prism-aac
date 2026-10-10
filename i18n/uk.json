@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Перевірку точності камери пройдено.",
+  "tracking_accuracy_unverified": "Калібрування збережено. Точність камери ще не перевірена.",
+  "tracking_camera_hits": "Вибори за допомогою камери: {hits}/{total}.",
   "aac_chat_no_contacts": "Ще немає контактів.",
   "aac_chat_setup_hint": "Опікун може додати контакти в Налаштування → Контакти.",
   "aac_chat_title": "Надіслати повідомлення",

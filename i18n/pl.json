@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Test dokładności kamery zakończony pomyślnie.",
+  "tracking_accuracy_unverified": "Kalibracja zapisana. Dokładność kamery nie została jeszcze zweryfikowana.",
+  "tracking_camera_hits": "Wybory za pomocą kamery: {hits}/{total}.",
   "aac_chat_no_contacts": "Brak kontaktów.",
   "aac_chat_setup_hint": "Opiekun może dodać kontakty w Ustawienia → Kontakty.",
   "aac_chat_title": "Wyślij wiadomość",

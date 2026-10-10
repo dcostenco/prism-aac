@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Camera accuracy test passed.",
+  "tracking_accuracy_unverified": "Calibration saved. Camera accuracy is not yet verified.",
+  "tracking_camera_hits": "Camera selections: {hits}/{total}.",
   "aac_chat_no_contacts": "No contacts yet.",
   "aac_chat_setup_hint": "A caregiver can add contacts in Settings → Contacts.",
   "aac_chat_title": "Send a message",

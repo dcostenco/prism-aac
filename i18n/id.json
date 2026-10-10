@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Uji akurasi kamera berhasil.",
+  "tracking_accuracy_unverified": "Kalibrasi tersimpan. Akurasi kamera belum diverifikasi.",
+  "tracking_camera_hits": "Pilihan melalui kamera: {hits}/{total}.",
   "aac_chat_no_contacts": "Belum ada kontak.",
   "aac_chat_setup_hint": "Pengasuh dapat menambahkan kontak di Pengaturan → Kontak.",
   "aac_chat_title": "Kirim pesan",

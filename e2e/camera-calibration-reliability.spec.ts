@@ -163,6 +163,18 @@ for (const profile of [
     });
     // Manual escape remains usable; it is not recognition/accuracy proof.
     await page.getByTestId('tracking-test-skip').click();
+    const result = page.getByTestId('tracking-accuracy-result');
+    await expect(result).toHaveAttribute('data-accuracy-passed', 'false');
+    await expect(result).toContainText('Camera accuracy is not yet verified');
+    const finishBounds = await page.getByRole('button', { name: 'Start Using Prism AAC' }).boundingBox();
+    expect(finishBounds).not.toBeNull();
+    expect(finishBounds!.height).toBeGreaterThanOrEqual(48);
+    expect(finishBounds!.y + finishBounds!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+    await safeScreenshot(page, info.outputPath('accuracy-not-verified.png'), {
+      expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-accuracy-result"]'],
+      criticalSelectors: ['[data-testid="tracking-accuracy-result"]', '[data-phase="complete"] .max-w-md > button'],
+      occluderSelectors: ['[data-testid="tracking-wizard-pip-wrapper"]'],
+    });
     await page.evaluate(() => Object.assign((window as unknown as {
       __cameraReplay: object }).__cameraReplay, { lost: false, x: 0, y: 0 }));
     await page.getByRole('button', { name: 'Start Using Prism AAC' }).click();

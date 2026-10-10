@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "카메라 정확도 테스트를 통과했습니다.",
+  "tracking_accuracy_unverified": "보정이 저장되었습니다. 카메라 정확도는 아직 확인되지 않았습니다.",
+  "tracking_camera_hits": "카메라로 선택: {hits}/{total}.",
   "aac_chat_no_contacts": "아직 연락처가 없습니다.",
   "aac_chat_setup_hint": "보호자가 설정 → 연락처에서 연락처를 추가할 수 있습니다.",
   "aac_chat_title": "메시지 보내기",

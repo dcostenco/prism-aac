@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Prueba de precisión de la cámara superada.",
+  "tracking_accuracy_unverified": "Calibración guardada. La precisión de la cámara aún no se ha verificado.",
+  "tracking_camera_hits": "Selecciones con la cámara: {hits}/{total}.",
   "aac_chat_no_contacts": "Aún no hay contactos.",
   "aac_chat_setup_hint": "Un cuidador puede añadir contactos en Configuración → Contactos.",
   "aac_chat_title": "Enviar un mensaje",

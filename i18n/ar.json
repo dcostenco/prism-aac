@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "اجتاز اختبار دقة الكاميرا.",
+  "tracking_accuracy_unverified": "تم حفظ المعايرة. لم يتم التحقق من دقة الكاميرا بعد.",
+  "tracking_camera_hits": "اختيارات الكاميرا: {hits}/{total}.",
   "aac_chat_no_contacts": "لا توجد جهات اتصال بعد.",
   "aac_chat_setup_hint": "يمكن لمقدم الرعاية إضافة جهات الاتصال في الإعدادات ← جهات الاتصال.",
   "aac_chat_title": "إرسال رسالة",

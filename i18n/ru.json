@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "Проверка точности камеры пройдена.",
+  "tracking_accuracy_unverified": "Калибровка сохранена. Точность камеры ещё не проверена.",
+  "tracking_camera_hits": "Выборы с помощью камеры: {hits}/{total}.",
   "aac_chat_no_contacts": "Пока нет контактов.",
   "aac_chat_setup_hint": "Опекун может добавить контакты в Настройки → Контакты.",
   "aac_chat_title": "Отправить сообщение",

@@ -1,4 +1,7 @@
 {
+  "tracking_accuracy_passed": "摄像头准确度测试已通过。",
+  "tracking_accuracy_unverified": "校准已保存。摄像头准确度尚未验证。",
+  "tracking_camera_hits": "摄像头选择：{hits}/{total}。",
   "aac_chat_no_contacts": "暂无联系人。",
   "aac_chat_setup_hint": "看护者可以在设置 → 联系人中添加联系人。",
   "aac_chat_title": "发送消息",
