@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { safeScreenshot } from './helpers/screenshot-validation';
 import { installLocalCameraAccess } from './helpers/camera-access-fixture';
 test.beforeEach(async ({ page, baseURL }, info) => installLocalCameraAccess(page, baseURL, info));
+test.use({ serviceWorkers: 'block' });
 
 test.afterEach(async ({ page, context }) => {
   try { await page.close(); } catch { /* fixture may already be closed */ }

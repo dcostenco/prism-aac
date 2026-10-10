@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { safeScreenshot } from './helpers/screenshot-validation';
 import { expectPhotographicCameraInput, installCameraVideoProbe } from './helpers/camera-provenance';
@@ -16,7 +17,17 @@ for (const drift of [0, 0.003, 0.015]) {
   test(`head and gesture input survives camera loss, drift ${drift}`, async ({ page }, info) => {
     test.setTimeout(120_000);
     const errors: string[] = [];
+    const assetResponses: { url: string; status: number; mime: string }[] = [];
+    const failedAssets: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
+    page.on('response', response => {
+      if (new URL(response.url()).pathname.includes('/models/mediapipe/')) assetResponses.push({
+        url: response.url(), status: response.status(), mime: response.headers()['content-type'] ?? '',
+      });
+    });
+    page.on('requestfailed', request => {
+      if (new URL(request.url()).pathname.includes('/models/mediapipe/')) failedAssets.push(request.url());
+    });
     await page.addInitScript(installCameraVideoProbe);
     await page.addInitScript(({ photograph, drift }) => {
       const state = { lost: false, frames: 0, calls: 0, trackId: '', retiredTrackIds: [] as string[] };
@@ -100,5 +111,21 @@ for (const drift of [0, 0.003, 0.015]) {
     await page.keyboard.press('Escape');
     await expect(overlay).toHaveCount(0);
     expect(errors).toEqual([]);
+    // Tracking status alone can conceal a fallback or a failed landmark model.
+    // Bind this loader smoke to actual self-hosted responses, not fixture mocks.
+    const assetEvidence = info.outputPath('mediapipe-assets.json');
+    await writeFile(assetEvidence, JSON.stringify(assetResponses));
+    await info.attach('mediapipe-assets.json', { path: assetEvidence, contentType: 'application/json' });
+    expect(failedAssets).toEqual([]);
+    expect(assetResponses.length).toBeGreaterThan(0);
+    for (const asset of assetResponses) {
+      expect(new URL(asset.url).origin).toBe(new URL(page.url()).origin);
+      expect(asset.status).toBe(200);
+      if (asset.url.endsWith('.wasm')) expect(asset.mime).toContain('application/wasm');
+    }
+    for (const model of ['blaze_face_short_range.tflite', 'face_landmarker.task']) {
+      expect(assetResponses.some(asset => asset.url.endsWith(`/${model}`))).toBe(true);
+    }
+    expect(assetResponses.some(asset => asset.url.endsWith('.wasm'))).toBe(true);
   });
 }

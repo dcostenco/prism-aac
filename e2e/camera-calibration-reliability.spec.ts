@@ -13,7 +13,7 @@ const photograph = readFileSync(resolve(process.cwd(), 'e2e/_fixtures/wizard-sce
 
 // Camera inference and continuous trace screencasts compete on small devices.
 // Keep call/network diagnostics, plus explicit validated workflow screenshots.
-test.use({ trace: { mode: 'retain-on-failure', screenshots: false, snapshots: false } });
+test.use({ serviceWorkers: 'block', trace: { mode: 'retain-on-failure', screenshots: false, snapshots: false } });
 
 test.afterEach(async ({ page, context }) => {
   await page.close();
