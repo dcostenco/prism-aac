@@ -112,8 +112,42 @@ async function calibratedWizard() {
   return view;
 }
 
+async function centerOnlyWizard() {
+  const view = render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+  fireEvent.click(screen.getByTestId('tracking-setup-start'));
+  await act(async () => { await Promise.resolve(); });
+  pose(0.5, 0.5); await step(66); await step(40);
+  expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'calibrate-center');
+  fireEvent.click(screen.getByTestId('tracking-capture-center'));
+  expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'calibrate-corners');
+  const preview = loadPoseCalibration();
+  fireEvent.click(screen.getByTestId('tracking-save-center-only'));
+  expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'accuracy-test');
+  return { view, preview };
+}
+
 describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it('finalizes the limited-mobility center-only save without discarding its captured mapping', async () => {
+    const { preview } = await centerOnlyWizard();
+    const saved = loadPoseCalibration();
+    expect(saved.wizardCompleted).toBe(true);
+    expect(saved).toMatchObject({ leftX: preview.leftX, rightX: preview.rightX, topY: preview.topY, bottomY: preview.bottomY });
+    // Completion belongs to this saved orientation, not a new global signal
+    // that could suppress bootstrap for a different, uncalibrated orientation.
+    expect(localStorage.getItem('prism_pose_wizard_completed')).toBeNull();
+  });
+
+  it('keeps center-only ranges intact in the live accuracy tracker instead of bootstrap shrinking them', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    const { preview } = await centerOnlyWizard();
+    pose(0.5, 0.5); await step(530);
+    const saved = loadPoseCalibration();
+    expect(saved.leftX - saved.rightX).toBeCloseTo(preview.leftX - preview.rightX, 5);
+    expect(saved.bottomY - saved.topY).toBeCloseTo(preview.bottomY - preview.topY, 5);
+    expect(saved.wizardCompleted).toBe(true);
+  });
+
   it('saves selected-finger calibration and restores its real cursor mapping in the application overlay', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1);
     const wizard = await calibratedWizard();

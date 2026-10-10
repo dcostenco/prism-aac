@@ -10,6 +10,9 @@ test.beforeEach(async ({ page, baseURL }, info) => installLocalCameraAccess(page
 // MediaPipe WASM, detector, tracker,
 // private samples, wizard, storage and cursor rendering are all production.
 const photograph = readFileSync(resolve(process.cwd(), 'e2e/_fixtures/wizard-scenarios/person-on-sofa.jpg')).toString('base64');
+const NEAR_CROPPED_PROFILE = { name: 'near-cropped-dim', width: 160, height: 120,
+  zoom: 2.1, tilt: -0.15, brightness: 0.65, blur: 1, drift: 0.015 };
+const RANGE_COMPARE_EPSILON = 1e-9;
 
 // Camera inference and continuous trace screencasts compete on small devices.
 // Keep call/network diagnostics, plus explicit validated workflow screenshots.
@@ -22,7 +25,8 @@ test.afterEach(async ({ page, context }) => {
 
 for (const profile of [
   { name: 'close-low-resolution', width: 320, height: 240, zoom: 1.5, tilt: 0.12, brightness: 0.8, blur: 0.5, drift: 0.003 },
-  { name: 'near-cropped-dim', width: 160, height: 120, zoom: 2.1, tilt: -0.15, brightness: 0.65, blur: 1, drift: 0.015 },
+  NEAR_CROPPED_PROFILE,
+  { ...NEAR_CROPPED_PROFILE, name: 'near-cropped-dim-center-only', centerOnly: true },
 ]) {
   test(`synthetic camera smoke ${profile.name}, drift ${profile.drift}`, async ({ page }, info) => {
     test.setTimeout(120_000);
@@ -119,6 +123,12 @@ for (const profile of [
     expect(await page.getByTestId('tracking-center-target').boundingBox()).toEqual(frozenCircle);
     await page.clock.resume();
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-corners', { timeout: 25_000 });
+    const centerOnly = 'centerOnly' in profile && profile.centerOnly;
+    if (centerOnly) {
+      await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+      await page.getByTestId('tracking-save-center-only').click();
+      await page.clock.resume();
+    } else {
     const offsets = [[0.10, -0.08], [-0.10, -0.08], [-0.10, 0.08], [0.10, 0.08]];
     for (let index = 0; index < offsets.length; index++) {
       const [x, y] = offsets[index];
@@ -131,10 +141,16 @@ for (const profile of [
           `Step 2: Corners (${index + 2}/4)`, { timeout: 12_000 });
       }
     }
+    }
     await expect(wizard).toHaveAttribute('data-phase', 'accuracy-test', { timeout: 12_000 });
     // This limited-motion replay is accepted by the runtime. The visible
     // diagnostic must not contradict it with a legacy, stricter range floor.
     await expect(page.getByTestId('tracking-wizard-diag')).toContainText('min-range: OK');
+    const centerCalibration = centerOnly ? await page.evaluate(() => {
+      const orientation = innerWidth >= innerHeight ? 'landscape' : 'portrait';
+      return JSON.parse(localStorage.getItem(`prism-pose-calibration-${orientation}`)!);
+    }) : null;
+    if (centerOnly) expect(centerCalibration.wizardCompleted).toBe(true);
     await expectPhotographicCameraInput(page, '__cameraReplay');
     const hits = await page.getByTestId('tracking-test-hits').innerText();
     await page.evaluate(() => Object.assign((window as unknown as {
@@ -166,6 +182,17 @@ for (const profile of [
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
     await expect(page.getByRole('button', { name: 'Camera input', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    if (centerOnly) {
+      const restored = await page.evaluate(() => {
+        const orientation = innerWidth >= innerHeight ? 'landscape' : 'portrait';
+        return JSON.parse(localStorage.getItem(`prism-pose-calibration-${orientation}`)!);
+      });
+      expect(restored.wizardCompleted).toBe(true);
+      expect(restored.leftX - restored.rightX + RANGE_COMPARE_EPSILON)
+        .toBeGreaterThanOrEqual(centerCalibration.leftX - centerCalibration.rightX);
+      expect(restored.bottomY - restored.topY + RANGE_COMPARE_EPSILON)
+        .toBeGreaterThanOrEqual(centerCalibration.bottomY - centerCalibration.topY);
+    }
     expect(errors).toEqual([]);
   });
 }

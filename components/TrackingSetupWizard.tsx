@@ -979,7 +979,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               {centerSampleRef.current && (
                 <button
                   onClick={() => {
+                    const center = centerSampleRef.current;
+                    if (!mountedRef.current || !center) return;
                     tapFeedback();
+                    // Finalize the same captured neutral mapping as preview,
+                    // including the live learner's completed-calibration lock.
+                    const cal = { ...computeCenterPreviewCalibration(center), wizardCompleted: true };
+                    savePoseCalibration(cal);
+                    applyCalibrationToActiveTracker(cal);
                     unfreezeLearnerCalSaves();
                     updateSettings({
                       cameraInputEnabled: true,
