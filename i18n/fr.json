@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "Vérification de votre compte. Se connecter est gratuit.",
   "web_signin_free_account": "Un compte gratuit est requis après la démo d'une minute. L'abonnement cloud est facultatif.",
   "web_signin_draft_fallback": "Impossible de sauvegarder votre message ici. Google va s'ouvrir dans un autre onglet. Gardez cette page ouverte pour retrouver votre texte.",
-  "toolbar_browser": "Navigateur"
+  "toolbar_browser": "Navigateur",
+  "scan_active": "Balayage en cours",
+  "scan_stopped": "Balayage en pause",
+  "scan_start": "Démarrer le balayage",
+  "scan_stop": "Arrêter le balayage",
+  "scan_keys": "Space/Enter : sélectionner · Tab : suivant"
 }

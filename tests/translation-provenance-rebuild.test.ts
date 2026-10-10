@@ -12,7 +12,8 @@ import path from 'node:path';
 // the repo; without it, a run wrote the file with no corpus surface and erased
 // 50,658 records. It also listed English, the source language, as machine output.
 
-type Surfaces = Record<string, Record<string, { reviewed: string[]; unreviewed: string[] }>>;
+type Surfaces = Record<string, Record<string, { reviewed: string[]; unreviewed: string[];
+  generatorById?: Record<string, { generator: string; generatedAt: string }> }>>;
 
 const ROOT = path.resolve(__dirname, '..');
 const TRACKED = path.join(ROOT, 'i18n', 'provenance', 'machine-translations.json');
@@ -79,6 +80,19 @@ describe('rebuilding the translation provenance', () => {
 
   it('never lists English, the source language, as machine output', () => {
     expect(Object.entries(after).filter(([, langs]) => 'en' in langs).map(([s]) => s)).toEqual([]);
+  });
+
+  it('retains specific scanner-text origins without treating draft translations as reviewed', () => {
+    const scannerKeys = ['scan_active', 'scan_stopped', 'scan_start', 'scan_stop', 'scan_keys'];
+    const matrix = JSON.parse(fs.readFileSync(path.join(ROOT, 'i18n', 'translations.json'), 'utf-8'));
+    for (const lang of Object.keys(matrix.scan_active).filter(lang => lang !== 'en')) {
+      for (const key of scannerKeys) {
+        expect(before.ui[lang].generatorById?.[key]?.generator).toBe('host-ai-draft');
+        expect(after.ui[lang].generatorById?.[key]).toEqual(before.ui[lang].generatorById?.[key]);
+        expect(after.ui[lang].unreviewed).toContain(key);
+        expect(after.ui[lang].reviewed).not.toContain(key);
+      }
+    }
   });
 
   it('does not touch the tracked file', () => {

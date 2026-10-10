@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "Konto und Web-Vorschau werden geprüft. Die Anmeldung ist kostenlos und startet kein kostenpflichtiges Abo.",
   "web_signin_free_account": "Die Web-App erfordert nach einer Minute Vorschau ein kostenloses Konto. Cloud-Abos sind optional.",
   "web_signin_draft_fallback": "Dieser Browser konnte deine angefangene Nachricht nicht für die Anmeldung speichern. Bei Weiter zu Google öffnet sich ein neuer Tab. Lass diesen Tab offen und kehre nach der Anmeldung hierher zurück.",
-  "toolbar_browser": "Browser"
+  "toolbar_browser": "Browser",
+  "scan_active": "Scanning",
+  "scan_stopped": "Scanning pausiert",
+  "scan_start": "Scanning starten",
+  "scan_stop": "Scanning stoppen",
+  "scan_keys": "Space/Enter: auswählen · Tab: weiter"
 }

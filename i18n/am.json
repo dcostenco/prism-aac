@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "አካውንትዎን በማረጋገጥ ላይ። መግባት ነፃ ነው፣ ክፍያ አያስጀምርም።",
   "web_signin_free_account": "የዌብ መተግበሪያው ከቅድመ-እይታ በኋላ ነፃ አካውንት ይፈልጋል። የክላውድ ክፍያ አማራጭ ነው።",
   "web_signin_draft_fallback": "ይህ አሳሽ ያልተጠናቀቀ መልእክትዎን ማስቀመጥ አልቻለም። በGoogle ሲቀጥሉ ሌላ ገጽ ይከፈታል። መልእክትዎን ለማግኘት ይህንን ገጽ ክፍት ያድርጉት።",
-  "toolbar_browser": "አሳሽ"
+  "toolbar_browser": "አሳሽ",
+  "scan_active": "ቅኝት በሂደት ላይ",
+  "scan_stopped": "ቅኝት ለጊዜው ቆሟል",
+  "scan_start": "ቅኝት ጀምር",
+  "scan_stop": "ቅኝት አቁም",
+  "scan_keys": "Space/Enter: ምረጥ · Tab: ቀጣይ"
 }

@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "Memeriksa akun dan pratinjau web Anda. Masuk akun itu gratis dan tidak memulai langganan berbayar.",
   "web_signin_free_account": "Aplikasi web membutuhkan akun gratis setelah pratinjau satu menit. Langganan cloud bersifat opsional.",
   "web_signin_draft_fallback": "Browser ini tidak bisa menyimpan pesan Anda saat masuk akun. Lanjut ke Google akan membuka tab baru. Biarkan tab ini terbuka dan kembali ke sini setelah masuk untuk melanjutkan pesan Anda.",
-  "toolbar_browser": "Browser"
+  "toolbar_browser": "Browser",
+  "scan_active": "Pemindaian berlangsung",
+  "scan_stopped": "Pemindaian dijeda",
+  "scan_start": "Mulai pemindaian",
+  "scan_stop": "Hentikan pemindaian",
+  "scan_keys": "Space/Enter: pilih · Tab: berikutnya"
 }

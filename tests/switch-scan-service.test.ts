@@ -44,6 +44,7 @@ Element.prototype.scrollIntoView = vi.fn();
 // ── localStorage helpers ──────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'prism-switch-scan';
+const RELEASE_KEYS = [' ', 'Enter', 'Tab'] as const;
 
 function clearStorage() {
   localStorage.removeItem(STORAGE_KEY);
@@ -63,6 +64,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const key of RELEASE_KEYS) {
+    document.body.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true, cancelable: true }));
+  }
   stopScan();
   clearStorage();
   vi.useRealTimers();

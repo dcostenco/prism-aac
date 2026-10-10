@@ -6,7 +6,7 @@ import { useT } from '@/engine/useT';
 import TrackingSetupWizard from './TrackingSetupWizard';
 import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
 import { requestMotionPermission } from '@/services/deviceMotion';
-import { loadConfig as loadSwitchConfig, saveConfig as saveSwitchConfig, startScan, stopScan, type SwitchScanConfig } from '@/services/switchScanService';
+import { loadConfig as loadSwitchConfig, saveConfig as saveSwitchConfig, SWITCH_SCAN_CONFIG_EVENT, type SwitchScanConfig } from '@/services/switchScanService';
 
 // 'any_*' targets let bodyPoseService pick the more visible side per
 // frame (services/bodyPoseService.ts:78 chooseAggregateTarget). The
@@ -29,11 +29,16 @@ const TRACKING_TARGETS = [
   { id: 'left_shoulder', label: 'Left Shoulder' },
 ];
 
+const INPUT_TOGGLE_ROW_CLASS = 'flex items-center justify-between gap-8 py-3';
+
 function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
   return (
     <button onClick={() => { tapFeedback(); onToggle(); }} aria-pressed={on} aria-label={label}
-      className={`w-12 h-7 rounded-full transition-colors shrink-0 ${on ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}>
-      <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${on ? 'translate-x-5' : ''}`} />
+      data-input-mode-toggle="true"
+      className="relative w-16 h-12 inline-flex items-center rounded-none bg-transparent shrink-0">
+      {/* Paint the pill without clipping the native 64×48 selection surface. */}
+      <span aria-hidden="true" className={`absolute inset-0 rounded-full pointer-events-none transition-colors ${on ? 'bg-[#4CAF50]' : 'bg-[#999]'}`} />
+      <div className={`relative w-8 h-8 rounded-full bg-white pointer-events-none transition-transform mx-1 ${on ? 'translate-x-6' : ''}`} />
     </button>
   );
 }
@@ -58,8 +63,8 @@ export default function InputModesSettings() {
       {/* Camera Finger/Body Tracking (opt-in — settings store default false) */}
       <div data-testid="camera-input-settings">
         <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Camera Input</h4>
-        <label className="flex items-center justify-between py-1.5">
-          <div>
+        <label className={INPUT_TOGGLE_ROW_CLASS}>
+          <div className="min-w-0 flex-1">
             <span className="text-primary text-sm font-semibold">Camera Finger Tracking</span>
             <p className="text-muted text-xs">Camera tracks your finger/arm and moves cursor on screen</p>
           </div>
@@ -93,8 +98,8 @@ export default function InputModesSettings() {
       </div>
 
       {/* Hand Calibration visibility toggle */}
-      <label className="flex items-center justify-between py-1.5">
-        <div>
+      <label className={INPUT_TOGGLE_ROW_CLASS}>
+        <div className="min-w-0 flex-1">
           <span className="text-primary text-sm font-semibold">Hand Calibration Settings</span>
           <p className="text-muted text-xs">Show hand profile + per-finger button mapping in Settings</p>
         </div>
@@ -104,8 +109,8 @@ export default function InputModesSettings() {
       {/* Vision Context — camera object detection for phrase suggestions */}
       <div data-testid="vision-context-settings">
         <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Vision Context</h4>
-        <label className="flex items-center justify-between py-1.5">
-          <div>
+        <label className={INPUT_TOGGLE_ROW_CLASS}>
+          <div className="min-w-0 flex-1">
             <span className="text-primary text-sm font-semibold">Camera Phrase Suggestions</span>
             <p className="text-muted text-xs">Camera detects objects and suggests relevant phrases (e.g. cup → &quot;I want a drink&quot;)</p>
           </div>
@@ -114,8 +119,8 @@ export default function InputModesSettings() {
       </div>
 
       {/* Head Tracking (opt-in) */}
-      <label className="flex items-center justify-between py-1.5">
-        <div>
+      <label className={INPUT_TOGGLE_ROW_CLASS}>
+        <div className="min-w-0 flex-1">
           <span className="text-primary text-sm font-semibold">{t('enable_head_tracking')}</span>
           <p className="text-muted text-xs">Move cursor by moving your head (uses camera)</p>
         </div>
@@ -174,30 +179,28 @@ export default function InputModesSettings() {
 
 function SwitchScanSettings() {
   const [config, setConfig] = useState<SwitchScanConfig>(() => loadSwitchConfig());
-  const [running, setRunning] = useState(false);
+  useEffect(() => {
+    const change = (event: Event) => setConfig((event as CustomEvent<SwitchScanConfig>).detail);
+    window.addEventListener(SWITCH_SCAN_CONFIG_EVENT, change);
+    return () => window.removeEventListener(SWITCH_SCAN_CONFIG_EVENT, change);
+  }, []);
 
   const persist = (patch: Partial<SwitchScanConfig>) => {
     const next = { ...config, ...patch };
     setConfig(next);
     saveSwitchConfig(next);
-    if (running && !next.enabled) { stopScan(); setRunning(false); }
-    if (running && next.enabled) { stopScan(); startScan(next); }
   };
 
   const toggleEnabled = () => {
     const willEnable = !config.enabled;
     persist({ enabled: willEnable });
-    if (willEnable) { startScan({ ...config, enabled: true }); setRunning(true); }
-    else { stopScan(); setRunning(false); }
   };
-
-  useEffect(() => () => { stopScan(); }, []);
 
   return (
     <div data-testid="switch-scan-settings" data-scan-group="switch-scan-settings">
       <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Switch Scanning</h4>
-      <label className="flex items-center justify-between py-1.5">
-        <div>
+      <label className={INPUT_TOGGLE_ROW_CLASS}>
+        <div className="min-w-0 flex-1">
           <span className="text-primary text-sm font-semibold">Enable Switch Scanning</span>
           <p className="text-muted text-xs">Use a Bluetooth switch, keyboard key, or gamepad to navigate</p>
         </div>
@@ -227,8 +230,8 @@ function SwitchScanSettings() {
                 className="w-full accent-[#4CAF50]" />
             </div>
           )}
-          <label className="flex items-center justify-between py-1">
-            <span className="text-primary text-sm">Group scanning</span>
+          <label className={INPUT_TOGGLE_ROW_CLASS}>
+            <span className="text-primary text-sm min-w-0 flex-1">Group scanning</span>
             <Toggle on={config.groupScan} onToggle={() => persist({ groupScan: !config.groupScan })} label="Group scanning" />
           </label>
           <p className="text-muted text-xs">Press <strong>Space</strong> or <strong>Enter</strong> to select. Connect a Bluetooth switch for hands-free use.</p>
@@ -310,8 +313,8 @@ function GestureRecognitionSettings() {
       </summary>
 
       {/* Enable toggle */}
-      <label className="flex items-center justify-between py-1.5 mt-2">
-        <div>
+      <label className={`${INPUT_TOGGLE_ROW_CLASS} mt-2`}>
+        <div className="min-w-0 flex-1">
           <span className="text-primary text-sm font-semibold">Enable Gestures</span>
           <p className="text-muted text-xs">Detect head, eye, lip, and brow gestures via camera</p>
         </div>

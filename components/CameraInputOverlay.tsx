@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react';
+import { subscribeCameraSelection, readCameraSelectionState } from '@/services/cameraSelection';
+import { resolveDwellTarget } from '@/services/dwellTarget';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
   startPoseTracker,
@@ -26,9 +28,15 @@ import { tapFeedback } from '@/services/feedback';
  */
 
 type Status = 'starting' | 'tracking' | 'lost' | 'stopped';
+const CAMERA_KEY_SELECTOR = 'button[data-key], button[data-action]';
+function cameraKeyTarget(target: Element | null): HTMLElement | null {
+  return target instanceof HTMLElement && target.matches(CAMERA_KEY_SELECTOR) ? target : null;
+}
 
 export default function CameraInputOverlay() {
   const enabled = useSettingsStore(s => s.cameraInputEnabled);
+  const ownershipEpoch = useSyncExternalStore(subscribeCameraSelection,
+    () => readCameraSelectionState().epoch, () => 0);
   const calGeneration = useSettingsStore(s => s.poseCalibrationGeneration);
   const target = useSettingsStore(s => s.cameraTrackingTarget) as TrackingTarget;
   const dwellMs = useSettingsStore(s => s.headTrackingDwellMs);
@@ -40,6 +48,7 @@ export default function CameraInputOverlay() {
   const [dwellProgress, setDwellProgress] = useState(0);
 
   const handleRef = useRef<PoseTrackerHandle | null>(null);
+  const [resumeGeneration, setResumeGeneration] = useState(0);
   const dwellStartRef = useRef(0);
   const dwellElementRef = useRef<Element | null>(null);
   const rafRef = useRef(0);
@@ -87,7 +96,10 @@ export default function CameraInputOverlay() {
   const statusRef = useRef<Status>('stopped');
 
   const animateDwell = useCallback(function animate() {
-    if (!dwellElementRef.current || dwellStartRef.current === 0) {
+    if (!dwellElementRef.current || dwellStartRef.current === 0 ||
+        resolveDwellTarget(dwellElementRef.current) !== dwellElementRef.current) {
+      dwellElementRef.current = null;
+      dwellStartRef.current = 0;
       setDwellProgress(0);
       return;
     }
@@ -98,12 +110,12 @@ export default function CameraInputOverlay() {
 
   useEffect(() => {
     let mounted = true;
-    if (!enabled || !isPoseTrackingSupported()) {
+    if (!enabled || readCameraSelectionState().blocked || !isPoseTrackingSupported()) {
       if (handleRef.current) { handleRef.current.stop(); handleRef.current = null; }
       queueMicrotask(() => {
         if (mounted) setStatus('stopped');
       });
-      return;
+      return () => { mounted = false; };
     }
 
     const handle = startPoseTracker({
@@ -114,6 +126,7 @@ export default function CameraInputOverlay() {
       cursorSmoothing: 0.12,
       onMove(x, y) {
         setCursorPos({ x, y });
+        if (!mounted || readCameraSelectionState().blocked) return;
         // Watchdog window — only keep the most recent 100 samples to
         // bound memory; the watchdog filters by timestamp anyway.
         cursorWindowRef.current.push({ x, y, t: Date.now() });
@@ -125,9 +138,9 @@ export default function CameraInputOverlay() {
         // finger width data alongside cursor position.
 
         const el = document.elementFromPoint(x, y);
-        const interactive = el?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? null;
+        const interactive = resolveDwellTarget(el);
 
-        const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
+        const keyBtn = cameraKeyTarget(interactive);
         if (keyBtn && keyBtn !== highlightedKeyRef.current) {
           highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
           highlightedKeyRef.current = keyBtn;
@@ -200,7 +213,7 @@ export default function CameraInputOverlay() {
     const PIN_BOX_PX = 80;
     const GRACE_PERIOD_MS = 20_000;     // don't fire for 20s after tracker start — calibration just set
     const watchdog = setInterval(() => {
-      if (!mounted) return;
+      if (!mounted || readCameraSelectionState().blocked) return;
       const now = Date.now();
       // Only judge once tracker is actually tracking (not 'starting' /
       // 'lost' / 'stopped') — those have their own UX.
@@ -255,7 +268,25 @@ export default function CameraInputOverlay() {
   // calGeneration increments each time the wizard saves a new calibration.
   // Adding it to deps forces the tracker to restart and reload the new cal
   // from localStorage — otherwise the running tracker's in-memory cal is stale.
-  }, [enabled, target, dwellMs, sensitivity, animateDwell, setSettings, calGeneration]);
+  }, [enabled, resumeGeneration, target, dwellMs, sensitivity, animateDwell, setSettings, calGeneration]);
+
+  // Ownership pauses selection inside the service, not the tracker lifetime:
+  // a completed same-control hold must survive scanning and require departure.
+  useEffect(() => {
+    cancelAnimationFrame(rafRef.current);
+    dwellElementRef.current = null;
+    dwellStartRef.current = 0;
+    setDwellProgress(0);
+    highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
+    highlightedKeyRef.current = null;
+    setKeyBubble(prev => ({ ...prev, visible: false }));
+    enabledAtRef.current = Date.now();
+    lastDwellTsRef.current = 0;
+    cursorWindowRef.current = [];
+    if (enabled && !readCameraSelectionState().blocked && !handleRef.current) {
+      setResumeGeneration(generation => generation + 1);
+    }
+  }, [ownershipEpoch, enabled]);
 
   // Pointer fallback: when camera is on but can't detect the target
   // (MacBook — hands below FOV), use mouse movement for cursor + highlights.
@@ -272,7 +303,7 @@ export default function CameraInputOverlay() {
       setCursorPos({ x: e.clientX, y: e.clientY });
 
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
+      const keyBtn = cameraKeyTarget(resolveDwellTarget(el));
       if (keyBtn && keyBtn !== highlightedKeyRef.current) {
         highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
         highlightedKeyRef.current = keyBtn;

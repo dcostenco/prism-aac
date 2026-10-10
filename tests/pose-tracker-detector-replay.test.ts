@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { createElement } from 'react';
+import { act, cleanup, render } from '@testing-library/react';
 import type { PoseTrackerHandle, PoseTrackerOptions, TrackingTarget } from '@/services/bodyPoseService';
 
 // MediaPipe's documented pose indices: synthetic detector output, not
@@ -73,11 +75,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   handle?.stop();
   handle = undefined;
   document.body.replaceChildren();
   window.localStorage.clear();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
@@ -130,6 +134,73 @@ function step(count = 1) {
 
 describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it('keeps a completed native selection locked through overlay → scanner → overlay until observed departure', async () => {
+    await start('nose');
+    const service = await import('@/services/bodyPoseService');
+    handle!.stop(); frames.clear();
+    const video = document.createElement('video');
+    Object.defineProperties(video, { readyState: { value: 4 }, videoWidth: { value: 640 },
+      videoHeight: { value: 480 }, srcObject: { value: {} } });
+    const realStart = service.startPoseTracker;
+    const startSpy = vi.spyOn(service, 'startPoseTracker').mockImplementation(options => {
+      handle = realStart(options, undefined, video); return handle;
+    });
+    vi.spyOn(service, 'isPoseTrackingSupported').mockReturnValue(true);
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'nose', headTrackingDwellMs: 500 });
+    const { default: Overlay } = await import('@/components/CameraInputOverlay');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    const view = render(createElement(Overlay));
+    expect(startSpy).toHaveBeenCalledTimes(1);
+    await act(() => vi.waitFor(() => expect(frames.size).toBeGreaterThan(0)));
+    pose(0, 0.5); act(() => step(8));
+    expect(clicks).toHaveBeenCalledTimes(1);
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    let release!: () => void;
+    act(() => { release = suspendCameraSelection(); });
+    try {
+      act(() => step(20));
+      expect(clicks).toHaveBeenCalledTimes(1);
+    } finally { act(() => release()); }
+    act(() => step(15));
+    expect(startSpy).toHaveBeenCalledTimes(1);
+    expect(clicks).toHaveBeenCalledTimes(1);
+    vi.mocked(document.elementFromPoint).mockReturnValue(null); act(() => step());
+    vi.mocked(document.elementFromPoint).mockReturnValue(button); act(() => step(6));
+    expect(clicks).toHaveBeenCalledTimes(2);
+    view.unmount(); vi.restoreAllMocks();
+  });
+  it('camera ownership cancels pending body dwell but preserves manual access and fresh rearming', async () => {
+    const { onMove, onDwell } = await start('nose');
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(0, 0.5); step(4);
+    const release = suspendCameraSelection();
+    try {
+      step(20); expect(clicks).not.toHaveBeenCalled(); expect(onDwell).not.toHaveBeenCalled();
+      expect(onMove).toHaveBeenCalled();
+      button.click(); expect(clicks).toHaveBeenCalledTimes(1); clicks.mockClear();
+    } finally { release(); }
+    step(5); expect(clicks).not.toHaveBeenCalled();
+    step(); expect(clicks).toHaveBeenCalledTimes(1);
+    step(20); expect(clicks).toHaveBeenCalledTimes(1);
+  });
+  it('does not deliver body native clicks across a completion callback ownership cycle', async () => {
+    const { onDwell } = await start('nose');
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    onDwell.mockImplementationOnce(() => { const release = suspendCameraSelection(); release(); });
+    pose(0, 0.5); step(6);
+    expect(onDwell).toHaveBeenCalledTimes(1); expect(clicks).not.toHaveBeenCalled();
+    step(5); expect(clicks).not.toHaveBeenCalled();
+    step(); expect(clicks).toHaveBeenCalledTimes(1);
+  });
   it.each([false, true])('neutral gaze stays centered and deliberate eye movement is retained, eye gaze=%s', async useEyeGaze => {
     detector.face = Array.from({ length: 478 }, () => ({ x: 0.5, y: 0.5 }));
     detector.face[468] = { x: 0.54, y: 0.4 };

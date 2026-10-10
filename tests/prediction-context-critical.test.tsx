@@ -281,6 +281,10 @@ describe('critical prediction context and selection identity', () => {
           bubbles: true,
           cancelable: true,
         }));
+        document.body.dispatchEvent(new KeyboardEvent('keyup', {
+          key: 'Tab',
+          bubbles: true,
+        }));
       }
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
@@ -306,6 +310,13 @@ describe('critical prediction context and selection identity', () => {
     });
 
     expect(useMessageStore.getState().text).toBe('I need my mom ');
+
+    // The following selection is a distinct physical press. An unreleased
+    // switch must remain suppressed, even when predictions rerank meanwhile.
+    document.body.dispatchEvent(new KeyboardEvent('keyup', {
+      key: 'Enter',
+      bubbles: true,
+    }));
 
     await act(async () => {
       usePredictionStore.setState({

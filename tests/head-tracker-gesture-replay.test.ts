@@ -4,6 +4,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fileURLToPath } from 'node:url';
+import { createElement } from 'react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import type { HeadTrackerHandle, FaceLandmarkData } from '@/services/headTracker';
 import { DEFAULT_GESTURE_CONFIG, GestureDetector, type GestureEvent } from '@/services/gestureService';
 
@@ -60,6 +62,8 @@ let events: GestureEvent[];
 let samples: (FaceLandmarkData | null)[];
 let detector: GestureDetector;
 let onDrift: ReturnType<typeof vi.fn>;
+let onDwell: ReturnType<typeof vi.fn>;
+let onMove: ReturnType<typeof vi.fn>;
 let elementFromPointDescriptor: PropertyDescriptor | undefined;
 
 async function settle() { for (let i = 0; i < 30; i++) await Promise.resolve(); }
@@ -70,6 +74,9 @@ beforeEach(() => {
     alternating: false, landmarks: true, areas: [0.30, 0.30], videos: [], observations: [] });
   queue = new Map(); nextId = 0; events = []; samples = [];
   onDrift = vi.fn();
+  onDwell = vi.fn();
+  onMove = vi.fn();
+  localStorage.clear();
   vi.spyOn(Date, 'now').mockImplementation(() => camera.now);
   vi.spyOn(performance, 'now').mockImplementation(() => camera.now);
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as CanvasRenderingContext2D);
@@ -82,6 +89,7 @@ beforeEach(() => {
   detector = new GestureDetector({ ...DEFAULT_GESTURE_CONFIG, enabled: true }, event => events.push(event));
 });
 afterEach(() => {
+  cleanup();
   handle?.stop(); handle = undefined; vi.restoreAllMocks(); vi.unstubAllGlobals();
   if (elementFromPointDescriptor) Object.defineProperty(document, 'elementFromPoint', elementFromPointDescriptor);
   else Reflect.deleteProperty(document, 'elementFromPoint');
@@ -99,7 +107,7 @@ async function start(count = 1) {
     await visionMock.FaceLandmarker.createFromOptions() as unknown as InstanceType<typeof actual.FaceLandmarker>);
   const { startHeadTracker } = await import('@/services/headTracker');
   handle = startHeadTracker({ dwellMs: 800, sensitivity: 5, smoothing: 0.15,
-    onMove: vi.fn(), onDwell: vi.fn(), onStatusChange: vi.fn(),
+    onMove, onDwell, onStatusChange: vi.fn(),
     onDrift,
     onLandmarks: sample => { samples.push(sample); detector.processFrame(sample); },
   }, Array.from({ length: count }, (_, i) => `replay-camera-${i}`));
@@ -126,6 +134,132 @@ async function frame(time: number, stalled: number[] = []) {
 }
 
 describe.each([0, 0.003, 0.015])('head tracker gesture replay with drift %s', drift => {
+  it.each([false, true])('Escape under ownership disables honestly and requires explicit retry, auto drift=%s', async autoDisable => {
+    camera.drift = drift; camera.landmarks = false;
+    await start(); handle!.stop(); queue.clear(); camera.videos = [];
+    const service = await import('@/services/headTracker'); const realStart = service.startHeadTracker;
+    const startSpy = vi.spyOn(service, 'startHeadTracker').mockImplementation(options => {
+      handle = realStart(options, ['replay-camera-0']); return handle;
+    });
+    vi.spyOn(service, 'isHeadTrackingSupported').mockReturnValue(true);
+    const probe = await import('@/services/reliabilityProbe');
+    const probeSpy = vi.spyOn(probe, 'startReliabilityProbe');
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({ language: 'en', headTrackingEnabled: true,
+      headTrackingDriftAutoDisable: autoDisable, headTrackingEyeGaze: false,
+      gestureConfig: { ...DEFAULT_GESTURE_CONFIG, enabled: false } });
+    const { default: Overlay } = await import('@/components/HeadTrackingOverlay');
+    const view = render(createElement(Overlay));
+    await vi.waitFor(() => expect(handle!.activeCameraCount).toBe(1));
+    await act(() => frame(1200));
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    let release!: () => void; act(() => { release = suspendCameraSelection(); });
+    try {
+      act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+      expect(handle!.activeCameraCount).toBe(0);
+      expect(useSettingsStore.getState().headTrackingEnabled).toBe(false);
+      expect(view.getByRole('button', { name: 'Enable Head Tracking' })).toBeVisible();
+    } finally { act(() => release()); }
+    for (let t = 1300; t <= 2800; t += 100) await act(() => frame(t));
+    expect(startSpy).toHaveBeenCalledTimes(1); expect(probeSpy).not.toHaveBeenCalled();
+    act(() => fireEvent.click(view.getByRole('button', { name: 'Enable Head Tracking' })));
+    expect(useSettingsStore.getState().headTrackingEnabled).toBe(true);
+    await vi.waitFor(() => expect(handle!.activeCameraCount).toBe(1));
+    expect(startSpy).toHaveBeenCalledTimes(2); view.unmount();
+  });
+  it('keeps a completed head dwell locked through actual overlay ownership until observed departure', async () => {
+    camera.drift = drift; camera.landmarks = false;
+    await start(); handle!.stop(); queue.clear(); camera.videos = [];
+    const service = await import('@/services/headTracker');
+    const realStart = service.startHeadTracker;
+    const startSpy = vi.spyOn(service, 'startHeadTracker').mockImplementation(options => {
+      handle = realStart(options, ['replay-camera-0']); return handle;
+    });
+    vi.spyOn(service, 'isHeadTrackingSupported').mockReturnValue(true);
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({ headTrackingEnabled: true, headTrackingDwellMs: 800,
+      headTrackingEyeGaze: false, gestureConfig: { ...DEFAULT_GESTURE_CONFIG, enabled: false } });
+    const { default: Overlay } = await import('@/components/HeadTrackingOverlay');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    let pointed: HTMLElement | null = button;
+    Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => pointed });
+    const view = render(createElement(Overlay));
+    await vi.waitFor(() => expect(handle!.activeCameraCount).toBe(1));
+    for (let t = 1200; t <= 2200; t += 100) await act(() => frame(t));
+    expect(clicks).toHaveBeenCalledTimes(1);
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    let release!: () => void;
+    act(() => { release = suspendCameraSelection(); });
+    try {
+      for (let t = 2300; t <= 4200; t += 100) await act(() => frame(t));
+      expect(clicks).toHaveBeenCalledTimes(1);
+    } finally { act(() => release()); }
+    for (let t = 4300; t <= 5700; t += 100) await act(() => frame(t));
+    expect(startSpy).toHaveBeenCalledTimes(1); expect(clicks).toHaveBeenCalledTimes(1);
+    pointed = null; await act(() => frame(5800)); pointed = button;
+    for (let t = 5900; t <= 6700; t += 100) await act(() => frame(t));
+    expect(clicks).toHaveBeenCalledTimes(2);
+    view.unmount();
+  });
+  it.each(['callback-reflow', 'click-reflow', 'click-removal'])('teaches the original target center after allowed %s, not post-click geometry', async mutation => {
+    camera.drift = drift; camera.landmarks = false;
+    await start();
+    const service = await import('@/services/headTracker');
+    const before = { ...service.loadCalibration() };
+    const button = document.createElement('button'); document.body.append(button);
+    let moved = false;
+    button.getBoundingClientRect = () => {
+      const [x, y] = onMove.mock.calls.at(-1) ?? [window.innerWidth / 2, window.innerHeight / 2];
+      return new DOMRect(moved ? x + 50 : x - 70, y - 20, 40, 40);
+    };
+    Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => button });
+    const clicks = vi.fn(() => { moved = true; if (mutation === 'click-removal') button.remove(); });
+    button.addEventListener('click', clicks);
+    if (mutation === 'callback-reflow') onDwell.mockImplementationOnce(() => { moved = true; });
+    for (let t = 1200; t <= 2000; t += 100) await frame(t);
+    expect(clicks).toHaveBeenCalledTimes(1);
+    const after = service.loadCalibration();
+    const originalDelta = 50 * (before.leftX - before.rightX) / window.innerWidth * 0.3;
+    expect(after.leftX - before.leftX).toBeCloseTo(originalDelta, 6);
+    expect(after.rightX - before.rightX).toBeCloseTo(originalDelta, 6);
+    document.body.replaceChildren();
+  });
+  it('camera ownership cancels head dwell and gesture evidence, then requires a fresh native hold', async () => {
+    camera.drift = drift;
+    await start();
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => button });
+    const release = suspendCameraSelection();
+    try {
+      for (let t = 1200; t <= 2800; t += 100) await frame(t);
+      expect(clicks).not.toHaveBeenCalled(); expect(events).toEqual([]);
+      expect(samples.every(sample => sample === null)).toBe(true);
+      button.click(); expect(clicks).toHaveBeenCalledTimes(1); clicks.mockClear();
+    } finally { release(); }
+    camera.landmarks = false;
+    for (let t = 2900; t <= 3600; t += 100) await frame(t);
+    expect(clicks).not.toHaveBeenCalled();
+    await frame(3700); expect(clicks).toHaveBeenCalledTimes(1);
+    document.body.replaceChildren();
+  });
+  it('does not deliver head native clicks or lock completion after a callback ownership cycle', async () => {
+    camera.drift = drift; camera.landmarks = false;
+    await start();
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => button });
+    onDwell.mockImplementationOnce(() => { const release = suspendCameraSelection(); release(); });
+    for (let t = 1200; t <= 2000; t += 100) await frame(t);
+    expect(onDwell).toHaveBeenCalledTimes(1); expect(clicks).not.toHaveBeenCalled();
+    for (let t = 2100; t <= 2800; t += 100) await frame(t);
+    expect(clicks).not.toHaveBeenCalled();
+    await frame(2900); expect(clicks).toHaveBeenCalledTimes(1);
+    document.body.replaceChildren();
+  });
   beforeEach(() => { camera.drift = drift; });
 
   it('does not treat slow inference as a held blink', async () => {

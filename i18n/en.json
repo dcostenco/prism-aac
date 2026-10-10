@@ -481,5 +481,10 @@
   "web_signin_checking_desc": "Checking your account and web preview. Signing in is free and does not start a paid subscription.",
   "web_signin_free_account": "The web app requires a free account after a one-minute preview. Cloud subscriptions are optional purchases.",
   "web_signin_draft_fallback": "This browser could not save your unfinished message for sign-in. Continue to Google will open another tab. Keep this tab open and return here after signing in to recover your message.",
-  "toolbar_browser": "Browser"
+  "toolbar_browser": "Browser",
+  "scan_active": "Scanning",
+  "scan_stopped": "Scanning paused",
+  "scan_start": "Start scanning",
+  "scan_stop": "Stop scanning",
+  "scan_keys": "Space/Enter: select · Tab: next"
 }
