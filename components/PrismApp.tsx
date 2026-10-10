@@ -561,6 +561,7 @@ export default function PrismApp() {
           {/* Recovery reserves its own row; an inactive camera must never
               cover communication controls with a floating stop notice. */}
           <HeadTrackingOverlay />
+          <CameraInputOverlay />
           {/* Math panel takes over the full viewport — hide AAC chrome
               (banner / message / predictions / categories) so the
               cell-grid canvas + bigger keyboards have room to breathe.
@@ -644,7 +645,6 @@ export default function PrismApp() {
           <HistoryModal />
           <SettingsModal />
           <CategoryManagerModal />
-          <CameraInputOverlay />
           {/* Hidden by default; activates via ?debug=tracking or
               localStorage["prism-tracking-debug"]="1". Returns null
               for end users so there is no bundle / DOM cost. */}

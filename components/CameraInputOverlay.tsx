@@ -329,7 +329,7 @@ export default function CameraInputOverlay() {
     if (!stuckToast) return null;
     return (
       <div
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] bg-[#1f1f1f] text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/10 max-w-md pointer-events-auto"
+        className="camera-recovery-warning bg-[#1f1f1f] text-white border border-white/10 pointer-events-auto"
         data-testid="camera-input-stuck-toast"
         role="alert"
       >
@@ -359,7 +359,7 @@ export default function CameraInputOverlay() {
 
   const recalToastEl = recalToast ? (
     <div
-      className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[10000] bg-[#1a1a2e] text-white px-4 py-3 rounded-2xl shadow-2xl border border-[#FF9800]/40 max-w-sm pointer-events-auto"
+      className="camera-recovery-warning bg-[#1a1a2e] text-white border border-[#FF9800]/40 pointer-events-auto"
       data-testid="camera-input-recal-toast"
       role="alert"
     >
@@ -379,6 +379,7 @@ export default function CameraInputOverlay() {
 
   return (
     <>
+    <div className={`camera-recovery-rows${recalToast && (selectionBlocked || status === 'stopped') ? ' camera-recovery-rows-paired' : ''}`}>
     {(selectionBlocked || status === 'stopped') && <TrackingSelectionNotice
       title={t('camera_required')} testId="camera-input-notice" paused={selectionBlocked}
       onRetry={() => {
@@ -388,6 +389,7 @@ export default function CameraInputOverlay() {
       }}
     />}
     {recalToastEl}
+    </div>
     <div
       className="fixed inset-0 pointer-events-none"
       style={{ zIndex: 9998, display: selectionBlocked || status === 'stopped' ? 'none' : undefined }}

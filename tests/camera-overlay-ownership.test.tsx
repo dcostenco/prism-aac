@@ -90,6 +90,41 @@ it('offers camera stopped-startup retry without permitting stale blocked or disa
   expect(useSettingsStore.getState().cameraInputEnabled).toBe(false);
 });
 
+it('preserves watchdog auto-disable and explicit re-enable after a stuck cursor', () => {
+  vi.useFakeTimers();
+  const view = render(<CameraInputOverlay />);
+  act(() => tracker.options.at(-1)!.onStatusChange('tracking'));
+  act(() => vi.advanceTimersByTime(46_000));
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(false);
+  expect(tracker.stop).toHaveBeenCalledTimes(1);
+  const notice = view.getByTestId('camera-input-stuck-toast'); expect(notice).toHaveAttribute('role', 'alert');
+  expect(notice).toHaveClass('camera-recovery-warning'); expect(notice).not.toHaveClass('fixed');
+  expect(notice).toHaveTextContent(/camera tracking auto-disabled/i);
+  fireEvent.click(view.getByRole('button', { name: 'Re-enable', exact: true }));
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(true);
+  expect(tracker.start).toHaveBeenCalledTimes(2); expect(view.queryByTestId('camera-input-stuck-toast')).toBeNull();
+});
+
+it('dismissing a stuck warning does not silently re-enable camera input', () => {
+  vi.useFakeTimers(); const view = render(<CameraInputOverlay />);
+  act(() => tracker.options.at(-1)!.onStatusChange('tracking'));
+  act(() => vi.advanceTimersByTime(46_000));
+  fireEvent.click(view.getByRole('button', { name: 'Dismiss', exact: true }));
+  expect(view.queryByTestId('camera-input-stuck-toast')).toBeNull();
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(false); expect(tracker.start).toHaveBeenCalledTimes(1);
+});
+
+it('drift warning dismissal preserves tracking and does not consume communication input', () => {
+  const view = render(<CameraInputOverlay />);
+  act(() => window.dispatchEvent(new Event('prism-recalibration-needed')));
+  expect(view.getByTestId('camera-input-recal-toast')).toHaveAttribute('role', 'alert');
+  expect(view.getByTestId('camera-input-recal-toast')).toHaveClass('camera-recovery-warning');
+  expect(view.getByTestId('camera-input-recal-toast')).not.toHaveClass('fixed');
+  fireEvent.click(view.getByRole('button', { name: 'Dismiss', exact: true }));
+  expect(view.queryByTestId('camera-input-recal-toast')).toBeNull();
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(true); expect(tracker.stop).not.toHaveBeenCalled();
+});
+
 describe.each([false, true])('same-commit setup ownership, StrictMode=%s', strict => {
   it('never starts a background tracker under the setup lease, then resumes after release', () => {
     const tree = (setup: boolean) => {
