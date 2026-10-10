@@ -97,6 +97,7 @@ for (const drift of [0, 0.003, 0.015]) {
     await page.evaluate(() => Object.assign((window as unknown as {
       __headCameraReplay: object }).__headCameraReplay, { lost: true }));
     await expect(overlay).toHaveAttribute('data-status', 'lost');
+    await expect(overlay.locator('circle[stroke-dasharray]')).toHaveCount(0);
     const frozen = await cursor.boundingBox();
     expect(frozen).not.toBeNull();
     await page.waitForTimeout(800);

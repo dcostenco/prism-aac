@@ -129,8 +129,9 @@ export default function CameraInputOverlay() {
       trackingTarget: target,
       cursorSmoothing: 0.12,
       onMove(x, y) {
+        if (!mounted) return;
         setCursorPos({ x, y });
-        if (!mounted || readCameraSelectionState().blocked) return;
+        if (readCameraSelectionState().blocked) return;
         // Watchdog window — only keep the most recent 100 samples to
         // bound memory; the watchdog filters by timestamp anyway.
         cursorWindowRef.current.push({ x, y, t: Date.now() });
@@ -178,6 +179,7 @@ export default function CameraInputOverlay() {
         }
       },
       onDwell() {
+        if (!mounted) return;
         tapFeedback();
         setDwellProgress(0);
         dwellElementRef.current = null;
@@ -186,8 +188,18 @@ export default function CameraInputOverlay() {
         lastDwellTsRef.current = Date.now();
       },
       onStatusChange(s, detectedTarget) {
+        if (!mounted) return;
         setStatus(s);
         if (detectedTarget) setActiveTarget(detectedTarget);
+        if (s !== 'tracking') {
+          cancelAnimationFrame(rafRef.current);
+          dwellElementRef.current = null;
+          dwellStartRef.current = 0;
+          setDwellProgress(0);
+          highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
+          highlightedKeyRef.current = null;
+          setKeyBubble(previous => ({ ...previous, visible: false }));
+        }
       },
     });
 

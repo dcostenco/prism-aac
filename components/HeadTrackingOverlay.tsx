@@ -309,8 +309,9 @@ export default function HeadTrackingOverlay() {
         gestureDetectorRef.current?.processFrame(data);
       } : undefined,
       onMove(x, y) {
+        if (!mounted) return;
         setCursorPos({ x, y });
-        if (!mounted || readCameraSelectionState().blocked) return;
+        if (readCameraSelectionState().blocked) return;
 
         // Track which element is under cursor for highlight
         const el = document.elementFromPoint(x, y);
@@ -333,13 +334,22 @@ export default function HeadTrackingOverlay() {
         }
       },
       onDwell() {
+        if (!mounted) return;
         tapFeedback();
         setDwellProgress(0);
         dwellElementRef.current = null;
         dwellStartRef.current = 0;
       },
       onStatusChange(s) {
+        if (!mounted) return;
         setStatus(s);
+        if (s !== 'tracking') {
+          cancelAnimationFrame(rafDwellRef.current);
+          dwellElementRef.current = null;
+          dwellStartRef.current = 0;
+          setDwellProgress(0);
+          setHighlightRect(null);
+        }
       },
     });
 

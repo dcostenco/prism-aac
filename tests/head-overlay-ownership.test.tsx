@@ -12,6 +12,7 @@ import { DWELL_FEEDBACK_CASES, feedbackTarget, feedbackClock } from './helpers/d
 const releases: (() => void)[] = [];
 const RECOVERY_REASONS = ['escape', 'drift'] as const;
 const MOTION_PERMISSION_RESULTS = ['granted', 'denied'] as const;
+const LIVE_BUTTON_TARGET = { kind: 'button', tag: 'button', eligible: true } as const;
 const MOTION_RECOVERY_CASES = RECOVERY_REASONS.flatMap(reason =>
   MOTION_PERMISSION_RESULTS.map(result => ({ reason, result })));
 const tracker = vi.hoisted(() => ({ options: [] as HeadTrackerOptions[], stop: vi.fn(),
@@ -50,6 +51,40 @@ it.each(DWELL_FEEDBACK_CASES)('head feedback agrees with service eligibility for
   act(() => tracker.options.at(-1)!.onMove(32, 24));
   act(() => advance());
   expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(item.eligible ? 1 : 0);
+});
+
+it.each([0, 0.003, 0.015])('clears lost-camera dwell feedback without moving the cursor, drift=%s', drift => {
+  const advance = feedbackClock(); feedbackTarget(LIVE_BUTTON_TARGET);
+  useSettingsStore.setState({ headTrackingDwellMs: 1200 });
+  const view = render(<HeadTrackingOverlay />), options = tracker.options.at(-1)!;
+  act(() => { options.onStatusChange('tracking'); options.onMove(32 + drift, 24 + drift); });
+  act(() => advance());
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
+  const cursor = view.getByTestId('head-tracking-overlay').firstElementChild as HTMLElement;
+  const position = { left: cursor.style.left, top: cursor.style.top };
+  act(() => options.onStatusChange('lost'));
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  expect({ left: cursor.style.left, top: cursor.style.top }).toEqual(position);
+  act(() => advance());
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  act(() => { options.onStatusChange('tracking'); options.onMove(32 + drift, 24 + drift); });
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  act(() => advance());
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
+  expect(useSettingsStore.getState().headTrackingEnabled).toBe(true);
+});
+
+it('retired head callbacks cannot overwrite a new tracker or its fresh dwell feedback', () => {
+  const advance = feedbackClock(); feedbackTarget(LIVE_BUTTON_TARGET);
+  const view = render(<HeadTrackingOverlay />), old = tracker.options.at(-1)!;
+  act(() => useSettingsStore.getState().update({ headTrackingEnabled: false }));
+  act(() => useSettingsStore.getState().update({ headTrackingEnabled: true }));
+  const current = tracker.options.at(-1)!;
+  act(() => { current.onStatusChange('tracking'); current.onMove(32, 24); advance(); });
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
+  act(() => { old.onMove(200, 200); old.onDwell(document.body); old.onStatusChange('lost'); });
+  expect(view.getByTestId('head-tracking-overlay')).toHaveAttribute('data-status', 'tracking');
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
 });
 
 it.each(['escape', 'drift'] as const)('Settings restart retires the %s notice and recovery before a later explicit off', reason => {

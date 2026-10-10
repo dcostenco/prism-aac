@@ -9,6 +9,7 @@ import { DWELL_FEEDBACK_CASES, feedbackTarget, feedbackClock } from './helpers/d
 
 const tracker = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn(), options: [] as PoseTrackerOptions[] }));
 const releases: (() => void)[] = [];
+const LIVE_BUTTON_TARGET = { kind: 'button', tag: 'button', eligible: true } as const;
 vi.mock('@/services/bodyPoseService', () => ({
   isPoseTrackingSupported: () => true,
   startPoseTracker: (options: PoseTrackerOptions) => {
@@ -38,6 +39,42 @@ it.each(DWELL_FEEDBACK_CASES)('camera feedback agrees with service eligibility f
   act(() => advance());
   expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(item.eligible ? 1 : 0);
   expect(target.classList.contains('camera-cursor-highlight')).toBe(item.eligible && item.tag === 'button');
+});
+
+it.each([0, 0.003, 0.015])('clears lost-camera dwell feedback without moving the cursor, drift=%s', drift => {
+  const advance = feedbackClock(), target = feedbackTarget(LIVE_BUTTON_TARGET);
+  useSettingsStore.setState({ headTrackingDwellMs: 1200 });
+  const view = render(<CameraInputOverlay />), options = tracker.options.at(-1)!;
+  act(() => { options.onStatusChange('tracking'); options.onMove(32 + drift, 24 + drift); });
+  act(() => advance());
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
+  expect(target).toHaveClass('camera-cursor-highlight');
+  const cursor = view.getByTestId('camera-input-overlay').firstElementChild as HTMLElement;
+  const position = { left: cursor.style.left, top: cursor.style.top };
+  act(() => options.onStatusChange('lost'));
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  expect(target).not.toHaveClass('camera-cursor-highlight');
+  expect({ left: cursor.style.left, top: cursor.style.top }).toEqual(position);
+  act(() => advance());
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  act(() => { options.onStatusChange('tracking'); options.onMove(32 + drift, 24 + drift); });
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  act(() => advance());
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(true);
+});
+
+it('retired camera callbacks cannot overwrite a new tracker or its fresh dwell feedback', () => {
+  const advance = feedbackClock(); feedbackTarget(LIVE_BUTTON_TARGET);
+  const view = render(<CameraInputOverlay />), old = tracker.options.at(-1)!;
+  act(() => useSettingsStore.getState().update({ cameraInputEnabled: false }));
+  act(() => useSettingsStore.getState().update({ cameraInputEnabled: true }));
+  const current = tracker.options.at(-1)!;
+  act(() => { current.onStatusChange('tracking'); current.onMove(32, 24); advance(); });
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
+  act(() => { old.onMove(200, 200); old.onDwell(document.body); old.onStatusChange('lost'); });
+  expect(view.getByTestId('camera-input-overlay')).toHaveAttribute('data-status', 'tracking');
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
 });
 
 it('does not retire a running tracker or reset its completed lock solely for scanning ownership', () => {
