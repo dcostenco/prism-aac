@@ -156,6 +156,16 @@ export function observeKeyboardPresses(onIdleSwitch?: (freshPress: boolean) => b
   };
 }
 
+/** Enabled app owners retain hardware edges through finite/Panic idle. A
+ * restart edge is consumed here, never replayed as a scanner selection. */
+export function observeHardwarePresses(onIdleSwitch: () => boolean): () => void {
+  idleHardwareObservers.add(onIdleSwitch);
+  return () => {
+    idleHardwareObservers.delete(onIdleSwitch);
+    if (!hardwareInputNeeded()) { stopGamepadPolling(); disconnectHIDDevices(); }
+  };
+}
+
 // ── Feature Detection ───────────────────────────────────────────────────────
 
 export function isSwitchScanSupported(): boolean {
@@ -386,7 +396,13 @@ function removeHighlightStyle(): void {
 
 let scanTimer: ReturnType<typeof setInterval> | null = null;
 let gamepadRafId: number | null = null;
+let gamepadEpoch = 0;
 let activeHIDDevices: HIDDevice[] = [];
+const idleHardwareObservers = new Set<() => boolean>();
+const pendingHIDDevices = new Set<HIDDevice>();
+const closingHIDDevices = new Map<HIDDevice, Promise<void>>();
+let hidEpoch = 0;
+let releaseHIDConnections: (() => void) | null = null;
 let domObserver: MutationObserver | null = null;
 let rescanDebounce: ReturnType<typeof setTimeout> | null = null;
 
@@ -717,6 +733,15 @@ function releaseKeyboard(): void {
 
 let prevGamepadButtonStates: boolean[][] = [];
 
+function hardwareInputNeeded(): boolean {
+  return state.phase !== 'idle' || idleHardwareObservers.size > 0;
+}
+
+function onHardwarePress(): void {
+  if (state.phase !== 'idle') { selectCurrent(); return; }
+  for (const restart of idleHardwareObservers) if (restart()) return;
+}
+
 function pollGamepads(): void {
   if (!isGamepadSupported()) return;
 
@@ -733,36 +758,41 @@ function pollGamepads(): void {
       continue;
     }
 
+    const previous = prevGamepadButtonStates[gi];
+    // Publish release/hold state before a selection can stop or restart us.
+    prevGamepadButtonStates[gi] = gp.buttons.map((b) => b.pressed);
+
     for (let bi = 0; bi < gp.buttons.length; bi++) {
-      const wasPressed = prevGamepadButtonStates[gi][bi] || false;
+      const wasPressed = previous[bi] || false;
       const isPressed = gp.buttons[bi].pressed;
 
       // Trigger on button-down edge (not held)
       if (isPressed && !wasPressed) {
-        selectCurrent();
+        onHardwarePress();
         // Only process one button per frame
         break;
       }
     }
-
-    prevGamepadButtonStates[gi] = gp.buttons.map((b) => b.pressed);
   }
 }
 
 function startGamepadPolling(): void {
-  if (!isGamepadSupported()) return;
+  if (!isGamepadSupported() || gamepadRafId !== null) return;
   prevGamepadButtonStates = [];
+  const epoch = ++gamepadEpoch;
 
   function loop() {
-    if (state.phase === 'idle') return;
+    if (epoch !== gamepadEpoch) return;
+    if (!hardwareInputNeeded()) { stopGamepadPolling(); return; }
     pollGamepads();
-    gamepadRafId = requestAnimationFrame(loop);
+    if (epoch === gamepadEpoch && hardwareInputNeeded()) gamepadRafId = requestAnimationFrame(loop);
   }
 
   gamepadRafId = requestAnimationFrame(loop);
 }
 
 function stopGamepadPolling(): void {
+  gamepadEpoch++;
   if (gamepadRafId !== null) {
     cancelAnimationFrame(gamepadRafId);
     gamepadRafId = null;
@@ -787,59 +817,96 @@ function onHIDInputReport(event: HIDInputReportEvent): void {
     currentState |= data.getUint8(i);
   }
   const now = performance.now();
+  const fresh = currentState !== 0 && lastHIDState === 0;
+  // A synchronous stop/restart must observe this report as already held.
+  lastHIDState = currentState;
 
   // Edge detection: fire only on 0→1 transition + 200ms debounce
-  if (currentState !== 0 && lastHIDState === 0 && (now - lastHIDTime > HID_DEBOUNCE_MS)) {
+  if (fresh && (now - lastHIDTime > HID_DEBOUNCE_MS)) {
     lastHIDTime = now;
-    selectCurrent();
+    onHardwarePress();
   }
-  lastHIDState = currentState;
 }
 
 async function connectHIDDevices(): Promise<void> {
-  if (!isWebHIDSupported()) return;
+  if (!isWebHIDSupported() || releaseHIDConnections) return;
   const hid = (navigator as NavigatorWithHID).hid!;
+  const epoch = ++hidEpoch;
+  const connect = (event: { device: HIDDevice }) => {
+    if (epoch === hidEpoch) void openHIDDevice(event.device, epoch);
+  };
+  const disconnect = (event: { device: HIDDevice }) => {
+    event.device.removeEventListener('inputreport', onHIDInputReport);
+    activeHIDDevices = activeHIDDevices.filter(device => device !== event.device);
+    lastHIDState = 0;
+  };
+  releaseHIDConnections = () => {
+    hid.removeEventListener('connect', connect);
+    hid.removeEventListener('disconnect', disconnect);
+  };
 
   try {
+    hid.addEventListener('connect', connect);
+    hid.addEventListener('disconnect', disconnect);
     // Check for already-paired devices first
     const paired = await hid.getDevices();
+    if (epoch !== hidEpoch) return;
     for (const device of paired) {
-      await openHIDDevice(device);
+      await openHIDDevice(device, epoch);
     }
-
-    // Listen for new device connections
-    hid.addEventListener('connect', async (event: { device: HIDDevice }) => {
-      await openHIDDevice(event.device);
-    });
-
-    hid.addEventListener('disconnect', (event: { device: HIDDevice }) => {
-      activeHIDDevices = activeHIDDevices.filter((d) => d !== event.device);
-    });
   } catch {
     // WebHID not available or permission denied — degrade gracefully
   }
 }
 
-async function openHIDDevice(device: HIDDevice): Promise<void> {
+async function openHIDDevice(device: HIDDevice, epoch = hidEpoch): Promise<void> {
+  if (epoch !== hidEpoch || activeHIDDevices.includes(device) || pendingHIDDevices.has(device)) return;
+  pendingHIDDevices.add(device);
   try {
+    const closing = closingHIDDevices.get(device);
+    if (closing) await closing;
+    if (epoch !== hidEpoch) return;
     if (!device.opened) {
       await device.open();
+    }
+    if (epoch !== hidEpoch) {
+      await closeHIDDevice(device);
+      return;
     }
     device.addEventListener('inputreport', onHIDInputReport);
     activeHIDDevices.push(device);
   } catch {
     // Device open failed — skip this device
+  } finally {
+    pendingHIDDevices.delete(device);
+    // A new enabled owner may have arrived while the retired open finished.
+    if (epoch !== hidEpoch && releaseHIDConnections && hardwareInputNeeded()) void openHIDDevice(device);
   }
 }
 
+function closeHIDDevice(device: HIDDevice): Promise<void> {
+  const pending = closingHIDDevices.get(device);
+  if (pending) return pending;
+  const closing = device.close().catch(() => {}).finally(() => {
+    if (closingHIDDevices.get(device) === closing) closingHIDDevices.delete(device);
+  });
+  closingHIDDevices.set(device, closing);
+  return closing;
+}
+
 function disconnectHIDDevices(): void {
+  hidEpoch++;
+  releaseHIDConnections?.();
+  releaseHIDConnections = null;
   for (const device of activeHIDDevices) {
     try {
       device.removeEventListener('inputreport', onHIDInputReport);
-      device.close().catch(() => {});
+      void closeHIDDevice(device);
     } catch { /* best effort cleanup */ }
   }
   activeHIDDevices = [];
+  lastHIDState = 0;
+  lastHIDTime = 0;
 }
 
 /**
@@ -850,6 +917,7 @@ function disconnectHIDDevices(): void {
 export async function requestHIDDevice(): Promise<boolean> {
   if (!isWebHIDSupported()) return false;
   const hid = (navigator as NavigatorWithHID).hid!;
+  const epoch = hidEpoch;
 
   try {
     const devices = await hid.requestDevice({
@@ -862,10 +930,11 @@ export async function requestHIDDevice(): Promise<boolean> {
         { usagePage: 0x09 },
       ],
     });
+    if (epoch !== hidEpoch) return false;
     for (const device of devices) {
-      await openHIDDevice(device);
+      await openHIDDevice(device, epoch);
     }
-    return devices.length > 0;
+    return epoch === hidEpoch && devices.length > 0;
   } catch {
     return false;
   }
@@ -991,8 +1060,7 @@ export function stopScan(): void {
   scanEpoch++;
   finishSwitchScanOwnershipStaging();
   stopAutoTimer();
-  stopGamepadPolling();
-  disconnectHIDDevices();
+  if (idleHardwareObservers.size === 0) { stopGamepadPolling(); disconnectHIDDevices(); }
   clearHighlight();
 
   if (domObserver) { domObserver.disconnect(); domObserver = null; }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/engine/useT';
 import { suspendCameraSelection, finishSwitchScanOwnershipStaging } from '@/services/cameraSelection';
-import { getState, loadConfig, saveConfig, startScan, stopScan, observeKeyboardPresses,
+import { getState, loadConfig, saveConfig, startScan, stopScan, observeKeyboardPresses, observeHardwarePresses,
   SWITCH_SCAN_CONFIG_EVENT, type SwitchScanConfig } from '@/services/switchScanService';
 
 /** One app-lifetime owner; Settings edits configuration, not scanner lifetime. */
@@ -22,11 +22,22 @@ export default function SwitchScanningController() {
     const change = (event: Event) => {
       const next = (event as CustomEvent<SwitchScanConfig>).detail;
       configRef.current = next;
+      // Retire activation synchronously; a hardware report can arrive before
+      // React commits the disabled configuration and cleans up its effects.
+      if (!next.enabled) stopScan();
       setConfig(next);
     };
     window.addEventListener(SWITCH_SCAN_CONFIG_EVENT, change);
     return () => { window.removeEventListener(SWITCH_SCAN_CONFIG_EVENT, change); releaseKeyboard(); };
   }, []);
+  useEffect(() => {
+    if (!config.enabled) return;
+    return observeHardwarePresses(() => {
+      if (!configRef.current.enabled || getState().phase !== 'idle') return false;
+      setRestart(value => value + 1);
+      return true;
+    });
+  }, [config.enabled]);
   useEffect(() => {
     if (!config.enabled) { stopScan(); return; }
     let mounted = true;

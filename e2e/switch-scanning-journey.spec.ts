@@ -6,6 +6,10 @@ const STEP_LIMIT = 150;
 const TEXT_EDGE_INSET = 2;
 const CAPTION_PROBE_WORDS = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
 const CAPTION_GUARD_MODES = ['hidden', 'clipped', 'covered'] as const;
+const HARDWARE_INPUTS = ['gamepad', 'hid'] as const;
+const HID_RELEASE_INTERVAL_MS = 250;
+type HardwareAudit = { polls: number; clicks: number; reports: number; connections: number; opens: number; closes: number;
+  emit: (kind: typeof HARDWARE_INPUTS[number], pressed: boolean) => void };
 test.use({ serviceWorkers: 'block' });
 test.afterEach(async ({ page, context }) => { await page.close(); await context.close(); });
 
@@ -178,5 +182,93 @@ test('Settings to explicit board selection, held keys, reload and manual recover
     expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="message-text"]'],
     criticalSelectors: ['[data-testid="message-text"]'],
   });
+  expect(errors).toEqual([]);
+});
+
+for (const kind of HARDWARE_INPUTS) test(`${kind} switch recovers finite idle and selects a word only after release`, async ({ page, baseURL }, info) => {
+  test.setTimeout(90_000);
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  const app = new URL(baseURL!);
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(app.hostname)) throw new Error('Hardware switch fixture requires localhost');
+  await page.route('**/*', route => {
+    const request = route.request(), url = new URL(request.url());
+    const remoteData = url.origin !== app.origin && ['fetch', 'xhr'].includes(request.resourceType());
+    if (url.pathname.includes('/api/') || remoteData) return route.fulfill({ ...OFFLINE_API_RESPONSE,
+      headers: { 'access-control-allow-origin': app.origin, 'access-control-allow-credentials': 'true' } });
+    return route.continue();
+  });
+  await page.addInitScript(() => {
+    let pressed = false;
+    const reports = new Set<(event: { device: typeof device; data: DataView }) => void>();
+    const connections = new Set<unknown>();
+    const audit = { polls: 0, clicks: 0, reports: 0, connections: 0, opens: 0, closes: 0,
+      emit(kind: string, down: boolean) {
+        if (kind === 'gamepad') pressed = down;
+        else for (const listener of [...reports]) listener({ device, data: new DataView(Uint8Array.of(down ? 1 : 0).buffer) });
+      } };
+    const device = { opened: false,
+      async open() { audit.opens++; device.opened = true; },
+      async close() { audit.closes++; device.opened = false; },
+      addEventListener(_type: string, listener: (event: { device: typeof device; data: DataView }) => void) { reports.add(listener); audit.reports = reports.size; },
+      removeEventListener(_type: string, listener: (event: { device: typeof device; data: DataView }) => void) { reports.delete(listener); audit.reports = reports.size; },
+    };
+    Object.defineProperty(navigator, 'getGamepads', { configurable: true,
+      value: () => { audit.polls++; return [{ buttons: [{ pressed }] }]; } });
+    Object.defineProperty(navigator, 'hid', { configurable: true, value: {
+      getDevices: async () => [device], requestDevice: async () => { throw new Error('Idle restart must not request new device permission'); },
+      addEventListener(_type: string, listener: unknown) { connections.add(listener); audit.connections = connections.size; },
+      removeEventListener(_type: string, listener: unknown) { connections.delete(listener); audit.connections = connections.size; },
+    } });
+    document.addEventListener('click', event => { if (!event.isTrusted) audit.clicks++; }, true);
+    Object.assign(window, { __switchHardware: audit });
+  });
+  const audit = () => page.evaluate(() => {
+    const state = (window as unknown as { __switchHardware: HardwareAudit }).__switchHardware;
+    return { polls: state.polls, clicks: state.clicks, reports: state.reports,
+      connections: state.connections, opens: state.opens, closes: state.closes };
+  });
+  const press = (down: boolean) => page.evaluate(({ input, pressed }) => {
+    (window as unknown as { __switchHardware: HardwareAudit }).__switchHardware.emit(input, pressed);
+  }, { input: kind, pressed: down });
+  await page.goto('/prism-aac');
+  await page.getByRole('button', { name: 'Sound on', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
+  const settings = page.getByTestId('switch-scan-settings');
+  await settings.getByRole('button', { name: 'Switch scanning', exact: true }).click();
+  await settings.getByRole('button', { name: 'Manual (step)', exact: true }).click();
+  await settings.getByRole('button', { name: 'Group scanning', exact: true }).click();
+  await page.getByRole('button', { name: 'Close settings', exact: true }).click();
+  const controller = page.getByTestId('switch-scan-controller');
+  await expect.poll(async () => (await audit()).polls).toBeGreaterThan(1);
+  await expect.poll(async () => (await audit()).reports).toBe(1);
+  for (let step = 0; step < STEP_LIMIT * 3 && await controller.getAttribute('data-phase') !== 'idle'; step++) await page.keyboard.press('Tab');
+  await expect(controller).toHaveAttribute('data-phase', 'idle');
+  expect((await audit()).reports).toBe(1); expect((await audit()).connections).toBe(2);
+  const unrelated = page.getByRole('button', { name: 'Sound off', exact: true }); await unrelated.focus();
+  const before = await audit();
+  await press(true); await expect(controller).toHaveAttribute('data-phase', 'items');
+  await page.waitForTimeout(HID_RELEASE_INTERVAL_MS);
+  expect((await audit()).clicks).toBe(before.clicks);
+  await expect(page.getByTestId('message-empty-prompt')).toBeVisible();
+  await expect(unrelated).toBeVisible();
+  await press(false); await page.waitForTimeout(HID_RELEASE_INTERVAL_MS);
+  const word = await highlight(page, 0); await press(true);
+  await expect(page.getByTestId('message-text')).toHaveText(word);
+  await page.waitForTimeout(HID_RELEASE_INTERVAL_MS); await press(true);
+  await expect(page.getByTestId('message-text')).toHaveText(word);
+  await assertVisiblePredictionText(page);
+  expect((await controller.boundingBox())!.height).toBeLessThanOrEqual(96);
+  await safeScreenshot(page, info.outputPath(`${kind}-recovered-word.png`), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="switch-scan-controller"]'],
+    criticalSelectors: ['[data-testid="message-text"]', '[data-testid="switch-scan-controller"] button'],
+  });
+  await press(false); await page.getByRole('button', { name: 'Stop scanning', exact: true }).click();
+  await expect(controller).toHaveCount(0);
+  await expect.poll(async () => (await audit()).reports).toBe(0);
+  expect((await audit()).connections).toBe(0);
+  await press(true); await expect(controller).toHaveCount(0);
+  await page.getByTestId('prediction-tile').nth(1).click();
+  await expect(page.getByTestId('message-text')).not.toHaveText(word);
   expect(errors).toEqual([]);
 });
