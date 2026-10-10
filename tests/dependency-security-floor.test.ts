@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT_FLOORS = {
   next: '16.3.8', sharp: '0.35.5', handlebars: '4.7.10',
   'source-map-js': '1.2.2', 'brace-expansion': '5.0.12',
+  katex: '0.18.2',
 };
 const EXTENSION_FLOORS = { 'source-map-js': '1.2.2' };
 const TARGETS = [

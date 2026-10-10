@@ -35,7 +35,7 @@
     "@serwist/next": "^9.5.8",
     "@supabase/supabase-js": "^2.105.1",
     "es-hangul": "^2.3.8",
-    "katex": "^0.16.45",
+    "katex": "0.18.2",
     "mathjs": "^15.2.0",
     "next": "16.3.8",
     "pdfjs-dist": "^6.2.108",
