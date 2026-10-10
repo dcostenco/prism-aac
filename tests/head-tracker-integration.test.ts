@@ -199,6 +199,15 @@ describe('startHeadTracker — cross-modal lockout integration', () => {
 });
 
 describe('startHeadTracker — Esc escape hatch', () => {
+    it('reports explicit Escape once without misclassifying it through the automatic drift callback', () => {
+        const onEscape = vi.fn(), onDrift = vi.fn();
+        const handle = startHeadTracker(defaultOpts({ onEscape, onDrift }));
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        expect(onEscape).toHaveBeenCalledTimes(1);
+        expect(onDrift).not.toHaveBeenCalled();
+        handle.stop();
+    });
     it('Esc keypress fires onStatusChange("stopped")', () => {
         const onStatusChange = vi.fn();
         const handle = startHeadTracker(defaultOpts({ onStatusChange }));

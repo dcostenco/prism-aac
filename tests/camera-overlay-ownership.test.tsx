@@ -4,12 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CameraInputOverlay from '@/components/CameraInputOverlay';
 import { useSettingsStore } from '@/store/settingsStore';
 import { readCameraSelectionState, suspendCameraSelection } from '@/services/cameraSelection';
+import type { PoseTrackerOptions } from '@/services/bodyPoseService';
+import { DWELL_FEEDBACK_CASES, feedbackTarget, feedbackClock } from './helpers/dwell-feedback';
 
-const tracker = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn() }));
+const tracker = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn(), options: [] as PoseTrackerOptions[] }));
 const releases: (() => void)[] = [];
 vi.mock('@/services/bodyPoseService', () => ({
   isPoseTrackingSupported: () => true,
-  startPoseTracker: () => {
+  startPoseTracker: (options: PoseTrackerOptions) => {
+    tracker.options.push(options);
     tracker.start(readCameraSelectionState());
     return { stop: tracker.stop, setAllowLetterMovement: vi.fn() };
   },
@@ -22,10 +25,20 @@ function SetupOwner() {
 }
 
 beforeEach(() => {
-  tracker.start.mockClear(); tracker.stop.mockClear();
+  tracker.start.mockClear(); tracker.stop.mockClear(); tracker.options = [];
   useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'nose' });
 });
-afterEach(() => { cleanup(); releases.splice(0).forEach(release => release()); localStorage.clear(); });
+afterEach(() => { cleanup(); releases.splice(0).forEach(release => release()); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); document.body.replaceChildren(); });
+
+it.each(DWELL_FEEDBACK_CASES)('camera feedback agrees with service eligibility for $kind', item => {
+  const advance = feedbackClock(); const target = feedbackTarget(item);
+  useSettingsStore.setState({ headTrackingDwellMs: 1200 });
+  const view = render(<CameraInputOverlay />);
+  act(() => tracker.options.at(-1)!.onMove(32, 24));
+  act(() => advance());
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(item.eligible ? 1 : 0);
+  expect(target.classList.contains('camera-cursor-highlight')).toBe(item.eligible && item.tag === 'button');
+});
 
 it('does not retire a running tracker or reset its completed lock solely for scanning ownership', () => {
   const view = render(<CameraInputOverlay />);

@@ -176,7 +176,16 @@ export default function HeadTrackingOverlay() {
   // When drift auto-disables tracking, surface a non-blocking toast so the
   // user knows what happened. Cleared when they re-enable manually OR when
   // the reliability probe auto-recovers.
-  const [driftToast, setDriftToast] = useState<{ reason: string; ts: number } | null>(null);
+  const [driftToast, setDriftToast] = useState<{ reason: string; ts: number; manual?: boolean } | null>(null);
+  const manualStopRef = useRef(false);
+  useEffect(() => useSettingsStore.subscribe((state, previous) => {
+    if (state.headTrackingEnabled && !previous.headTrackingEnabled) {
+      // An explicit Settings restart retires the old stop and its recovery
+      // evidence synchronously, even before a passive probe cleanup runs.
+      manualStopRef.current = true;
+      setDriftToast(null);
+    }
+  }), []);
 
   // Hooks — see top of file. Each encapsulates one side concern so this
   // component reads top-to-bottom as a tracker lifecycle, not a pile of
@@ -184,9 +193,10 @@ export default function HeadTrackingOverlay() {
   const { safeMode, effectiveSensitivity, effectiveDwellMs, effectiveGestureConfig } =
     useSafeModeCaps({ sensitivity, dwellMs, gestureConfig });
   const probeProgress = useReliabilityProbe(
-    Boolean(driftToast) && driftAutoDisable && !selectionBlocked,
+    !enabled && Boolean(driftToast) && !driftToast?.manual && driftAutoDisable && !selectionBlocked,
     ownershipEpoch,
     useCallback(() => {
+      if (manualStopRef.current) return;
       setDriftToast(null);
       setSettings({ headTrackingEnabled: true });
     }, [setSettings]),
@@ -203,7 +213,10 @@ export default function HeadTrackingOverlay() {
 
   // Dwell progress animation
   const animateDwellProgress = useCallback(function animate() {
-    if (!dwellElementRef.current || dwellStartRef.current === 0) {
+    if (!dwellElementRef.current || dwellStartRef.current === 0 ||
+        resolveDwellTarget(dwellElementRef.current) !== dwellElementRef.current) {
+      dwellElementRef.current = null;
+      dwellStartRef.current = 0;
       setDwellProgress(0);
       return;
     }
@@ -252,6 +265,7 @@ export default function HeadTrackingOverlay() {
       return () => { mounted = false; };
     }
 
+    manualStopRef.current = false;
     const handle = startHeadTracker({
       dwellMs: effectiveDwellMs,
       sensitivity: effectiveSensitivity,
@@ -266,6 +280,14 @@ export default function HeadTrackingOverlay() {
       // (legacy behavior). Default ON.
       driftThresholdPx,
       driftWindowMs,
+      onEscape: () => {
+        if (!mounted) return;
+        // Synchronous intent fence also rejects a recovery callback delivered
+        // before the probe's effect cleanup runs in this same React batch.
+        manualStopRef.current = true;
+        setDriftToast({ reason: 'cursor-drift', ts: Date.now(), manual: true });
+        setSettings({ headTrackingEnabled: false });
+      },
       onDrift: (reason) => {
         if (!mounted || readCameraSelectionState().blocked || !driftAutoDisable) return;
         setDriftToast({ reason, ts: Date.now() });
@@ -290,7 +312,7 @@ export default function HeadTrackingOverlay() {
 
         // Track which element is under cursor for highlight
         const el = document.elementFromPoint(x, y);
-        const interactive = el?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? null;
+        const interactive = resolveDwellTarget(el);
         if (interactive) {
           const rect = interactive.getBoundingClientRect();
           setHighlightRect(rect);
@@ -355,26 +377,27 @@ export default function HeadTrackingOverlay() {
   // user has a visible "Try again" path that doesn't depend on the cursor.
   if (!enabled) {
     if (!driftToast) return null;
-    const reasonLabel = driftToast.reason === 'confidence-collapse'
+    const reasonLabel = driftToast.manual ? t('head_tracking') : driftToast.reason === 'confidence-collapse'
       ? (t('drift_confidence') ?? 'Face was hard to read — tracking paused.')
       : (t('drift_cursor') ?? 'Cursor drifted — tracking paused.');
     return (
       <div
-        className="fixed inset-x-0 bottom-8 flex justify-center pointer-events-none"
-        style={{ zIndex: 9999 }}
+        className="shrink-0 surface-bar px-3"
         role="status"
         aria-live="polite"
+        data-scan-group="head-tracking-controls"
+        data-testid="head-tracking-stop-toast"
+        data-stop-reason={driftToast.manual ? 'escape' : 'drift'}
       >
         <div
-          className="pointer-events-auto surface-bar border border-theme rounded-2xl px-5 py-4 shadow-xl flex items-center gap-3 max-w-md"
-          style={{ borderColor: '#FF9800' }}
+          className="flex items-center gap-2"
         >
           <span className="text-2xl">🛡️</span>
           <div className="flex-1">
             <div className="text-primary font-bold text-base">{reasonLabel}</div>
-            <div className="text-muted text-sm mt-0.5">
+            {!driftToast.manual && <div className="text-muted text-sm mt-0.5">
               {t('drift_safety_explanation') ?? 'Auto-disabled to keep your screen usable. Press Esc anytime to disable tracking.'}
-            </div>
+            </div>}
             {driftAutoDisable && probeProgress > 0 && (
               <div className="mt-2" aria-live="polite">
                 <div className="text-xs text-muted mb-1">
@@ -399,12 +422,15 @@ export default function HeadTrackingOverlay() {
               // their second event. If they trip a third within the
               // window, safe mode kicks back in automatically.
               clearDriftHistory();
+              manualStopRef.current = false;
               setDriftToast(null);
               setSettings({ headTrackingEnabled: true });
             }}
-            aria-label={t('try_again') ?? 'Try again'}
+            aria-label={driftToast.manual ? t('enable_head_tracking') : (t('try_again') ?? 'Try again')}
           >
-            {t('try_again') ?? 'Try again'}
+            <span data-testid="head-tracking-resume-label">
+              {driftToast.manual ? t('enable_head_tracking') : (t('try_again') ?? 'Try again')}
+            </span>
           </button>
           <button
             type="button"

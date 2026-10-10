@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import { createElement } from 'react';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import type { HeadTrackerHandle, FaceLandmarkData } from '@/services/headTracker';
 import { DEFAULT_GESTURE_CONFIG, GestureDetector, type GestureEvent } from '@/services/gestureService';
 
@@ -134,6 +134,39 @@ async function frame(time: number, stalled: number[] = []) {
 }
 
 describe.each([0, 0.003, 0.015])('head tracker gesture replay with drift %s', drift => {
+  it.each([false, true])('Escape under ownership disables honestly and requires explicit retry, auto drift=%s', async autoDisable => {
+    camera.drift = drift; camera.landmarks = false;
+    await start(); handle!.stop(); queue.clear(); camera.videos = [];
+    const service = await import('@/services/headTracker'); const realStart = service.startHeadTracker;
+    const startSpy = vi.spyOn(service, 'startHeadTracker').mockImplementation(options => {
+      handle = realStart(options, ['replay-camera-0']); return handle;
+    });
+    vi.spyOn(service, 'isHeadTrackingSupported').mockReturnValue(true);
+    const probe = await import('@/services/reliabilityProbe');
+    const probeSpy = vi.spyOn(probe, 'startReliabilityProbe');
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({ language: 'en', headTrackingEnabled: true,
+      headTrackingDriftAutoDisable: autoDisable, headTrackingEyeGaze: false,
+      gestureConfig: { ...DEFAULT_GESTURE_CONFIG, enabled: false } });
+    const { default: Overlay } = await import('@/components/HeadTrackingOverlay');
+    const view = render(createElement(Overlay));
+    await vi.waitFor(() => expect(handle!.activeCameraCount).toBe(1));
+    await act(() => frame(1200));
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    let release!: () => void; act(() => { release = suspendCameraSelection(); });
+    try {
+      act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+      expect(handle!.activeCameraCount).toBe(0);
+      expect(useSettingsStore.getState().headTrackingEnabled).toBe(false);
+      expect(view.getByRole('button', { name: 'Enable Head Tracking' })).toBeVisible();
+    } finally { act(() => release()); }
+    for (let t = 1300; t <= 2800; t += 100) await act(() => frame(t));
+    expect(startSpy).toHaveBeenCalledTimes(1); expect(probeSpy).not.toHaveBeenCalled();
+    act(() => fireEvent.click(view.getByRole('button', { name: 'Enable Head Tracking' })));
+    expect(useSettingsStore.getState().headTrackingEnabled).toBe(true);
+    await vi.waitFor(() => expect(handle!.activeCameraCount).toBe(1));
+    expect(startSpy).toHaveBeenCalledTimes(2); view.unmount();
+  });
   it('keeps a completed head dwell locked through actual overlay ownership until observed departure', async () => {
     camera.drift = drift; camera.landmarks = false;
     await start(); handle!.stop(); queue.clear(); camera.videos = [];

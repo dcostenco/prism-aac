@@ -67,6 +67,9 @@ export interface HeadTrackerOptions {
    * surface a toast. See services/headTrackerStability.ts.
    */
   onDrift?: (reason: 'cursor-drift' | 'confidence-collapse') => void;
+  /** Explicit user stop, independent of automatic drift/selection ownership.
+   * Legacy consumers without this callback still receive onDrift on Escape. */
+  onEscape?: () => void;
   /** Drift detector tuning (defaults from settingsStore). */
   driftThresholdPx?: number;
   driftWindowMs?: number;
@@ -1328,13 +1331,15 @@ export function startHeadTracker(
       sources.forEach(stopCameraSource);
       window.removeEventListener('keydown', escHandler);
       opts.onStatusChange('stopped');
-      // Surface as a drift event so the consumer's UX (toast, recovery
-      // probe) reacts the same way as an auto-trigger.
-      if (opts.onDrift && !driftFired) {
+      // Keep legacy telemetry/callback behavior, but distinguish explicit
+      // user intent so an ownership fence cannot swallow the escape hatch.
+      const firstDrift = !driftFired;
+      if (firstDrift && (opts.onEscape || opts.onDrift)) {
         driftFired = true;
         emitTrackingEvent({ type: 'drift', reason: 'cursor-drift', timestamp: Date.now() });
-        opts.onDrift('cursor-drift');
       }
+      if (opts.onEscape) opts.onEscape();
+      else if (firstDrift) opts.onDrift?.('cursor-drift');
     }
   };
   if (typeof window !== 'undefined') {

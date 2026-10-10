@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react';
 import { subscribeCameraSelection, readCameraSelectionState } from '@/services/cameraSelection';
+import { resolveDwellTarget } from '@/services/dwellTarget';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
   startPoseTracker,
@@ -27,6 +28,10 @@ import { tapFeedback } from '@/services/feedback';
  */
 
 type Status = 'starting' | 'tracking' | 'lost' | 'stopped';
+const CAMERA_KEY_SELECTOR = 'button[data-key], button[data-action]';
+function cameraKeyTarget(target: Element | null): HTMLElement | null {
+  return target instanceof HTMLElement && target.matches(CAMERA_KEY_SELECTOR) ? target : null;
+}
 
 export default function CameraInputOverlay() {
   const enabled = useSettingsStore(s => s.cameraInputEnabled);
@@ -91,7 +96,10 @@ export default function CameraInputOverlay() {
   const statusRef = useRef<Status>('stopped');
 
   const animateDwell = useCallback(function animate() {
-    if (!dwellElementRef.current || dwellStartRef.current === 0) {
+    if (!dwellElementRef.current || dwellStartRef.current === 0 ||
+        resolveDwellTarget(dwellElementRef.current) !== dwellElementRef.current) {
+      dwellElementRef.current = null;
+      dwellStartRef.current = 0;
       setDwellProgress(0);
       return;
     }
@@ -130,9 +138,9 @@ export default function CameraInputOverlay() {
         // finger width data alongside cursor position.
 
         const el = document.elementFromPoint(x, y);
-        const interactive = el?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? null;
+        const interactive = resolveDwellTarget(el);
 
-        const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
+        const keyBtn = cameraKeyTarget(interactive);
         if (keyBtn && keyBtn !== highlightedKeyRef.current) {
           highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
           highlightedKeyRef.current = keyBtn;
@@ -295,7 +303,7 @@ export default function CameraInputOverlay() {
       setCursorPos({ x: e.clientX, y: e.clientY });
 
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
+      const keyBtn = cameraKeyTarget(resolveDwellTarget(el));
       if (keyBtn && keyBtn !== highlightedKeyRef.current) {
         highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
         highlightedKeyRef.current = keyBtn;
