@@ -27,6 +27,7 @@ import {
 } from '@/services/safeMode';
 import {
   startMotionMonitor,
+  requestMotionPermission,
   type MotionMonitorHandle,
 } from '@/services/deviceMotion';
 import { tapFeedback } from '@/services/feedback';
@@ -417,6 +418,10 @@ export default function HeadTrackingOverlay() {
             className="aac-btn min-h-[48px] px-4 rounded-xl bg-[#4CAF50] text-white font-bold border-0"
             onClick={() => {
               tapFeedback();
+              // iOS requires the permission request in this user gesture.
+              // The sensor is optional: never delay local camera recovery
+              // while its dialog is pending or when permission is denied.
+              void requestMotionPermission();
               // Manual retry is a vote of confidence — clear the drift
               // history so we exit safe mode if the user just tripped
               // their second event. If they trip a third within the

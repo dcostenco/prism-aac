@@ -14,6 +14,8 @@ const PREDICTION_BAR_SELECTOR = '[data-testid="prediction-bar"]';
 const PREDICTION_FONT_FLOOR_PX = 16;
 const EXPECTED_PREDICTION_COUNT = 5;
 const TEXT_PROBE_INSET_PX = 2;
+const MOTION_PERMISSION_GRANTED = 'granted' as const;
+type HeadEscapeAudit = { requests: number; motionRequests: number };
 
 test.use({ serviceWorkers: 'block' });
 test.afterEach(async ({ page, context }) => { await page.close(); await context.close(); });
@@ -93,8 +95,8 @@ test('Escape persists an explicit stop during scanning and requires user resume'
   await page.route(`${app.origin}${PENDING_MODEL_LOADER_PATH}`, () => new Promise<void>(() => {}));
   // A deliberately pending camera exercises the real tracker escape listener
   // without touching hardware or fabricating detector/photographic evidence.
-  await page.addInitScript(device => {
-    const audit = { requests: 0 };
+  await page.addInitScript(({ device, motionPermission }) => {
+    const audit = { requests: 0, motionRequests: 0 };
     Object.assign(window, { __headEscapeCamera: audit });
     const pendingCamera = () => { audit.requests++; return new Promise<MediaStream>(() => {}); };
     const devices = async () => [device as MediaDeviceInfo];
@@ -102,7 +104,15 @@ test('Escape persists an explicit stop during scanning and requires user resume'
     MediaDevices.prototype.enumerateDevices = devices;
     navigator.mediaDevices.getUserMedia = pendingCamera;
     navigator.mediaDevices.enumerateDevices = devices;
-  }, PENDING_CAMERA_DEVICE);
+    const requestPermission = () => { audit.motionRequests++; return Promise.resolve(motionPermission); };
+    if (window.DeviceMotionEvent) {
+      Object.defineProperty(window.DeviceMotionEvent, 'requestPermission', { value: requestPermission, configurable: true });
+    } else {
+      Object.assign(window, { DeviceMotionEvent: class extends Event {
+        static requestPermission = requestPermission;
+      } });
+    }
+  }, { device: PENDING_CAMERA_DEVICE, motionPermission: MOTION_PERMISSION_GRANTED });
   await page.goto('/prism-aac');
   await expect(page.getByTestId('prediction-bar')).toBeVisible();
   await assertReadablePredictionWords(page);
@@ -111,7 +121,9 @@ test('Escape persists an explicit stop during scanning and requires user resume'
   const overlay = page.getByTestId('head-tracking-overlay');
   await expect(overlay).toHaveAttribute('data-status', 'starting');
   await expect.poll(() => page.evaluate(() => (window as unknown as {
-    __headEscapeCamera: { requests: number } }).__headEscapeCamera.requests)).toBeGreaterThan(0);
+    __headEscapeCamera: HeadEscapeAudit }).__headEscapeCamera.requests)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => (window as unknown as {
+    __headEscapeCamera: HeadEscapeAudit }).__headEscapeCamera.motionRequests)).toBe(1);
   const scanning = page.getByTestId('switch-scan-settings');
   await scanning.getByRole('button', { name: 'Switch scanning', exact: true }).click();
   await scanning.getByRole('button', { name: 'Manual (step)', exact: true }).click();
@@ -144,6 +156,8 @@ test('Escape persists an explicit stop during scanning and requires user resume'
   await expect(overlay).toHaveCount(0);
   await expect(resume).toBeVisible();
   await resume.click();
+  expect(await page.evaluate(() => (window as unknown as {
+    __headEscapeCamera: HeadEscapeAudit }).__headEscapeCamera.motionRequests)).toBe(2);
   await expect(overlay).toHaveAttribute('data-status', 'starting');
   await expect(toast).toHaveCount(0);
   await page.keyboard.press('Escape');

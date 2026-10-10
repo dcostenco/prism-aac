@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import HeadTrackingOverlay from '@/components/HeadTrackingOverlay';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -10,6 +10,10 @@ import type { GestureEvent } from '@/services/gestureService';
 import { clearDriftHistory, recordDriftEvent } from '@/services/safeMode';
 import { DWELL_FEEDBACK_CASES, feedbackTarget, feedbackClock } from './helpers/dwell-feedback';
 const releases: (() => void)[] = [];
+const RECOVERY_REASONS = ['escape', 'drift'] as const;
+const MOTION_PERMISSION_RESULTS = ['granted', 'denied'] as const;
+const MOTION_RECOVERY_CASES = RECOVERY_REASONS.flatMap(reason =>
+  MOTION_PERMISSION_RESULTS.map(result => ({ reason, result })));
 const tracker = vi.hoisted(() => ({ options: [] as HeadTrackerOptions[], stop: vi.fn(),
   gestures: [] as ((event: GestureEvent) => void)[],
   probes: [] as ReliabilityProbeOpts[], probeStop: vi.fn() }));
@@ -162,4 +166,44 @@ it('explicit Escape defeats a recovery callback before passive cleanup, and reje
   act(() => escaped.onEscape?.());
   expect(useSettingsStore.getState().headTrackingEnabled).toBe(true);
   view.unmount();
+});
+
+it.each(MOTION_RECOVERY_CASES)('requests iOS motion permission inside $reason recovery despite $result response', async ({ reason, result }) => {
+  useSettingsStore.setState({ headTrackingDriftAutoDisable: true });
+  let resolvePermission!: (result: 'granted' | 'denied') => void;
+  const requestPermission = vi.fn(() => {
+    // Permission is requested before the recovered tracker starts.
+    expect(tracker.options).toHaveLength(1);
+    return new Promise<'granted' | 'denied'>(resolve => { resolvePermission = resolve; });
+  });
+  vi.stubGlobal('DeviceMotionEvent', { requestPermission });
+  const view = render(<HeadTrackingOverlay />);
+  act(() => { const options = tracker.options.at(-1)!;
+    if (reason === 'escape') options.onEscape?.(); else options.onDrift?.('cursor-drift'); });
+  expect(useSettingsStore.getState().headTrackingEnabled).toBe(false);
+  fireEvent.click(view.getByRole('button', { name: reason === 'escape' ? 'Enable Head Tracking' : /^Try again/ }));
+  expect(requestPermission).toHaveBeenCalledTimes(1);
+  // Motion sensing supplements camera input, so a delayed permission dialog
+  // must not leave the local recovery button ineffective.
+  expect(useSettingsStore.getState().headTrackingEnabled).toBe(true);
+  expect(tracker.options).toHaveLength(2);
+  await act(async () => { resolvePermission(result); });
+  expect(useSettingsStore.getState().headTrackingEnabled).toBe(true);
+  expect(tracker.options).toHaveLength(2);
+});
+
+it('late motion permission cannot revive a stopped or unmounted tracker', async () => {
+  let resolvePermission!: (result: 'granted') => void;
+  const requestPermission = vi.fn(() => new Promise<'granted'>(resolve => { resolvePermission = resolve; }));
+  vi.stubGlobal('DeviceMotionEvent', { requestPermission });
+  const view = render(<HeadTrackingOverlay />);
+  act(() => tracker.options.at(-1)!.onEscape?.());
+  fireEvent.click(view.getByRole('button', { name: 'Enable Head Tracking' }));
+  expect(requestPermission).toHaveBeenCalledTimes(1);
+  expect(tracker.options).toHaveLength(2);
+  act(() => useSettingsStore.getState().update({ headTrackingEnabled: false }));
+  view.unmount();
+  await act(async () => { resolvePermission('granted'); });
+  expect(useSettingsStore.getState().headTrackingEnabled).toBe(false);
+  expect(tracker.options).toHaveLength(2);
 });
