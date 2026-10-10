@@ -6,6 +6,7 @@ import {
   savePoseCalibration,
   loadPoseCalibration,
   DEFAULT_CALIBRATION,
+  POSE_CALIBRATION_MIN_RANGE,
   freezeLearnerCalSaves,
   unfreezeLearnerCalSaves,
   initFaceLandmarkerForGazeEager,
@@ -1268,7 +1269,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             const rangeX = latestCal.leftX - latestCal.rightX;
             const rangeY = latestCal.bottomY - latestCal.topY;
             const conventionOK = rangeX > 0 && rangeY > 0;
-            const minRangeOK = rangeX >= 0.20 && rangeY >= 0.15;
+            const minRangeOK = rangeX >= POSE_CALIBRATION_MIN_RANGE && rangeY >= POSE_CALIBRATION_MIN_RANGE;
             return (
               <>
                 <div style={{ marginTop: 4, color: '#fff', fontWeight: 700 }}>cal:</div>

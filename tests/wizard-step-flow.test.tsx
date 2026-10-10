@@ -76,6 +76,15 @@ vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
 // Lazy import AFTER mocks are in place.
 import TrackingSetupWizard from '@/components/TrackingSetupWizard';
 import { useSettingsStore } from '@/store/settingsStore';
+import { loadPoseCalibration, mapPoseToScreen } from '@/services/bodyPoseService';
+
+const RANGE_DIAGNOSTIC_CASES = [
+  { name: 'observed low-resolution range', x: 0.175, y: 0.178, accepted: true },
+  { name: 'limited movement with baseline drift', x: 0.03, y: 0.025, accepted: true },
+  { name: 'wide range', x: 0.7, y: 0.6, accepted: true },
+  { name: 'below runtime floor', x: 0.01, y: 0.03, accepted: false },
+  { name: 'inverted range', x: -0.03, y: 0.03, accepted: false },
+];
 
 // ── Driver helpers ──────────────────────────────────────────────────────
 
@@ -133,6 +142,20 @@ afterEach(() => {
 });
 
 // ── Tests ───────────────────────────────────────────────────────────────
+
+it.each(RANGE_DIAGNOSTIC_CASES)('diagnostics agree with actual mapping for $name', item => {
+  // A shifted baseline changes proximity/neutral location, not the reachable
+  // span. The diagnostic must not demand wider movement than the mapper uses.
+  const baseline = 0.5 + 0.015;
+  const calibration = { leftX: baseline + item.x / 2, rightX: baseline - item.x / 2,
+    topY: baseline - item.y / 2, bottomY: baseline + item.y / 2 };
+  expect(mapPoseToScreen(0.5, 0.5, calibration, 1, 1280, 720).rangeOK).toBe(item.accepted);
+  vi.mocked(loadPoseCalibration).mockReturnValueOnce(calibration).mockReturnValueOnce(calibration);
+  render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+  fireEvent.click(screen.getByTestId('tracking-setup-start'));
+  expect(screen.getByTestId('tracking-wizard-diag')).toHaveTextContent(
+    item.accepted ? /min-range:\s*OK/ : /min-range:\s*TOO NARROW/);
+});
 
 describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners → test)', () => {
   it('intro → Get Started kicks off detecting phase + spins up a tracker', () => {

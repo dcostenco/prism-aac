@@ -292,6 +292,9 @@ export const DEFAULT_CALIBRATION: PoseCalibrationData = {
   bottomY: 0.8,
 };
 
+/** Shared with wizard diagnostics; accepts existing limited-motion ranges. */
+export const POSE_CALIBRATION_MIN_RANGE = 0.02;
+
 /** Pure calibration math: pose-normalized-x/y → screen pixel coords.
  *  Mirrors X (front camera), applies calibration rect, applies
  *  sensitivity zoom around center, clamps to screen.
@@ -314,8 +317,7 @@ export function mapPoseToScreen(
   // defaults every frame. 0.02 still guards against inverted/zero
   // calibrations (the actual corruption mode) without rejecting
   // legitimate small-range users.
-  const MIN_RANGE = 0.02;
-  const rangeOK = rangeX >= MIN_RANGE && rangeY >= MIN_RANGE;
+  const rangeOK = rangeX >= POSE_CALIBRATION_MIN_RANGE && rangeY >= POSE_CALIBRATION_MIN_RANGE;
   const cal = rangeOK ? calibration : DEFAULT_CALIBRATION;
   const rX = cal.leftX - cal.rightX;
   const rY = cal.bottomY - cal.topY;

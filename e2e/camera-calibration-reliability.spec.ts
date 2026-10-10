@@ -132,6 +132,9 @@ for (const profile of [
       }
     }
     await expect(wizard).toHaveAttribute('data-phase', 'accuracy-test', { timeout: 12_000 });
+    // This limited-motion replay is accepted by the runtime. The visible
+    // diagnostic must not contradict it with a legacy, stricter range floor.
+    await expect(page.getByTestId('tracking-wizard-diag')).toContainText('min-range: OK');
     await expectPhotographicCameraInput(page, '__cameraReplay');
     const hits = await page.getByTestId('tracking-test-hits').innerText();
     await page.evaluate(() => Object.assign((window as unknown as {
