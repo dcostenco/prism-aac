@@ -11,6 +11,8 @@ import {
   type TrackingTarget,
 } from '@/services/bodyPoseService';
 import { tapFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
+import TrackingSelectionNotice from './TrackingSelectionNotice';
 
 /**
  * Camera Input Overlay — opt-in camera-based finger/arm tracking.
@@ -34,9 +36,11 @@ function cameraKeyTarget(target: Element | null): HTMLElement | null {
 }
 
 export default function CameraInputOverlay() {
+  const { t } = useT();
   const enabled = useSettingsStore(s => s.cameraInputEnabled);
   const ownershipEpoch = useSyncExternalStore(subscribeCameraSelection,
     () => readCameraSelectionState().epoch, () => 0);
+  const selectionBlocked = readCameraSelectionState().blocked;
   const calGeneration = useSettingsStore(s => s.poseCalibrationGeneration);
   const target = useSettingsStore(s => s.cameraTrackingTarget) as TrackingTarget;
   const dwellMs = useSettingsStore(s => s.headTrackingDwellMs);
@@ -375,13 +379,21 @@ export default function CameraInputOverlay() {
 
   return (
     <>
+    {(selectionBlocked || status === 'stopped') && <TrackingSelectionNotice
+      title={t('camera_required')} testId="camera-input-notice" paused={selectionBlocked}
+      onRetry={() => {
+        if (!useSettingsStore.getState().cameraInputEnabled || readCameraSelectionState().blocked) return;
+        tapFeedback();
+        setResumeGeneration(generation => generation + 1);
+      }}
+    />}
     {recalToastEl}
     <div
       className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 9998 }}
+      style={{ zIndex: 9998, display: selectionBlocked || status === 'stopped' ? 'none' : undefined }}
       aria-hidden="true"
       data-testid="camera-input-overlay"
-      data-status={status}
+      data-status={selectionBlocked ? 'paused' : status}
       data-target={activeTarget}
     >
       {/* Precision bubble on keyboard key */}

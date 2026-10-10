@@ -207,3 +207,49 @@ it('late motion permission cannot revive a stopped or unmounted tracker', async 
   expect(useSettingsStore.getState().headTrackingEnabled).toBe(false);
   expect(tracker.options).toHaveLength(2);
 });
+
+it('reports paused selection while owners hold input without retiring the warm tracker or preview', () => {
+  const view = render(<HeadTrackingOverlay />);
+  act(() => tracker.options.at(-1)!.onStatusChange('tracking'));
+  const preview = view.getByTestId('head-tracking-pip');
+  let first!: () => void, second!: () => void;
+  act(() => { first = suspendCameraSelection(); second = suspendCameraSelection(); releases.push(first, second); });
+  expect(view.getByTestId('head-tracking-overlay')).toHaveAttribute('data-status', 'paused');
+  expect(view.getByTestId('head-tracking-notice')).toHaveTextContent(/selection paused/i);
+  expect(view.getByTestId('head-tracking-overlay')).not.toBeVisible();
+  expect(view.getByTestId('head-tracking-pip')).toBe(preview);
+  expect(tracker.stop).not.toHaveBeenCalled();
+  act(() => first());
+  expect(view.getByTestId('head-tracking-overlay')).toHaveAttribute('data-status', 'paused');
+  act(() => second());
+  expect(view.queryByTestId('head-tracking-notice')).toBeNull();
+  expect(view.getByTestId('head-tracking-overlay')).toHaveAttribute('data-status', 'tracking');
+  expect(view.getByTestId('head-tracking-overlay')).toBeVisible();
+  expect(view.getByTestId('head-tracking-pip')).toBe(preview);
+  expect(tracker.options).toHaveLength(1);
+});
+
+it('offers a stopped-startup retry and rejects stale retry while ownership or Settings off takes effect', () => {
+  const requestPermission = vi.fn(async () => 'granted' as const);
+  vi.stubGlobal('DeviceMotionEvent', { requestPermission });
+  const view = render(<HeadTrackingOverlay />);
+  act(() => tracker.options.at(-1)!.onStatusChange('stopped'));
+  const retry = view.getByRole('button', { name: /^Try again/ });
+  let release!: () => void;
+  act(() => { release = suspendCameraSelection(); releases.push(release); fireEvent.click(retry); });
+  expect(tracker.options).toHaveLength(1);
+  expect(requestPermission).not.toHaveBeenCalled();
+  act(() => release());
+  fireEvent.click(view.getByRole('button', { name: /^Try again/ }));
+  expect(tracker.options).toHaveLength(2);
+  expect(requestPermission).toHaveBeenCalledTimes(1);
+  expect(useSettingsStore.getState().headTrackingEnabled).toBe(true);
+  act(() => tracker.options.at(-1)!.onStatusChange('starting'));
+  expect(view.queryByTestId('head-tracking-notice')).toBeNull();
+  act(() => tracker.options.at(-1)!.onStatusChange('stopped'));
+  const freshRetry = view.getByRole('button', { name: /^Try again/ });
+  act(() => { useSettingsStore.getState().update({ headTrackingEnabled: false }); fireEvent.click(freshRetry); });
+  expect(tracker.options).toHaveLength(2);
+  expect(useSettingsStore.getState().headTrackingEnabled).toBe(false);
+  expect(requestPermission).toHaveBeenCalledTimes(1);
+});

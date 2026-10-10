@@ -32,6 +32,7 @@ import {
 } from '@/services/deviceMotion';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
+import TrackingSelectionNotice from './TrackingSelectionNotice';
 
 /* ─────────────────────────────────────────────────────────────────────────────
  *  HeadTrackingOverlay
@@ -466,12 +467,22 @@ export default function HeadTrackingOverlay() {
   // SVG renders circle directly
 
   return (
+    <>
+    {(selectionBlocked || status === 'stopped') && <TrackingSelectionNotice
+      title={t('head_tracking')} testId="head-tracking-notice" paused={selectionBlocked}
+      onRetry={() => {
+        if (!useSettingsStore.getState().headTrackingEnabled || readCameraSelectionState().blocked) return;
+        tapFeedback();
+        void requestMotionPermission();
+        setResumeGeneration(generation => generation + 1);
+      }}
+    />}
     <div
       className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 9999 }}
+      style={{ zIndex: 9999, display: selectionBlocked || status === 'stopped' ? 'none' : undefined }}
       aria-hidden="true"
       data-testid="head-tracking-overlay"
-      data-status={status}
+      data-status={selectionBlocked ? 'paused' : status}
       data-safe-mode={safeMode ? 'true' : 'false'}
     >
       {/* ── Cursor dot + dwell ring — large and visible ── */}
@@ -609,5 +620,6 @@ export default function HeadTrackingOverlay() {
         />
       </div>
     </div>
+    </>
   );
 }

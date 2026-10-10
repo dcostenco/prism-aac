@@ -1,5 +1,5 @@
 import React, { StrictMode, useLayoutEffect } from 'react';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CameraInputOverlay from '@/components/CameraInputOverlay';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -50,6 +50,44 @@ it('does not retire a running tracker or reset its completed lock solely for sca
   expect(tracker.start).toHaveBeenCalledTimes(1);
   view.unmount();
   expect(tracker.stop).toHaveBeenCalledTimes(1);
+});
+
+it('reports paused camera selection until every owner releases, then restores the warm tracker', () => {
+  const view = render(<CameraInputOverlay />);
+  act(() => tracker.options.at(-1)!.onStatusChange('tracking'));
+  let first!: () => void, second!: () => void;
+  act(() => { first = suspendCameraSelection(); second = suspendCameraSelection(); releases.push(first, second); });
+  expect(view.getByTestId('camera-input-overlay')).toHaveAttribute('data-status', 'paused');
+  expect(view.getByTestId('camera-input-notice')).toHaveTextContent(/selection paused/i);
+  expect(view.getByTestId('camera-input-overlay')).not.toBeVisible();
+  expect(tracker.stop).not.toHaveBeenCalled();
+  act(() => first());
+  expect(view.getByTestId('camera-input-overlay')).toHaveAttribute('data-status', 'paused');
+  act(() => second());
+  expect(view.queryByTestId('camera-input-notice')).toBeNull();
+  expect(view.getByTestId('camera-input-overlay')).toHaveAttribute('data-status', 'tracking');
+  expect(view.getByTestId('camera-input-overlay')).toBeVisible();
+  expect(tracker.start).toHaveBeenCalledTimes(1);
+});
+
+it('offers camera stopped-startup retry without permitting stale blocked or disabled retries', () => {
+  const view = render(<CameraInputOverlay />);
+  act(() => tracker.options.at(-1)!.onStatusChange('stopped'));
+  const retry = view.getByRole('button', { name: /^Try again/ });
+  let release!: () => void;
+  act(() => { release = suspendCameraSelection(); releases.push(release); fireEvent.click(retry); });
+  expect(tracker.start).toHaveBeenCalledTimes(1);
+  act(() => release());
+  fireEvent.click(view.getByRole('button', { name: /^Try again/ }));
+  expect(tracker.start).toHaveBeenCalledTimes(2);
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(true);
+  act(() => tracker.options.at(-1)!.onStatusChange('starting'));
+  expect(view.queryByTestId('camera-input-notice')).toBeNull();
+  act(() => tracker.options.at(-1)!.onStatusChange('stopped'));
+  const freshRetry = view.getByRole('button', { name: /^Try again/ });
+  act(() => { useSettingsStore.getState().update({ cameraInputEnabled: false }); fireEvent.click(freshRetry); });
+  expect(tracker.start).toHaveBeenCalledTimes(2);
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(false);
 });
 
 describe.each([false, true])('same-commit setup ownership, StrictMode=%s', strict => {

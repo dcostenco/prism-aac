@@ -52,6 +52,7 @@
           "calibrate",
           "calm",
           "camera_required",
+          "camera_selection_paused",
           "cancel",
           "card_face_down",
           "caregiver_connected",
@@ -415,6 +416,7 @@
           "tone",
           "toolbar_browser",
           "tracking",
+          "tracking_unavailable",
           "try_again",
           "type_here",
           "type_or_speak",
@@ -499,7 +501,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "sw": {
@@ -552,6 +556,7 @@
           "calibrate",
           "calm",
           "camera_required",
+          "camera_selection_paused",
           "cancel",
           "card_face_down",
           "caregiver_connected",
@@ -915,6 +920,7 @@
           "tone",
           "toolbar_browser",
           "tracking",
+          "tracking_unavailable",
           "try_again",
           "type_here",
           "type_or_speak",
@@ -999,7 +1005,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "bn": {
@@ -1052,6 +1060,7 @@
           "calibrate",
           "calm",
           "camera_required",
+          "camera_selection_paused",
           "cancel",
           "card_face_down",
           "caregiver_connected",
@@ -1415,6 +1424,7 @@
           "tone",
           "toolbar_browser",
           "tracking",
+          "tracking_unavailable",
           "try_again",
           "type_here",
           "type_or_speak",
@@ -1499,7 +1509,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "es": {
@@ -1507,6 +1519,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -1550,6 +1563,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1581,7 +1595,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "fr": {
@@ -1589,6 +1605,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -1632,6 +1649,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1663,7 +1681,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "pt": {
@@ -1671,6 +1691,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -1714,6 +1735,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1745,7 +1767,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "ro": {
@@ -1753,6 +1777,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -1796,6 +1821,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1827,7 +1853,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "uk": {
@@ -1835,6 +1863,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -1878,6 +1907,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1909,7 +1939,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "ru": {
@@ -1917,6 +1949,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -1960,6 +1993,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1991,7 +2025,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "de": {
@@ -1999,6 +2035,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2042,6 +2079,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2073,7 +2111,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "ja": {
@@ -2081,6 +2121,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2124,6 +2165,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2155,7 +2197,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "ko": {
@@ -2163,6 +2207,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2206,6 +2251,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2237,7 +2283,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "zh": {
@@ -2245,6 +2293,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2288,6 +2337,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2319,7 +2369,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "ar": {
@@ -2327,6 +2379,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2370,6 +2423,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2401,7 +2455,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "hi": {
@@ -2409,6 +2465,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2452,6 +2509,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2483,7 +2541,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "it": {
@@ -2491,6 +2551,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2534,6 +2595,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2565,7 +2627,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "pl": {
@@ -2573,6 +2637,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2616,6 +2681,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2647,7 +2713,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "he": {
@@ -2655,6 +2723,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2698,6 +2767,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2729,7 +2799,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "nl": {
@@ -2737,6 +2809,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2780,6 +2853,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2811,7 +2885,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "vi": {
@@ -2819,6 +2895,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2862,6 +2939,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2893,7 +2971,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "tl": {
@@ -2901,6 +2981,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -2944,6 +3025,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2975,7 +3057,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "tr": {
@@ -2983,6 +3067,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -3026,6 +3111,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -3057,7 +3143,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "id": {
@@ -3065,6 +3153,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -3108,6 +3197,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -3139,7 +3229,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "bg": {
@@ -3147,6 +3239,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -3190,6 +3283,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -3221,7 +3315,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "zh-Hant": {
@@ -3229,6 +3325,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -3272,6 +3369,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -3303,7 +3401,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "zh-HK": {
@@ -3311,6 +3411,7 @@
         "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "cloud_access_active",
           "cloud_allowance_reset",
           "cloud_beta_access",
@@ -3354,6 +3455,7 @@
           "speech_cache_unavailable",
           "speech_cache_usage",
           "toolbar_browser",
+          "tracking_unavailable",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -3385,7 +3487,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       },
       "zh-Hans": {
@@ -3393,11 +3497,13 @@
         "generatedAt": "2026-10-09T23:34:08.690Z",
         "reviewed": [],
         "unreviewed": [
+          "camera_selection_paused",
           "scan_active",
           "scan_keys",
           "scan_start",
           "scan_stop",
-          "scan_stopped"
+          "scan_stopped",
+          "tracking_unavailable"
         ],
         "generatorById": {
           "scan_active": {
@@ -3419,7 +3525,9 @@
           "scan_keys": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-09T23:34:08.690Z"
-          }
+          },
+          "camera_selection_paused": "codex-generated-draft",
+          "tracking_unavailable": "codex-generated-draft"
         }
       }
     },

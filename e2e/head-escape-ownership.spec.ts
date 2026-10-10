@@ -16,6 +16,11 @@ const EXPECTED_PREDICTION_COUNT = 5;
 const TEXT_PROBE_INSET_PX = 2;
 const MOTION_PERMISSION_GRANTED = 'granted' as const;
 type HeadEscapeAudit = { requests: number; motionRequests: number };
+const CAMERA_DENIAL = { message: 'Camera denied by test fixture', name: 'NotAllowedError' };
+const STARTUP_RETRY_MODES = [
+  { label: 'Head tracking', overlay: 'head-tracking-overlay', notice: 'head-tracking-notice' },
+  { label: 'Camera input', overlay: 'camera-input-overlay', notice: 'camera-input-notice' },
+] as const;
 
 test.use({ serviceWorkers: 'block' });
 test.afterEach(async ({ page, context }) => { await page.close(); await context.close(); });
@@ -75,10 +80,7 @@ async function assertReadablePredictionWords(page: Page) {
   }
 }
 
-test('Escape persists an explicit stop during scanning and requires user resume', async ({ page, baseURL }, info) => {
-  test.setTimeout(60_000);
-  const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
+async function installCameraFixture(page: Page, baseURL: string, outcome: 'pending' | 'denied') {
   const app = new URL(baseURL!);
   if (!['localhost', '127.0.0.1', '[::1]'].includes(app.hostname)) {
     throw new Error('Explicit-stop camera fixture requires localhost');
@@ -90,15 +92,17 @@ test('Escape persists an explicit stop during scanning and requires user resume'
       headers: { 'access-control-allow-origin': app.origin, 'access-control-allow-credentials': 'true' } });
     return route.continue();
   });
-  // Keep model loading pending too: this is an Escape-during-startup test,
+  // Keep model loading pending too: these are startup recovery tests,
   // not a WASM loader or recognition test. Never filter uncaught page errors.
   await page.route(`${app.origin}${PENDING_MODEL_LOADER_PATH}`, () => new Promise<void>(() => {}));
   // A deliberately pending camera exercises the real tracker escape listener
   // without touching hardware or fabricating detector/photographic evidence.
-  await page.addInitScript(({ device, motionPermission }) => {
+  await page.addInitScript(({ device, motionPermission, outcome, denial }) => {
     const audit = { requests: 0, motionRequests: 0 };
     Object.assign(window, { __headEscapeCamera: audit });
-    const pendingCamera = () => { audit.requests++; return new Promise<MediaStream>(() => {}); };
+    const pendingCamera = () => { audit.requests++;
+      return outcome === 'denied' ? Promise.reject(new DOMException(denial.message, denial.name))
+        : new Promise<MediaStream>(() => {}); };
     const devices = async () => [device as MediaDeviceInfo];
     MediaDevices.prototype.getUserMedia = pendingCamera;
     MediaDevices.prototype.enumerateDevices = devices;
@@ -112,7 +116,14 @@ test('Escape persists an explicit stop during scanning and requires user resume'
         static requestPermission = requestPermission;
       } });
     }
-  }, { device: PENDING_CAMERA_DEVICE, motionPermission: MOTION_PERMISSION_GRANTED });
+  }, { device: PENDING_CAMERA_DEVICE, motionPermission: MOTION_PERMISSION_GRANTED, outcome, denial: CAMERA_DENIAL });
+}
+
+test('Escape persists an explicit stop during scanning and requires user resume', async ({ page, baseURL }, info) => {
+  test.setTimeout(60_000);
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await installCameraFixture(page, baseURL!, 'pending');
   await page.goto('/prism-aac');
   await expect(page.getByTestId('prediction-bar')).toBeVisible();
   await assertReadablePredictionWords(page);
@@ -131,6 +142,18 @@ test('Escape persists an explicit stop during scanning and requires user resume'
   const controller = page.getByTestId('switch-scan-controller');
   await expect(controller).toBeVisible();
   await expect(page.locator('.switch-scan-active')).toHaveCount(1);
+  await expect(overlay).toHaveAttribute('data-status', 'paused');
+  await expect(overlay).toBeHidden();
+  const pausedNotice = page.getByTestId('head-tracking-notice');
+  await expect(pausedNotice).toHaveText(/selection paused/i);
+  await assertReadablePredictionWords(page);
+  expect(await checkCriticalOcclusion(page, { expectedPath: '/prism-aac',
+    criticalSelectors: [KEYBOARD_CONTROL_ROW, PREDICTION_BAR_SELECTOR],
+    occluderSelectors: ['[data-testid="head-tracking-notice"]'] })).toEqual([]);
+  await safeScreenshot(page, info.outputPath('paused-during-scanning.png'), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="head-tracking-notice"]'],
+    criticalSelectors: [KEYBOARD_CONTROL_ROW, PREDICTION_BAR_SELECTOR],
+  });
   await page.keyboard.press('Escape');
   const toast = page.getByTestId('head-tracking-stop-toast');
   await expect(toast).toHaveAttribute('data-stop-reason', 'escape');
@@ -193,3 +216,42 @@ test('Escape persists an explicit stop during scanning and requires user resume'
   });
   expect(errors).toEqual([]);
 });
+
+for (const mode of STARTUP_RETRY_MODES) {
+  test(`${mode.label} offers a visible retry after denied camera startup and stays manually controllable`, async ({ page, baseURL }, info) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await installCameraFixture(page, baseURL!, 'denied');
+    await page.goto('/prism-aac');
+    await openInputSettings(page);
+    await page.getByRole('button', { name: mode.label, exact: true }).click();
+    await page.getByRole('button', { name: 'Close settings', exact: true }).click();
+    const overlay = page.getByTestId(mode.overlay), notice = page.getByTestId(mode.notice);
+    await expect(overlay).toHaveAttribute('data-status', 'stopped');
+    await expect(overlay).toBeHidden();
+    await expect(notice).toContainText(/tracking stopped/i);
+    const requests = await page.evaluate(() => (window as unknown as {
+      __headEscapeCamera: HeadEscapeAudit }).__headEscapeCamera.requests);
+    expect(requests).toBeGreaterThan(0);
+    await notice.getByRole('button', { name: /^Try again/ }).click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as {
+      __headEscapeCamera: HeadEscapeAudit }).__headEscapeCamera.requests)).toBeGreaterThan(requests);
+    await expect(overlay).toHaveAttribute('data-status', 'stopped');
+    await assertReadablePredictionWords(page);
+    expect(await checkCriticalOcclusion(page, { expectedPath: '/prism-aac',
+      criticalSelectors: [KEYBOARD_CONTROL_ROW, PREDICTION_BAR_SELECTOR],
+      occluderSelectors: [`[data-testid="${mode.notice}"]`] })).toEqual([]);
+    await safeScreenshot(page, info.outputPath(`${mode.notice}-retry.png`), {
+      expectedPath: '/prism-aac', requiredSelectors: [`[data-testid="${mode.notice}"]`],
+      criticalSelectors: [KEYBOARD_CONTROL_ROW, PREDICTION_BAR_SELECTOR],
+    });
+    await openInputSettings(page);
+    const toggle = page.getByRole('button', { name: mode.label, exact: true });
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await toggle.click();
+    await page.getByRole('button', { name: 'Close settings', exact: true }).click();
+    await expect(overlay).toHaveCount(0);
+    await expect(notice).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+}
