@@ -1404,6 +1404,15 @@ export function startPoseTracker(
       return video;
     },
     setCalibration(data: PoseCalibrationData) {
+      const mappingChanged = data.leftX !== calibration.leftX || data.rightX !== calibration.rightX ||
+        data.topY !== calibration.topY || data.bottomY !== calibration.bottomY;
+      if (mappingChanged) {
+        // Filter history is in screen pixels under the previous mapping.
+        // Reinitialize from the next genuine usable pose, not a made-up center.
+        oneEuroX.reset();
+        oneEuroY.reset();
+        oneEuroInitialized = false;
+      }
       calibration.leftX = data.leftX;
       calibration.rightX = data.rightX;
       calibration.topY = data.topY;

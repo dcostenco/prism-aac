@@ -297,6 +297,43 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
     expect(onMove.mock.calls.at(-1)![0]).toBeGreaterThan(1000);
   });
 
+  it('uses only the new mapping on the first valid frame after a warmed tracker is recalibrated', async () => {
+    const { onMove, mapPoseToScreen } = await start();
+    pose(20, 0.5, 0.5); step(20);
+    // Warm the real filters under the factory mapping before changing it.
+    // Testing setCalibration before any frame cannot catch old-pixel history.
+    const neutralX = 0.5 + drift();
+    const neutralY = 0.5 + drift() / 2;
+    const calibration = { leftX: 1 - neutralX + 0.15, rightX: 1 - neutralX - 0.15,
+      topY: neutralY - 0.12, bottomY: neutralY + 0.12, wizardCompleted: true };
+    handle!.setCalibration(calibration);
+    const expectedDrift = driftLevel * Math.min((now + 100) / 5_000, 1);
+    const expected = mapPoseToScreen(0.5 + expectedDrift, 0.5 + expectedDrift / 2,
+      calibration, 1, 1280, 720);
+    step();
+    expect(onMove.mock.calls.at(-1)![0]).toBeCloseTo(expected.x);
+    expect(onMove.mock.calls.at(-1)![1]).toBeCloseTo(expected.y);
+  });
+
+  it('retains smoothing for an unchanged mapping and completion metadata update', async () => {
+    const { DEFAULT_CALIBRATION } = await start();
+    pose(20, 0.5); step(20);
+    const { ConfidenceAwareOneEuro } = await import('@/services/oneEuroFilter');
+    const reset = vi.spyOn(ConfidenceAwareOneEuro.prototype, 'reset');
+    handle!.setCalibration({ ...DEFAULT_CALIBRATION, wizardCompleted: true });
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it('never manufactures a centered cursor when a new calibration is applied without a usable frame', async () => {
+    const { onMove } = await start();
+    pose(20, 0.5); step(20);
+    const moves = onMove.mock.calls.length;
+    detector.poses = [];
+    handle!.setCalibration({ leftX: 0.65, rightX: 0.35, topY: 0.38, bottomY: 0.62 });
+    step(3);
+    expect(onMove).toHaveBeenCalledTimes(moves);
+  });
+
   it('uses the tested safe mapping for a degenerate live calibration rather than pinning the cursor', async () => {
     const { onMove, mapPoseToScreen } = await start();
     const calibration = { leftX: 0.505, rightX: 0.5, topY: 0.3, bottomY: 0.8 };
