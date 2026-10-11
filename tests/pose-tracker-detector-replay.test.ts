@@ -16,6 +16,13 @@ const aggregateTargets = [
   ['any_index', 19, 20, 'left_index', 'right_index'],
   ['any_hand', 15, 20, 'left_wrist', 'right_index'],
 ] as const;
+const INVALID_CAMERA_COORDINATES = [
+  { name: 'left of frame', x: -0.1, y: 0.5 },
+  { name: 'right of frame', x: 1.1, y: 0.5 },
+  { name: 'above frame', x: 0.5, y: -0.1 },
+  { name: 'non-finite X', x: NaN, y: 0.5 },
+  { name: 'non-finite Y', x: 0.5, y: Infinity },
+];
 
 // Mock only the detector boundary. Calibration, target resolution, real
 // filters, the frame loop and dwell selection must remain production code.
@@ -134,6 +141,37 @@ function step(count = 1) {
 
 describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it.each(INVALID_CAMERA_COORDINATES)('rejects $name even with high visibility', async ({ x, y }) => {
+    const { onMove, onStatusChange } = await start('right_index');
+    pose(20, x, y); step(6);
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+  });
+  it('retains a valid head fallback when the requested finger is outside the camera frame', async () => {
+    const { onStatusChange } = await start('right_index');
+    pose(20, 0.243, 1.767);
+    detector.poses[0][0] = { x: 0.5, y: 0.5, visibility: 0.9 };
+    step(5);
+    expect(onStatusChange).toHaveBeenLastCalledWith('tracking', 'nose');
+  });
+  it.each(concreteTargets)('rejects off-frame %s rather than moving or dwelling on an extrapolated landmark', async (target, index) => {
+    const { onMove, onDwell, onStatusChange } = await start(target);
+    pose(index, 0.243, 1.767); step(6);
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onDwell).not.toHaveBeenCalled();
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+    pose(index, 0.5, 0.5); step(3);
+    expect(onStatusChange).toHaveBeenLastCalledWith('tracking', target);
+    expect(onMove).toHaveBeenCalled();
+  });
+  it.each(aggregateTargets)('%s ignores a high-visibility off-frame side and retains the in-frame side', async (target, first, second, firstTarget, secondTarget) => {
+    const { onStatusChange } = await start(target);
+    pose(first, 0.243, 1.767);
+    detector.poses[0][second] = { x: 0.5, y: 0.5, visibility: 0.4 };
+    step(5);
+    expect(onStatusChange).toHaveBeenLastCalledWith('tracking', secondTarget);
+    expect(onStatusChange).not.toHaveBeenCalledWith('tracking', firstTarget);
+  });
   it('keeps a completed native selection locked through overlay → scanner → overlay until observed departure', async () => {
     await start('nose');
     const service = await import('@/services/bodyPoseService');
@@ -404,8 +442,7 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
 });
 
 it('covers every camera target offered by Settings, so a new option cannot silently escape the replay matrix', () => {
-  const settings = readFileSync('components/InputModesSettings.tsx', 'utf8');
-  const section = settings.slice(settings.indexOf('const TRACKING_TARGETS = ['), settings.indexOf('function Toggle('));
+  const section = readFileSync('services/cameraTrackingTargets.ts', 'utf8');
   const offered = [...section.matchAll(/id: '([^']+)'/g)].map(match => match[1]);
   expect(offered.length).toBeGreaterThan(0);
   expect(offered.sort()).toEqual([...concreteTargets, ...aggregateTargets].map(([target]) => target).sort());

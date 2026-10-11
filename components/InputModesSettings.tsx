@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import TrackingSetupWizard from './TrackingSetupWizard';
+import { CAMERA_TRACKING_TARGETS } from '@/services/cameraTrackingTargets';
 import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
 import { requestMotionPermission } from '@/services/deviceMotion';
 import { loadConfig as loadSwitchConfig, saveConfig as saveSwitchConfig, SWITCH_SCAN_CONFIG_EVENT, type SwitchScanConfig } from '@/services/switchScanService';
@@ -14,20 +15,6 @@ import { loadConfig as loadSwitchConfig, saveConfig as saveSwitchConfig, SWITCH_
 // the matching chip, no target appeared selected and the user was
 // forced to pick a specific side, losing the auto-side fallback that
 // matters for users with asymmetric reach (May 2026 prod probe).
-const TRACKING_TARGETS = [
-  { id: 'any_wrist', label: 'Any Wrist (auto)' },
-  { id: 'any_index', label: 'Any Index (auto)' },
-  { id: 'any_hand', label: 'Any Hand (auto)' },
-  { id: 'right_index', label: 'Right Index Finger' },
-  { id: 'left_index', label: 'Left Index Finger' },
-  { id: 'right_wrist', label: 'Right Wrist' },
-  { id: 'left_wrist', label: 'Left Wrist' },
-  { id: 'right_elbow', label: 'Right Elbow' },
-  { id: 'left_elbow', label: 'Left Elbow' },
-  { id: 'nose', label: 'Nose (Head)' },
-  { id: 'right_shoulder', label: 'Right Shoulder' },
-  { id: 'left_shoulder', label: 'Left Shoulder' },
-];
 
 const INPUT_TOGGLE_ROW_CLASS = 'flex items-center justify-between gap-8 py-3';
 
@@ -74,7 +61,7 @@ export default function InputModesSettings() {
           <div className="ml-2 mt-1 space-y-1">
             <label className="text-muted text-xs">Track:</label>
             <div className="grid grid-cols-3 gap-1">
-              {TRACKING_TARGETS.map(tt => (
+              {CAMERA_TRACKING_TARGETS.map(tt => (
                 <button key={tt.id} onClick={() => { tapFeedback(); update({ cameraTrackingTarget: tt.id }); }}
                   data-testid={`tracking-target-${tt.id}`}
                   data-selected={cameraTrackingTarget === tt.id ? 'true' : 'false'}

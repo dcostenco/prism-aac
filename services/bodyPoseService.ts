@@ -95,6 +95,31 @@ const LANDMARK_INDEX: Record<Exclude<TrackingTarget, 'any_wrist' | 'any_index' |
   right_index: 20,
 };
 
+const AGGREGATE_TARGET_MEMBERS = {
+  any_wrist: ['right_wrist', 'left_wrist'],
+  any_index: ['right_index', 'left_index'],
+  any_hand: ['right_wrist', 'left_wrist', 'right_index', 'left_index'],
+} as const;
+const POSE_FALLBACK_TARGETS: TrackingTarget[] = [
+  'nose', 'right_wrist', 'left_wrist', 'right_index', 'left_index',
+  'right_elbow', 'left_elbow',
+];
+
+/** The same concrete candidates used by the live detector and setup. */
+export function trackingTargetCandidates(target: TrackingTarget): readonly Exclude<TrackingTarget, 'any_wrist' | 'any_index' | 'any_hand'>[] {
+  if (target === 'any_wrist' || target === 'any_index' || target === 'any_hand') {
+    return AGGREGATE_TARGET_MEMBERS[target];
+  }
+  return [target];
+}
+
+function isInCameraFrame(mark: { x: number; y: number } | undefined): boolean {
+  // MediaPipe can extrapolate a cropped limb beyond the image while still
+  // giving it visibility > 0.3. Visibility alone is not camera presence.
+  return !!mark && Number.isFinite(mark.x) && Number.isFinite(mark.y) &&
+    mark.x >= 0 && mark.x <= 1 && mark.y >= 0 && mark.y <= 1;
+}
+
 /**
  * Resolve an aggregate target to the underlying landmark with the highest
  * visibility on the current frame. Returns null if none of the candidates
@@ -104,16 +129,14 @@ function resolveAggregateTarget(
   agg: 'any_wrist' | 'any_index' | 'any_hand',
   lm: Array<{ x: number; y: number; visibility?: number }>,
 ): { target: TrackingTarget; mark: { x: number; y: number; visibility?: number }; vis: number } | null {
-  let candidates: Array<Exclude<TrackingTarget, 'any_wrist' | 'any_index' | 'any_hand'>>;
-  if (agg === 'any_wrist') candidates = ['right_wrist', 'left_wrist'];
-  else if (agg === 'any_index') candidates = ['right_index', 'left_index'];
-  else candidates = ['right_wrist', 'left_wrist', 'right_index', 'left_index'];
+  const candidates = trackingTargetCandidates(agg);
 
   let best: { target: TrackingTarget; mark: { x: number; y: number; visibility?: number }; vis: number } | null = null;
   for (const c of candidates) {
     const idx = LANDMARK_INDEX[c];
     if (idx === undefined || lm.length <= idx) continue;
     const mark = lm[idx];
+    if (!isInCameraFrame(mark)) continue;
     const vis = mark.visibility ?? 0;
     if (!best || vis > best.vis) {
       best = { target: c, mark, vis };
@@ -933,7 +956,7 @@ export function startPoseTracker(
           // lighting; the multi-pose disambiguation only matters when 2+
           // poses are returned anyway.
           const noseLm = lm[LANDMARK_INDEX.nose];
-          if (noseLm && (noseLm.visibility ?? 0) >= 0.3) {
+          if (isInCameraFrame(noseLm) && (noseLm.visibility ?? 0) >= 0.3) {
             lockedAnchor = { x: noseLm.x, y: noseLm.y };
             lockedAnchorTimestamp = Date.now();
           } else if (lockedAnchor && Date.now() - lockedAnchorTimestamp > 2000) {
@@ -958,9 +981,7 @@ export function startPoseTracker(
           //   A — accept first landmark with vis >= 0.3 (good signal)
           //   B — if A failed, accept first with vis >= 0.1 (weak fallback)
           const FALLBACK_CHAIN: TrackingTarget[] = [
-            requested,
-            'nose', 'right_wrist', 'left_wrist', 'right_index', 'left_index',
-            'right_elbow', 'left_elbow',
+            requested, ...POSE_FALLBACK_TARGETS,
           ];
           if (!chosen) {
             for (const target of FALLBACK_CHAIN) {
@@ -968,6 +989,7 @@ export function startPoseTracker(
               const idx = LANDMARK_INDEX[target];
               if (idx === undefined || lm.length <= idx) continue;
               const mark = lm[idx];
+              if (!isInCameraFrame(mark)) continue;
               const vis = mark.visibility ?? 0;
               if (vis >= 0.3) { chosen = { mark, target, vis }; break; }
             }
@@ -988,6 +1010,7 @@ export function startPoseTracker(
               const idx = LANDMARK_INDEX[target];
               if (idx === undefined || lm.length <= idx) continue;
               const mark = lm[idx];
+              if (!isInCameraFrame(mark)) continue;
               const vis = mark.visibility ?? 0;
               if (vis >= 0.1) { chosen = { mark, target, vis }; break; }
             }

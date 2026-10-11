@@ -47,6 +47,7 @@ for (const profile of [
   { name: 'close-low-resolution', width: 320, height: 240, zoom: 1.5, tilt: 0.12, brightness: 0.8, blur: 0.5, drift: 0.003 },
   NEAR_CROPPED_PROFILE,
   { ...NEAR_CROPPED_PROFILE, name: 'near-cropped-dim-center-only', centerOnly: true },
+  { ...NEAR_CROPPED_PROFILE, name: 'near-cropped-dim-selected-finger', explicitFallback: true },
 ]) {
   test(`synthetic camera smoke ${profile.name}, drift ${profile.drift}`, async ({ page }, info) => {
     test.setTimeout(120_000);
@@ -99,6 +100,12 @@ for (const profile of [
     await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
     const toggle = page.getByRole('button', { name: 'Camera input', exact: true });
     if (await toggle.getAttribute('aria-pressed') !== 'true') await toggle.click();
+    // Head-only photo: the finger case checks honest explicit fallback,
+    // not successful finger recognition from a head-only frame.
+    const explicitFallback = 'explicitFallback' in profile && profile.explicitFallback;
+    const initialTarget = explicitFallback ? 'right_index' : 'nose';
+    await page.getByTestId(`tracking-target-${initialTarget}`).click();
+    await expect(page.getByTestId(`tracking-target-${initialTarget}`)).toHaveAttribute('data-selected', 'true');
     await page.getByRole('button', { name: /Set Up Tracking/ }).click();
     await safeScreenshot(page, info.outputPath('setup-entry.png'), {
       expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-setup-start"]'],
@@ -108,6 +115,17 @@ for (const profile of [
     await page.getByTestId('tracking-setup-start').click();
     await expectPhotographicCameraInput(page, '__cameraReplay');
     const wizard = page.getByTestId('tracking-setup-wizard');
+    if (explicitFallback) {
+      await expect(wizard.getByRole('button', { name: /Head/ })).toBeVisible({ timeout: 45_000 });
+      await page.waitForTimeout(1800);
+      await expect(wizard).toHaveAttribute('data-phase', 'detecting');
+      expect(await page.evaluate(() => JSON.parse(localStorage.getItem('prism-aac-settings')!).state.cameraTrackingTarget)).toBe('right_index');
+      await safeScreenshot(page, info.outputPath('selected-finger-explicit-fallback.png'), {
+        expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-setup-wizard"][data-phase="detecting"]'],
+      });
+      await wizard.getByRole('button', { name: /Head/ }).click();
+      await wizard.getByRole('button', { name: /^Calibrate Head/ }).click();
+    }
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-center', { timeout: 45_000 });
     await expect(wizard).toHaveAttribute('data-tracker-status', 'tracking');
     const capture = page.getByTestId('tracking-capture-center');
@@ -228,6 +246,7 @@ for (const profile of [
     // lets a neutral camera dwell activate its controls; that separate
     // interaction-policy issue is not storage loss or covered by this smoke.
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('tracking-target-nose')).toHaveAttribute('data-selected', 'true');
     await page.getByRole('button', { name: 'Close settings', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByTestId('camera-input-overlay')).toHaveAttribute('data-status', 'tracking', { timeout: 15_000 });
@@ -239,6 +258,7 @@ for (const profile of [
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
     await expect(page.getByRole('button', { name: 'Camera input', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('tracking-target-nose')).toHaveAttribute('data-selected', 'true');
     if (centerOnly) {
       const restored = await page.evaluate(() => {
         const orientation = innerWidth >= innerHeight ? 'landscape' : 'portrait';

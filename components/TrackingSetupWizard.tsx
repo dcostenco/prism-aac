@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
   startPoseTracker,
@@ -11,10 +11,13 @@ import {
   unfreezeLearnerCalSaves,
   applyCalibrationToActiveTracker,
   subscribePoseSamples,
+  trackingTargetCandidates,
   type PoseTrackerHandle,
   type TrackingTarget,
   type PoseCalibrationData,
 } from '@/services/bodyPoseService';
+import { CAMERA_TRACKING_TARGETS } from '@/services/cameraTrackingTargets';
+import { suspendCameraSelection } from '@/services/cameraSelection';
 import {
   computeWizardCalibration,
   computeCenterPreviewCalibration,
@@ -43,15 +46,13 @@ interface DetectedPart {
   confidence: number;
 }
 
-const BODY_PARTS: Array<{ target: TrackingTarget; label: string; emoji: string }> = [
-  { target: 'nose', label: 'Head', emoji: '🙂' },
-  { target: 'right_wrist', label: 'Right Hand', emoji: '🤚' },
-  { target: 'left_wrist', label: 'Left Hand', emoji: '🖐' },
-  { target: 'right_index', label: 'Right Finger', emoji: '👆' },
-  { target: 'left_index', label: 'Left Finger', emoji: '☝️' },
-  { target: 'right_elbow', label: 'Right Elbow', emoji: '💪' },
-  { target: 'left_elbow', label: 'Left Elbow', emoji: '💪' },
-];
+function detectedStatus(parts: DetectedPart[]): string {
+  return `Found: ${parts.map(part => part.emoji).join(' ')}`;
+}
+
+const BODY_PARTS = CAMERA_TRACKING_TARGETS.map(part => ({
+  target: part.id, label: part.setupLabel, emoji: part.emoji,
+}));
 
 const CORNER_TARGETS = [
   { label: 'Top Left', x: 15, y: 15, emoji: '↖' },
@@ -66,6 +67,9 @@ interface Props {
 }
 
 export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
+  // Own setup before sibling passive effects can start an overlay tracker.
+  // A target change during setup must not let the overlay stop this tracker.
+  useLayoutEffect(() => suspendCameraSelection(), []);
   const { speechRate, speechVolume, update: updateSettings } = useSettingsStore();
   // This wizard enables CameraInputOverlay, not the independent Head Tracking
   // gaze mode. Calibrate the same body-camera pipeline and chosen sensitivity.
@@ -89,6 +93,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
+  const samplingAllowedRef = useRef(false);
   const detectionCountRef = useRef<Record<string, number>>({});
   // Captured center sample (raw normX/normY of the user's neutral pose).
   // Used by captureCorner's narrow-range fallback to anchor a default-
@@ -171,7 +176,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // Listen for raw pose samples
   useEffect(() => {
     return subscribePoseSamples(detail => {
-      if (detail?.normX != null) {
+      if (samplingAllowedRef.current && detail?.normX != null) {
         sampleBufferRef.current.push({ normX: detail.normX, normY: detail.normY });
         if (sampleBufferRef.current.length > 100) sampleBufferRef.current.shift();
       }
@@ -233,7 +238,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
   // ── PHASE: Detection ──
   const startDetection = useCallback(() => {
+    const requested = BODY_PARTS.find(part => part.target === useSettingsStore.getState().cameraTrackingTarget)
+      ?? BODY_PARTS.find(part => part.target === 'any_wrist')!;
     setPhase('detecting');
+    setSelectedPart(null);
     setStatusText('Looking for you...');
     speak('Hold still. I am looking for you.');
     detectionCountRef.current = {};
@@ -261,11 +269,12 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       dwellMs: 99999,
       sensitivity: cameraSensitivity,
       smoothing: 0.15,
-      trackingTarget: 'nose',
+      trackingTarget: requested.target,
       cursorSmoothing: 0.12,
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
       onStatusChange(status, activeTarget) {
+        samplingAllowedRef.current = status === 'tracking';
         setTrackerStatus(status);
         if (status === 'tracking' && activeTarget) {
           const counts = detectionCountRef.current;
@@ -284,7 +293,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       const counts = detectionCountRef.current;
       const results: DetectedPart[] = [];
       for (const bp of BODY_PARTS) {
-        const count = counts[bp.target] || 0;
+        // Aggregate modes need not see six frames of the same side. The
+        // runtime may legitimately alternate sides as visibility changes.
+        const count = trackingTargetCandidates(bp.target).reduce((sum, target) => sum + (counts[target] || 0), 0);
         if (count > 5) {
           results.push({ ...bp, confidence: Math.min(100, Math.round(count / 1.5)) });
         }
@@ -292,20 +303,21 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       results.sort((a, b) => b.confidence - a.confidence);
       setDetected(results);
 
-      if (results.length > 0) {
-        const top = results[0];
+      const matched = results.find(part => part.target === requested.target);
+      if (matched) {
+        const top = matched;
         setSelectedPart(top.target);
-        setStatusText(`Found: ${results.map(r => r.emoji).join(' ')}`);
+        setStatusText(detectedStatus(results));
         speak(`I can see your ${top.label}. Let's calibrate.`);
-        useSettingsStore.getState().update({ cameraTrackingTarget: top.target });
+        useSettingsStore.getState().update({ cameraTrackingTarget: requested.target });
         const advanceTimer = setTimeout(() => {
           if (!mountedRef.current) return;
           startCenterCalibrationRef.current?.();
         }, 1500);
         detectionTimersRef.current.push(advanceTimer);
       } else {
-        setStatusText('No body parts detected. Try moving closer.');
-        if (!noDetectionAnnounced) {
+        setStatusText(results.length > 0 ? detectedStatus(results) : 'No body parts detected. Try moving closer.');
+        if (!noDetectionAnnounced && results.length === 0) {
           speak('I cannot see you. Please move closer to the camera.');
           noDetectionAnnounced = true;
         }
@@ -323,12 +335,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     detectionTimersRef.current.push(detectTimer);
   }, [speak, cameraSensitivity]);
 
-  // After detection picks a body part, restart the pose tracker with
-  // THAT target — not the hardcoded 'nose' from startDetection. User
-  // report 2026-05-08 (Image #27): "test still failing.. nothing i
-  // can do" / "it appears to be a fake test" / "cursor is not moving
-  // when i point to corners". Root cause: the wizard's tracker stayed
-  // on 'nose' forever, so moving a hand never moved the cursor.
+  // Setup and the runtime overlay must use the same requested mode,
+  // including aggregate modes that can switch to the more visible side.
   const restartTrackerForPart = useCallback((target: TrackingTarget) => {
     if (handleRef.current) handleRef.current.stop();
     console.log(`[wizard] restartTrackerForPart target=${target}`);
@@ -338,11 +346,19 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       smoothing: 0.15,
       trackingTarget: target,
       cursorSmoothing: 0.12,
-      onMove(x, y) { setCursorPos({ x, y }); },
+      onMove(x, y) {
+        if (samplingAllowedRef.current) setCursorPos({ x, y });
+      },
       onDwell() {},
-      onStatusChange(status) {
-        setTrackerStatus(status);
-        console.log(`[wizard] tracker status → ${status}`);
+      onStatusChange(status, activeTarget) {
+        const matches = status === 'tracking' && trackingTargetCandidates(target).some(candidate => candidate === activeTarget);
+        samplingAllowedRef.current = matches;
+        if (!matches) sampleBufferRef.current = [];
+        // Runtime fallback is useful outside setup, but cannot silently
+        // calibrate a different body part. Wait for the selected part again.
+        const setupStatus = status === 'tracking' && !matches ? 'lost' : status;
+        setTrackerStatus(setupStatus);
+        console.log(`[wizard] tracker status → ${setupStatus}`);
       },
     });
     handleRef.current = handle;
@@ -353,6 +369,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // implementation auto-advanced after 3s regardless of whether the
   // user was actually pointing. Now: user taps Capture when ready.
   const startCenterCalibration = useCallback(() => {
+    for (const id of detectionTimersRef.current) clearTimeout(id);
+    detectionTimersRef.current = [];
     setPhase('calibrate-center');
     sampleBufferRef.current = [];
     setProgress(0);
@@ -845,7 +863,12 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                   {detected.map(d => (
                     <button
                       key={d.target}
-                      onClick={() => { tapFeedback(); setSelectedPart(d.target); }}
+                      onClick={() => {
+                        tapFeedback();
+                        for (const id of detectionTimersRef.current) clearTimeout(id);
+                        detectionTimersRef.current = [];
+                        setSelectedPart(d.target);
+                      }}
                       className={`px-4 py-3 rounded-2xl flex items-center gap-2 transition-all ${
                         selectedPart === d.target
                           ? 'bg-[#4CAF50] text-white scale-110 shadow-lg'

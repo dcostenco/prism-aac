@@ -4,6 +4,7 @@ import TrackingSetupWizard from '@/components/TrackingSetupWizard';
 import CameraInputOverlay from '@/components/CameraInputOverlay';
 import { loadPoseCalibration, stopPoseTracker } from '@/services/bodyPoseService';
 import { useSettingsStore } from '@/store/settingsStore';
+import { readCameraSelectionState } from '@/services/cameraSelection';
 
 // Real wizard, settings, calibration, tracker and filters. Only camera,
 // detector and audio IO are replaced; no synthetic pose events/callbacks.
@@ -32,6 +33,7 @@ beforeEach(() => {
   vi.setSystemTime(10_000);
   localStorage.clear();
   useSettingsStore.setState({ ...originalSettings, cameraInputEnabled: false,
+    cameraTrackingTarget: 'right_index',
     headTrackingEyeGaze: false, headTrackingSensitivity: 5 });
   frames = new Map(); id = 0; now = 0;
   io.poses = [];
@@ -128,6 +130,23 @@ async function centerOnlyWizard() {
 
 describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it('retains wizard tracker ownership when a manual mode change rerenders the live overlay', async () => {
+    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'any_hand' });
+    const view = render(<><CameraInputOverlay /><TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} /></>);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(0.5, 0.5); await step(51);
+    expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'detecting');
+    fireEvent.click(screen.getByRole('button', { name: /Right Finger/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Calibrate Right Finger/ }));
+    await step(20);
+    expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-tracker-status', 'tracking');
+    expect(screen.getByTestId('tracking-capture-center')).toBeEnabled();
+    expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_index');
+    expect(readCameraSelectionState().blocked).toBe(true);
+    view.unmount();
+    expect(readCameraSelectionState().blocked).toBe(false);
+  });
   it('finalizes the limited-mobility center-only save without discarding its captured mapping', async () => {
     const { preview } = await centerOnlyWizard();
     const saved = loadPoseCalibration();
