@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
+vi.mock('@/services/bundledPicturePack', () => import('./mocks/bundled-picture-pack'));
 
 // Skip the jsdom-flavored mocks when the test file declares
 // `@vitest-environment node` (integration tests against the real portal /

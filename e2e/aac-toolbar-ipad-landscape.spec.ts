@@ -13,20 +13,11 @@ import path from 'node:path';
 
 const ARTIFACT_DIR = process.env.AAC_LAYOUT_ARTIFACT_DIR;
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function expectVisiblePredictionPictograms(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => [...document.querySelectorAll('.aac-prediction-tile')]
     .filter((tile) => {
+      if (tile.getAttribute('data-picture') === 'text') return true;
       const image = tile.querySelector<HTMLImageElement>('img');
       if (!image || !image.complete || image.naturalWidth <= 0) return false;
       const rect = image.getBoundingClientRect();
@@ -45,7 +36,6 @@ async function safeScreenshot(page: Page, fileName: string): Promise<void> {
 
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'ipad-7-land', '1024x768 touch-tablet checkpoint');
-  await proxyArasaacForLocalWebKit(page);
 
   await page.addInitScript(() => {
     class SpeechRecognitionStub {}

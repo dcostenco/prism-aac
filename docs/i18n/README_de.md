@@ -273,7 +273,7 @@ Funktioniert ohne iPhone — eigenständig mit Offline-Phrasenwörterbuch.
 </p>
 
 - **Offline-Übersetzung:** 1.261 Phrasen × 20 Sprachen integriert (411 KB JSON) — sofortiges Nachschlagen, 100% genau, kein Netzwerk erforderlich
-- 2-spaltiges Piktogramm-Raster mit ARASAAC-Bildern
+- 2-spaltiges Piktogramm-Raster mit generierten Bildern
 - KI-Chat mit Diktat + Tastatureingabe (Cloud im Online-Zustand, Phrasenwörterbuch im Offline-Zustand)
 - Notfallsystem: Countdown → WCSession → Mobilfunk-Rückfallebene → TTS
 - Übersetzung mit TTS-Ausgabe (zuerst Offline-Wörterbuch, Cloud als Rückfallebene)
@@ -427,7 +427,7 @@ Bildkacheln im PECS-Stil. Tippen Sie auf eine Kategorie, tippen Sie auf eine Kac
 - 22 Standardkategorien: Personen, Essen, Gefühle, Körper, Kleidung, Tiere, Orte usw.
 - Betreuungspersonen können Kacheln pro Kind hinzufügen / entfernen / umordnen
 - Jede Kachel enthält einen `textKey` für die Internationalisierung (i18n) — das Wechseln der App-Sprache benennt jede Kachel mit einem Tippen um
-- Kachel-Piktogramme stammen von ARASAAC + einem kuratierten Set; Stimmklonen ermöglicht es Ihnen, die Stimme der Kachel an die der Geschwister oder Eltern des Kindes anzupassen (kostenpflichtige Stufe)
+- Kachel-Piktogramme stammen von der Bibliothek generierter Bilder; Stimmklonen ermöglicht es Ihnen, die Stimme der Kachel an die der Geschwister oder Eltern des Kindes anzupassen (kostenpflichtige Stufe)
 - N-Gramm-Lernen pro Benutzer: Ein Kind, das dreimal „Ich will essen“ tippt, sieht in der nächsten Sitzung „essen“ nach „will“ nach oben rücken
 - Holografischer HRR-Speicher: Kontextbezogene Vorhersagen ohne Suche in ~0,2 ms über Rust WASM — +27 % Top-1-Genauigkeit bei zentralen AAC-Phrasen
 

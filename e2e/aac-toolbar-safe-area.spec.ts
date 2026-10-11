@@ -25,16 +25,6 @@ const DEVICE_INSETS = {
 
 type SafeAreaProject = keyof typeof DEVICE_INSETS;
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function safeScreenshot(page: Page, fileName: string): Promise<void> {
   await expect(page.locator('nextjs-portal')).toHaveCount(0);
@@ -48,6 +38,7 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => (
     [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')]
       .filter((tile) => {
+        if (tile.dataset.picture === 'text') return true;
         const image = tile.querySelector<HTMLImageElement>('img');
         return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
       }).length
@@ -59,7 +50,6 @@ test.beforeEach(async ({ page }, testInfo) => {
   test.skip(!(projectName in DEVICE_INSETS), 'touch safe-area matrix only');
   const inset = DEVICE_INSETS[projectName];
 
-  await proxyArasaacForLocalWebKit(page);
   await page.addInitScript(() => {
     class SpeechRecognitionStub {}
     Object.defineProperty(window, 'SpeechRecognition', {

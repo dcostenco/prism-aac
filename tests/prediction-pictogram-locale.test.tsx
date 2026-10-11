@@ -1,18 +1,16 @@
 /**
- * Prediction tiles must get pictures in locales ARASAAC cannot search.
+ * Prediction tiles follow the board, in every language.
  *
- * Found by looking at production, not by a test: the English prediction bar
- * showed five pictograms and the Amharic one showed five blank white boxes.
- * The unit suite was fully green at the time, because nothing asserted which
- * locale the pictogram lookup is issued in.
+ * A predicted word that is built-in vocabulary shows the bundled symbol its
+ * board tile shows — or just the word, when the tile has none — and asks for
+ * nothing over the network. Only a word outside the vocabulary can get a
+ * generated picture (paid plans).
  *
- * ARASAAC answers HTTP 400 for ja, hi, vi, tl, id, am, sw and bn — eight of
- * the shipped languages. Its images are language-neutral; only the search term
- * is localized. PhraseTile already exploits that by searching with the English
- * source. PredictionBar searched the localized word and got nothing back.
- *
- * A blank prediction bar is not a cosmetic defect for an AAC user who reads
- * symbols rather than text — it removes the prediction feature for them.
+ * History: the prediction bar once showed five blank boxes in Amharic while
+ * English showed five pictograms, because the lookup was issued with the
+ * localized word. Symbols are now tied to the phrase's meaning, so the same
+ * symbol appears whatever the language — provided the localized word can be
+ * tied back to the built-in phrase, which is what the reverse lookup does.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render, cleanup } from '@testing-library/react';
@@ -23,14 +21,16 @@ import { useMessageStore } from '@/store/messageStore';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
 import { ensureLangCorpusLoaded, isAllowedInLang } from '@/lib/langAllowlist';
 import { englishSourceFor } from '@/constants/reverseTranslation';
+import { loadPictureWords, pictureWordSource } from '@/constants/pictureWords';
+import { builtInVocabularySymbol } from '@/lib/builtInSymbols';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 
-/** Locales ARASAAC's search endpoint rejects — verified against the live API. */
-const UNSEARCHABLE = ['ja', 'hi', 'vi', 'tl', 'id', 'am', 'sw', 'bn'] as const;
+/** Non-Latin and Latin scripts alike; these eight once rendered blank tiles. */
+const SAMPLE_LOCALES = ['ja', 'hi', 'vi', 'tl', 'id', 'am', 'sw', 'bn'] as const;
 
 describe('reverse lookup of a localized word to its English source', () => {
-  it('resolves core vocabulary in every locale ARASAAC cannot search', () => {
+  it('resolves core vocabulary in every sampled locale', () => {
     // 'I', 'You', 'More', 'Want', 'Help' are the five tiles that rendered
     // blank in the production screenshot.
     const core = ['cw-i', 'cw-you', 'cw-more', 'cw-want', 'cw-help']
@@ -38,7 +38,7 @@ describe('reverse lookup of a localized word to its English source', () => {
       .filter((p): p is NonNullable<typeof p> => Boolean(p));
     expect(core.length, 'core phrase ids drifted — update this list').toBeGreaterThan(2);
 
-    for (const lang of UNSEARCHABLE) {
+    for (const lang of SAMPLE_LOCALES) {
       for (const p of core) {
         const localized = getPhraseText(p.id, lang, p.text);
         if (localized === p.text) continue; // untranslated; nothing to reverse
@@ -65,13 +65,9 @@ describe('reverse lookup of a localized word to its English source', () => {
 });
 
 /**
- * Renders the real PredictionBar and inspects which locale it asks the
- * pictogram service for.
- *
- * Asserting on the ARGUMENTS rather than on a rendered <img>: the bug was
- * never that the request failed to fire — it fired, in a locale the API
- * rejects. Only the call site distinguishes those, and in jsdom no image
- * would load either way.
+ * Renders the real PredictionBar on a PAID plan, so any generated-picture
+ * request shows up in `pictogramCalls`, and inspects both the requests and
+ * the rendered symbols.
  */
 const pictogramCalls: Array<[string, string]> = [];
 vi.mock('@/services/pictogramService', () => ({
@@ -79,67 +75,73 @@ vi.mock('@/services/pictogramService', () => ({
     pictogramCalls.push([phrase, lang]);
     return Promise.resolve(null);
   },
-  pictureModeForProfile: () => 'arasaac',
+  pictureModeForProfile: () => 'symbols-ai',
+  typedWordPicturesEnabled: (mode: string) => mode === 'symbols-ai',
 }));
 
-describe('PredictionBar issues its pictogram lookup in a searchable locale', () => {
-  const amharicFor = (id: string) => {
-    const p = DEFAULT_PHRASES.find((x) => x.id === id)!;
-    return { localized: getPhraseText(p.id, 'am', p.text), english: p.text };
-  };
+const localizedFor = (id: string, lang: 'am' | 'en') => {
+  const p = DEFAULT_PHRASES.find((x) => x.id === id)!;
+  return getPhraseText(p.id, lang, p.text);
+};
 
+/** word → data-picture state for every rendered prediction tile. */
+const renderedStates = () => Object.fromEntries(
+  [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')].map((tile) => [
+    (tile.getAttribute('aria-label') ?? '').replace('Predict: ', ''),
+    `${tile.dataset.picture}${tile.querySelector('.aac-tile-icon') ? '+well' : ''}`,
+  ]),
+);
+
+/** word → symbol file name (or '-') for every rendered prediction tile. */
+const renderedPictures = () => Object.fromEntries(
+  [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')].map((tile) => [
+    (tile.getAttribute('aria-label') ?? '').replace('Predict: ', ''),
+    tile.querySelector('img')?.getAttribute('src') ?? '-',
+  ]),
+);
+
+function setLanguage(lang: 'am' | 'en') {
+  useSettingsStore.setState({
+    language: lang, outputLanguage: lang, speechRate: 0.5, speechVolume: 1.0,
+  } as never);
+}
+
+describe('PredictionBar pictures', () => {
   beforeEach(() => {
     cleanup();
     pictogramCalls.length = 0;
     if (typeof window !== 'undefined') window.localStorage.clear();
-    useSettingsStore.setState({
-      language: 'am', outputLanguage: 'am', speechRate: 0.5, speechVolume: 1.0,
-    } as never);
+    setLanguage('am');
     useMessageStore.setState({ text: '' } as never);
-  });
-
-  it('searches in English for a locale ARASAAC rejects', async () => {
-    const i = amharicFor('cw-i');
-    const want = amharicFor('cw-want');
-    // Non-empty text matters: with an empty message PredictionBar ignores the
-    // store's predictions and renders only the AAC-core filler. An earlier
-    // draft of this test asserted on "I" that came from that filler, so it
-    // would have passed without exercising the store path at all.
-    useMessageStore.setState({ text: 'ሀ ' } as never);
-    usePredictionStore.setState({
-      aiCompletion: null, wordFreq: {}, bigrams: {}, trigrams: {},
-      predictions: [i.localized, want.localized],
-    });
-
-    await act(async () => { render(<PredictionBar />); });
-
-    expect(pictogramCalls.length, 'no pictogram lookup was issued').toBeGreaterThan(0);
-    const forI = pictogramCalls.find(([phrase]) => phrase === i.english || phrase === i.localized);
-    expect(forI, `no lookup for "${i.localized}"`).toBeTruthy();
-    // The regression: this was ['እኔ', 'am'] — a locale ARASAAC answers 400 for.
-    expect(forI![1], 'must not search an unsearchable locale').toBe('en');
-    expect(forI![0]).toBe(i.english);
-  });
-
-  it('resolves EVERY default filler tile, not just most of them', async () => {
-    // The production screenshot showed five blank tiles. A first cut of this
-    // fix resolved four of them: the fifth, እርዳታ, comes from the AAC-core
-    // matrix rather than the phrase table, which words Help differently. Four
-    // out of five still leaves a blank tile on screen.
     usePredictionStore.setState({
       aiCompletion: null, wordFreq: {}, bigrams: {}, trigrams: {}, predictions: [],
     });
+  });
+
+  // With an empty message the bar shows the language's AAC-core filler:
+  // I, You, More, Want, Help. Every one of them has a Prism AAC symbol, so
+  // every filler tile shows its board picture, and none asks for a generated one.
+  it.each(['en', 'am'] as const)('filler tiles show their board symbol or just the word, with no request (%s)', async (lang) => {
+    setLanguage(lang);
 
     await act(async () => { render(<PredictionBar />); });
 
-    const unresolved = pictogramCalls.filter(([, lang]) => lang !== 'en');
-    expect(
-      unresolved,
-      `these default tiles would render blank: ${JSON.stringify(unresolved)}`,
-    ).toEqual([]);
+    const pictures = renderedPictures();
+    expect(pictures[localizedFor('cw-i', lang)]).toBe('/prism-aac/symbols/cw-i.png');
+    expect(pictures[localizedFor('cw-you', lang)]).toBe('/prism-aac/symbols/cw-you.png');
+    expect(pictures[localizedFor('cw-more', lang)]).toBe('/prism-aac/symbols/cw-more.png');
+    expect(pictures[localizedFor('cw-want', lang)]).toBe('/prism-aac/symbols/cw-want.png');
+    expect(pictures[localizedFor('cw-help', lang)]).toBe('/prism-aac/symbols/cw-help.png');
+    expect(Object.keys(pictures)).toHaveLength(5);
+    expect(pictogramCalls, 'built-in vocabulary must never ask for a generated picture').toEqual([]);
+    // A picture sits in its well above the word.
+    const states = renderedStates();
+    expect(states[localizedFor('cw-i', lang)]).toBe('symbol+well');
+    expect(states[localizedFor('cw-help', lang)]).toBe('symbol+well');
+    expect(states[localizedFor('cw-more', lang)]).toBe('symbol+well');
   });
 
-  it('leaves a word outside the vocabulary searching its own locale', async () => {
+  it('asks for a generated picture, in its own locale, for a word outside the vocabulary', async () => {
     // The fallback branch is only reachable by a word the language allowlist
     // accepts but the phrase table cannot reverse — PredictionBar drops
     // anything else before render, so a nonsense string never gets this far.
@@ -147,10 +149,13 @@ describe('PredictionBar issues its pictogram lookup in a searchable locale', () 
     // against 1512 English phrases, so most predictions are not tile text.
     const seed = await loadPredictionSeed('am');
     await ensureLangCorpusLoaded('am');
+    // A word the language's picture table links to a symbol is not an orphan: it shows that symbol and asks for nothing
+    // (the bar now starts the table as soon as a tile renders, so such a word never reaches the generator).
+    await loadPictureWords('am');
     const orphan = Object.keys(seed.wordFreq)
-      .find((w) => englishSourceFor(w, 'am') === null && isAllowedInLang(w, 'am'));
+      .find((w) => englishSourceFor(w, 'am') === null && isAllowedInLang(w, 'am')
+        && pictureWordSource(w, 'am') === null && !builtInVocabularySymbol(w, 'am'));
     expect(orphan, 'no non-vocabulary word in the am seed — premise drifted').toBeTruthy();
-
     useMessageStore.setState({ text: 'ሀ ' } as never);
     usePredictionStore.setState({
       aiCompletion: null, wordFreq: {}, bigrams: {}, trigrams: {},

@@ -416,7 +416,7 @@ export default function Keyboard({ browserMode, onBrowserGo, sayControl }: {
       if (lastWord) {
         const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
         const prevPrevWord = words.length > 2 ? words[words.length - 3] : undefined;
-        learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase(), prevPrevWord?.toLowerCase());
+        learnWord(lastWord, prevWord, prevPrevWord);
         const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
         const phrase = currentText.trim();
         // Auditory feedback on the word just completed — never the running

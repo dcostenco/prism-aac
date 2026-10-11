@@ -1,0 +1,6407 @@
+{
+  "generatedFrom": "Reviewed primary AAC meanings",
+  "languages": {
+    "am": {
+      "ሂድ": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "እይ": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "አስቀምጥ": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "ክፈት": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "ጠርሙስ": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "ማስቸገር": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "የእኔ": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning; explicit localized basic vocabulary"
+      },
+      "የአንተ": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning; explicit localized basic vocabulary"
+      },
+      "እኔ": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "አንተ": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "ተጨማሪ": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "እፈልጋለሁ": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "ርዳኝ": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "ስራ": {
+        "file": "cw-work.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "ማግኘት": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "ታጠፍ": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "ጥሩ": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "አንድ አይነት": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "የተለየ": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "አንዳንድ": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "ወደ ላይ": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "ውስጥ": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "ላይ": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "እሱ": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "እሷ": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "ይህ": {
+        "file": "cw-this.png",
+        "means": "Primary AAC It meaning"
+      },
+      "ያ": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "ማን?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "ምን?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "መቼ?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "የት?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "ለምን?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "ሴት ልጅ": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "ወንድ ልጅ": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "ልጅ": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "ያስፈልገኛል": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "አድርግ": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "እችላለሁ": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "በቃ": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "ብላ": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "ጠጣ": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "ተኛ": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "አዎ": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "አይ": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "እወዳለሁ": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "እዚህ": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "እዚያ": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "እኛ": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "እነሱ": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "አለኝ": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "ስጥ": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "ውሰድ": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "ሩብ": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "ጥራት": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "ar": {
+      "من": {
+        "file": "cw-from.png",
+        "means": "From, the ordinary preposition; distinct from the interrogative من؟"
+      },
+      "طفل": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "زجاجة": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "زجاجات": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "يزعج": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "تزعج": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "إزعاج": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "من؟": {
+        "file": "qu-who.png",
+        "means": "Explicit interrogative who, indicated by the question mark"
+      },
+      "من?": {
+        "file": "qu-who.png",
+        "means": "Explicit interrogative who with the alternate keyboard question mark"
+      },
+      "أنا": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "أنت": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "أكثر": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "أريد": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "ساعدني": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "اذهب": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "انظر": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "اصنع": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "خذ": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "ضع": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "لف": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "جيد": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "نفسه": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "مختلف": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "بعض": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "افتح": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "فوق": {
+        "file": "cw-above.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "في": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "على": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "هو": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "هي": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "هو/هي": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "ذلك": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "ماذا؟": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "متى؟": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "أين؟": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "لماذا؟": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "بنت": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "ولد": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "أحتاج": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "أفعل": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "أستطيع": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "توقف": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "آكل": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "أشرب": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "نم": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "نعم": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "لا": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "أحب": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "هنا": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "هناك": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "نحن": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "هم": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "ملكي": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "ملكك": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "عندي": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "اعْطِي": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "خُذ": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "ربع": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "الربع": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "جودة": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "الجودة": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "bg": {
+      "бутилка": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "бутилки": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "безпокоя": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "безпокои": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "досаждам": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "да": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning; explicit localized basic vocabulary"
+      },
+      "те": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "аз": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "ти": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "още": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "искам": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "помогни": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "отивам": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "погледни": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "направи": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "вземи": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "сложи": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "завърти": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "добър": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "същото": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "различен": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "някои": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "отвори": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "горе": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "вътре": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "на": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "той": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "тя": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "то": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "онова": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "кой?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "какво?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "кога?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "къде?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "защо?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "момиче": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "момче": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "дете": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "трябва ми": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "правя": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "мога": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "спри": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "яж": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "пий": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "спи": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "не": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "харесвам": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "тук": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "там": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "ние": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "мой": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "твой": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "имам": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "дай": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "четвърт": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "качество": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "bn": {
+      "নাও": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "রাখো": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "সে": {
+        "file": "w-g-third-person.png",
+        "means": "Third-person human reference without choosing gender or grammatical number"
+      },
+      "বাচ্চা": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "বোতল": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "বিরক্ত করা": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "আছে": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning; explicit localized basic vocabulary"
+      },
+      "আমি": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "তুমি": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "আরো": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "চাই": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "সাহায্য করো": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "যাই": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "তাকাও": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "বানাই": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "ঘোরো": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "ভালো": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "একই": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "আলাদা": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "কিছু": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "খোলো": {
+        "file": "cw-open-2.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "উপরে": {
+        "file": "cw-on.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "ভেতরে": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "এটা": {
+        "file": "cw-this.png",
+        "means": "Primary AAC It meaning"
+      },
+      "ওটা": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "কে?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "কী?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "কখন?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "কোথায়?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "কেন?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "মেয়ে": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "ছেলে": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "দরকার": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "করি": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "পারি": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "থামো": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "খাওয়া": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "পান করা": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "ঘুমাও": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "হ্যাঁ": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "না": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "পছন্দ করি": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "এখানে": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "সেখানে": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "আমরা": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "তারা": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "আমার": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "তোমার": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "দাও": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "এক চতুর্থাংশ": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "চতুর্থাংশ": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "গুণমান": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "de": {
+      "gleich": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "sie": {
+        "file": "w-g-third-person.png",
+        "means": "Third-person human reference without choosing gender or grammatical number"
+      },
+      "jungen": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "kinder": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "flasche": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "flaschen": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "stören": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "stört": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "störst": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "störte": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "ich": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "du": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "mehr": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "will": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "hilfe": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "gehen": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "gucken": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "machen": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "holen": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "legen": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "drehen": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "gut": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "anders": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "einige": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "öffnen": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "hoch": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "rein": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "auf": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "er": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "es": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "das": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "wer?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "was?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "wann?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "wo?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "warum?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "mädchen": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "junge": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "kind": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "brauche": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "mache": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "kann": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "stopp": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "essen": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "trinken": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "schlafen": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "ja": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "nein": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "mag": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "hier": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "dort": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "wir": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "mein": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "dein": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "habe": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "geben": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "nehmen": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "viertel": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "qualität": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "en": {
+      "open": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "was": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time, marked by a backward timeline arrow"
+      },
+      "were": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time, marked by a backward timeline arrow"
+      },
+      "bottle": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "bottles": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "bother": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "bothers": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "bothered": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "bothering": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "girl's": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "boy's": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "like": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning; explicit localized basic vocabulary"
+      },
+      "i": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "you": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "more": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "want": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "help": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "go": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "look": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "make": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "get": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "put": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "turn": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "good": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "same": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "different": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "some": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "up": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "in": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "on": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "he": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "she": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "it": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "that": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "who?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "what?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "when?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "where?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "why?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "girl": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "boy": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "kid": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "need": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "do": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "can": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "stop": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "eat": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "drink": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "sleep": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "yes": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "no": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "here": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "there": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "we": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "they": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "my": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "your": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "have": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "give": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "take": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "girls": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "boys": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "children": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "kids": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "quarter": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "one fourth": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "one-fourth": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "quality": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "es": {
+      "niño": {
+        "file": "pp-boy.png",
+        "means": "Child or boy; the usual child sense of the masculine label"
+      },
+      "niña": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "niñas": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "niños": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "botella": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "botellas": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "molestar": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "molesta": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "molestas": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "molestan": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "molestando": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "yo": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "tú": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "más": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "quiero": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "ayuda": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "ir": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "mirar": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "hacer": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "conseguir": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "poner": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "girar": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "bueno": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "igual": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "diferente": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "algunos": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "abrir": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "arriba": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "dentro": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "sobre": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "él": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "ella": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "ello": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "eso": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "¿quién?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "¿qué?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "¿cuándo?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "¿dónde?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "¿por qué?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "necesito": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "hago": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "puedo": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "parar": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "comer": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "beber": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "dormir": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "sí": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "no": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "me gusta": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "aquí": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "allí": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "nosotros": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "ellos": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "mi": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "tu": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "tengo": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "dar": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "tomar": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "un cuarto": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "cuarta parte": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "calidad": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "fr": {
+      "il": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "qui": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "fille": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "filles": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "garçon": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "garçons": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "enfants": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "bouteille": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "bouteilles": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "déranger": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "dérange": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "déranges": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "dérangent": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "je": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "tu": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "plus": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "veux": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "aide": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "aller": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "regarde": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "faire": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "obtenir": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "mettre": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "tourner": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "bon": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "pareil": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "différent": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "quelques": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "ouvrir": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "haut": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "dans": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "sur": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "elle": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "ça": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "cela": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "qui?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "quoi?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "quand?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "où?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "pourquoi?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "enfant": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "besoin": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "fais": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "peux": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "stop": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "manger": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "boire": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "dormir": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "oui": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "non": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "aime": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "ici": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "là": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "nous": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "ils": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "mon": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "ton": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "ai": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "donner": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "prendre": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "fillette": {
+        "file": "pp-girl.png",
+        "means": "French little girl, including its plural spelling"
+      },
+      "fillettes": {
+        "file": "pp-girl.png",
+        "means": "French little girl, including its plural spelling"
+      },
+      "quart": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "un quart": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "qualité": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "he": {
+      "לך": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "לפתוח": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "ילד": {
+        "file": "pp-boy.png",
+        "means": "Child or boy; the usual child sense of the masculine label"
+      },
+      "בקבוק": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "בקבוקים": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "להפריע": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "מפריע": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "מפריעה": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "מפריעים": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "הם": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "אני": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "אתה": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "עוד": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "רוצה": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "עזרה": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "להסתכל": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "עשה": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "קח": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "שים": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "לסובב": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "טוב": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "אותו דבר": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "שונה": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "כמה": {
+        "file": "qu-how-many.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "למעלה": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "בפנים": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "על": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "הוא": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "היא": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "זה": {
+        "file": "cw-this.png",
+        "means": "Primary AAC It meaning"
+      },
+      "ההוא": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "מי?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "מה?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "מתי?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "איפה?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "למה?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "ילדה": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "צריך": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "עושה": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "יכול": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "לעצור": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "לאכול": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "לשתות": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "לישון": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "כן": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "לא": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "אוהב": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "כאן": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "שם": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "אנחנו": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "שלי": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "שלך": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "יש לי": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "לתת": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "לקחת": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "רבע": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "הרבע": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "איכות": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "האיכות": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "hi": {
+      "जाओ": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "लो": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "ऊपर": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "वह": {
+        "file": "cw-that.png",
+        "means": "Distal third-person reference to the entity being pointed out; unmarked for gender"
+      },
+      "बच्चा": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "बोतल": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "बोतलें": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "परेशान करना": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "बस": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning; explicit localized basic vocabulary"
+      },
+      "दो": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning; explicit localized basic vocabulary"
+      },
+      "मैं": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "तुम": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "और": {
+        "file": "cw-and.png",
+        "means": "Primary AAC More meaning"
+      },
+      "चाहता हूँ": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "मदद": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "देखो": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "बनाओ": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "रखो": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "मोड़ो": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "अच्छा": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "वही": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "अलग": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "कुछ": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "खोलो": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "अंदर": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "पर": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "यह": {
+        "file": "cw-this.png",
+        "means": "Primary AAC It meaning"
+      },
+      "कौन?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "क्या?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "कब?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "कहाँ?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "क्यों?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "लड़की": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "लड़का": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "चाहिए": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "करता हूँ": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "सकता हूँ": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "खाओ": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "पीओ": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "सो जाओ": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "हाँ": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "नहीं": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "पसंद": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "यहाँ": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "वहाँ": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "हम": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "वे": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "मेरा": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "तुम्हारा": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "है": {
+        "file": "cw-is.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "चौथाई": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "गुणवत्ता": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "id": {
+      "buat": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "sama": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "beberapa": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "atas": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "dia": {
+        "file": "w-g-third-person.png",
+        "means": "Third-person human reference without choosing gender or grammatical number"
+      },
+      "botol": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "mengganggu": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "ganggu": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "di sini": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning; explicit localized basic vocabulary"
+      },
+      "mereka": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "kasih": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning; explicit localized basic vocabulary"
+      },
+      "saya": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "kamu": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "lebih": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "mau": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "bantu": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "pergi": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "lihat": {
+        "file": "cw-see.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "ambil": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "taruh": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "putar": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "bagus": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "berbeda": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "buka": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "dalam": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "di atas": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "itu": {
+        "file": "cw-that.png",
+        "means": "Primary AAC It meaning"
+      },
+      "siapa?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "apa?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "kapan?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "di mana?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "mengapa?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "anak perempuan": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "anak laki-laki": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "anak": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "perlu": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "lakukan": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "bisa": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "stop": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "makan": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "minum": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "tidur": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "ya": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "tidak": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "suka": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "di sana": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "kami": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "milik saya": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "milik kamu": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "punya": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "seperempat": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "kualitas": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "mutu": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "it": {
+      "alcuni": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "apri": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "perché": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "bambino": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "bambini": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "bambina": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "bambine": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "bottiglia": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "bottiglie": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "disturbare": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "disturba": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "disturbano": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "loro": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "dai": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning; explicit localized basic vocabulary"
+      },
+      "io": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "tu": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "di più": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "voglio": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "aiuto": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "vai": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "guarda": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "fai": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "prendi": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "metti": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "gira": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "buono": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "uguale": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "diverso": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "su": {
+        "file": "cw-on.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "dentro": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "lui": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "lei": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "esso": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "quello": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "chi?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "cosa?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "quando?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "dove?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "perché?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "ragazza": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "ragazzo": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "ho bisogno": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "faccio": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "posso": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "stop": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "mangia": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "bevi": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "dormi": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "sì": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "no": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "mi piace": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "qui": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "lì": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "noi": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "mio": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "tuo": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "ho": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "un quarto": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "qualità": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "ja": {
+      "助けて": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "置いて": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "違う": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "いくつか": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "あける": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "ボトル": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "びん": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "瓶": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "邪魔する": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "じゃまする": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "やめて": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning; explicit localized basic vocabulary"
+      },
+      "私たち": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning; explicit localized basic vocabulary"
+      },
+      "私の": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning; explicit localized basic vocabulary"
+      },
+      "私": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "あなた": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "もっと": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "欲しい": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "行く": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "みて": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "作って": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "取って": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "まわす": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "いい": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "同じ": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "上": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "中": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "上に": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "彼": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "彼女": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "それ": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "あれ": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "誰?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "何?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "いつ?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "どこ?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "なぜ?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "女の子": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "男の子": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "子供": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "必要": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "する": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "できる": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "たべる": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "のむ": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "ねる": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "はい": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "いいえ": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "好き": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "ここ": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "あそこ": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "彼ら": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "あなたの": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "持っている": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "あげる": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "もっていく": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "四分の一": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "4分の1": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "品質": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "ko": {
+      "가져와요": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "같아요": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "열어요": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "그": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "언제예요": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "물병": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "방해하다": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "방해해요": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "있어요": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning; explicit localized basic vocabulary"
+      },
+      "나": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "너": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "더": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "원해요": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "도와줘요": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "가요": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "봐요": {
+        "file": "cw-see.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "만들어요": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "놔요": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "돌려요": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "좋아요": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "달라요": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "몇 개": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "위": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "안에": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "위에": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "그녀": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "그것": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "저것": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "누구예요?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "뭐예요?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "언제예요?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "어디예요?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "왜요?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "여자아이": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "남자아이": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "아이": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "필요해요": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "해요": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "할 수 있어요": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "멈춰요": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "먹어요": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "마셔요": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "자요": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "네": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "아니요": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "여기": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "저기": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "우리": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "그들": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "내": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "줘요": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "가져가요": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "사분의 일": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "4분의 1": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "품질": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "nl": {
+      "draaien": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "zij": {
+        "file": "w-g-third-person.png",
+        "means": "Third-person human reference without choosing gender or grammatical number"
+      },
+      "fles": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "flessen": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "storen": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "stoort": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "stoorde": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "ik": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "jij": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "meer": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "wil": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "help": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "ga": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "kijk": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "maak": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "pak": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "leg": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "goed": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "hetzelfde": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "anders": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "sommige": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "open": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "omhoog": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "in": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "op": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "hij": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "het": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "dat": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "wie?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "wat?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "wanneer?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "waar?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "waarom?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "meisje": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "jongen": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "kind": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "nodig": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "doe": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "kan": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "stop": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "eten": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "drinken": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "slapen": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "ja": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "nee": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "leuk": {
+        "file": "dw-fun.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "hier": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "daar": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "wij": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "mijn": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "jouw": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "heb": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "geven": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "nemen": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "kwart": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "kwaliteit": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "pl": {
+      "idź": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "inny": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "otwórz": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "góra": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "dziewczynki": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "chłopcy": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "dzieci": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "butelka": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "butelki": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "przeszkadzać": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "przeszkadza": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "przeszkadzasz": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "ja": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "ty": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "więcej": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "chcę": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "pomóż": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "patrz": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "zrób": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "weź": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "połóż": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "obróć": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "dobry": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "tak samo": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "trochę": {
+        "file": "cw-a-little.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "w": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "na": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "on": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "ona": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "to": {
+        "file": "cw-this.png",
+        "means": "Primary AAC It meaning"
+      },
+      "tamto": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "kto?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "co?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "kiedy?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "gdzie?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "dlaczego?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "dziewczynka": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "chłopiec": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "dziecko": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "potrzebuję": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "robię": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "mogę": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "stop": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "jedz": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "pij": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "śpij": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "tak": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "nie": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "lubię": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "tutaj": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "tam": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "my": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "oni": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "mój": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "twój": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "mam": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "daj": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "ćwierć": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "jakość": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "pt": {
+      "menina": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "meninas": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "menino": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "meninos": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "crianças": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "garrafa": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "garrafas": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "incomodar": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "incomoda": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "incomodam": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "seu": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning; explicit localized basic vocabulary"
+      },
+      "eu": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "você": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "mais": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "quero": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "ajuda": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "ir": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "olha": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "fazer": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "pegar": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "colocar": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "virar": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "bom": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "igual": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "diferente": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "alguns": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "abrir": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "cima": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "dentro": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "sobre": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "ele": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "ela": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "isso": {
+        "file": "cw-that.png",
+        "means": "Primary AAC It meaning"
+      },
+      "quem?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "o quê?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "quando?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "onde?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "por quê?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "criança": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "preciso": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "faço": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "posso": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "para": {
+        "file": "cw-for.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "comer": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "beber": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "dormir": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "sim": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "não": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "gosto": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "aqui": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "ali": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "nós": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "eles": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "meu": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "tenho": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "dar": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "um quarto": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "quarta parte": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "qualidade": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "ro": {
+      "sticlă": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "sticle": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "deranja": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "deranjează": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "deranjezi": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "al meu": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning; explicit localized basic vocabulary"
+      },
+      "al tău": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning; explicit localized basic vocabulary"
+      },
+      "eu": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "tu": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "mai mult": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "vreau": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "ajutor": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "du-te": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "uită-te": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "fă": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "ia": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "pune": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "răsucește": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "bun": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "la fel": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "diferit": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "câteva": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "deschide": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "sus": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "înăuntru": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "pe": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "el": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "ea": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "el/ea": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "aia": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "cine?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "ce?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "când?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "unde?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "de ce?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "fată": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "băiat": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "copil": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "am nevoie": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "fac": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "pot": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "oprește": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "mănâncă": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "bea": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "dormi": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "da": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "nu": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "îmi place": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "aici": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "acolo": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "noi": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "ei/ele": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "am": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "dă": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "sfert": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "un sfert": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "calitate": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "ru": {
+      "положи": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "то": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "что": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "был": {
+        "file": "w-past-being.png",
+        "means": "Past being, not present is"
+      },
+      "была": {
+        "file": "w-past-being.png",
+        "means": "Past being, not present is"
+      },
+      "было": {
+        "file": "w-past-being.png",
+        "means": "Past being, not present is"
+      },
+      "были": {
+        "file": "w-past-being.png",
+        "means": "Past being, not present is"
+      },
+      "день": {
+        "file": "w-day.png",
+        "means": "Day or daylight; not specifically afternoon"
+      },
+      "дня": {
+        "file": "w-day.png",
+        "means": "Day or daylight; not specifically afternoon"
+      },
+      "дни": {
+        "file": "w-day.png",
+        "means": "Day or daylight; not specifically afternoon"
+      },
+      "дней": {
+        "file": "w-day.png",
+        "means": "Day or daylight; not specifically afternoon"
+      },
+      "делать": {
+        "file": "cw-do.png",
+        "means": "Doing an action or task; not the unrelated noun affairs"
+      },
+      "делаю": {
+        "file": "cw-do.png",
+        "means": "Doing an action or task; not the unrelated noun affairs"
+      },
+      "делаешь": {
+        "file": "cw-do.png",
+        "means": "Doing an action or task; not the unrelated noun affairs"
+      },
+      "делает": {
+        "file": "cw-do.png",
+        "means": "Doing an action or task; not the unrelated noun affairs"
+      },
+      "делаем": {
+        "file": "cw-do.png",
+        "means": "Doing an action or task; not the unrelated noun affairs"
+      },
+      "делают": {
+        "file": "cw-do.png",
+        "means": "Doing an action or task; not the unrelated noun affairs"
+      },
+      "девочка": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "девочки": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "девочку": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "девочке": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "мальчик": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "мальчики": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "мальчика": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "мальчику": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "ребёнок": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "ребенок": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "дети": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "детей": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "детям": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "бутылка": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "бутылки": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "бутылку": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "бутылке": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "бутылок": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "беспокоить": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "беспокоит": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "беспокоят": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "мешать": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "мешаю": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "мешает": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "мешают": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "я": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "ты": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "ещё": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "хочу": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "помоги": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "иди": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "смотри": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "сделай": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "возьми": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "поверни": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "хороший": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "так же": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "другой": {
+        "file": "cw-other.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "немного": {
+        "file": "cw-a-little.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "открой": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "вверх": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "внутри": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "на": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "он": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "она": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "это": {
+        "file": "cw-this.png",
+        "means": "Primary AAC It meaning"
+      },
+      "кто?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "что?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "когда?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "где?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "почему?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "нужно": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "могу": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "стоп": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "ешь": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "пей": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "спи": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "да": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "нет": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "нравится": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "здесь": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "там": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "мы": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "они": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "мой": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "твой": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "имею": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "дать": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "взять": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "четверть": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "четверти": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "четвертью": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "качество": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "качеству": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "качеством": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "качестве": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "sw": {
+      "tazama": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "tengeneza": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "weka": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "fungua": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "yeye": {
+        "file": "w-g-third-person.png",
+        "means": "Third-person human reference without choosing gender or grammatical number"
+      },
+      "chupa": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "kusumbua": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "sumbua": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "acha": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning; explicit localized basic vocabulary"
+      },
+      "wao": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "mimi": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "wewe": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "zaidi": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "taka": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "saidia": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "enda": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "pata": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "geuza": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "nzuri": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "sawa": {
+        "file": "qt-okay.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "tofauti": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "baadhi": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "juu": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "ndani": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "juu ya": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "kitu hiki": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "ile": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "nani?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "nini?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "lini?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "wapi?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "kwa nini?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "msichana": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "mvulana": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "mtoto": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "hitaji": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "fanya": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "weza": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "kula": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "kunywa": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "lala": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "ndiyo": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "hapana": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "penda": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "hapa": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "kule": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "sisi": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "yangu": {
+        "file": "cw-mine.png",
+        "means": "Primary AAC My meaning"
+      },
+      "yako": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "kuwa na": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "mpa": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "chukua": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "robo": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "ubora": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "tl": {
+      "tingin": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "kuha": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "lagay": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "pareho": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "ilan": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "siya": {
+        "file": "w-g-third-person.png",
+        "means": "Third-person human reference without choosing gender or grammatical number"
+      },
+      "bote": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "mga bote": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "abalahin": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "mang-abala": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "kaya": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning; explicit localized basic vocabulary"
+      },
+      "sila": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "ako": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "ikaw": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "dagdag": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "gusto": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "tulong": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "punta": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "gumawa": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "ikot": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "mabuti": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "iba": {
+        "file": "cw-other.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "buksan": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "taas": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "sa loob": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "sa ibabaw": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "ito": {
+        "file": "cw-this.png",
+        "means": "Primary AAC It meaning"
+      },
+      "iyon": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "sino?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "ano?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "kailan?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "saan?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "bakit?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "batang babae": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "batang lalaki": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "bata": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "kailangan": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "gawin": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "tigil": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "kain": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "inom": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "tulog": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "oo": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "hindi": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "dito": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "doon": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "tayo": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "akin": {
+        "file": "cw-mine.png",
+        "means": "Primary AAC My meaning"
+      },
+      "iyong": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "meron": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "ibigay": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "kunin": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "isang kapat": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "sangkapat": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "kalidad": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "tr": {
+      "git": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "yap": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "aç": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "o": {
+        "file": "cw-that.png",
+        "means": "Distal third-person reference to the entity being pointed out; unmarked for gender"
+      },
+      "ne zaman": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "şişe": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "şişeler": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "rahatsız etmek": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "rahatsız ediyor": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "biz": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning; explicit localized basic vocabulary"
+      },
+      "onlar": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "ben": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "sen": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "daha": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "istiyorum": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "yardım": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "bak": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "al": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "koy": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "dön": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "iyi": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "aynı": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "farklı": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "biraz": {
+        "file": "cw-a-little.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "yukarı": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "içeri": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "üzerinde": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "şu": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "kim?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "ne?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "ne zaman?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "nerede?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "neden?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "kız çocuk": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "erkek çocuk": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "çocuk": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "ihtiyacım var": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "yapıyorum": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "yapabiliyorum": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "dur": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "ye": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "iç": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "uyuma": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "evet": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "hayır": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "seviyorum": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "burada": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "orada": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "benim": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "senin": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "var": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "ver": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "çeyrek": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "kalite": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "uk": {
+      "повернути": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "то": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "що": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "дівчинка": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "дівчинки": {
+        "file": "pp-girl.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "хлопчик": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "хлопчики": {
+        "file": "pp-boy.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "діти": {
+        "file": "pp-kid.png",
+        "means": "Reviewed child noun form with unchanged referent"
+      },
+      "пляшка": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "пляшки": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "пляшку": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "пляшок": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "турбувати": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "турбує": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "турбують": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "заважати": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "заважає": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "заважають": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "я": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "ти": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "ще": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "хочу": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "допоможи": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "іди": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "дивись": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "зроби": {
+        "file": "cw-make.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "візьми": {
+        "file": "cw-get-core.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "поклади": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "гарний": {
+        "file": "dw-pretty.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "так само": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "інший": {
+        "file": "cw-other.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "деякі": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "відкрити": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "вгору": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "всередині": {
+        "file": "pl-inside.png",
+        "means": "Primary AAC In meaning"
+      },
+      "на": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "він": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "вона": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "це": {
+        "file": "cw-this.png",
+        "means": "Primary AAC It meaning"
+      },
+      "хто?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "що?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "коли?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "де?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "чому?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "дитина": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "потрібно": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "роблю": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Do meaning"
+      },
+      "можу": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "стоп": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "їсти": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "пити": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "спати": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "так": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "ні": {
+        "file": "cw-no-core.png",
+        "means": "Primary AAC No meaning"
+      },
+      "подобається": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "тут": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "там": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "ми": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "вони": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "мій": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning"
+      },
+      "твій": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning"
+      },
+      "маю": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "дати": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "взяти": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "чверть": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "чверті": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "чвертю": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "якість": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "якістю": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "vi": {
+      "chai": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "làm phiền": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "có thể": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning; explicit localized basic vocabulary"
+      },
+      "dừng lại": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning; explicit localized basic vocabulary"
+      },
+      "họ": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "của tôi": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning; explicit localized basic vocabulary"
+      },
+      "của bạn": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning; explicit localized basic vocabulary"
+      },
+      "cho": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning; explicit localized basic vocabulary"
+      },
+      "tôi": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "bạn": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "thêm": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "muốn": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "giúp": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "đi": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "nhìn": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "làm": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "lấy": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "đặt": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "xoay": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "tốt": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "giống": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "khác": {
+        "file": "cw-other.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "một số": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "mở": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "lên": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "trong": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "trên": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "anh ấy": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "cô ấy": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "nó": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "đó": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "ai?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "cái gì?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "khi nào?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "ở đâu?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "tại sao?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "con gái": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "con trai": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "trẻ em": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "cần": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "ăn": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "uống": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "ngủ": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "có": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Yes meaning"
+      },
+      "không": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "thích": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "đây": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "chúng tôi": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "một phần tư": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "phần tư": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "chất lượng": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "zh-HK": {
+      "打開": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "什麼時候": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "瓶子": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "水瓶": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "打擾": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "是": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning; explicit localized basic vocabulary"
+      },
+      "我們": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning; explicit localized basic vocabulary"
+      },
+      "他們": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "我的": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning; explicit localized basic vocabulary"
+      },
+      "你的": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning; explicit localized basic vocabulary"
+      },
+      "我": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "你": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "更多": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "要": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "幫": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "去": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "看": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "做": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "拿": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "放": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "轉": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "好": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "一樣": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "不同": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "一些": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "上": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "裏": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "上面": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "他": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "她": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "它": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "那個": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "誰?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "什麼?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "什麼時候?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "在哪?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "為什麼?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "女孩": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "男孩": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "孩子": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "需要": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "能": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "停": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "吃": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "喝": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "睡覺": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "不": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "喜歡": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "這裏": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "那裏": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "有": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "給": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "拿走": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "四分之一": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "四分一": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "質素": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "品質": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "zh-Hans": {
+      "什么时候": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "瓶子": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "水瓶": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "打扰": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "是": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning; explicit localized basic vocabulary"
+      },
+      "我的": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning; explicit localized basic vocabulary"
+      },
+      "你的": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning; explicit localized basic vocabulary"
+      },
+      "我": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "你": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "更多": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "要": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "帮": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "去": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "看": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "做": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "拿": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "放": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "转": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "好": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "一样": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "不同": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "一些": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "打开": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "上": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "里": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "上面": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "他": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "她": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "它": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "那个": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "谁?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "什么?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "什么时候?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "在哪?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "为什么?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "女孩": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "男孩": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "孩子": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "需要": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "能": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "停": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "吃": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "喝": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "睡觉": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "不": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "喜欢": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "这里": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "那里": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "我们": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning"
+      },
+      "他们": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning"
+      },
+      "有": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "给": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "拿走": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "四分之一": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "质量": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "品质": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    },
+    "zh-Hant": {
+      "打開": {
+        "file": "cw-open.png",
+        "means": "Primary AAC Open meaning"
+      },
+      "什麼時候": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "瓶子": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "水瓶": {
+        "file": "w-bottle.png",
+        "means": "Bottle, including reviewed plural spelling where listed"
+      },
+      "打擾": {
+        "file": "w-bother.png",
+        "means": "Bother or disturb through unwanted interruption, not merely feeling annoyed"
+      },
+      "是": {
+        "file": "cw-yes-core.png",
+        "means": "Primary AAC Yes meaning; explicit localized basic vocabulary"
+      },
+      "我們": {
+        "file": "cw-we.png",
+        "means": "Primary AAC We meaning; explicit localized basic vocabulary"
+      },
+      "他們": {
+        "file": "cw-they.png",
+        "means": "Primary AAC They meaning; explicit localized basic vocabulary"
+      },
+      "我的": {
+        "file": "cw-my.png",
+        "means": "Primary AAC My meaning; explicit localized basic vocabulary"
+      },
+      "你的": {
+        "file": "cw-your.png",
+        "means": "Primary AAC Your meaning; explicit localized basic vocabulary"
+      },
+      "我": {
+        "file": "cw-i.png",
+        "means": "Primary AAC I meaning"
+      },
+      "你": {
+        "file": "cw-you.png",
+        "means": "Primary AAC You meaning"
+      },
+      "更多": {
+        "file": "cw-more.png",
+        "means": "Primary AAC More meaning"
+      },
+      "要": {
+        "file": "cw-want.png",
+        "means": "Primary AAC Want meaning"
+      },
+      "幫": {
+        "file": "cw-help.png",
+        "means": "Primary AAC Help meaning"
+      },
+      "去": {
+        "file": "cw-go-core.png",
+        "means": "Primary AAC Go meaning"
+      },
+      "看": {
+        "file": "cw-look.png",
+        "means": "Primary AAC Look meaning"
+      },
+      "做": {
+        "file": "cw-do.png",
+        "means": "Primary AAC Make meaning"
+      },
+      "拿": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Get meaning"
+      },
+      "放": {
+        "file": "cw-put-core.png",
+        "means": "Primary AAC Put meaning"
+      },
+      "轉": {
+        "file": "cw-turn.png",
+        "means": "Primary AAC Turn meaning"
+      },
+      "好": {
+        "file": "dw-good.png",
+        "means": "Primary AAC Good meaning"
+      },
+      "一樣": {
+        "file": "cw-same-core.png",
+        "means": "Primary AAC Same meaning"
+      },
+      "不同": {
+        "file": "dw-different.png",
+        "means": "Primary AAC Different meaning"
+      },
+      "一些": {
+        "file": "cw-some.png",
+        "means": "Primary AAC Some meaning"
+      },
+      "上": {
+        "file": "cw-up.png",
+        "means": "Primary AAC Up meaning"
+      },
+      "裡": {
+        "file": "cw-in.png",
+        "means": "Primary AAC In meaning"
+      },
+      "上面": {
+        "file": "cw-on.png",
+        "means": "Primary AAC On meaning"
+      },
+      "他": {
+        "file": "cw-he.png",
+        "means": "Primary AAC He meaning"
+      },
+      "她": {
+        "file": "cw-she.png",
+        "means": "Primary AAC She meaning"
+      },
+      "它": {
+        "file": "cw-it.png",
+        "means": "Primary AAC It meaning"
+      },
+      "那個": {
+        "file": "cw-that.png",
+        "means": "Primary AAC That meaning"
+      },
+      "誰?": {
+        "file": "qu-who.png",
+        "means": "Primary AAC Who? meaning"
+      },
+      "什麼?": {
+        "file": "qu-what.png",
+        "means": "Primary AAC What? meaning"
+      },
+      "什麼時候?": {
+        "file": "qu-when.png",
+        "means": "Primary AAC When? meaning"
+      },
+      "在哪?": {
+        "file": "qu-where.png",
+        "means": "Primary AAC Where? meaning"
+      },
+      "為什麼?": {
+        "file": "qu-why.png",
+        "means": "Primary AAC Why? meaning"
+      },
+      "女孩": {
+        "file": "pp-girl.png",
+        "means": "Primary AAC Girl meaning"
+      },
+      "男孩": {
+        "file": "pp-boy.png",
+        "means": "Primary AAC Boy meaning"
+      },
+      "孩子": {
+        "file": "pp-kid.png",
+        "means": "Primary AAC Kid meaning"
+      },
+      "需要": {
+        "file": "cw-need.png",
+        "means": "Primary AAC Need meaning"
+      },
+      "能": {
+        "file": "cw-can.png",
+        "means": "Primary AAC Can meaning"
+      },
+      "停": {
+        "file": "cw-stop.png",
+        "means": "Primary AAC Stop meaning"
+      },
+      "吃": {
+        "file": "cw-eat.png",
+        "means": "Primary AAC Eat meaning"
+      },
+      "喝": {
+        "file": "cw-drink.png",
+        "means": "Primary AAC Drink meaning"
+      },
+      "睡覺": {
+        "file": "cw-sleep.png",
+        "means": "Primary AAC Sleep meaning"
+      },
+      "不": {
+        "file": "cw-not.png",
+        "means": "Primary AAC No meaning"
+      },
+      "喜歡": {
+        "file": "cw-like.png",
+        "means": "Primary AAC Like meaning"
+      },
+      "這裡": {
+        "file": "cw-here.png",
+        "means": "Primary AAC Here meaning"
+      },
+      "那裡": {
+        "file": "cw-there.png",
+        "means": "Primary AAC There meaning"
+      },
+      "有": {
+        "file": "cw-have.png",
+        "means": "Primary AAC Have meaning"
+      },
+      "給": {
+        "file": "cw-give.png",
+        "means": "Primary AAC Give meaning"
+      },
+      "拿走": {
+        "file": "cw-take.png",
+        "means": "Primary AAC Take meaning"
+      },
+      "四分之一": {
+        "file": "w-quarter.png",
+        "means": "One fourth of a whole; a fraction. The approved primary picture does not depict currency, time, a district, accommodation, or an ordinal position."
+      },
+      "品質": {
+        "file": "w-quality.png",
+        "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      }
+    }
+  }
+}

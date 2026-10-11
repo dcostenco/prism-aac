@@ -1,0 +1,248 @@
+{
+  "bottle": {
+    "am": [
+      "ጠርሙስ"
+    ],
+    "ar": [
+      "زجاجة",
+      "زجاجات"
+    ],
+    "bg": [
+      "бутилка",
+      "бутилки"
+    ],
+    "bn": [
+      "বোতল"
+    ],
+    "de": [
+      "flasche",
+      "flaschen"
+    ],
+    "en": [
+      "bottle",
+      "bottles"
+    ],
+    "es": [
+      "botella",
+      "botellas"
+    ],
+    "fr": [
+      "bouteille",
+      "bouteilles"
+    ],
+    "he": [
+      "בקבוק",
+      "בקבוקים"
+    ],
+    "hi": [
+      "बोतल",
+      "बोतलें"
+    ],
+    "id": [
+      "botol"
+    ],
+    "it": [
+      "bottiglia",
+      "bottiglie"
+    ],
+    "ja": [
+      "ボトル",
+      "びん",
+      "瓶"
+    ],
+    "ko": [
+      "물병"
+    ],
+    "nl": [
+      "fles",
+      "flessen"
+    ],
+    "pl": [
+      "butelka",
+      "butelki"
+    ],
+    "pt": [
+      "garrafa",
+      "garrafas"
+    ],
+    "ro": [
+      "sticlă",
+      "sticle"
+    ],
+    "ru": [
+      "бутылка",
+      "бутылки",
+      "бутылку",
+      "бутылке",
+      "бутылок"
+    ],
+    "sw": [
+      "chupa"
+    ],
+    "tl": [
+      "bote",
+      "mga bote"
+    ],
+    "tr": [
+      "şişe",
+      "şişeler"
+    ],
+    "uk": [
+      "пляшка",
+      "пляшки",
+      "пляшку",
+      "пляшок"
+    ],
+    "vi": [
+      "chai"
+    ],
+    "zh-Hans": [
+      "瓶子",
+      "水瓶"
+    ],
+    "zh-Hant": [
+      "瓶子",
+      "水瓶"
+    ],
+    "zh-HK": [
+      "瓶子",
+      "水瓶"
+    ]
+  },
+  "bother": {
+    "am": [
+      "ማስቸገር"
+    ],
+    "ar": [
+      "يزعج",
+      "تزعج",
+      "إزعاج"
+    ],
+    "bg": [
+      "безпокоя",
+      "безпокои",
+      "досаждам"
+    ],
+    "bn": [
+      "বিরক্ত করা"
+    ],
+    "de": [
+      "stören",
+      "stört",
+      "störst",
+      "störte"
+    ],
+    "en": [
+      "bother",
+      "bothers",
+      "bothered",
+      "bothering"
+    ],
+    "es": [
+      "molestar",
+      "molesta",
+      "molestas",
+      "molestan",
+      "molestando"
+    ],
+    "fr": [
+      "déranger",
+      "dérange",
+      "déranges",
+      "dérangent"
+    ],
+    "he": [
+      "להפריע",
+      "מפריע",
+      "מפריעה",
+      "מפריעים"
+    ],
+    "hi": [
+      "परेशान करना"
+    ],
+    "id": [
+      "mengganggu",
+      "ganggu"
+    ],
+    "it": [
+      "disturbare",
+      "disturba",
+      "disturbano"
+    ],
+    "ja": [
+      "邪魔する",
+      "じゃまする"
+    ],
+    "ko": [
+      "방해하다",
+      "방해해요"
+    ],
+    "nl": [
+      "storen",
+      "stoort",
+      "stoorde"
+    ],
+    "pl": [
+      "przeszkadzać",
+      "przeszkadza",
+      "przeszkadzasz"
+    ],
+    "pt": [
+      "incomodar",
+      "incomoda",
+      "incomodam"
+    ],
+    "ro": [
+      "deranja",
+      "deranjează",
+      "deranjezi"
+    ],
+    "ru": [
+      "беспокоить",
+      "беспокоит",
+      "беспокоят",
+      "мешать",
+      "мешаю",
+      "мешает",
+      "мешают"
+    ],
+    "sw": [
+      "kusumbua",
+      "sumbua"
+    ],
+    "tl": [
+      "abalahin",
+      "mang-abala"
+    ],
+    "tr": [
+      "rahatsız etmek",
+      "rahatsız ediyor"
+    ],
+    "uk": [
+      "турбувати",
+      "турбує",
+      "турбують",
+      "заважати",
+      "заважає",
+      "заважають"
+    ],
+    "vi": [
+      "làm phiền"
+    ],
+    "zh-Hans": [
+      "打扰"
+    ],
+    "zh-Hant": [
+      "打擾"
+    ],
+    "zh-HK": [
+      "打擾"
+    ]
+  },
+  "girl": {
+    "fr": [
+      "fillette",
+      "fillettes"
+    ]
+  }
+}

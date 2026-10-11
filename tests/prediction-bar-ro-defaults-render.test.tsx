@@ -98,7 +98,12 @@ describe('PredictionBar — Romanian default tiles', () => {
       expect(label.classList.contains('aac-prediction-label')).toBe(true);
       expect(label.closest('button')?.classList.contains('aac-prediction-tile')).toBe(true);
       expect(label.closest('button')?.getAttribute('data-testid')).toBe('prediction-tile');
-      expect(label.closest('button')?.querySelector('.aac-tile-icon')).toBeTruthy();
+      // A tile with a picture keeps its well; a text tile (no picture) shows
+      // the word alone, so it has none.
+      const tile = label.closest('button')!;
+      expect(['symbol', 'generated', 'pending', 'text']).toContain(tile.getAttribute('data-picture'));
+      if (tile.getAttribute('data-picture') === 'text') expect(tile.querySelector('.aac-tile-icon')).toBeNull();
+      else expect(tile.querySelector('.aac-tile-icon')).toBeTruthy();
     }
   });
 });

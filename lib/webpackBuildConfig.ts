@@ -5,6 +5,8 @@
  * importing next.config pulls @serwist/next into the test worker, which killed
  * the worker and silently dropped 204 unrelated tests from the run.
  */
+export const MAX_STATIC_PRECACHE_FILE_BYTES = 4 * 1024 * 1024;
+
 export function customizeWebpack(
   config: { cache?: unknown; resolve?: Record<string, unknown>; plugins?: unknown[] },
   { webpack, isServer, dev }: {

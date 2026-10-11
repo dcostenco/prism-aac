@@ -10,11 +10,17 @@ struct AACPhrase: Identifiable {
     let label: String
     let sfSymbol: String
     let color: Color
-    let arasaacId: Int?
+    let pictureID: String?
+    let canonicalLabel: String
+    let categoryID: String?
+    let allowsLabelPicture: Bool
+    let sourceLanguage: String
     // #10: explicit flag so emergency detection works for both static and API-loaded vocab
     let isEmergency: Bool
 
-    init(label: String, sfSymbol: String, color: Color, arasaacId: Int?, isEmergency: Bool = false) {
+    init(label: String, sfSymbol: String, color: Color, isEmergency: Bool = false,
+         pictureID: String? = nil, canonicalLabel: String? = nil,
+         categoryID: String? = nil, allowsLabelPicture: Bool = true, sourceLanguage: String = "en-US") {
         // Stable id: lowercase label + sfSymbol — prevents collision for same label across categories
         // e.g. "Help" (sfSymbol: "sos") vs "Help" (sfSymbol: "hand.raised") get distinct ids
         // #28: For emoji-only or non-Latin labels, the filtered prefix is empty and would cause
@@ -25,27 +31,62 @@ struct AACPhrase: Identifiable {
         let uniquePrefix = prefix.isEmpty
             ? "emoji\(abs(label.unicodeScalars.reduce(0) { $0 &* 31 &+ Int($1.value) }) & Int.max)"
             : prefix
-        self.id = "\(uniquePrefix)-\(sfSymbol)-\(arasaacId.map(String.init) ?? "x")"
+        self.id = "\(uniquePrefix)-\(sfSymbol)\(pictureID.map { "-\($0)" } ?? "")"
         self.label = label
         self.sfSymbol = sfSymbol
         self.color = color
-        self.arasaacId = arasaacId
         self.isEmergency = isEmergency
+        self.pictureID = pictureID
+        self.canonicalLabel = canonicalLabel ?? label
+        self.categoryID = categoryID
+        self.allowsLabelPicture = allowsLabelPicture
+        self.sourceLanguage = sourceLanguage
+    }
+}
+
+/// Preserve the selected meaning even when companion vocabulary is unavailable.
+struct WatchRecentPhrase: Codable {
+    let label: String
+    let sfSymbol: String
+    let pictureID: String?
+    let canonicalLabel: String
+    let categoryID: String?
+    let allowsLabelPicture: Bool
+    let isEmergency: Bool
+    let sourceLanguage: String
+
+    init(_ phrase: AACPhrase, sourceLanguage: String? = nil) {
+        label = phrase.label
+        sfSymbol = phrase.sfSymbol
+        pictureID = phrase.pictureID
+        canonicalLabel = phrase.canonicalLabel
+        categoryID = phrase.categoryID
+        allowsLabelPicture = phrase.allowsLabelPicture
+        isEmergency = phrase.isEmergency
+        self.sourceLanguage = sourceLanguage ?? phrase.sourceLanguage
     }
 
-    var arasaacURL: URL? {
-        guard let aid = arasaacId, aid > 0, aid < 200_000 else {
-            if let aid = arasaacId {
-                NSLog("[PairCard] arasaacId \(aid) out of range — using sfSymbol fallback")
-            }
-            return nil
-        }
-        return URL(string: "https://static.arasaac.org/pictograms/\(aid)/\(aid)_300.png")
-    }
+    var identity: String { pictureID ?? "\(canonicalLabel)-\(sfSymbol)" }
 }
 
 struct AACVocab {
     // Note: static let categories was removed (Fix #14) — it was dead code; use childFriendlyOrder instead.
+    // The short offline core predates phrase IDs. Reuse art only when all
+    // matching canonical entries agree on the same approved file.
+    static let picturesByEnglishLabel: [String: String] = {
+        var candidates: [String: Set<String>] = [:]
+        var unmappedLabels: Set<String> = []
+        for phrase in WatchCategory.iOSDefaultSet.flatMap(\.phrases) {
+            let label = phrase.label.lowercased()
+            if let file = AACPictureLibrary.shared.filename(phraseID: phrase.id) {
+                candidates[label, default: []].insert(file)
+            } else {
+                unmappedLabels.insert(label)
+            }
+        }
+        return candidates.filter { !unmappedLabels.contains($0.key) }
+            .compactMapValues { $0.count == 1 ? $0.first : nil }
+    }()
 }
 
 /// AAC for Apple Watch — 2-column grid, designed for children.
@@ -76,8 +117,9 @@ struct WatchPictogramCards: View {
             let isEmergencyCat = cat.id == "emergency" || cat.id == "help-needs"
             return cat.phrases.map { p in
                 AACPhrase(label: p.label, sfSymbol: p.sfSymbol,
-                          color: phraseColor(cat.id), arasaacId: p.arasaacId,
-                          isEmergency: isEmergencyCat)
+                          color: phraseColor(cat.id),
+                          isEmergency: isEmergencyCat, pictureID: p.id, categoryID: cat.id,
+                          sourceLanguage: vocab.vocabLanguage)
             }
         }
         // Use the full 28-phrase childFriendlyOrder when:
@@ -100,11 +142,14 @@ struct WatchPictogramCards: View {
     /// offline dictionary. Falls through to the original (English) label
     /// for phrases not in the dictionary.
     private func localized(_ phrase: AACPhrase) -> AACPhrase {
-        let newLabel = WatchTranslation.localizedLabel(phrase.label, to: vocab.inputLanguage)
+        let newLabel = WatchTranslation.localizedLabel(phrase.canonicalLabel, to: vocab.inputLanguage,
+            sourceLanguage: phrase.sourceLanguage, phraseID: phrase.pictureID)
         if newLabel == phrase.label { return phrase }
         return AACPhrase(label: newLabel, sfSymbol: phrase.sfSymbol,
-                         color: phrase.color, arasaacId: phrase.arasaacId,
-                         isEmergency: phrase.isEmergency)
+                         color: phrase.color,
+                         isEmergency: phrase.isEmergency, pictureID: phrase.pictureID,
+                         canonicalLabel: phrase.canonicalLabel, categoryID: phrase.categoryID,
+                         allowsLabelPicture: phrase.allowsLabelPicture, sourceLanguage: phrase.sourceLanguage)
     }
 
     private func localized(_ label: String) -> String {
@@ -115,11 +160,14 @@ struct WatchPictogramCards: View {
     /// translated into the user's input language (offline dict only).
     private func localized(category cat: WatchCategory) -> WatchCategory {
         let lang = vocab.inputLanguage
-        let translatedName = WatchTranslation.localizedLabel(cat.name, to: lang)
+        let sourceLanguage = vocab.categories.count > 1 ? vocab.vocabLanguage : "en-US"
+        let canonicalName = WatchCategory.iOSDefaultSet.first(where: { $0.id == cat.id })?.name
+        let translatedName = WatchTranslation.localizedLabel(cat.name, to: lang,
+            sourceLanguage: sourceLanguage, canonicalEnglish: canonicalName)
         let translatedPhrases = cat.phrases.map { p in
             WatchPhrase(id: p.id,
-                        label: WatchTranslation.localizedLabel(p.label, to: lang),
-                        arasaacId: p.arasaacId,
+                        label: WatchTranslation.localizedLabel(p.label, to: lang,
+                            sourceLanguage: sourceLanguage, phraseID: p.id),
                         sfSymbol: p.sfSymbol,
                         isEmergency: p.isEmergency)
         }
@@ -179,9 +227,9 @@ struct WatchPictogramCards: View {
     @State private var showAlertConfirm       = false
     @State private var alertSendStatus: String? = nil
     @State private var presentedCategory: WatchCategory? = nil
-    // Recents ring buffer (last 6 tapped phrase labels, excluding Yes/No).
-    // JSON-encoded into AppStorage so a single key holds the ordered list.
+    // Read the old labels as a fallback; new writes preserve canonical meaning.
     @AppStorage("recent_phrase_labels") private var recentPhraseLabelsJSON: String = "[]"
+    @AppStorage("recent_phrase_records") private var recentPhraseRecordsJSON: String = ""
 
     private func code(_ bcp: String) -> String {
         supportedLanguages.first { $0.code == bcp }?.name ?? String(bcp.prefix(2)).uppercased()
@@ -209,7 +257,7 @@ struct WatchPictogramCards: View {
         // colored icons) — they shouldn't compete with the bright cards
         // below for the kid's attention. These actions are caregiver-side
         // and infrequent (language pick, AI chat, inbox, send-to-caregiver).
-        // Height ≈ card / 4 = 16pt, leaving max area for the cards.
+        // Match the row height to the controls so their touch frames stay bounded.
         HStack(spacing: 1) {
             Button { pickingInput = true; showLangPicker = true } label: {
                 HStack(spacing: 2) {
@@ -222,10 +270,12 @@ struct WatchPictogramCards: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }
-                .frame(maxWidth: .infinity, minHeight: 24)
+                .frame(maxWidth: .infinity, minHeight: 24, maxHeight: 24)
                 .background(Color.black)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("watch-language-picker")
 
             Button { showAIChat = true } label: {
                 HStack(spacing: 2) {
@@ -275,7 +325,7 @@ struct WatchPictogramCards: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Send — SOS to caregiver or compose message")
         }
-        .frame(height: 16)
+        .frame(height: 24)
         .frame(maxWidth: .infinity)
         .background(Color.black)
     }
@@ -446,8 +496,8 @@ struct WatchPictogramCards: View {
                         label: source.label,
                         sfSymbol: source.sfSymbol,
                         color: phraseColor(cat.id),
-                        arasaacId: source.arasaacId,
-                        isEmergency: source.isEmergency
+                        isEmergency: source.isEmergency, pictureID: source.id, categoryID: cat.id,
+                        sourceLanguage: vocab.categories.count > 1 ? vocab.vocabLanguage : "en-US"
                     )
                     tapPhrase(p, recordRecent: true)
                     presentedCategory = nil
@@ -551,32 +601,25 @@ struct WatchPictogramCards: View {
 
     /// Yes/No are pinned above the scroll. Match by stable id prefix to survive
     /// localized labels and so a category named "Yes/No" can't double-render.
-    /// arasaacId is intentionally nil so the AsyncImage path is skipped — the
-    /// arasaac "no" pictogram renders as a marked-up arm bitmap which looks
-    /// unsettling on a child's Watch. SF symbols are clean and universal.
     private var yesNoPhrases: [AACPhrase] {
         let yesLabel = cachedPhrases.first { $0.id.hasPrefix("yes-") }?.label ?? "Yes"
         let noLabel  = cachedPhrases.first { $0.id.hasPrefix("no-") }?.label ?? "No"
         return [
-            AACPhrase(label: yesLabel, sfSymbol: "checkmark.circle.fill", color: .green, arasaacId: nil),
-            AACPhrase(label: noLabel,  sfSymbol: "xmark.circle.fill",     color: .red,   arasaacId: nil),
+            AACPhrase(label: yesLabel, sfSymbol: "checkmark.circle.fill", color: .green),
+            AACPhrase(label: noLabel,  sfSymbol: "xmark.circle.fill",     color: .red),
         ]
     }
 
     /// Recently-tapped phrases (up to 6, MRU first, Yes/No excluded).
-    /// Decoded from @AppStorage JSON; resolved against current cachedPhrases
-    /// so that re-rendering picks up updated arasaacId / color from API vocab.
+    /// Canonical selections survive relaunch and changes in companion vocabulary.
     private var recentPhraseCards: [AACPhrase] {
-        let labels = decodeRecentLabels()
-        guard !labels.isEmpty else { return [] }
-        var out: [AACPhrase] = []
-        for label in labels {
-            if let p = cachedPhrases.first(where: { $0.label == label }), !p.id.hasPrefix("yes-"), !p.id.hasPrefix("no-") {
-                out.append(p)
-                if out.count >= 6 { break }
-            }
+        decodeRecentRecords().prefix(6).map { record in
+            AACPhrase(label: record.label, sfSymbol: record.sfSymbol,
+                      color: record.categoryID.map(phraseColor) ?? .accentColor, isEmergency: record.isEmergency,
+                      pictureID: record.pictureID, canonicalLabel: record.canonicalLabel,
+                      categoryID: record.categoryID, allowsLabelPicture: record.allowsLabelPicture,
+                      sourceLanguage: record.sourceLanguage)
         }
-        return out
     }
 
     /// Category cards source. Mirrors the iOS top-level set from
@@ -599,24 +642,41 @@ struct WatchPictogramCards: View {
             return
         }
         translation.translateAndSpeak(
-            text: phrase.label,
-            from: vocab.vocabLanguage,
+            text: phrase.canonicalLabel,
+            from: phrase.sourceLanguage.isEmpty ? vocab.inputLanguage : phrase.sourceLanguage,
             to: vocab.outputLanguage,
+            phraseID: phrase.pictureID,
             tts: tts
         )
         session.sendPhrase(phrase.label)
-        if recordRecent { appendRecent(phrase.label) }
+        if recordRecent { appendRecent(phrase) }
     }
 
     /// MRU-prepend with dedupe; cap 6. Persisted as JSON in @AppStorage.
-    private func appendRecent(_ label: String) {
-        var labels = decodeRecentLabels()
-        labels.removeAll { $0 == label }
-        labels.insert(label, at: 0)
-        if labels.count > 6 { labels = Array(labels.prefix(6)) }
-        if let data = try? JSONEncoder().encode(labels),
+    private func appendRecent(_ phrase: AACPhrase) {
+        let record = WatchRecentPhrase(phrase)
+        var records = decodeRecentRecords()
+        records.removeAll {
+            $0.identity == record.identity || ($0.pictureID == nil && $0.canonicalLabel == record.canonicalLabel)
+        }
+        records.insert(record, at: 0)
+        if records.count > 6 { records = Array(records.prefix(6)) }
+        if let data = try? JSONEncoder().encode(records),
            let json = String(data: data, encoding: .utf8) {
-            recentPhraseLabelsJSON = json
+            recentPhraseRecordsJSON = json
+        }
+    }
+
+    private func decodeRecentRecords() -> [WatchRecentPhrase] {
+        if let data = recentPhraseRecordsJSON.data(using: .utf8),
+           let records = try? JSONDecoder().decode([WatchRecentPhrase].self, from: data) {
+            return records
+        }
+        return decodeRecentLabels().filter { !["Yes", "No"].contains($0) }.map { label in
+            // Legacy labels never acquire an ID from a reduced synced subset.
+            // The complete catalogue's unanimous-file map governs their art.
+            return WatchRecentPhrase(AACPhrase(label: label, sfSymbol: "", color: .accentColor,
+                                               allowsLabelPicture: true, sourceLanguage: ""))
         }
     }
 
@@ -671,10 +731,10 @@ struct CategoryCardView: View {
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 4) {
-                Image(systemName: category.icon.isEmpty ? "square.grid.2x2" : category.icon)
-                    .font(.system(size: 28))
-                    .foregroundColor(color)
-                    .frame(maxWidth: .infinity, maxHeight: 44)
+                if let file = AACPictureLibrary.shared.filename(categoryID: category.id) {
+                    GeneratedWatchPicture(filename: file)
+                        .frame(maxWidth: .infinity, maxHeight: 44)
+                }
                 Text(category.name)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.primary)
@@ -718,8 +778,7 @@ struct WatchCategoryDetail: View {
                             label: phrase.label,
                             sfSymbol: phrase.sfSymbol,
                             color: color,
-                            arasaacId: phrase.arasaacId,
-                            isEmergency: phrase.isEmergency
+                            isEmergency: phrase.isEmergency, pictureID: phrase.id
                         )
                         PairCard(phrase: aac) {
                             onTapPhrase(phrase)
@@ -1436,53 +1495,47 @@ struct WatchSendMessageView: View {
 // MARK: - Compact 2-column card (replaces full-screen PictogramCard)
 
 struct PairCard: View {
+    @EnvironmentObject private var vocab: WatchVocabSync
     let phrase: AACPhrase
     let onTap: () -> Void
     var emergencyIsActive: Bool = false
+    private var pictureFile: String? {
+        if let id = phrase.pictureID { return AACPictureLibrary.shared.filename(phraseID: id) }
+        guard phrase.allowsLabelPicture else { return nil }
+        if phrase.sourceLanguage.isEmpty {
+            return AACPictureLibrary.shared.filename(legacyWord: phrase.canonicalLabel)
+        }
+        let sourcePicture = AACPictureLibrary.shared.filename(word: phrase.canonicalLabel, language: phrase.sourceLanguage)
+        let displayPicture = AACPictureLibrary.shared.filename(word: phrase.label, language: vocab.inputLanguage)
+        let sourceCode = (phrase.sourceLanguage.isEmpty ? vocab.inputLanguage : phrase.sourceLanguage)
+            .split(whereSeparator: { $0 == "-" || $0 == "_" }).first?.lowercased()
+        let englishPicture = sourceCode == "en" ? AACVocab.picturesByEnglishLabel[phrase.canonicalLabel.lowercased()] : nil
+        return sourcePicture ?? displayPicture ?? englishPicture
+    }
 
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 4) {
-                // If emergency is active, skip pictogram network loads to free URLSession connections
-                // #17: emergencyIsActive skips AsyncImage entirely when true, freeing URLSession slots
-                // for emergency/translation requests. Falls through to sfSymbol fallback below.
-                // Fix #17 (intentional): AsyncImage is gated on !emergencyIsActive so that
-                // pictogram network loads are skipped during emergencies, freeing URLSession
-                // connections for emergency and translation requests. sfSymbol fallback below.
-                if let url = phrase.arasaacURL, !emergencyIsActive {
-                    // Pictogram images: use a dedicated short-timeout URLSession to avoid
-                    // starving emergency/translation requests that share URLSession.shared.
-                    // LIMITATION: .task(id: url) cancels the Task but NOT AsyncImage's internal URLSession request.
-                    // A separate URLSession with timeoutIntervalForResource: 5 would be needed for true timeout.
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let img):
-                            img.resizable()
-                               .scaledToFit()
-                               .frame(maxWidth: .infinity, maxHeight: 52)
-                        default:
-                            Image(systemName: phrase.sfSymbol)
-                                .font(.system(size: 32))
-                                .foregroundColor(phrase.color)
-                                .frame(maxWidth: .infinity, maxHeight: 52)
-                        }
-                    }
-                    .id(url)
-                    // AsyncImage has no native timeout. The dedicated AISession/translation sessions
-                    // have separate connection pools. Image loads use URLSession.shared implicitly
-                    // but are skipped entirely during emergencies (emergencyIsActive gate above).
+                // Artwork comes from the same approved library as the phone.
+                // Unmapped meanings retain their written word.
+                if pictureFile == nil {
+                    Text(phrase.label)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.primary)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity, minHeight: 52)
                 } else {
-                    Image(systemName: phrase.sfSymbol)
-                        .font(.system(size: 32))
-                        .foregroundColor(phrase.color)
+                    GeneratedWatchPicture(filename: pictureFile!)
                         .frame(maxWidth: .infinity, maxHeight: 52)
+                    Text(phrase.label)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.85)
                 }
-                Text(phrase.label)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.85)
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
@@ -1492,6 +1545,23 @@ struct PairCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Say: \(phrase.label)")
+        .accessibilityIdentifier("aac-picture-\(pictureFile ?? "text")")
+    }
+}
+
+private struct GeneratedWatchPicture: View {
+    let filename: String
+    var body: some View {
+        if let image = AACPictureLibrary.shared.image(filename: filename) {
+            Image(decorative: image, scale: 1)
+                .resizable()
+                .scaledToFit()
+                .padding(2)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
+        }
     }
 }
 
@@ -1552,42 +1622,42 @@ extension AACVocab {
     /// Most common needs first — reduces swipes to find the right word.
     static let childFriendlyOrder: [AACPhrase] = [
         // Tier 1 — most frequent (first 8 = within 3 swipes)
-        AACPhrase(label: "Yes",        sfSymbol: "checkmark.circle.fill", color: .green,  arasaacId: 5584),
-        AACPhrase(label: "No",         sfSymbol: "xmark.circle.fill",     color: .red,    arasaacId: 5578),
-        AACPhrase(label: "More",       sfSymbol: "plus.circle",           color: .blue,   arasaacId: 5571),
-        AACPhrase(label: "All done",   sfSymbol: "checkmark.seal",        color: .green,  arasaacId: 5552),
-        AACPhrase(label: "Help",       sfSymbol: "sos",                   color: .red,    arasaacId: 5557,  isEmergency: true),
-        AACPhrase(label: "Want",       sfSymbol: "hand.point.right.fill", color: .blue,   arasaacId: 5583),
-        AACPhrase(label: "Stop",       sfSymbol: "hand.raised.fill",      color: .orange, arasaacId: 5581),
-        AACPhrase(label: "Go",         sfSymbol: "arrow.right.circle",    color: .green,  arasaacId: nil),
+        AACPhrase(label: "Yes",        sfSymbol: "checkmark.circle.fill", color: .green),
+        AACPhrase(label: "No",         sfSymbol: "xmark.circle.fill",     color: .red),
+        AACPhrase(label: "More",       sfSymbol: "plus.circle",           color: .blue),
+        AACPhrase(label: "All done",   sfSymbol: "checkmark.seal",        color: .green),
+        AACPhrase(label: "Help",       sfSymbol: "sos",                   color: .red,  isEmergency: true),
+        AACPhrase(label: "Want",       sfSymbol: "hand.point.right.fill", color: .blue),
+        AACPhrase(label: "Stop",       sfSymbol: "hand.raised.fill",      color: .orange),
+        AACPhrase(label: "Go",         sfSymbol: "arrow.right.circle",    color: .green),
 
         // Tier 2 — physical needs
-        AACPhrase(label: "Water",      sfSymbol: "drop.fill",             color: .blue,   arasaacId: 14981),
-        AACPhrase(label: "Food",       sfSymbol: "fork.knife",            color: .orange, arasaacId: nil),
-        AACPhrase(label: "Bathroom",   sfSymbol: "toilet.fill",           color: .teal,   arasaacId: nil),
-        AACPhrase(label: "Hurt",       sfSymbol: "cross.circle.fill",     color: .red,    arasaacId: nil,   isEmergency: true),
-        AACPhrase(label: "Tired",      sfSymbol: "moon.zzz.fill",         color: .gray,   arasaacId: nil),
-        AACPhrase(label: "Hot",        sfSymbol: "thermometer.sun",       color: .red,    arasaacId: nil),
-        AACPhrase(label: "Cold",       sfSymbol: "thermometer.snowflake", color: .blue,   arasaacId: nil),
-        AACPhrase(label: "Medicine",   sfSymbol: "pill.fill",             color: .red,    arasaacId: nil),
+        AACPhrase(label: "Water",      sfSymbol: "drop.fill",             color: .blue),
+        AACPhrase(label: "Food",       sfSymbol: "fork.knife",            color: .orange),
+        AACPhrase(label: "Bathroom",   sfSymbol: "toilet.fill",           color: .teal),
+        AACPhrase(label: "Hurt",       sfSymbol: "cross.circle.fill",     color: .red,   isEmergency: true),
+        AACPhrase(label: "Tired",      sfSymbol: "moon.zzz.fill",         color: .gray),
+        AACPhrase(label: "Hot",        sfSymbol: "thermometer.sun",       color: .red),
+        AACPhrase(label: "Cold",       sfSymbol: "thermometer.snowflake", color: .blue),
+        AACPhrase(label: "Medicine",   sfSymbol: "pill.fill",             color: .red),
 
         // Tier 3 — emotions
-        AACPhrase(label: "Happy",      sfSymbol: "face.smiling",          color: .yellow, arasaacId: nil),
-        AACPhrase(label: "Sad",        sfSymbol: "cloud.rain.fill",       color: .blue,   arasaacId: nil),
-        AACPhrase(label: "Scared",     sfSymbol: "bolt.heart.fill",       color: .purple, arasaacId: nil),
-        AACPhrase(label: "Angry",      sfSymbol: "flame.fill",            color: .red,    arasaacId: nil),
+        AACPhrase(label: "Happy",      sfSymbol: "face.smiling",          color: .yellow),
+        AACPhrase(label: "Sad",        sfSymbol: "cloud.rain.fill",       color: .blue),
+        AACPhrase(label: "Scared",     sfSymbol: "bolt.heart.fill",       color: .purple),
+        AACPhrase(label: "Angry",      sfSymbol: "flame.fill",            color: .red),
 
         // Tier 4 — social
-        AACPhrase(label: "Hello",      sfSymbol: "hand.wave.fill",        color: .yellow, arasaacId: nil),
-        AACPhrase(label: "Thank you",  sfSymbol: "heart.fill",            color: .pink,   arasaacId: nil),
-        AACPhrase(label: "Please",     sfSymbol: "hands.clap.fill",       color: .blue,   arasaacId: nil),
-        AACPhrase(label: "Sorry",      sfSymbol: "hand.thumbsdown",       color: .gray,   arasaacId: nil),
+        AACPhrase(label: "Hello",      sfSymbol: "hand.wave.fill",        color: .yellow),
+        AACPhrase(label: "Thank you",  sfSymbol: "heart.fill",            color: .pink),
+        AACPhrase(label: "Please",     sfSymbol: "hands.clap.fill",       color: .blue),
+        AACPhrase(label: "Sorry",      sfSymbol: "hand.thumbsdown",       color: .gray),
 
         // Tier 5 — places
-        AACPhrase(label: "Home",       sfSymbol: "house.fill",            color: .green,  arasaacId: 8514),
-        AACPhrase(label: "School",     sfSymbol: "graduationcap.fill",    color: .blue,   arasaacId: nil),
-        AACPhrase(label: "Outside",    sfSymbol: "sun.max.fill",          color: .yellow, arasaacId: nil),
-        AACPhrase(label: "Bed",        sfSymbol: "bed.double.fill",       color: .indigo, arasaacId: nil),
+        AACPhrase(label: "Home",       sfSymbol: "house.fill",            color: .green),
+        AACPhrase(label: "School",     sfSymbol: "graduationcap.fill",    color: .blue),
+        AACPhrase(label: "Outside",    sfSymbol: "sun.max.fill",          color: .yellow),
+        AACPhrase(label: "Bed",        sfSymbol: "bed.double.fill",       color: .indigo),
     ]
 }
 

@@ -1,4 +1,4 @@
-import { PICTOGRAM_CONTENT_HOSTS } from '@/lib/pictogramSources';
+import { PICTOGRAM_CONTENT_PATH_PREFIXES } from '@/lib/pictogramSources';
 
 let initialized = false;
 
@@ -250,21 +250,21 @@ export function scrubPhi(text: string): string {
 }
 
 /**
- * services/pictogramService.ts puts an AAC vocabulary token straight into the
- * picture-symbol search path, and `trackResources: true` reports the whole URL.
- * No pattern can recognise "grandma" or "seizure" as sensitive, so the path is
- * dropped wholesale for those hosts. Origin, timing and status survive, which
- * is all the resource telemetry is read for.
+ * A bundled symbol's file name names the word on its tile (lib/builtInSymbols.ts),
+ * and prediction tiles follow what the AAC user is composing, so
+ * `trackResources: true` would report vocabulary in the URL. No pattern can
+ * recognise "pain" or "toilet" as sensitive, so everything after the prefix is
+ * dropped wholesale. Origin, timing and status survive, which is all the
+ * resource telemetry is read for.
  *
- * The host list lives with the provider config so swapping the pictogram
- * provider cannot silently leave this redaction pointed at a dead host.
+ * The prefix list lives with the picture-source config so changing where
+ * pictures come from cannot silently leave this redaction pointed at a dead path.
  */
-const AAC_CONTENT_HOSTS = new Set(PICTOGRAM_CONTENT_HOSTS);
-
 function redactAacContentUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    return AAC_CONTENT_HOSTS.has(parsed.hostname) ? `${parsed.origin}/[REDACTED]` : url;
+    const prefix = PICTOGRAM_CONTENT_PATH_PREFIXES.find((p) => parsed.pathname.startsWith(p));
+    return prefix ? `${parsed.origin}${prefix}[REDACTED]` : url;
   } catch {
     return url;
   }
@@ -297,7 +297,7 @@ export const SCRUBBABLE_PATHS: ReadonlyArray<readonly [path: string, kind: PathK
   ['view.name', 'text'],
   ['view.performance.lcp.resource_url', 'url'],
   // Long Animation Frames attribute work to the resource that caused it, so a
-  // pictogram lookup URL lands here too. `trackLongTasks` is on.
+  // symbol URL lands here too. `trackLongTasks` is on.
   ['long_task.scripts[].invoker', 'url'],
   ['long_task.scripts[].source_url', 'url'],
   ['service', 'text'],
@@ -410,9 +410,10 @@ function carriesUnredactableText(event: RumEventLike): boolean {
  * console text regardless. 130 of prism-aac's last 138 RUM errors arrived with
  * `error.source: console`.
  *
- * `trackResources: true` is the other carrier: pictogram lookups put the word
- * the user is composing into the request path (services/pictogramService.ts),
- * so resource events need scrubbing just as much as error events do.
+ * `trackResources: true` is the other carrier: a symbol's file name names the
+ * word on its tile, and prediction tiles follow what the user is composing
+ * (lib/builtInSymbols.ts), so resource events need scrubbing just as much as
+ * error events do.
  *
  * Returns false to discard an event whose PHI cannot be redacted in place.
  *
@@ -420,7 +421,7 @@ function carriesUnredactableText(event: RumEventLike): boolean {
  * otherwise: a single first name; lowercase vocabulary (`grandma`, `seizure`);
  * a street address; a diagnosis in prose; a name in an uncased script (CJK,
  * Thai); a Luhn-invalid identifier that is still sensitive. The structural
- * controls — dropping pictogram URL paths by host, discarding events whose
+ * controls — dropping symbol URL paths, discarding events whose
  * unredactable fields carry structured PHI — carry the guarantee; the patterns
  * are best-effort on top.
  */

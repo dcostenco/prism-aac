@@ -87,7 +87,7 @@ const trackingResetScript = `
 })();
 `;
 
-const swKillswitchScript = buildServiceWorkerKillswitchScript(SW_KILLSWITCH_VERSION);
+const swKillswitchScript = buildServiceWorkerKillswitchScript(SW_KILLSWITCH_VERSION, true);
 
 // Supported language codes — must stay in sync with SupportedLanguage in engine/i18n.ts.
 const SUPPORTED_LANGS = ['en','es','fr','pt','ro','uk','ru','de','ja','ko','zh','ar','hi','it','pl','he','nl','vi','tl','tr','id','bg'];

@@ -1,6 +1,7 @@
 import { WordFreqEntry, PredictionConfig } from '@/types';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { getStemmer, type Stemmer } from '@/engine/stemmers';
+import { normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts } from '@/engine/predictionSpellings';
 
 const DEFAULT_CONFIG: PredictionConfig = {
   bigramWeight: 0.5,
@@ -65,7 +66,7 @@ const TUNING = {
   completeWordCount: 100,
 } as const;
 
-import { AGE_BLOCKED_WORDS } from '@/engine/ageBlocklist';
+import { isAgeBlocked } from '@/engine/ageBlocklist';
 
 
 type Scores = { bigram: number; trigram: number; freq: number; recency: number; prefix: number };
@@ -93,10 +94,13 @@ export function isConfidentCompleteWord(
   wordFreq: Record<string, WordFreqEntry>,
   lang = 'en',
 ): boolean {
-  const word = value.toLowerCase().trim();
+  const word = predictionWordKey(value.trim(), lang);
   if (!word) return false;
   const artifacts = ARTIFACTS_BY_LANG[lang] ?? new Set<string>();
-  return !artifacts.has(word) && (wordFreq[word]?.count ?? 0) >= TUNING.completeWordCount;
+  if (artifacts.has(word)) return false;
+  if ((wordFreq[word]?.count ?? 0) >= TUNING.completeWordCount) return true;
+  return Object.entries(wordFreq).some(([key, entry]) =>
+    entry.count >= TUNING.completeWordCount && predictionWordKey(key, lang) === word);
 }
 
 export function mergeUserNgramsWithBoost(
@@ -230,11 +234,10 @@ export function getPredictions(
   // bar fell back to raw corpus frequency ("I / To / A / You / The"). AAC
   // utterances are short and punctuated, so this fired constantly.
   //
-  // Only the CONTEXT tokens are normalized. The partial word the user is
-  // currently typing keeps its raw form, because prefix matching must compare
-  // against exactly what they typed.
+  // Matching normalizes keyboard spelling; candidate text and stored dictionaries
+  // retain their words. Combining marks are part of a word, including its end.
   const rawWords = currentText.trim().split(/\s+/).filter(Boolean);
-  const bare = (w: string) => w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}'-]+$/gu, '');
+  const bare = (w: string) => normalizePredictionSpelling(predictionTokenParts(w).word, lang);
   const words = rawWords.map(bare).filter(Boolean);
   const lastWord = words.length > 0 ? words[words.length - 1] : '';
 
@@ -247,7 +250,7 @@ export function getPredictions(
   // "you", so we must predict the NEXT word rather than offer prefix
   // completions of a word they already closed ("your", "young").
   const rawLast = rawWords.length > 0 ? rawWords[rawWords.length - 1] : '';
-  const closedByPunctuation = /[^\p{L}\p{N}'-]$/u.test(rawLast);
+  const closedByPunctuation = /[^\p{L}\p{M}\p{N}'-]$/u.test(rawLast);
   const partialWord = currentText.endsWith(' ') || closedByPunctuation ? '' : lastWord;
   const isMidWord = !!partialWord;
   const ctxLastIdx = isMidWord ? words.length - 2 : words.length - 1;
@@ -265,6 +268,10 @@ export function getPredictions(
   const candidateMap = new Map<string, Scores>();
   const getOrCreate = (w: string) =>
     candidateMap.get(w) ?? (() => { const s: Scores = { bigram: 0, trigram: 0, freq: 0, recency: 0, prefix: 0 }; candidateMap.set(w, s); return s; })();
+  const boost = (word: string, part: keyof Scores, value: number) => {
+    const scores = getOrCreate(word);
+    scores[part] = Math.max(scores[part], value);
+  };
 
   // (1) Predict NEXT WORD — works whether the user is mid-word or just hit
   // space. When mid-word the partial is treated optimistically as "almost a
@@ -273,23 +280,23 @@ export function getPredictions(
   if (trigrams && prevWord && lastWord) {
     const triKey = prevWord + '|' + lastWord + '|';
     const triEntries = Object.entries(trigrams)
-      .filter(([k]) => k.startsWith(triKey))
+      .filter(([k]) => matchesPredictionContext(k, triKey, lang))
       .sort((a, b) => b[1].count - a[1].count)
       .slice(0, TUNING.trigramPoolSize);
     const maxTri = triEntries.length > 0 ? triEntries[0][1].count : 1;
     for (const [key, val] of triEntries) {
       const word3 = key.split('|')[2];
-      getOrCreate(word3).trigram = val.count / maxTri;
+      boost(word3, 'trigram', val.count / maxTri);
     }
   }
   if (lastWord) {
     const bigramEntries = Object.entries(bigrams)
-      .filter(([k]) => k.startsWith(lastWord + '|'))
+      .filter(([k]) => matchesPredictionContext(k, lastWord + '|', lang))
       .sort((a, b) => b[1].count - a[1].count)
       .slice(0, TUNING.bigramPoolSize);
     const maxBigram = bigramEntries.length > 0 ? bigramEntries[0][1].count : 1;
     for (const [key, val] of bigramEntries) {
-      getOrCreate(key.split('|')[1]).bigram = val.count / maxBigram;
+      boost(key.split('|')[1], 'bigram', val.count / maxBigram);
     }
   }
 
@@ -302,7 +309,7 @@ export function getPredictions(
   if (isMidWord && ctxLast) {
     const partialPrefix = ctxLast + '|' + partialWord;
     const bigramEntries = Object.entries(bigrams)
-      .filter(([k]) => k.startsWith(partialPrefix))
+      .filter(([k]) => matchesPredictionContext(k, partialPrefix, lang))
       .sort((a, b) => b[1].count - a[1].count)
       .slice(0, TUNING.bigramPoolSize);
     const maxBigram = bigramEntries.length > 0 ? bigramEntries[0][1].count : 1;
@@ -316,7 +323,7 @@ export function getPredictions(
   if (isMidWord && trigrams && ctxPrev && ctxLast) {
     const partialPrefix = ctxPrev + '|' + ctxLast + '|' + partialWord;
     const triEntries = Object.entries(trigrams)
-      .filter(([k]) => k.startsWith(partialPrefix))
+      .filter(([k]) => matchesPredictionContext(k, partialPrefix, lang))
       .sort((a, b) => b[1].count - a[1].count)
       .slice(0, TUNING.trigramPoolSize);
     const maxTri = triEntries.length > 0 ? triEntries[0][1].count : 1;
@@ -341,7 +348,7 @@ export function getPredictions(
   if (partialWord && partialWord.length >= 1) {
     const prefixCands: Array<{ word: string; count: number }> = [];
     for (const word of Object.keys(wordFreq)) {
-      if (word.startsWith(partialWord) && word !== partialWord) {
+      if (matchesPredictionPrefix(word, partialWord, lang) && predictionWordKey(word, lang) !== predictionWordKey(partialWord, lang)) {
         prefixCands.push({ word, count: wordFreq[word].count });
       }
     }
@@ -353,7 +360,7 @@ export function getPredictions(
     const topPrefix = prefixCands.slice(0, poolSize);
     const maxPrefix = topPrefix.length > 0 ? topPrefix[0].count : 1;
     for (const { word, count } of topPrefix) {
-      getOrCreate(word).prefix = count / maxPrefix;
+      boost(word, 'prefix', count / maxPrefix);
     }
   }
 
@@ -363,7 +370,7 @@ export function getPredictions(
     .slice(0, TUNING.freqPoolSize);
   const maxFreq = freqEntries.length > 0 ? freqEntries[0][1].count : 1;
   for (const [word, val] of freqEntries) {
-    getOrCreate(word).freq = val.count / maxFreq;
+    boost(word, 'freq', val.count / maxFreq);
   }
 
   // Recency
@@ -374,7 +381,7 @@ export function getPredictions(
     .slice(0, TUNING.recencyPoolSize);
   const maxRecent = recentEntries.length > 0 ? recentEntries[0][1].count : 1;
   for (const [word, val] of recentEntries) {
-    getOrCreate(word).recency = val.count / maxRecent;
+    boost(word, 'recency', val.count / maxRecent);
   }
 
   // Weighted scoring — trigram > prefix > bigram > freq > recency
@@ -401,6 +408,7 @@ export function getPredictions(
   const effectivePrefixWeight = partialIsCompleteWord ? prefixWeight * 0.5 : prefixWeight;
 
   const artifacts = ARTIFACTS_BY_LANG[lang ?? 'en'] ?? new Set<string>();
+  const seenSpellings = new Set<string>();
 
   // Build the score-ranked candidate list. Each candidate carries its raw
   // score components so the filter can distinguish "this matches because
@@ -413,10 +421,10 @@ export function getPredictions(
       hasContext: s.bigram > 0 || s.trigram > 0,
     }))
     .filter((c) => {
-      const lc = c.word.toLowerCase();
-      if (AGE_BLOCKED_WORDS.has(lc)) return false;
+      const lc = normalizePredictionSpelling(c.word, lang);
+      if (isAgeBlocked(lc, lang)) return false;
       if (artifacts.has(lc)) return false;
-      if (lc === lastWord || lc === partialWord) return false;
+      if (predictionWordKey(lc, lang) === predictionWordKey(lastWord, lang) || predictionWordKey(lc, lang) === predictionWordKey(partialWord, lang)) return false;
       // Mid-typing rule: surface candidates that complete the partial word.
       // EXCEPTION — if (a) the partial is itself a confidently complete
       // word AND (b) the candidate carries bigram/trigram score, it's a
@@ -424,14 +432,21 @@ export function getPredictions(
       // surfaces via "to|be" bigram alongside "together"/"top". Without
       // this exception, AAC users typing common short words only see
       // prefix completions, never useful next-word continuations.
-      if (partialWord && !lc.startsWith(partialWord) && !(c.hasContext && partialIsCompleteWord)) return false;
+      if (partialWord && !matchesPredictionPrefix(lc, partialWord, lang) && !(c.hasContext && partialIsCompleteWord)) return false;
       // Drop wrong-script words. Necessary because the store's initial
       // wordFreq state seeds with English DEFAULT_PHRASES, which leak into
       // non-English sessions (e.g. "I" appearing for a Russian user).
       if (scriptFilter && !scriptFilter.test(lc)) return false;
       return true;
     })
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => b.total - a.total)
+    .filter(candidate => {
+      const key = predictionWordKey(candidate.word, lang);
+      if (seenSpellings.has(key)) return false;
+      seenSpellings.add(key);
+      return true;
+    })
+    .map(candidate => ({ ...candidate, word: preferredPredictionSpelling(candidate.word, lang) }));
 
   // Stem-diversity filter — when many prefix matches are inflected forms of
   // the same lemma (e.g. ru "думать/думал/думала/думают" stem to "дума";
@@ -452,13 +467,14 @@ export function getPredictions(
   const groupKey = (w: string): string | null => {
     if (!partialWord) return null;
     if (stemmer) {
-      const stem = stemmer(w.toLowerCase());
+      const normalized = normalizePredictionSpelling(w, lang);
+      const stem = stemmer(normalized);
       // Never produce a key shorter than the user-typed prefix — otherwise
       // a stem like "ду" would collapse all ду* words into one bucket and
       // the user couldn't see alternative continuations they're aiming at.
-      return stem.length >= partialWord.length ? stem : w.toLowerCase().slice(0, partialWord.length + 1);
+      return stem.length >= partialWord.length ? stem : normalized.slice(0, partialWord.length + 1);
     }
-    return w.toLowerCase().slice(0, partialWord.length + 1);
+    return normalizePredictionSpelling(w, lang).slice(0, partialWord.length + 1);
   };
   // Cap forms per stem at MAX_PER_STEM. Strict 1-per-stem was too
   // aggressive for noun declensions where different forms ARE different
@@ -486,7 +502,7 @@ export function getPredictions(
       if (
         partialIsCompleteWord
         && !c.hasContext
-        && c.word.toLowerCase().startsWith(partialWord)
+        && matchesPredictionPrefix(c.word, partialWord, lang)
       ) {
         if (barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE) continue;
         barePrefixTaken++;
@@ -516,7 +532,7 @@ export function getPredictions(
         partialWord
         && partialIsCompleteWord
         && !c.hasContext
-        && c.word.toLowerCase().startsWith(partialWord)
+        && matchesPredictionPrefix(c.word, partialWord, lang)
       ) continue;
       taken.push(c);
     }
@@ -528,16 +544,19 @@ export function getPredictions(
       // Always-capitalized words (e.g. English "I") win regardless of position.
       if (alwaysCapitalized.has(lower)) return lower.charAt(0).toUpperCase() + lower.slice(1);
       // Capitalize first word of sentence; otherwise keep the user-typed lowercase.
-      if (isSentenceStart) return c.word.charAt(0).toUpperCase() + c.word.slice(1);
+      if (isSentenceStart) {
+        const initial = lang === 'tr' ? c.word.charAt(0).toLocaleUpperCase('tr') : c.word.charAt(0).toUpperCase();
+        return initial + c.word.slice(1);
+      }
       return c.word;
     });
 
   if (scored.length < config.maxResults) {
-    const existing = new Set(scored.map((s) => s.toLowerCase()));
+    const existing = new Set(scored.map((s) => predictionWordKey(s, lang)));
     for (const d of fallback) {
-      if (!existing.has(d.toLowerCase()) && scored.length < config.maxResults) {
-        scored.push(d);
-        existing.add(d.toLowerCase());
+      if (!existing.has(predictionWordKey(d, lang)) && scored.length < config.maxResults) {
+        scored.push(preferredPredictionSpelling(d, lang));
+        existing.add(predictionWordKey(d, lang));
       }
     }
   }
@@ -561,9 +580,11 @@ function evictLRU(dict: Record<string, WordFreqEntry>, maxSize: number): Record<
 export function recordWord(
   wordFreq: Record<string, WordFreqEntry>,
   word: string,
+  lang = 'en',
 ): Record<string, WordFreqEntry> {
   if (!word || word.length > 200) return wordFreq;
-  const key = word.toLowerCase();
+  const key = predictionWordKey(predictionTokenParts(word).word, lang);
+  if (!key) return wordFreq;
   const existing = wordFreq[key];
   const updated = { ...wordFreq, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
   return evictLRU(updated, TUNING.maxWords);
@@ -573,8 +594,11 @@ export function recordBigram(
   bigrams: Record<string, WordFreqEntry>,
   word1: string,
   word2: string,
+  lang = 'en',
 ): Record<string, WordFreqEntry> {
-  const key = `${word1.toLowerCase()}|${word2.toLowerCase()}`;
+  const parts = [word1, word2].map(word => predictionWordKey(predictionTokenParts(word).word, lang));
+  if (parts.some(word => !word)) return bigrams;
+  const key = parts.join('|');
   const existing = bigrams[key];
   const updated = { ...bigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
   return evictLRU(updated, TUNING.maxBigrams);
@@ -585,8 +609,11 @@ export function recordTrigram(
   word1: string,
   word2: string,
   word3: string,
+  lang = 'en',
 ): Record<string, WordFreqEntry> {
-  const key = `${word1.toLowerCase()}|${word2.toLowerCase()}|${word3.toLowerCase()}`;
+  const parts = [word1, word2, word3].map(word => predictionWordKey(predictionTokenParts(word).word, lang));
+  if (parts.some(word => !word)) return trigrams;
+  const key = parts.join('|');
   const existing = trigrams[key];
   const updated = { ...trigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
   return evictLRU(updated, TUNING.maxTrigrams);
@@ -594,12 +621,13 @@ export function recordTrigram(
 
 export function buildNgramsFromPhrases(
   phrases: string[],
+  lang = 'en',
 ): { bigrams: Record<string, WordFreqEntry>; trigrams: Record<string, WordFreqEntry> } {
   const bigrams: Record<string, WordFreqEntry> = {};
   const trigrams: Record<string, WordFreqEntry> = {};
   const now = Date.now();
   for (const phrase of phrases) {
-    const words = phrase.toLowerCase().split(/\s+/).filter(Boolean);
+    const words = phrase.split(/\s+/).map(word => predictionWordKey(predictionTokenParts(word).word, lang)).filter(Boolean);
     for (let i = 0; i < words.length - 1; i++) {
       const biKey = `${words[i]}|${words[i + 1]}`;
       bigrams[biKey] = { count: (bigrams[biKey]?.count ?? 0) + 1, lastUsed: now };

@@ -50,6 +50,7 @@ vi.mock('@/services/aacSpeak', () => ({
 vi.mock('@/services/pictogramService', () => ({
   getPictogramUrl: vi.fn(async () => null),
   pictureModeForProfile: vi.fn(() => 'none'),
+  typedWordPicturesEnabled: vi.fn(() => false),
 }));
 
 vi.mock('@/lib/datadog', () => ({

@@ -129,6 +129,11 @@ describe('predictionStore — runDecay', () => {
 // ── ensureSeed ────────────────────────────────────────────────────────────────
 
 describe('predictionStore — ensureSeed', () => {
+  it('keeps Hindi vowel marks in the authored prediction seed', () => {
+    useSettingsStore.setState({language:'hi',outputLanguage:'hi'});
+    usePredictionStore.getState().ensureSeed();
+    expect(usePredictionStore.getState().wordFreq['कृपया']).toBeDefined();
+  });
   it('does not throw when called on an empty corpus', () => {
     expect(() => usePredictionStore.getState().ensureSeed()).not.toThrow();
   });

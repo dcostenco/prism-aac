@@ -98,20 +98,11 @@ async function goToLanguage(
   }
 }
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function expectLoadedImages(page: Page, tileSelector: string, minimum: number): Promise<void> {
   await expect.poll(async () => page.evaluate(({ selector }) => (
     [...document.querySelectorAll(selector)].filter((tile) => {
+      if (tile.getAttribute('data-picture') === 'text') return true;
       const image = tile.querySelector<HTMLImageElement>('img');
       if (!image || !image.complete || image.naturalWidth <= 0) return false;
       const rect = image.getBoundingClientRect();
@@ -242,7 +233,6 @@ async function endImeComposition(page: Page, committed: string, cancelled = fals
 test('prediction labels remain black on white in Dark mode', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'ipad-7-land', 'primary iPad Mini landscape acceptance');
   await installBootstrap(page);
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, (route) => route.abort());
   await goToLanguage(page, 'en', 'typing', 'dark');
   await expect(page.locator('.dark')).toHaveCount(1);
   await expectPredictionContract(page, 'en');
@@ -342,7 +332,6 @@ for (const { code: language } of LANG_META) {
   test(`${language} keeps one complete usable Typing surface`, async ({ page }, testInfo) => {
     test.skip(!IPAD_STAGE_PROJECTS.has(testInfo.project.name), 'first-stage iPad acceptance matrix');
     await installBootstrap(page);
-    await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, (route) => route.abort());
     const pageErrors: string[] = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
 
@@ -354,7 +343,6 @@ for (const { code: language } of LANG_META) {
 test('Hong Kong picker names the shipped written corpus accurately', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'ipad-7-land', 'primary iPad Mini landscape acceptance');
   await installBootstrap(page);
-  await proxyArasaacForLocalWebKit(page);
   await goToLanguage(page, 'en', 'typing');
   await expectLoadedImages(page, '[data-testid="prediction-tile"]', 3);
 
@@ -371,7 +359,6 @@ test('Hong Kong picker names the shipped written corpus accurately', async ({ pa
 test('iOS-style Chinese composition commits once and cancellation never leaks pinyin', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'ipad-7-land', 'primary iPad Mini landscape acceptance');
   await installBootstrap(page);
-  await proxyArasaacForLocalWebKit(page);
   await goToLanguage(page, 'zh-HK', 'typing');
   await expectLoadedImages(page, '[data-testid="prediction-tile"]', 3);
 
@@ -406,7 +393,6 @@ for (const language of VISUAL_LANGUAGES) {
   test(`${language} has inspected Typing and Picture mode evidence`, async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'ipad-7-land', 'primary iPad Mini landscape acceptance');
     test.setTimeout(60_000);
-    await proxyArasaacForLocalWebKit(page);
     await installBootstrap(page);
     const pageErrors: string[] = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -441,12 +427,6 @@ for (const language of VISUAL_LANGUAGES) {
     await expectUnobscuredLabels(page, '[data-testid="phrase-tile-label"]', 4);
     await safeArtifact(page, `${language}-picture-${testInfo.project.name}`);
 
-    // The lazy pictogram loader can leave off-screen ARASAAC searches in
-    // flight after the visible acceptance images are complete. Detach the
-    // test-only CORS proxy before Playwright closes the context so those
-    // irrelevant requests cannot turn a visually complete case into a
-    // teardown failure.
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
     expect(pageErrors, `uncaught page errors: ${pageErrors.join(' | ')}`).toEqual([]);
   });
 }

@@ -47,6 +47,7 @@ import { registerConnectivityListener } from '@/services/emergencyService';
 import { recordFirstUse, checkDaysUsedReview } from '@/services/reviewPromptService';
 import { useT } from '@/engine/useT';
 import { getAacDeviceClass } from '@/lib/aacDeviceClass';
+import { watchPicturePack } from '@/services/bundledPicturePack';
 
 const PROVIDER_LABEL: Record<string, string> = {
   'google-gmail': 'Gmail',
@@ -180,6 +181,7 @@ const PANELS_WITHOUT_QWERTY = new Set([
 ]);
 
 export default function PrismApp() {
+  useEffect(() => watchPicturePack(), []);
   const runDecay = usePredictionStore((s) => s.runDecay);
   const ensureSeed = usePredictionStore((s) => s.ensureSeed);
   useVisionContext();
@@ -274,10 +276,10 @@ export default function PrismApp() {
     import('@/services/aiService').then(m => m.autoSideload?.()).catch(() => {});
     // HRR contextual memory — 229KB WASM, loads lazily
     import('@/services/hrrContext').then(m => m.initAacHrr()).catch(() => {});
-    // Pictograms load and persist on demand. Do not pre-cache the full
-    // 1,500+ phrase corpus on every mount: that creates hundreds of immediate
-    // ARASAAC requests, duplicate work on reload, and avoidable memory/network
-    // pressure before the AAC user has selected a category.
+    // Built-in symbols ship with the app and the service worker precaches
+    // them; generated pictures load on demand. Pictograms cached by earlier
+    // versions are no longer shown, so free that space once.
+    import('@/services/pictogramService').then(m => m.clearLegacyPictogramCache()).catch(() => {});
     const unregisterPanic = registerPanicListeners();
     const cleanupConnectivity = registerConnectivityListener();
     // Drain incoming caregiver/contact messages onto the schedule. The

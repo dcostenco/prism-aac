@@ -5,8 +5,8 @@
  * open/close, phrase click calls appendText + learnWord + recordPhraseUse,
  * category detail render, back-button navigation.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import CategoryPanel from '@/components/CategoryPanel';
 
@@ -31,10 +31,11 @@ const mocks = vi.hoisted(() => {
   const aacSpeakMock            = vi.fn();
   const speakWordMock           = vi.fn();
 
-  type Phrase = { id: string; text: string };
+  type Phrase = { id: string; text: string; isCustom?: boolean };
   type Category = {
     id: string; name: string; nameKey?: string; icon: string;
     parentId?: string | null;
+    isCustom?: boolean;
     phrases?: Phrase[];
   };
 
@@ -183,8 +184,8 @@ vi.mock('@/engine/useT', () => ({
 }));
 
 vi.mock('@/components/PhraseTile', () => ({
-  default: ({ phrase, onClick }: { phrase: string; onClick: () => void }) => (
-    <button onClick={onClick} data-testid="phrase-tile">{phrase}</button>
+  default: ({ phrase, onClick, builtInPhraseId }: { phrase: string; onClick: () => void; builtInPhraseId?: string }) => (
+    <button onClick={onClick} data-testid="phrase-tile" data-built-in-phrase-id={builtInPhraseId ?? ''}>{phrase}</button>
   ),
 }));
 
@@ -607,6 +608,118 @@ describe('CategoryPanel — search', () => {
     expect(screen.getByRole('textbox', { name: /search all vocabulary/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '✕' }));
     expect(screen.queryByRole('textbox', { name: /search all vocabulary/i })).toBeNull();
+  });
+});
+
+// ── bundled symbols: built-in vs custom phrases ───────────────────────────────
+
+describe('CategoryPanel — symbols for built-in phrases', () => {
+  // A built-in phrase shows the symbol approved for its meaning; a custom
+  // phrase never borrows one, even when its text looks like a built-in word.
+  beforeEach(() => {
+    mocks.mockPhrases.push(
+      { id: 'ac-buckle', text: 'Buckle', isCustom: false },
+      { id: 'custom-7f3a', text: 'Buckle up tight', isCustom: true },
+    );
+  });
+  afterEach(() => { mocks.mockPhrases.splice(3); });
+
+  it('hands the board tile the built-in id, and no id for a custom phrase', () => {
+    mocks.uiState.sidePanel = 'category-detail';
+    mocks.uiState.activeCategoryId = 'quick-talk';
+    render(<CategoryPanel />);
+    const tile = (text: string) => screen.getAllByTestId('phrase-tile').find((t) => t.textContent === text)!;
+    expect(tile('Buckle')).toHaveAttribute('data-built-in-phrase-id', 'ac-buckle');
+    expect(tile('Buckle up tight')).toHaveAttribute('data-built-in-phrase-id', '');
+  });
+
+  it('does the same on the Home board', () => {
+    mocks.uiState.sidePanel = 'none';
+    render(<CategoryPanel />);
+    const tile = (text: string) => screen.getAllByTestId('phrase-tile').find((t) => t.textContent === text)!;
+    expect(tile('Buckle')).toHaveAttribute('data-built-in-phrase-id', 'ac-buckle');
+    expect(tile('Buckle up tight')).toHaveAttribute('data-built-in-phrase-id', '');
+  });
+
+  it('shows the bundled symbol in search results for a built-in phrase only', async () => {
+    render(<CategoryPanel />);
+    fireEvent.click(screen.getByRole('button', { name: /search/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /search all vocabulary/i }), { target: { value: 'buckle' } });
+    const result = (text: string) => screen.getAllByText(text)[0].closest('button')!;
+    await waitFor(() => expect(result('Buckle')).toBeInTheDocument());
+    expect(result('Buckle').querySelector('img')).toHaveAttribute('src', '/prism-aac/symbols/ac-buckle.png');
+    // Free plan (no profile): a custom phrase gets no picture at all.
+    expect(result('Buckle up tight').querySelector('img')).toBeNull();
+  });
+
+  it('on a paid plan, never asks to generate a search picture for a phrase listed in the board language', async () => {
+    // Search pictures are requested in English; Swahili "tako" (buttock) is listed only in Swahili.
+    const { useAuthStore } = await import('@/store/authStore');
+    const generated = vi.fn(async () => new Response(new ArrayBuffer(8), { status: 200, headers: { 'Content-Type': 'image/png' } }));
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      String(input).includes('/prism-aac/pictogram') ? generated() : new Response('', { status: 404 })));
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: () => 'blob:search' });
+    mocks.settingsState.language = 'sw';
+    mocks.mockPhrases.push({ id: 'custom-tako', text: 'tako', isCustom: true }, { id: 'custom-mbwa', text: 'mbwa', isCustom: true });
+    useAuthStore.setState({ profile: { plan: 'pro' } as never });
+    try {
+      render(<CategoryPanel />);
+      fireEvent.click(screen.getByRole('button', { name: /search/i }));
+      const input = screen.getByRole('textbox', { name: /search all vocabulary/i });
+      fireEvent.change(input, { target: { value: 'tako' } });
+      await waitFor(() => expect(screen.getAllByText('tako').length).toBeGreaterThan(0));
+      await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+      expect(generated).not.toHaveBeenCalled();
+      // a clean phrase in the same language still gets its generated picture
+      fireEvent.change(input, { target: { value: 'mbwa' } });
+      await waitFor(() => expect(generated).toHaveBeenCalled());
+    } finally {
+      useAuthStore.setState({ profile: null });
+      mocks.settingsState.language = 'en';
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('CategoryPanel — symbols for categories', () => {
+  // Built-in categories show their Prism AAC symbol, in the same style as the
+  // phrase tiles; a category the user made keeps the emoji they picked, even
+  // when a synced copy carries a built-in id.
+  beforeEach(() => {
+    mocks.uiState.sidePanel = 'none';
+    mocks.mockCategories.push(
+      { id: 'custom-cat-1', name: 'My stuff', icon: '⭐', parentId: null, isCustom: true },
+      { id: 'animals', name: 'My animals', icon: '🐸', parentId: null, isCustom: true },
+    );
+  });
+  afterEach(() => { mocks.mockCategories.splice(2); });
+
+  const tab = (name: string) => screen.getAllByTestId('category-tile').find((t) => t.textContent?.includes(name))!;
+
+  it('shows the bundled symbol on a built-in category tab', () => {
+    render(<CategoryPanel />);
+    const icon = tab('Feelings').querySelector('[data-category-picture]')!;
+    expect(icon).toHaveAttribute('data-category-picture', 'symbol');
+    expect(icon.querySelector('img')).toHaveAttribute('src', '/prism-aac/symbols/cat-feelings.png');
+    expect(tab('Feelings')).not.toHaveTextContent('😊');
+  });
+
+  it("keeps a user-made category's emoji, even with a built-in id", () => {
+    render(<CategoryPanel />);
+    for (const [name, emoji] of [['My stuff', '⭐'], ['My animals', '🐸']]) {
+      const icon = tab(name).querySelector('[data-category-picture]')!;
+      expect(icon).toHaveAttribute('data-category-picture', 'emoji');
+      expect(icon).toHaveTextContent(emoji);
+      expect(icon.querySelector('img')).toBeNull();
+    }
+  });
+
+  it('falls back to the emoji when the picture fails to load', () => {
+    render(<CategoryPanel />);
+    fireEvent.error(tab('Feelings').querySelector('img')!);
+    const icon = tab('Feelings').querySelector('[data-category-picture]')!;
+    expect(icon).toHaveAttribute('data-category-picture', 'emoji');
+    expect(icon).toHaveTextContent('😊');
   });
 });
 

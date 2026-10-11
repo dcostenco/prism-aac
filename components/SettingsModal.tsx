@@ -19,6 +19,9 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 import { tapFeedback } from '@/services/feedback';
 import HeadTrackingSettings from './HeadTrackingSettings';
 import LocalAISettings from './LocalAISettings';
+import { SYMBOL_BASE_PATH } from '@/lib/pictogramSources';
+import { APPLE_STANDARD_EULA_URL } from '@/lib/appPaths';
+import TermsLink from '@/components/TermsLink';
 import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
 import ToolbarCustomization from './ToolbarCustomization';
@@ -695,6 +698,10 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
                 </a>
                 <p className="text-dim text-xs mt-2">{t(!isNativeiOS() && process.env.NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE === '1'
                   ? 'web_signin_free_account' : 'core_aac_no_account')}</p>
+                <p className="text-xs text-muted" data-testid="aac-guest-legal-links">
+                  <TermsLink className="underline">{t('cloud_terms')}</TermsLink>
+                  {' · '}<a href={APPLE_STANDARD_EULA_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">{t('cloud_terms')} (Apple)</a>
+                </p>
               </div>
             )}
           </Section>
@@ -749,6 +756,16 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
               <a href="https://www.asha.org/practice-portal/professional-issues/augmentative-and-alternative-communication/" target="_blank" rel="noopener" className="block text-[#2563eb] text-sm hover:underline">ASHA — AAC Practice Portal</a>
               <a href="https://aac-rerc.psu.edu/" target="_blank" rel="noopener" className="block text-[#2563eb] text-sm hover:underline">AAC-RERC — Research Center</a>
               <a href="https://praacticalaac.org/" target="_blank" rel="noopener" className="block text-[#2563eb] text-sm hover:underline">PrAACtical AAC — Resources</a>
+            </div>
+          </Section>
+
+          <Section icon="🖼️" title="Symbol credits">
+            <div className="space-y-2 text-sm text-primary" data-testid="symbol-credits">
+              <p>
+                The picture symbols on built-in phrases and categories were drawn for Prism AAC, in one style for
+                every tile, and are part of the app.{' '}
+                <a href={`${SYMBOL_BASE_PATH}ATTRIBUTION.txt`} target="_blank" rel="noopener" className="text-[#2563eb] hover:underline">About the symbols</a>
+              </p>
             </div>
           </Section>
 

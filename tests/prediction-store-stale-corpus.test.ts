@@ -24,6 +24,7 @@ vi.mock('@/constants/predictionSeeds', () => ({
 
 const { useSettingsStore } = await import('@/store/settingsStore');
 const { usePredictionStore } = await import('@/store/predictionStore');
+const { useMessageStore } = await import('@/store/messageStore');
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -67,5 +68,19 @@ describe('predictionStore lazy corpus latest-language guard', () => {
     expect(usePredictionStore.getState().personalizationLanguage).toBe('ro');
     expect(usePredictionStore.getState().predictions).toEqual(romanianPredictions);
     expect(localStorage.getItem(englishStorageKey)).toBe(englishBeforeStaleResolve);
+  });
+
+  it('keeps the latest prefix instead of resetting to default words after an import', async () => {
+    useSettingsStore.setState({ language: 'de', outputLanguage: 'de' });
+    useMessageStore.setState({ text: 'wa' });
+    usePredictionStore.getState().updatePredictions('wa', 'de');
+    expect(seedMocks.resolvers.has('de')).toBe(true);
+    // The message can change while the import is pending.
+    useMessageStore.setState({ text: 'wass' });
+    seedMocks.resolvers.get('de')?.({ wordFreq: {}, bigrams: {}, trigrams: {} });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(usePredictionStore.getState().predictions).toContain('wasser');
+    expect(useMessageStore.getState().text).toBe('wass');
   });
 });

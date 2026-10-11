@@ -26,16 +26,6 @@ const PHONE_PROJECTS = new Set([
   'iphone-6.9-land',
 ]);
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function safeScreenshot(page: Page, fileName: string): Promise<void> {
   await expect(page.locator('nextjs-portal')).toHaveCount(0);
@@ -50,6 +40,7 @@ async function expectVisiblePictograms(page: Page, includePredictions: boolean):
     const firstLoaded = (selector: string, count: number) => [...document.querySelectorAll<HTMLElement>(selector)]
       .slice(0, count)
       .every((tile) => {
+        if (tile.dataset.picture === 'text') return true;
         const image = tile.querySelector<HTMLImageElement>('img');
         if (!image?.complete || image.naturalWidth <= 0 || image.naturalHeight <= 0) return false;
         const rect = image.getBoundingClientRect();
@@ -62,7 +53,6 @@ async function expectVisiblePictograms(page: Page, includePredictions: boolean):
 
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(!PHONE_PROJECTS.has(testInfo.project.name), 'iPhone picture-mode matrix only');
-  await proxyArasaacForLocalWebKit(page);
   await page.addInitScript(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -175,7 +165,14 @@ test('fits four full-width picture targets with reachable navigation and readabl
       }).length,
       phraseLabelColors: phraseLabels.slice(0, 4).map((label) => getComputedStyle(label).color),
       categoryLabelColors: categoryLabels.slice(0, 4).map((label) => getComputedStyle(label).color),
-      phraseLabelFonts: phraseLabels.slice(0, 4).map((label) => Number.parseFloat(getComputedStyle(label).fontSize)),
+      // Captions under a picture, and text tiles (no picture: the word alone,
+      // 1.35x larger by design), are measured separately.
+      phraseLabelFonts: phraseLabels.slice(0, 4)
+        .filter((label) => label.closest('[data-picture]')?.getAttribute('data-picture') !== 'text')
+        .map((label) => Number.parseFloat(getComputedStyle(label).fontSize)),
+      textTileLabelFonts: phraseLabels.slice(0, 4)
+        .filter((label) => label.closest('[data-picture]')?.getAttribute('data-picture') === 'text')
+        .map((label) => Number.parseFloat(getComputedStyle(label).fontSize)),
       categoryLabelFonts: categoryLabels.slice(0, 4).map((label) => Number.parseFloat(getComputedStyle(label).fontSize)),
       splitShortWords: phraseLabels.slice(0, 12).flatMap((label) => {
         const text = label.textContent?.trim() ?? '';
@@ -240,6 +237,9 @@ test('fits four full-width picture targets with reachable navigation and readabl
   expect(metrics.categoryLabelColors.every((color) => color === 'rgb(0, 0, 0)')).toBe(true);
   expect(Math.min(...metrics.phraseLabelFonts)).toBeGreaterThanOrEqual(isLandscape ? 16 : 18);
   expect(Math.max(...metrics.phraseLabelFonts)).toBeLessThanOrEqual(22);
+  expect(metrics.textTileLabelFonts.length).toBeGreaterThan(0);
+  expect(Math.min(...metrics.textTileLabelFonts)).toBeGreaterThanOrEqual(isLandscape ? 16 : 18);
+  expect(Math.max(...metrics.textTileLabelFonts)).toBeLessThanOrEqual(30);
   expect(Math.min(...metrics.categoryLabelFonts)).toBeGreaterThanOrEqual(14);
   expect(Math.max(...metrics.categoryLabelFonts)).toBeLessThanOrEqual(20);
   expect(metrics.splitShortWords).toEqual([]);

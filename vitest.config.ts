@@ -10,7 +10,8 @@ export default defineConfig({
     // Playwright owns e2e/. vitest accidentally picks up *.spec.ts files
     // there and fails because Playwright's `test` global isn't defined
     // under vitest. Explicit exclude so the suite stays green.
-    exclude: ['**/node_modules/**', 'e2e/**'],
+    // Native picture installer tests use Node's test runner (test:native-pictures).
+    exclude: ['**/node_modules/**', 'e2e/**', 'scripts/__tests__/*.test.mjs'],
     /**
      * Cap the worker pool.
      *

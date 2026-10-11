@@ -1,0 +1,164 @@
+[
+  {
+    "lang": "en",
+    "word": "More",
+    "id": "cw-more",
+    "file": "cw-more.png"
+  },
+  {
+    "lang": "am",
+    "word": "ነው",
+    "id": "cw-is",
+    "file": "cw-is.png"
+  },
+  {
+    "lang": "ar",
+    "word": "هو",
+    "id": "cw-he",
+    "file": "cw-he.png"
+  },
+  {
+    "lang": "bg",
+    "word": "не",
+    "id": "cw-not",
+    "file": "cw-not.png"
+  },
+  {
+    "lang": "bn",
+    "word": "আমার",
+    "id": "cw-my",
+    "file": "cw-my.png"
+  },
+  {
+    "lang": "de",
+    "word": "gehen",
+    "id": "cw-go-core",
+    "file": "cw-go-core.png"
+  },
+  {
+    "lang": "es",
+    "word": "es",
+    "id": "cw-is",
+    "file": "cw-is.png"
+  },
+  {
+    "lang": "fr",
+    "word": "de",
+    "id": "cw-of",
+    "file": "cw-of.png"
+  },
+  {
+    "lang": "he",
+    "word": "עכשיו",
+    "id": "ti-now",
+    "file": "ti-now.png"
+  },
+  {
+    "lang": "hi",
+    "word": "है",
+    "id": "cw-is",
+    "file": "cw-is.png"
+  },
+  {
+    "lang": "id",
+    "word": "saya",
+    "id": "cw-i",
+    "file": "cw-i.png"
+  },
+  {
+    "lang": "it",
+    "word": "è",
+    "id": "cw-is",
+    "file": "cw-is.png"
+  },
+  {
+    "lang": "ja",
+    "word": "いい",
+    "id": "dw-good",
+    "file": "dw-good.png"
+  },
+  {
+    "lang": "ko",
+    "word": "아파요",
+    "id": "help-hurts",
+    "file": "help-hurts.png"
+  },
+  {
+    "lang": "nl",
+    "word": "voor",
+    "id": "cw-for",
+    "file": "cw-for.png"
+  },
+  {
+    "lang": "pl",
+    "word": "na",
+    "id": "cw-on",
+    "file": "cw-on.png"
+  },
+  {
+    "lang": "pt",
+    "word": "de",
+    "id": "cw-of",
+    "file": "cw-of.png"
+  },
+  {
+    "lang": "ro",
+    "word": "la",
+    "id": "cw-to",
+    "file": "cw-to.png"
+  },
+  {
+    "lang": "ru",
+    "word": "пожалуйста",
+    "id": "qt-please",
+    "file": "qt-please.png"
+  },
+  {
+    "lang": "sw",
+    "word": "sana",
+    "id": "cw-very",
+    "file": "cw-very.png"
+  },
+  {
+    "lang": "tl",
+    "word": "sa",
+    "id": "cw-to",
+    "file": "cw-to.png"
+  },
+  {
+    "lang": "tr",
+    "word": "çok",
+    "id": "cw-very",
+    "file": "cw-very.png"
+  },
+  {
+    "lang": "uk",
+    "word": "з",
+    "id": "cw-with",
+    "file": "cw-with.png"
+  },
+  {
+    "lang": "vi",
+    "word": "tôi",
+    "id": "cw-i",
+    "file": "cw-i.png"
+  },
+  {
+    "lang": "zh-HK",
+    "word": "我",
+    "id": "cw-i",
+    "file": "cw-i.png"
+  },
+  {
+    "lang": "zh-Hans",
+    "word": "我",
+    "id": "cw-i",
+    "file": "cw-i.png"
+  },
+  {
+    "lang": "zh-Hant",
+    "word": "我",
+    "id": "cw-i",
+    "file": "cw-i.png"
+  }
+]

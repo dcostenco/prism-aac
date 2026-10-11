@@ -4,6 +4,8 @@
  * get_summary() looks up the stored summary for a key.
  */
 
+export default async function initHrr() { return {}; }
+
 export class HrrHologram {
     dim: number;
     private concepts: Map<string, string>;

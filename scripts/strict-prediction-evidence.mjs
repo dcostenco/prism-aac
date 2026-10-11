@@ -90,7 +90,7 @@ for (const target of targets) {
         }
         ttsRequests.push({ url, method: request.method(), body });
       }
-      if (/arasaac|pictogram/i.test(url)) pictogramRequests.push(url);
+      if (/\/symbols\/|pictogram/i.test(url)) pictogramRequests.push(url);
     });
     page.on('response', (response) => {
       if (response.status() >= 500) {
@@ -340,7 +340,7 @@ for (const target of targets) {
     const criticalRequestFailures = requestFailures.filter(
       ({ url, resourceType }) =>
         new URL(url).origin === new URL(target).origin &&
-        !/arasaac|pictogram/i.test(url) &&
+        !/\/symbols\/|pictogram/i.test(url) &&
         ['document', 'script', 'stylesheet', 'xhr', 'fetch'].includes(
           resourceType,
         ),

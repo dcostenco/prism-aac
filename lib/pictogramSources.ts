@@ -2,26 +2,26 @@
  * Where picture symbols come from, in one place.
  *
  * Two consumers read this and they must not drift apart:
- *   • services/pictogramService.ts builds its lookup URLs from it.
- *   • lib/datadog.ts redacts request paths on these hosts, because the search
- *     path carries the word the AAC user is composing.
+ *   • lib/builtInSymbols.ts builds symbol URLs from it.
+ *   • lib/datadog.ts redacts these request paths, because the file name names
+ *     the word on the tile — and prediction tiles follow what the AAC user is
+ *     composing.
  *
- * ARASAAC is licensed to us only while Prism AAC is free, and is expected to be
- * replaced. When it is, change `PICTOGRAM_SEARCH_API` / `PICTOGRAM_CDN` here and
- * add the successor's host to `PICTOGRAM_CONTENT_HOSTS` in the same commit —
- * otherwise the telemetry scrubber keeps redacting a host nobody calls while
- * the new one ships vocabulary to Datadog in cleartext.
+ * Built-in phrases and categories use the bundled Prism AAC symbols in
+ * the locally saved pack (see public/symbols/ATTRIBUTION.txt). Nothing is fetched from
+ * a third-party symbol service. Typed words on paid plans get a generated
+ * picture from the Synalux portal, whose request carries the word in the body,
+ * not the URL.
+ *
+ * If a new picture source ever puts vocabulary in a URL, add its path or host
+ * here in the same commit — otherwise the telemetry scrubber keeps redacting
+ * paths nobody calls while the new one ships vocabulary to Datadog in cleartext.
  */
+import { PRISM_AAC_BASE_PATH } from '@/lib/appPaths';
 
-export const PICTOGRAM_SEARCH_API = 'https://api.arasaac.org/v1';
+/** Stable symbol identities resolved to local pack bytes before rendering. */
+export const SYMBOL_BASE_PATH = `${PRISM_AAC_BASE_PATH}/symbols/`;
+export const PICTURE_PACK_API_PATH = '/api/v1/prism-aac/pictures/';
 
-export const PICTOGRAM_CDN = 'https://static.arasaac.org/pictograms';
-
-/**
- * Hosts whose request path embeds user vocabulary rather than an opaque id.
- * The CDN is deliberately absent — it is addressed by numeric pictogram id,
- * which carries no user text.
- */
-export const PICTOGRAM_CONTENT_HOSTS: readonly string[] = [
-  new URL(PICTOGRAM_SEARCH_API).hostname,
-];
+/** URL path prefixes whose remainder names AAC vocabulary. */
+export const PICTOGRAM_CONTENT_PATH_PREFIXES: readonly string[] = [SYMBOL_BASE_PATH];

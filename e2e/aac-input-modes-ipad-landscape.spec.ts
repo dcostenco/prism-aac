@@ -20,21 +20,12 @@ async function safeScreenshot(page: Page, fileName: string): Promise<void> {
   await page.screenshot({ path: path.join(outputDir, fileName), fullPage: false });
 }
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function expectVisiblePictograms(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => {
     const loadedCount = (tileSelector: string) => [...document.querySelectorAll(tileSelector)]
       .filter((tile) => {
+        if (tile.getAttribute('data-picture') === 'text') return true;
         const image = tile.querySelector<HTMLImageElement>('img');
         if (!image || !image.complete || image.naturalWidth <= 0) return false;
         const rect = image.getBoundingClientRect();
@@ -48,6 +39,7 @@ async function expectVisiblePictograms(page: Page): Promise<void> {
 async function expectVisiblePredictionPictograms(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => [...document.querySelectorAll('.aac-prediction-tile')]
     .filter((tile) => {
+      if (tile.getAttribute('data-picture') === 'text') return true;
       const image = tile.querySelector<HTMLImageElement>('img');
       if (!image || !image.complete || image.naturalWidth <= 0) return false;
       const rect = image.getBoundingClientRect();
@@ -70,6 +62,7 @@ async function expectVisiblePhrasePictograms(page: Page): Promise<void> {
       Math.abs(tile.getBoundingClientRect().top - firstRowTop) <= 2
     ));
     return firstRow.length >= 3 && firstRow.every((tile) => {
+      if (tile.getAttribute('data-picture') === 'text') return true;
       const image = tile.querySelector<HTMLImageElement>('img');
       if (!image || !image.complete || image.naturalWidth <= 0) return false;
       const rect = image.getBoundingClientRect();
@@ -144,7 +137,6 @@ async function expectVisibleTileLabelsSettled(page: Page): Promise<void> {
 
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'ipad-7-land', '1024x768 touch-tablet checkpoint');
-  await proxyArasaacForLocalWebKit(page);
   await page.addInitScript(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -202,14 +194,16 @@ test('switches between complete Typing and Picture surfaces without losing predi
   await expect(predictionCards).toHaveCount(5);
   await expect(phraseCards.first()).toBeVisible();
 
+  // Compare cards that both carry a picture: a text tile has no picture well
+  // and shows its word larger by design.
   const prediction = await tileMetrics(
     page,
-    '.aac-prediction-tile:visible',
+    '.aac-prediction-tile[data-picture="symbol"]:visible',
     '[data-testid="prediction-label"]',
   );
   const phrase = await tileMetrics(
     page,
-    'button:has(> [data-testid="phrase-tile-label"]):visible',
+    'button[data-picture="symbol"]:has(> [data-testid="phrase-tile-label"]):visible',
     '[data-testid="phrase-tile-label"]',
   );
   const category = await tileMetrics(

@@ -43,7 +43,7 @@ Caregivers are responsible for the vocabulary, contacts, and content configured 
 ## 7. Intellectual property
 
 - The App is licensed under AGPL-3.0 (see LICENSE)
-- ARASAAC pictograms are licensed under CC BY-NC-SA 4.0 by the Government of Aragon
+- The picture symbols on built-in tiles were made for Prism AAC and are part of the App. See NOTICE
 - User-generated content (custom phrases, recordings) remains the property of the user
 
 ## 8. Limitation of liability

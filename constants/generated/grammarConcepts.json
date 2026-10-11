@@ -1,0 +1,22 @@
+{
+  "g-etc": {
+    "file": "w-g-etc.png",
+    "kind": "grammar",
+    "means": "and so on, et cetera (etc.; Spanish, French, Portuguese, Romanian and German etc, Ukrainian тощо, Japanese など)"
+  },
+  "g-qyn": {
+    "file": "w-g-qyn.png",
+    "kind": "grammar",
+    "means": "yes/no question marker: asks whether (Turkish mi, Arabic هل, Russian ли, Polish czy, Ukrainian чи, Chinese 是否, English whether)"
+  },
+  "g-third-person": {
+    "file": "w-g-third-person.png",
+    "kind": "grammar",
+    "means": "Gender-unmarked person referred to from outside; arrow points at the person"
+  },
+  "g-past-being": {
+    "file": "w-past-being.png",
+    "kind": "grammar",
+    "means": "Person at the earlier end of a timeline with a backward arrow and clock, without an equals sign"
+  }
+}

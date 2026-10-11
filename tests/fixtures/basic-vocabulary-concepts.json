@@ -1,0 +1,90 @@
+[
+  {
+    "phraseId": "pp-girl",
+    "english": "Girl"
+  },
+  {
+    "phraseId": "pp-boy",
+    "english": "Boy"
+  },
+  {
+    "phraseId": "pp-kid",
+    "english": "Kid"
+  },
+  {
+    "phraseId": "cw-need",
+    "english": "Need"
+  },
+  {
+    "phraseId": "cw-do",
+    "english": "Do"
+  },
+  {
+    "phraseId": "cw-can",
+    "english": "Can"
+  },
+  {
+    "phraseId": "cw-stop",
+    "english": "Stop"
+  },
+  {
+    "phraseId": "cw-eat",
+    "english": "Eat"
+  },
+  {
+    "phraseId": "cw-drink",
+    "english": "Drink"
+  },
+  {
+    "phraseId": "cw-sleep",
+    "english": "Sleep"
+  },
+  {
+    "phraseId": "cw-yes-core",
+    "english": "Yes"
+  },
+  {
+    "phraseId": "cw-no-core",
+    "english": "No"
+  },
+  {
+    "phraseId": "cw-like",
+    "english": "Like"
+  },
+  {
+    "phraseId": "cw-here",
+    "english": "Here"
+  },
+  {
+    "phraseId": "cw-there",
+    "english": "There"
+  },
+  {
+    "phraseId": "cw-we",
+    "english": "We"
+  },
+  {
+    "phraseId": "cw-they",
+    "english": "They"
+  },
+  {
+    "phraseId": "cw-my",
+    "english": "My"
+  },
+  {
+    "phraseId": "cw-your",
+    "english": "Your"
+  },
+  {
+    "phraseId": "cw-have",
+    "english": "Have"
+  },
+  {
+    "phraseId": "cw-give",
+    "english": "Give"
+  },
+  {
+    "phraseId": "cw-take",
+    "english": "Take"
+  }
+]

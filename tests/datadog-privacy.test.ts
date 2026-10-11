@@ -99,26 +99,26 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
     expect(sent!.context).toEqual({ caption: 'G* B*', dob: 'DOB **/**/1998' });
   });
 
-  it('redacts the AAC word a pictogram lookup puts in a resource URL', async () => {
-    // services/pictogramService.ts puts the word the user is composing into the
-    // picture-symbol request path, and trackResources:true reports it.
-    // Error-only scrubbing let this one straight through.
+  it('redacts the AAC word a symbol file name puts in a resource URL', async () => {
+    // A bundled symbol's file name names the word on its tile, prediction tiles
+    // follow what the user is composing, and trackResources:true reports the
+    // URL. Error-only scrubbing let this one straight through.
     //
-    // `seizure` is the load-bearing part of this test: it is ordinary lowercase
+    // `toilet` is the load-bearing part of this test: it is ordinary lowercase
     // vocabulary, so NO pattern in scrubPhi can recognise it. Only dropping the
-    // path by host protects it. (An earlier version of this test used a
-    // capitalised name, which the [NAME] rule caught — so it passed with the
-    // host redaction deleted.)
+    // path after the symbol prefix protects it. (An earlier version of this
+    // test used a capitalised name, which the [NAME] rule caught — so it passed
+    // with the path redaction deleted.)
     const sent = await send(
       {
         type: 'resource',
-        resource: { url: 'https://api.arasaac.org/v1/pictograms/en/search/seizure' },
+        resource: { url: 'https://synalux.ai/prism-aac/symbols/m-toilet.svg' },
       },
       RESOURCE_PATHS,
     );
 
     expect((sent!.resource as Record<string, string>).url).toBe(
-      'https://api.arasaac.org/[REDACTED]',
+      'https://synalux.ai/prism-aac/symbols/[REDACTED]',
     );
   });
 
@@ -172,14 +172,14 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
 
   it('scrubs the Long Animation Frame and LCP fields Datadog also copies back', async () => {
     // trackLongTasks is on, and LoAF attributes work to the resource that
-    // caused it — so a pictogram lookup URL reaches Datadog here too.
+    // caused it — so a symbol URL reaches Datadog here too.
     const longTask = await send(
       {
         type: 'long_task',
         long_task: {
           scripts: [
             {
-              invoker: 'https://api.arasaac.org/v1/pictograms/en/search/seizure',
+              invoker: 'https://synalux.ai/prism-aac/symbols/m-toilet.svg',
               source_url: 'https://synalux.ai/x.js?caller=Grandma%20Betty',
             },
           ],
@@ -188,7 +188,7 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
       { 'long_task.scripts[].invoker': 'string', 'long_task.scripts[].source_url': 'string' },
     );
     const script = (longTask!.long_task as { scripts: Record<string, string>[] }).scripts[0];
-    expect(script.invoker).toBe('https://api.arasaac.org/[REDACTED]');
+    expect(script.invoker).toBe('https://synalux.ai/prism-aac/symbols/[REDACTED]');
     expect(script.source_url).not.toContain('Grandma');
 
     const view = await send(
@@ -196,14 +196,14 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
         type: 'view',
         view: {
           performance: {
-            lcp: { resource_url: 'https://api.arasaac.org/v1/pictograms/en/search/seizure' },
+            lcp: { resource_url: 'https://synalux.ai/prism-aac/symbols/m-toilet.svg' },
           },
         },
       },
       { 'view.performance.lcp.resource_url': 'string' },
     );
     const lcp = (view!.view as { performance: { lcp: { resource_url: string } } }).performance.lcp;
-    expect(lcp.resource_url).toBe('https://api.arasaac.org/[REDACTED]');
+    expect(lcp.resource_url).toBe('https://synalux.ai/prism-aac/symbols/[REDACTED]');
   });
 
   it('wraps an array context so it can be copied back, instead of dropping the event', async () => {

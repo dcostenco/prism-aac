@@ -1,13 +1,20 @@
 export const SERVICE_WORKER_KILLSWITCH_KEY = 'prism-aac-sw-killswitch';
 export const SERVICE_WORKER_RESET_READY_EVENT = 'prism-aac-sw-reset-ready';
 
-export function buildServiceWorkerKillswitchScript(version: string): string {
+export function buildServiceWorkerKillswitchScript(version: string, preserveOffline = false): string {
   return `
 (function(){
   try {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    var nativeContext = !!window.prismNativeBridge;
+    if (!nativeContext && window.parent !== window) {
+      try {
+        nativeContext = window.parent.location.origin === window.location.origin && !!window.parent.prismNativeBridge;
+      } catch (e) {}
+    }
+    var nativeOffline = ${JSON.stringify(preserveOffline)} && nativeContext;
+    if (!nativeOffline && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
       navigator.serviceWorker.getRegistrations().then(function(regs){
         regs.forEach(function(r){ r.unregister(); });
       });
@@ -30,6 +37,15 @@ export function buildServiceWorkerKillswitchScript(version: string): string {
     var KEY = ${JSON.stringify(SERVICE_WORKER_KILLSWITCH_KEY)};
     var V = ${JSON.stringify(version)};
     if (window.localStorage.getItem(KEY) === V) return;
+
+    if (${JSON.stringify(preserveOffline)}) {
+      // Keep the installed worker and its offline data until its replacement is ready.
+      window.localStorage.setItem(KEY, V);
+      if (typeof window.dispatchEvent === 'function') {
+        window.dispatchEvent(new Event(${JSON.stringify(SERVICE_WORKER_RESET_READY_EVENT)}));
+      }
+      return;
+    }
 
     var registrations = navigator.serviceWorker.getRegistrations();
     var cacheKeys = typeof caches === 'undefined' ? Promise.resolve([]) : caches.keys();

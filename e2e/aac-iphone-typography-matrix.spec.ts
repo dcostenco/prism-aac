@@ -106,16 +106,6 @@ const QWERTY_REFERENCE_ROWS = [
 
 type MatrixProject = keyof typeof IPHONE_MATRIX;
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function safeScreenshot(page: Page, fileName: string): Promise<void> {
   await expect(page.locator('nextjs-portal')).toHaveCount(0);
@@ -129,6 +119,7 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => (
     [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')]
       .filter((tile) => {
+        if (tile.dataset.picture === 'text') return true;
         const image = tile.querySelector<HTMLImageElement>('img');
         return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
       }).length
@@ -138,7 +129,6 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
 test.beforeEach(async ({ page }, testInfo) => {
   const projectName = testInfo.project.name as MatrixProject;
   test.skip(!(projectName in IPHONE_MATRIX), 'iPhone matrix only');
-  await proxyArasaacForLocalWebKit(page);
   await page.addInitScript(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -193,7 +183,8 @@ test('keeps prediction and keyboard targets readable and inside the viewport', a
     const messageContent = document.querySelector<HTMLElement>('[data-testid="message-content"]')!;
     const predictionTiles = [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')];
     const predictionLabels = [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-label"]')];
-    const predictionIcons = predictionTiles.map((tile) => tile.querySelector<HTMLElement>('.aac-tile-icon')!);
+    const predictionIcons = predictionTiles.map((tile) => tile.querySelector<HTMLElement>('.aac-tile-icon'))
+      .filter((icon): icon is HTMLElement => icon !== null);
     const predictionImages = predictionIcons.map((icon) => icon.querySelector<HTMLImageElement>('img')!);
     const keyboardButtons = [...document.querySelectorAll<HTMLElement>('[data-scan-group="keyboard"] button')];
     const characterKeys = [...document.querySelectorAll<HTMLElement>('[data-scan-group="keyboard"] button[data-key]')]

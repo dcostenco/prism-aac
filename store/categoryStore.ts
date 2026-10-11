@@ -103,7 +103,13 @@ export const useCategoryStore = create<CategoryState>()(
             // are the caregiver's own words, not machine output.
             && isPhraseVisibleForLanguage(p.id, language, showUnreviewedVocabulary),
         );
-        const custom = get().customPhrases.filter((p) => p.categoryId === categoryId && !p.deletedAt);
+        // Everything in customPhrases is the caregiver's own, whatever flag it
+        // was saved or synced with. A restored or synced entry reusing a
+        // built-in id with isCustom false (or missing) must not be shown as
+        // that built-in phrase — with its approved symbol over other words.
+        const custom = get().customPhrases
+          .filter((p) => p.categoryId === categoryId && !p.deletedAt)
+          .map((p) => (p.isCustom === true ? p : { ...p, isCustom: true }));
         return [...defaults, ...custom].sort((a, b) => a.sortOrder - b.sortOrder);
       },
 

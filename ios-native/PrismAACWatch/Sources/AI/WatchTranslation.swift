@@ -40,27 +40,57 @@ final class WatchTranslation: ObservableObject {
 
     // MARK: - Offline dictionary (1,261 phrases × 20 languages, 100% accurate)
 
-    nonisolated private static let offlineDict: [String: [String: String]] = {
+    private struct OfflinePhrase: Sendable {
+        let id: String
+        let english: String
+        let translations: [String: String]
+    }
+    nonisolated private static let offlinePhraseEntries: [OfflinePhrase] = {
         guard let url = Bundle.main.url(forResource: "aacTranslations", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let phrases = json["phrases"] as? [[String: Any]] else {
             NSLog("[WatchTranslation] Failed to load offline dictionary")
-            return [:]
+            return []
         }
-        var dict: [String: [String: String]] = [:]
+        var dict: [OfflinePhrase] = []
         for p in phrases {
-            guard let en = p["en"] as? String,
+            guard let id = p["id"] as? String, let en = p["en"] as? String,
                   let translations = p["translations"] as? [String: String] else { continue }
-            dict[en.lowercased()] = translations
+            dict.append(OfflinePhrase(id: id, english: en, translations: translations))
         }
         NSLog("[WatchTranslation] Loaded \(dict.count) offline phrases")
         return dict
     }()
+    nonisolated private static let offlinePhrases: [String: OfflinePhrase] =
+        offlinePhraseEntries.reduce(into: [:]) { $0[$1.id] = $1 }
+    nonisolated private static let offlineDict: [String: [String: String]] = {
+        var dict: [String: [String: String]] = [:]
+        for phrase in offlinePhraseEntries { dict[phrase.english.lowercased()] = phrase.translations }
+        return dict
+    }()
 
-    private func offlineTranslate(text: String, to toLang: String) -> String? {
-        let lang = String(toLang.prefix(2))
-        return Self.offlineDict[text.lowercased()]?[lang]
+    private func offlineTranslate(text: String, from sourceLanguage: String, to toLang: String, phraseID: String?) -> String? {
+        Self.phraseTranslation(text, from: sourceLanguage, to: toLang, phraseID: phraseID)
+    }
+
+    nonisolated private static func phraseTranslation(_ text: String, from sourceLanguage: String,
+                                                      to toLang: String, phraseID: String?) -> String? {
+        let sourceIsEnglish = sourceLanguage.prefix(2).lowercased() == "en"
+        if let phraseID, let phrase = offlinePhrases[phraseID] {
+            let source = sourceIsEnglish ? phrase.english : dictionaryTranslation(phrase.translations, to: sourceLanguage)
+            let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping.lowercased()
+            guard source?.precomposedStringWithCanonicalMapping.lowercased() == normalized else { return nil }
+            return toLang.prefix(2).lowercased() == "en" ? phrase.english
+                : dictionaryTranslation(phrase.translations, to: toLang)
+        }
+        guard sourceIsEnglish else { return nil }
+        return toLang.prefix(2).lowercased() == "en" ? text : dictionaryTranslation(offlineDict[text.lowercased()], to: toLang)
+    }
+
+    /// Prefer a script-specific entry while retaining regional base-language fallback.
+    nonisolated private static func dictionaryTranslation(_ translations: [String: String]?, to language: String) -> String? {
+        translations?[language] ?? translations?[String(language.prefix(2))]
     }
 
     /// Synchronous offline-only label translation for UI rendering.
@@ -68,12 +98,28 @@ final class WatchTranslation: ObservableObject {
     /// Checks both the AAC phrase dictionary (1,261 entries) and the
     /// category-names table (22 entries) so category cards and phrase tiles
     /// both render localized labels.
-    nonisolated static func localizedLabel(_ text: String, to toLang: String) -> String {
+    nonisolated static func localizedLabel(_ text: String, to toLang: String,
+                                          sourceLanguage: String = "en", phraseID: String? = nil,
+                                          canonicalEnglish: String? = nil) -> String {
+        let sourceIsEnglish = sourceLanguage.prefix(2).lowercased() == "en"
+        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping.lowercased()
+        if phraseID != nil {
+            return phraseTranslation(text, from: sourceLanguage, to: toLang, phraseID: phraseID) ?? text
+        }
+        if let canonicalEnglish, let names = categoryNames[canonicalEnglish.lowercased()] {
+            let source = sourceIsEnglish ? canonicalEnglish : dictionaryTranslation(names, to: sourceLanguage)
+            if source?.precomposedStringWithCanonicalMapping.lowercased() == normalized {
+                return toLang.prefix(2).lowercased() == "en" ? canonicalEnglish
+                    : dictionaryTranslation(names, to: toLang) ?? text
+            }
+            return text
+        }
+        guard sourceIsEnglish else { return text }
         let lang = String(toLang.prefix(2))
         if lang == "en" { return text }
         let key = text.lowercased()
-        if let t = offlineDict[key]?[lang] { return t }
-        if let t = categoryNames[key]?[lang] { return t }
+        if let t = dictionaryTranslation(offlineDict[key], to: toLang) { return t }
+        if let t = dictionaryTranslation(categoryNames[key], to: toLang) { return t }
         return text
     }
 
@@ -111,6 +157,7 @@ final class WatchTranslation: ObservableObject {
         text: String,
         from fromLang: String,
         to toLang: String,
+        phraseID: String? = nil,
         tts: WatchTTS
     ) {
         if fromLang.prefix(2) == toLang.prefix(2) && !(fromLang.prefix(2) == "zh" && fromLang != toLang) {
@@ -118,7 +165,7 @@ final class WatchTranslation: ObservableObject {
             return
         }
         // Offline first — instant, 100% accurate, no network
-        if let offline = offlineTranslate(text: text, to: toLang) {
+        if let offline = offlineTranslate(text: text, from: fromLang, to: toLang, phraseID: phraseID) {
             NSLog("[WatchTranslation] Offline hit: \(text) → \(offline)")
             tts.speak(offline, language: toLang)
             return

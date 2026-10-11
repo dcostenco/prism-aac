@@ -103,6 +103,20 @@ describe('predictionStore account and language isolation', () => {
     expect(usePredictionStore.getState().wordFreq.englishonlyzzq).toBeDefined();
   });
 
+  it('keeps Turkish learning identity through persistence and language switching', async () => {
+    await refreshAs(USER_A);
+    useSettingsStore.setState({language:'tr',outputLanguage:'tr'});
+    usePredictionStore.getState().learnWord('IŞIK', 'İSTİYORUM', 'BEN');
+    const count=usePredictionStore.getState().wordFreq['ışık'].count;
+    expect(usePredictionStore.getState().wordFreq['işik']).toBeUndefined();
+    expect(usePredictionStore.getState().bigrams['istiyorum|ışık']).toBeDefined();
+    expect(usePredictionStore.getState().trigrams['ben|istiyorum|ışık']).toBeDefined();
+    vi.advanceTimersByTime(1100);
+    useSettingsStore.setState({language:'en',outputLanguage:'en'});
+    useSettingsStore.setState({language:'tr',outputLanguage:'tr'});
+    expect(usePredictionStore.getState().wordFreq['ışık'].count).toBe(count);
+  });
+
   it('keeps anonymous learning tab-ephemeral across scope rotation', () => {
     const firstScope = getPredictionSessionScope(null);
     usePredictionStore.getState().activatePredictionIdentity(firstScope, 'en');

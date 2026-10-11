@@ -275,7 +275,7 @@ Funciona sin iPhone — de forma independiente con un diccionario de frases sin 
 </p>
 
 - **Traducción sin conexión:** 1261 frases × 20 idiomas incluidos (JSON de 411 KB) — búsqueda instantánea, 100 % precisa, sin red
-- Cuadrícula de pictogramas de 2 columnas con imágenes de ARASAAC
+- Cuadrícula de pictogramas de 2 columnas con imágenes generadas
 - Chat IA con dictado + entrada por teclado (nube con conexión, diccionario de frases sin conexión)
 - Sistema de emergencia: cuenta atrás → WCSession → respaldo celular → TTS
 - Traducción con salida por voz TTS (diccionario sin conexión primero, respaldo en la nube)
@@ -429,7 +429,7 @@ Casillas de imágenes estilo PECS. Toca una categoría, toca una casilla, escuch
 - 22 categorías predeterminadas: personas, comida, sentimientos, cuerpo, ropa, animales, lugares, etc.
 - El cuidador puede añadir / eliminar / reordenar casillas para cada niño
 - Cada casilla incluye una clave `textKey` para i18n — cambiar el idioma de la aplicación actualiza el texto de todas las casillas con un solo toque
-- Los pictogramas proceden de ARASAAC y de una selección optimizada; la clonación de voz permite adaptar la voz de la casilla a la de los hermanos o padres del niño (nivel de pago)
+- Los pictogramas proceden de la biblioteca de imágenes generadas; la clonación de voz permite adaptar la voz de la casilla a la de los hermanos o padres del niño (nivel de pago)
 - Aprendizaje de n-gramas por usuario: si un niño toca «Yo quiero comer» tres veces, «comer» aparecerá con mayor prioridad tras «quiero» en la siguiente sesión
 - Memoria holográfica HRR: predicciones contextuales sin búsqueda en ~0,2 ms mediante Rust WASM — +27 % de precisión Top-1 en frases básicas de CAA
 

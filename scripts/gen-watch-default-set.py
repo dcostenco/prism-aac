@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """Generate the Watch's iOSDefaultSet Swift literal from constants/phrases.ts.
 
-Per-phrase arasaacId values come from scripts/arasaac-id-cache.json,
-populated by scripts/fetch-arasaac-ids.py. Phrases without a resolved
-arasaacId fall back to the per-category SF Symbol.
+A phrase carries no symbol, so its card shows the word: one category symbol on
+every phrase showed a game controller for Crayons and a smiling face for Sad.
+Categories keep their SF Symbol. The Watch draws nothing from the network.
 
 Run after editing constants/phrases.ts to keep the Watch in parity with iOS.
 """
-import json, re, sys
+import re, sys
 from collections import defaultdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-PHRASES_TS = ROOT / 'constants' / 'phrases.ts'
-ARASAAC_CACHE = ROOT / 'scripts' / 'arasaac-id-cache.json'
+PHRASES_TS = Path(__file__).resolve().parent.parent / 'constants' / 'phrases.ts'
 
 TOP_CATS = {
     'core-pronouns':     ('person.2.fill',                    'I / You / We',     'person.fill'),
@@ -61,7 +59,8 @@ EMERGENCY_IDS = {'cw-help', 'cw-hurt', 'help-need-help', 'help-call911'}
 
 def main():
     c = PHRASES_TS.read_text()
-    pattern = re.compile(r"p\('([^']+)', '([^']+)', '((?:[^'\\]|\\.)*)', \s*\d+\)")
+    # p(id, category, text, sortOrder[, aacCoreRank])
+    pattern = re.compile(r"p\('([^']+)', '([^']+)', '((?:[^'\\]|\\.)*)', \s*\d+(?:, \s*\d+)?\)")
     by_cat = defaultdict(list)
     for m in pattern.finditer(c):
         pid, cat, text = m.group(1), m.group(2), m.group(3).replace("\\'", "'")
@@ -71,19 +70,13 @@ def main():
     for cat, items in by_cat.items():
         rolled[SUB_TO_PARENT.get(cat, cat)].extend(items)
 
-    arasaac_ids: dict[str, int | None] = {}
-    if ARASAAC_CACHE.exists():
-        arasaac_ids = json.loads(ARASAAC_CACHE.read_text())
-
     out = []
     out.append('    /// iOS-parity default set — generated from constants/phrases.ts')
-    out.append('    /// by scripts/gen-watch-default-set.py with arasaacId lookups from')
-    out.append('    /// scripts/arasaac-id-cache.json. Sync rule: when phrases.ts changes,')
-    out.append('    /// re-run fetch-arasaac-ids.py + gen-watch-default-set.py.')
+    out.append('    /// by scripts/gen-watch-default-set.py. Sync rule: when phrases.ts')
+    out.append('    /// changes, re-run gen-watch-default-set.py.')
     out.append('    static let iOSDefaultSet: [WatchCategory] = [')
-    n_with_id = 0
     n_total = 0
-    for cat_id, (cat_icon, cat_name, default_sym) in TOP_CATS.items():
+    for cat_id, (cat_icon, cat_name, _phrase_sym) in TOP_CATS.items():
         items = rolled.get(cat_id, [])
         if not items: continue
         out.append(f'        WatchCategory(id: "{cat_id}", icon: "{cat_icon}", name: "{cat_name}", phrases: [')
@@ -91,14 +84,10 @@ def main():
             n_total += 1
             esc = text.replace('\\', '\\\\').replace('"', '\\"')
             is_em = "true" if pid in EMERGENCY_IDS else "false"
-            aid = arasaac_ids.get(text)
-            aid_swift = f'{aid}' if isinstance(aid, int) and aid > 0 else 'nil'
-            if aid_swift != 'nil':
-                n_with_id += 1
-            out.append(f'            WatchPhrase(id: "{pid[:50]}", label: "{esc}", arasaacId: {aid_swift}, sfSymbol: "{default_sym}", isEmergency: {is_em}),')
+            out.append(f'            WatchPhrase(id: "{pid[:50]}", label: "{esc}", sfSymbol: "", isEmergency: {is_em}),')
         out.append('        ]),')
     out.append('    ]')
-    print(f'// {n_with_id}/{n_total} phrases have arasaacId ({100*n_with_id//n_total if n_total else 0}%)', file=sys.stderr)
+    print(f'// {n_total} phrases', file=sys.stderr)
     print('\n'.join(out))
 
 if __name__ == '__main__':

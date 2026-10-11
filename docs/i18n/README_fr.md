@@ -275,7 +275,7 @@ Fonctionne sans iPhone — mode autonome avec dictionnaire de phrases hors ligne
 </p>
 
 - **Traduction hors ligne :** 1 261 phrases × 20 langues intégrées (JSON de 411 Ko) — recherche instantanée, 100% précise, sans réseau
-- Grille de pictogrammes à 2 colonnes avec images ARASAAC
+- Grille de pictogrammes à 2 colonnes avec images générées
 - Chat IA avec dictée + saisie au clavier (cloud en ligne, dictionnaire de phrases hors ligne)
 - Système d'urgence : compte à rebours → WCSession → repli cellulaire → synthèse vocale
 - Traduction avec sortie vocale (dictionnaire hors ligne en priorité, repli cloud)
@@ -429,7 +429,7 @@ Tuiles d'images style PECS. Appuyez sur une catégorie, appuyez sur une tuile, �
 - 22 catégories par défaut : personnes, nourriture, émotions, corps, vêtements, animaux, lieux, etc.
 - L'aidant peut ajouter / supprimer / réordonner les tuiles pour chaque enfant
 - Chaque tuile possède une clé `textKey` pour l'i18n — changer la langue de l'application réétiquette toutes les tuiles en un seul geste
-- Les pictogrammes proviennent d'ARASAAC + d'un jeu sélectionné ; le clonage vocal permet d'associer la voix de la tuile aux frères, sœurs ou parents de l'enfant (forfait payant)
+- Les pictogrammes proviennent d'une bibliothèque d'images générées ; le clonage vocal permet d'associer la voix de la tuile aux frères, sœurs ou parents de l'enfant (forfait payant)
 - Apprentissage des n-grammes par utilisateur : un enfant qui clique trois fois sur "Je veux manger" verra "manger" remonter après "veux" lors de la session suivante
 - Mémoire holographique HRR : prédictions contextuelles sans recherche en ~0,2ms via Rust WASM — +27% de précision Top-1 sur les phrases clés de CAA
 

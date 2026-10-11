@@ -1,3 +1,5 @@
+import { PRISM_AAC_TERMS_PATH } from '@/lib/appPaths';
+
 export const metadata = {
   title: 'Prism AAC — Support & Documentation',
   description: 'Help and support for Prism AAC communication app',
@@ -53,7 +55,7 @@ export default function DocsPage() {
           <li>GDPR compliant — EU data stays in EU (Frankfurt)</li>
           <li>Designed for motor accessibility — large buttons, switch access, head tracking</li>
           <li><a href="https://github.com/dcostenco/prism-aac/blob/main/PRIVACY.md" style={{ color: '#6366f1' }}>Privacy Policy</a></li>
-          <li><a href="https://github.com/dcostenco/prism-aac/blob/main/TERMS.md" style={{ color: '#6366f1' }}>Terms of Service</a></li>
+          <li><a href={PRISM_AAC_TERMS_PATH} style={{ color: '#6366f1' }}>Terms of Service</a></li>
         </ul>
       </section>
 

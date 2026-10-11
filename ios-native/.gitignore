@@ -16,3 +16,10 @@ xcshareddata/
 
 # Large model binaries — obtain via scripts/download-watch-model.sh
 *.gguf
+
+# Shared scheme for the standalone offline UI regression.
+!PrismAAC.xcodeproj/xcshareddata/
+PrismAAC.xcodeproj/xcshareddata/*
+!PrismAAC.xcodeproj/xcshareddata/xcschemes/
+PrismAAC.xcodeproj/xcshareddata/xcschemes/*
+!PrismAAC.xcodeproj/xcshareddata/xcschemes/PrismAACWatch.xcscheme

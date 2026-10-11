@@ -1,0 +1,7 @@
+Prism AAC symbols
+=================
+
+Every picture was made for Prism AAC from written descriptions.
+Copyright (C) Synalux LLC. Most pictures were made with FLUX.2 [klein] 4B (Apache-2.0).
+The standalone quarter and quality pictures were made with OpenAI image generation.
+Every picture was reviewed before it was included.

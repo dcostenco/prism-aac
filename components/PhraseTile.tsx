@@ -1,14 +1,18 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
+import { getPictogramUrl, pictureModeForProfile, typedWordPicturesEnabled } from '@/services/pictogramService';
+import { builtInPhraseSymbolUrl, isBuiltInPhraseId } from '@/lib/builtInSymbols';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { useNearViewport } from '@/hooks/useNearViewport';
+import { useRecoverablePicture } from '@/hooks/useRecoverablePicture';
 import FittedTileLabel from './FittedTileLabel';
 
 interface Props {
   phrase: string;
   englishPhrase?: string;
+  /** Id of the built-in phrase this tile shows. Omit for a custom phrase. */
+  builtInPhraseId?: string;
   customImageUrl?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -17,26 +21,56 @@ interface Props {
   compact?: boolean;
 }
 
-export default function PhraseTile({ phrase, englishPhrase, customImageUrl, className, style, onClick, ariaLabel }: Props) {
+/**
+ * What the tile shows above (or instead of) its word:
+ *   custom    — a picture the caregiver chose
+ *   symbol    — the bundled symbol approved for this built-in phrase
+ *   generated — a generated picture for a typed phrase (paid plans)
+ *   pending   — waiting for a generated picture
+ *   text      — no picture: the word alone, centred and larger
+ */
+type Picture =
+  | { kind: 'custom' | 'symbol' | 'generated'; url: string }
+  | { kind: 'pending' | 'text' };
+
+export default function PhraseTile({ phrase, englishPhrase, builtInPhraseId, customImageUrl, className, style, onClick, ariaLabel }: Props) {
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
-  const [fetchedIconUrl, setFetchedIconUrl] = useState<string | null>(null);
-  const { elementRef, isNearViewport } = useNearViewport<HTMLButtonElement>(
-    !customImageUrl,
-  );
+  const builtIn = isBuiltInPhraseId(builtInPhraseId);
+  const generatedFor = englishPhrase || phrase;
+  const wantsGenerated = !customImageUrl && !builtIn && typedWordPicturesEnabled(pictureMode);
+  const requestKey = JSON.stringify([generatedFor, phrase, language, pictureMode]);
+  const [generated, setGenerated] = useState<{ key: string; url: string | null } | null>(null);
+  const { elementRef, isNearViewport } = useNearViewport<HTMLButtonElement>(wantsGenerated);
 
   useEffect(() => {
-    if (customImageUrl) return;
-    if (!isNearViewport) return;
+    if (!wantsGenerated || !isNearViewport) return;
     let cancelled = false;
-    const searchPhrase = englishPhrase || phrase;
-    getPictogramUrl(searchPhrase, 'en', pictureMode).then((url) => {
-      if (!cancelled) setFetchedIconUrl(url);
-    }).catch(() => { if (!cancelled) setFetchedIconUrl(null); });
+    getPictogramUrl(generatedFor, 'en', pictureMode, { text: phrase, lang: language }).then((url) => {
+      if (!cancelled) setGenerated({ key: requestKey, url });
+    }).catch(() => { if (!cancelled) setGenerated({ key: requestKey, url: null }); });
     return () => { cancelled = true; };
-  }, [phrase, englishPhrase, customImageUrl, pictureMode, language, isNearViewport]);
-  const iconUrl = customImageUrl || fetchedIconUrl;
+  }, [generatedFor, phrase, wantsGenerated, pictureMode, language, isNearViewport, requestKey]);
+
+  let picture: Picture;
+  if (customImageUrl) {
+    picture = { kind: 'custom', url: customImageUrl };
+  } else if (builtIn) {
+    const symbolUrl = builtInPhraseSymbolUrl(builtInPhraseId);
+    picture = symbolUrl ? { kind: 'symbol', url: symbolUrl } : { kind: 'text' };
+  } else if (!wantsGenerated) {
+    picture = { kind: 'text' };
+  } else if (generated?.key === requestKey) {
+    picture = generated.url ? { kind: 'generated', url: generated.url } : { kind: 'text' };
+  } else {
+    picture = { kind: 'pending' };
+  }
+  const requestedUrl = 'url' in picture ? picture.url : null;
+  const image = useRecoverablePicture(requestedUrl, JSON.stringify([requestKey, builtInPhraseId, customImageUrl]));
+  if (requestedUrl && !image.url) picture = { kind: 'text' };
+  const imageUrl = image.url;
+  const textTile = picture.kind === 'text';
 
   return (
     <button
@@ -44,6 +78,7 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
       onClick={onClick}
       aria-label={ariaLabel ?? phrase}
       data-testid="phrase-tile-card"
+      data-picture={picture.kind}
       className={`aac-phrase-tile ${className ?? ''}`}
       style={{
         border: '2px solid var(--border-strong, #000)',
@@ -53,23 +88,27 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
         ...style,
       }}
     >
-      <div className="aac-tile-icon" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
-        {iconUrl && (
-          <img
-            src={iconUrl}
-            alt=""
-            aria-hidden
-            loading="lazy"
-            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-          />
-        )}
-      </div>
+      {!textTile && (
+        <div className="aac-tile-icon" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
+          {imageUrl && (
+            <img
+              key={image.imageKey}
+              src={imageUrl}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              // Fill the well, whatever the file's intrinsic size.
+              style={{ width: '100%', height: '100%', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              onError={image.onError}
+            />
+          )}
+        </div>
+      )}
       <FittedTileLabel
         text={phrase}
         testId="phrase-tile-label"
-        className="aac-tile-label aac-phrase-label"
-        style={{ borderTop: '1px solid rgba(0,0,0,0.2)' }}
+        className={`aac-tile-label aac-phrase-label${textTile ? ' aac-text-tile-label' : ''}`}
+        style={textTile ? undefined : { borderTop: '1px solid rgba(0,0,0,0.2)' }}
       />
     </button>
   );

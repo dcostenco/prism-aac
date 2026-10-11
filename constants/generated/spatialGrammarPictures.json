@@ -1,0 +1,132 @@
+{
+  "translationOverrides": {
+    "cw-on": {
+      "es": "Sobre",
+      "pt": "Sobre",
+      "de": "Auf",
+      "it": "Su",
+      "he": "על",
+      "nl": "Op",
+      "vi": "Trên",
+      "tl": "Sa ibabaw",
+      "tr": "Üzerinde",
+      "id": "Di atas",
+      "bg": "На",
+      "bn": "উপরে"
+    },
+    "cw-in": {
+      "ko": "안에"
+    }
+  },
+  "aliases": {
+    "en": {
+      "in": "cw-in",
+      "on": "cw-on"
+    },
+    "ru": {
+      "в": "cw-in",
+      "на": "cw-on"
+    },
+    "uk": {
+      "в": "cw-in",
+      "у": "cw-in",
+      "на": "cw-on"
+    },
+    "bg": {
+      "в": "cw-in",
+      "на": "cw-on"
+    },
+    "ro": {
+      "în": "cw-in",
+      "pe": "cw-on"
+    },
+    "es": {
+      "en": "cw-in",
+      "sobre": "cw-on"
+    },
+    "fr": {
+      "dans": "cw-in",
+      "sur": "cw-on"
+    },
+    "pt": {
+      "em": "cw-in",
+      "sobre": "cw-on"
+    },
+    "de": {
+      "in": "cw-in",
+      "auf": "cw-on"
+    },
+    "it": {
+      "in": "cw-in",
+      "su": "cw-on"
+    },
+    "nl": {
+      "in": "cw-in",
+      "op": "cw-on"
+    },
+    "pl": {
+      "w": "cw-in",
+      "na": "cw-on"
+    },
+    "tr": {
+      "içinde": "cw-in",
+      "üzerinde": "cw-on"
+    },
+    "ar": {
+      "في": "cw-in",
+      "على": "cw-on"
+    },
+    "he": {
+      "בתוך": "cw-in",
+      "על": "cw-on"
+    },
+    "hi": {
+      "में": "cw-in",
+      "पर": "cw-on"
+    },
+    "bn": {
+      "ভেতরে": "cw-in",
+      "উপরে": "cw-on"
+    },
+    "id": {
+      "dalam": "cw-in",
+      "di atas": "cw-on"
+    },
+    "vi": {
+      "trong": "cw-in",
+      "trên": "cw-on"
+    },
+    "tl": {
+      "sa loob": "cw-in",
+      "sa ibabaw": "cw-on"
+    },
+    "sw": {
+      "ndani": "cw-in",
+      "juu ya": "cw-on"
+    },
+    "am": {
+      "ውስጥ": "cw-in",
+      "ላይ": "cw-on"
+    },
+    "ja": {
+      "中": "cw-in",
+      "上に": "cw-on"
+    },
+    "ko": {
+      "위에": "cw-on",
+      "안에": "cw-in"
+    },
+    "zh-Hans": {
+      "里": "cw-in",
+      "上面": "cw-on"
+    },
+    "zh-Hant": {
+      "裡": "cw-in",
+      "上面": "cw-on"
+    },
+    "zh-HK": {
+      "裏": "cw-in",
+      "上面": "cw-on"
+    }
+  }
+}

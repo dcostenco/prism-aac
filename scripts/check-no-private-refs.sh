@@ -57,6 +57,9 @@ EXCEPTIONS=(':!scripts/check-no-private-refs.sh')
 #     copy such as "Synalux private cloud".
 #   - deliberate obfuscation. This guards against accident, not evasion.
 status=0
+if ! node scripts/check-public-picture-bytes.mjs; then
+  status=1
+fi
 for pattern in "${PATTERNS[@]}"; do
   if hits=$(git grep -nIiE "$pattern" -- . "${EXCEPTIONS[@]}" 2>/dev/null); then
     if [ -n "$hits" ]; then

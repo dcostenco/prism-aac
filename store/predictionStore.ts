@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WordFreqEntry } from '@/types';
 import { getPredictions, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergePredictionBaselines, mergePredictionContextBaselines, mergeUserNgramsWithBoost } from '@/engine/predictionEngine';
+import { normalizePredictionSpelling } from '@/engine/predictionSpellings';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
@@ -10,15 +11,19 @@ import { SupportedLanguage } from '@/engine/i18n';
 import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useMessageStore } from '@/store/messageStore';
 import { getPredictionSessionScope } from '@/services/predictionMemoryService';
 import {
   loadPredictionSeed,
   getCachedPredictionSeed,
   PredictionSeed,
 } from '@/constants/predictionSeeds';
+import { loadPictureWords } from '@/constants/pictureWords';
+import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
 
 const MAX_ENTRIES = 2000;
 const SEED_LAST_USED = 0;
+const REVIEWED_BASIC_WORD_COUNT = 1;
 const LEGACY_STORAGE_KEY = 'prism-aac-predictions';
 const SCOPED_STORAGE_VERSION = 5;
 const MAX_NGRAM_ENTRIES = 50_000;
@@ -205,7 +210,8 @@ const SCRIPT_FILTER: Partial<Record<SupportedLanguage, RegExp>> = {
   it: /^[a-zàèéìíîòóùú'\-]+$/,
   pl: /^[a-ząćęłńóśźż'\-]+$/,
   nl: /^[a-zàáâäèéêëìíîïòóôöùúûü'\-]+$/,
-  vi: /^[a-zàáâãèéêìíòóôõùúýăđơưÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝĂĐƠƯ'\-]+$/,
+  // U+1EA0-1EF9 holds the stacked-diacritic vowels (ạ ả ấ ầ ế ệ ố ộ ớ ợ ụ ứ ự ỳ ỷ ỹ ...): without it được, bạn, muốn, một, nước, mẹ never reach the bar.
+  vi: /^[a-zàáâãèéêìíòóôõùúýăđơưÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝĂĐƠƯạ-ỹẠ-Ỹ'\-]+$/,
   tl: /^[a-zñ'\-]+$/,
   tr: /^[a-zçğıöşü'\-]+$/,
   id: /^[a-z'\-]+$/,
@@ -231,7 +237,7 @@ function buildSeedForLanguage(lang: SupportedLanguage, showUnreviewed: boolean):
   });
   for (const phrase of phrases) {
     for (const raw of phrase.split(/\s+/)) {
-      const word = raw.toLowerCase().replace(/[^\p{L}'-]/gu, '');
+      const word = normalizePredictionSpelling(raw, lang).replace(/[^\p{L}\p{M}'-]/gu, '');
       if (word.length < 1) continue;
       // Drop words that don't fit the language's script (English fallback
       // pollution when no translation exists for a phrase).
@@ -239,7 +245,13 @@ function buildSeedForLanguage(lang: SupportedLanguage, showUnreviewed: boolean):
       wordFreq[word] = { count: (wordFreq[word]?.count ?? 0) + 1, lastUsed: SEED_LAST_USED };
     }
   }
-  const { bigrams, trigrams } = buildNgramsFromPhrases(phrases);
+  // Reviewed picture aliases can be absent from the general corpus. Keep them
+  // available for prefix completion without outweighing established counts.
+  for (const word of getReviewedBasicWords(lang)) {
+    if (script && !script.test(word)) continue;
+    if (!wordFreq[word]) wordFreq[word] = { count: REVIEWED_BASIC_WORD_COUNT, lastUsed: SEED_LAST_USED };
+  }
+  const { bigrams, trigrams } = buildNgramsFromPhrases(phrases, lang);
   // Same script filter for n-grams — drop if any constituent word is wrong-script.
   if (script) {
     for (const k of Object.keys(bigrams)) {
@@ -270,7 +282,7 @@ function getClinicalWordFreq(lang: SupportedLanguage): Record<string, WordFreqEn
   if (clinicalCache.has(lang)) return clinicalCache.get(lang)!;
   const wf: Record<string, WordFreqEntry> = {};
   for (const word of getClinicalVocabulary(lang)) {
-    const key = word.toLowerCase();
+    const key = normalizePredictionSpelling(word, lang);
     wf[key] = { count: 1, lastUsed: 0 };
   }
   clinicalCache.set(lang, wf);
@@ -290,6 +302,8 @@ function pruneIfNeeded(data: Record<string, WordFreqEntry>): Record<string, Word
 // corpus, not user typing).
 const corpusSeedCache = new Map<string, PredictionSeed>();
 function syncCorpusSeed(lang: string): PredictionSeed | null {
+  // The language's picture word table loads with its predictions (constants/pictureWords.ts); a no-op once loaded.
+  void loadPictureWords(lang);
   const cached = corpusSeedCache.get(lang) ?? getCachedPredictionSeed(lang);
   if (cached) {
     if (!corpusSeedCache.has(lang)) corpusSeedCache.set(lang, cached);
@@ -305,8 +319,7 @@ function syncCorpusSeed(lang: string): PredictionSeed | null {
     if (useSettingsStore.getState().language !== lang) return;
     try {
       const store = usePredictionStore.getState();
-      // Touch a no-op set so subscribers re-render with the warmed cache.
-      store.updatePredictions('', lang as SupportedLanguage);
+      store.updatePredictions(useMessageStore.getState().text, lang as SupportedLanguage);
     } catch {}
   }).catch(() => {});
   return null;
@@ -430,11 +443,11 @@ export const usePredictionStore = create<PredictionState>()(
         const language = useSettingsStore.getState().language || 'en';
         get().activatePredictionIdentity(currentPredictionIdentity(), language);
         const state = get();
-        const wf = recordWord(state.wordFreq, word);
+        const wf = recordWord(state.wordFreq, word, language);
         let bg = state.bigrams;
         let tg = state.trigrams;
-        if (previousWord) bg = recordBigram(bg, previousWord, word);
-        if (previousWord && prevPrevWord) tg = recordTrigram(tg, prevPrevWord, previousWord, word);
+        if (previousWord) bg = recordBigram(bg, previousWord, word, language);
+        if (previousWord && prevPrevWord) tg = recordTrigram(tg, prevPrevWord, previousWord, word, language);
         set({ wordFreq: wf, bigrams: bg, trigrams: tg });
       },
 
