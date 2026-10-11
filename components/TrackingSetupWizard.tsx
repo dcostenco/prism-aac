@@ -25,6 +25,8 @@ import { useT } from '@/engine/useT';
 
 const WIZARD_CURSOR_SIZE = 36;
 const ACCURACY_DWELL_MS = 400;
+const CORNER_RING_RADIUS = 45;
+const CORNER_TARGET_SIZE = 100;
 
 type Phase =
   | 'intro'
@@ -76,6 +78,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const [cornerSamples, setCornerSamples] = useState<Array<{ x: number; y: number }>>([]);
   const [testTargets, setTestTargets] = useState<Array<{ x: number; y: number; hit: boolean; cameraHit?: boolean }>>([]);
   const accuracyTargetRef = useRef<HTMLButtonElement | null>(null);
+  const cornerTargetRef = useRef<HTMLDivElement | null>(null);
   const accuracyInstructionsRef = useRef<HTMLDivElement | null>(null);
   const diagnosticRef = useRef<HTMLDivElement | null>(null);
   const pipWrapperRef = useRef<HTMLDivElement | null>(null);
@@ -657,7 +660,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   }, [phase]);
 
   // Corner auto-capture — two triggers:
-  //   1. PROXIMITY: cursor within 200px of corner target for 1.5s
+  //   1. PROXIMITY: full cursor inside the visible corner ring for 1.5s
   //   2. TIMEOUT: after 5s on a corner, capture whatever position
   //      the cursor is at (best-effort). If user can't move cursor
   //      to the corner, the narrow-range fallback uses center-only
@@ -687,7 +690,6 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       cornerDwellRef.current = null;
       return;
     }
-    const AUTO_CAPTURE_RADIUS = 200;
     const CORNER_DWELL_MS = 1500;
     const CORNER_TIMEOUT_MS = 5000;
     const id = setInterval(() => {
@@ -704,11 +706,16 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       // Proximity path — fires when cursor holds near the corner target.
       const corner = CORNER_TARGETS[curIdx];
       if (!corner) return;
-      const tx = (corner.x / 100) * window.innerWidth;
-      const ty = (corner.y / 100) * window.innerHeight;
+      const bounds = cornerTargetRef.current?.getBoundingClientRect();
+      if (!bounds || bounds.width === 0 || bounds.height === 0) return;
+      const tx = bounds.left + bounds.width / 2;
+      const ty = bounds.top + bounds.height / 2;
       const { x, y } = cursorPosRef.current;
       const dist = Math.sqrt((x - tx) ** 2 + (y - ty) ** 2);
-      if (dist <= AUTO_CAPTURE_RADIUS) {
+      // A large viewport-relative radius includes neutral after targets move
+      // into a reserved workarea. Only an actual visible fit is a corner pause.
+      const ringRadius = Math.min(bounds.width, bounds.height) * CORNER_RING_RADIUS / CORNER_TARGET_SIZE;
+      if (dist + WIZARD_CURSOR_SIZE / 2 <= ringRadius) {
         if (!cornerDwellRef.current || cornerDwellRef.current.idx !== curIdx) {
           cornerDwellRef.current = { idx: curIdx, start: Date.now() };
         } else if (Date.now() - cornerDwellRef.current.start >= CORNER_DWELL_MS) {
@@ -747,7 +754,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       data-tracker-status={trackerStatus}
     >
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-6 py-4">
+      <div className="tracking-wizard-header shrink-0 flex items-center justify-between px-6 py-4">
         <button
           onClick={() => {
             // Disable finger/camera tracking on cancel so the user
@@ -771,7 +778,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       </div>
 
       {/* Progress dots */}
-      <div className="shrink-0 flex justify-center gap-2 pb-4">
+      <div className="tracking-wizard-progress shrink-0 flex justify-center gap-2 pb-4">
         {['detecting', 'calibrate', 'test', 'done'].map((step, i) => (
           <div
             key={step}
@@ -785,11 +792,12 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+      <div className="tracking-wizard-layout" data-camera-active={phase !== 'intro' && phase !== 'complete' ? 'true' : 'false'}>
+      <div className="tracking-wizard-workarea" data-testid="tracking-wizard-workarea">
 
         {/* INTRO */}
         {phase === 'intro' && (
-          <div className="text-center px-8 max-w-lg">
+          <div className="tracking-wizard-intro text-center px-8 max-w-lg">
             <div className="text-8xl mb-6">🎯</div>
             <h2 className="text-white text-3xl font-black mb-4">Let&apos;s Set Up Tracking</h2>
             <p className="text-white/70 text-lg mb-4">
@@ -800,7 +808,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               <li className="flex gap-2"><span>1️⃣</span><span>Sit ~50cm from the camera so it sees you clearly.</span></li>
               <li className="flex gap-2"><span>2️⃣</span><span><strong>Physically turn your head</strong> toward each corner — don&apos;t just move your eyes.</span></li>
               <li className="flex gap-2"><span>3️⃣</span><span>Tap <strong>Capture</strong> when you&apos;re looking at each target.</span></li>
-              <li className="flex gap-2"><span>4️⃣</span><span>Watch the camera preview (top-right) to confirm you&apos;re visible.</span></li>
+              <li className="flex gap-2"><span>4️⃣</span><span>Watch the camera preview to confirm you&apos;re visible.</span></li>
             </ul>
             <p className="text-white/50 text-xs mb-6">
               ~45 seconds. You can Skip any step if it&apos;s not working.
@@ -826,7 +834,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             <p className="text-white text-xl font-bold mb-2">{statusText}</p>
             <p className="text-white/60 text-sm">
               Slowly turn your head left, right, up, down — and wave a hand
-              if you can. I&apos;m looking at the camera feed (top-right) to
+              if you can. I&apos;m looking at the camera feed to
               see what you can move.
             </p>
 
@@ -889,7 +897,118 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 </div>
               </div>
             </div>
-            <div className="absolute bottom-20 left-0 right-0 text-center px-6">
+          </>
+        )}
+
+        {/* CALIBRATE CORNERS */}
+        {phase === 'calibrate-corners' && (
+          <>
+            {CORNER_TARGETS.map((corner, idx) => (
+              <div
+                key={idx}
+                ref={idx === cornerIdx ? cornerTargetRef : undefined}
+                data-testid={`tracking-corner-target-${idx}`}
+                className={`absolute pointer-events-none transition-all duration-500 ${idx === cornerIdx ? 'scale-100 opacity-100' : idx < cornerIdx ? 'scale-75 opacity-30' : 'scale-50 opacity-10'}`}
+                style={{ left: `clamp(${CORNER_TARGET_SIZE / 2}px, ${corner.x}%, calc(100% - ${CORNER_TARGET_SIZE / 2}px))`, top: `clamp(${CORNER_TARGET_SIZE / 2}px, ${corner.y}%, calc(100% - ${CORNER_TARGET_SIZE / 2}px))`, transform: 'translate(-50%, -50%)' }}
+              >
+                {idx === cornerIdx ? (
+                  <div className="relative">
+                    <svg width={CORNER_TARGET_SIZE} height={CORNER_TARGET_SIZE}>
+                      <circle cx="50" cy="50" r={CORNER_RING_RADIUS} fill="none" stroke="rgba(33,150,243,0.3)" strokeWidth="4" />
+                      <circle
+                        cx="50" cy="50" r={CORNER_RING_RADIUS}
+                        fill="none" stroke="#2196F3" strokeWidth="6"
+                        strokeDasharray={283}
+                        strokeDashoffset={283 * (1 - progress)}
+                        strokeLinecap="round"
+                        transform="rotate(-90 50 50)"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center text-3xl text-white">{corner.emoji}</div>
+                  </div>
+                ) : (
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${idx < cornerIdx ? 'bg-[#4CAF50]' : 'bg-white/10'}`}>
+                    <span className="text-xl">{idx < cornerIdx ? '✓' : corner.emoji}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* ACCURACY TEST */}
+        {phase === 'accuracy-test' && (
+          <>
+            {testTargets.map((target, idx) => (
+              <button
+                key={idx}
+                ref={idx === testIdx ? accuracyTargetRef : undefined}
+                onClick={() => handleTestHit(idx)}
+                data-testid={`tracking-test-target-${idx}`}
+                data-active={idx === testIdx ? 'true' : 'false'}
+                data-hit={target.hit ? 'true' : 'false'}
+                data-camera-hit={target.cameraHit ? 'true' : 'false'}
+                disabled={idx !== testIdx || target.hit}
+                className={`absolute w-24 h-24 rounded-full transition-all duration-300 ${
+                  target.hit
+                    ? 'bg-[#4CAF50] scale-75 opacity-50'
+                    : idx === testIdx
+                      ? 'bg-[#FF6B6B] animate-pulse shadow-lg shadow-[#FF6B6B]/50 scale-110'
+                      : 'bg-white/10 scale-75'
+                }`}
+                style={{
+                  left: `clamp(60px, ${target.x}%, calc(100% - 60px))`,
+                  top: `clamp(60px, ${target.y}%, calc(100% - 60px))`,
+                  zIndex: idx === testIdx ? 1 : 0,
+                  pointerEvents: idx === testIdx ? 'auto' : 'none',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                {target.hit ? <span className="text-2xl">✓</span> : idx === testIdx ? <span className="text-2xl">👆</span> : null}
+              </button>
+            ))}
+            {/* Global cursor (rendered below outside the per-phase
+                blocks) shows the camera-tracked position. The accuracy
+                test handler runs the dwell-on-target hit detection. */}
+          </>
+        )}
+
+        {/* COMPLETE */}
+        {phase === 'complete' && (
+          <div className="tracking-wizard-complete text-center px-8 max-w-md max-h-full overflow-y-auto">
+            <div className="tracking-wizard-result-icon text-8xl mb-6">{accuracyPassed ? '🎉' : 'ℹ️'}</div>
+            <h2 className="text-white text-3xl font-black mb-4">{t('done')}</h2>
+            <p className="text-white/70 text-lg mb-2">
+              Tracking: {detected.find(d => d.target === selectedPart)?.emoji} {detected.find(d => d.target === selectedPart)?.label}
+            </p>
+            <p className="text-white/80 text-sm mb-8" data-testid="tracking-accuracy-result"
+              data-camera-hits={cameraHits} data-accuracy-passed={accuracyPassed ? 'true' : 'false'}>
+              {t(accuracyPassed ? 'tracking_accuracy_passed' : 'tracking_accuracy_unverified')}
+              <br />
+              {t('tracking_camera_hits').replace('{hits}', String(cameraHits)).replace('{total}', String(testTargets.length))}
+            </p>
+            <button
+              onClick={() => {
+                tapFeedback();
+                unfreezeLearnerCalSaves();
+                useSettingsStore.getState().update({
+                  cameraInputEnabled: true,
+                  poseCalibrationGeneration: useSettingsStore.getState().poseCalibrationGeneration + 1,
+                });
+                handleRef.current?.stop();
+                onComplete();
+              }}
+              className="w-full py-4 rounded-2xl bg-[#4CAF50] text-white font-bold text-xl shadow-lg active:scale-95 transition-transform"
+            >
+              Start Using Prism AAC
+            </button>
+          </div>
+        )}
+      </div>
+      {(phase === 'calibrate-center' || phase === 'calibrate-corners' || phase === 'accuracy-test') && (
+        <div ref={accuracyInstructionsRef} className="tracking-wizard-guide" data-testid="tracking-wizard-guide">
+          {phase === 'calibrate-center' && (
+            <div className="text-center">
               <p className="text-white text-lg font-bold">{statusText}</p>
               <p className="text-white/80 text-sm mt-2 max-w-md mx-auto">
                 Face the green circle in the middle of the screen. Hold
@@ -925,41 +1044,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 Skip calibration → use defaults
               </button>
             </div>
-          </>
-        )}
-
-        {/* CALIBRATE CORNERS */}
-        {phase === 'calibrate-corners' && (
-          <>
-            {CORNER_TARGETS.map((corner, idx) => (
-              <div
-                key={idx}
-                className={`fixed pointer-events-none transition-all duration-500 ${idx === cornerIdx ? 'scale-100 opacity-100' : idx < cornerIdx ? 'scale-75 opacity-30' : 'scale-50 opacity-10'}`}
-                style={{ left: `${corner.x}%`, top: `${corner.y}%`, transform: 'translate(-50%, -50%)' }}
-              >
-                {idx === cornerIdx ? (
-                  <div className="relative">
-                    <svg width="100" height="100">
-                      <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(33,150,243,0.3)" strokeWidth="4" />
-                      <circle
-                        cx="50" cy="50" r="45"
-                        fill="none" stroke="#2196F3" strokeWidth="6"
-                        strokeDasharray={283}
-                        strokeDashoffset={283 * (1 - progress)}
-                        strokeLinecap="round"
-                        transform="rotate(-90 50 50)"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-3xl">{corner.emoji}</div>
-                  </div>
-                ) : (
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${idx < cornerIdx ? 'bg-[#4CAF50]' : 'bg-white/10'}`}>
-                    <span className="text-xl">{idx < cornerIdx ? '✓' : corner.emoji}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-            <div className="absolute bottom-20 left-0 right-0 text-center px-6">
+          )}
+          {phase === 'calibrate-corners' && (
+            <div className="text-center">
               <p className="text-white text-xl font-bold">
                 {`Step ${cornerIdx + 1} of 4: ${CORNER_TARGETS[cornerIdx]?.label}`}
               </p>
@@ -1040,42 +1127,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 Skip → use factory defaults
               </button>
             </div>
-          </>
-        )}
-
-        {/* ACCURACY TEST */}
-        {phase === 'accuracy-test' && (
-          <>
-            {testTargets.map((target, idx) => (
-              <button
-                key={idx}
-                ref={idx === testIdx ? accuracyTargetRef : undefined}
-                onClick={() => handleTestHit(idx)}
-                data-testid={`tracking-test-target-${idx}`}
-                data-active={idx === testIdx ? 'true' : 'false'}
-                data-hit={target.hit ? 'true' : 'false'}
-                data-camera-hit={target.cameraHit ? 'true' : 'false'}
-                disabled={idx !== testIdx || target.hit}
-                className={`fixed w-24 h-24 rounded-full transition-all duration-300 ${
-                  target.hit
-                    ? 'bg-[#4CAF50] scale-75 opacity-50'
-                    : idx === testIdx
-                      ? 'bg-[#FF6B6B] animate-pulse shadow-lg shadow-[#FF6B6B]/50 scale-110'
-                      : 'bg-white/10 scale-75'
-                }`}
-                style={{
-                  left: `${target.x}%`,
-                  top: `${target.y}%`,
-                  transform: 'translate(-50%, -50%)',
-                }}
-              >
-                {target.hit ? <span className="text-2xl">✓</span> : idx === testIdx ? <span className="text-2xl">👆</span> : null}
-              </button>
-            ))}
-            {/* Global cursor (rendered below outside the per-phase
-                blocks) shows the camera-tracked position. The accuracy
-                test handler runs the dwell-on-target hit detection. */}
-            <div ref={accuracyInstructionsRef} className="absolute bottom-20 left-0 right-0 text-center px-6">
+          )}
+          {phase === 'accuracy-test' && (
+            <div className="text-center">
               <p className="text-white text-lg font-bold">{statusText}</p>
               <p className="text-white/50 text-sm" data-testid="tracking-test-hits">
                 {t('tracking_camera_hits').replace('{hits}', String(cameraHits)).replace('{total}', String(testTargets.length))}
@@ -1093,92 +1147,18 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 Skip test → save calibration anyway
               </button>
             </div>
-          </>
-        )}
-
-        {/* COMPLETE */}
-        {phase === 'complete' && (
-          <div className="tracking-wizard-complete text-center px-8 max-w-md max-h-full overflow-y-auto">
-            <div className="tracking-wizard-result-icon text-8xl mb-6">{accuracyPassed ? '🎉' : 'ℹ️'}</div>
-            <h2 className="text-white text-3xl font-black mb-4">{t('done')}</h2>
-            <p className="text-white/70 text-lg mb-2">
-              Tracking: {detected.find(d => d.target === selectedPart)?.emoji} {detected.find(d => d.target === selectedPart)?.label}
-            </p>
-            <p className="text-white/80 text-sm mb-8" data-testid="tracking-accuracy-result"
-              data-camera-hits={cameraHits} data-accuracy-passed={accuracyPassed ? 'true' : 'false'}>
-              {t(accuracyPassed ? 'tracking_accuracy_passed' : 'tracking_accuracy_unverified')}
-              <br />
-              {t('tracking_camera_hits').replace('{hits}', String(cameraHits)).replace('{total}', String(testTargets.length))}
-            </p>
-            <button
-              onClick={() => {
-                tapFeedback();
-                unfreezeLearnerCalSaves();
-                useSettingsStore.getState().update({
-                  cameraInputEnabled: true,
-                  poseCalibrationGeneration: useSettingsStore.getState().poseCalibrationGeneration + 1,
-                });
-                handleRef.current?.stop();
-                onComplete();
-              }}
-              className="w-full py-4 rounded-2xl bg-[#4CAF50] text-white font-bold text-xl shadow-lg active:scale-95 transition-transform"
-            >
-              Start Using Prism AAC
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Live camera-cursor — visible during every phase that uses
-          the camera so the user can verify in real time that pointing
-          their hand actually moves the cursor. Color reflects status:
-          green = tracking, orange = lost, grey = stopped/starting. */}
-      {cursorVisible && (
-        <div
-          data-testid="tracking-wizard-cursor"
-          style={{
-            position: 'fixed',
-            left: cursorPos.x - WIZARD_CURSOR_SIZE / 2,
-            top: cursorPos.y - WIZARD_CURSOR_SIZE / 2,
-            width: WIZARD_CURSOR_SIZE,
-            height: WIZARD_CURSOR_SIZE,
-            borderRadius: '50%',
-            backgroundColor: cursorColor,
-            border: '3px solid white',
-            boxShadow: `0 0 20px ${cursorColor}99, 0 0 40px ${cursorColor}55`,
-            pointerEvents: 'none',
-            transition: 'left 0.06s linear, top 0.06s linear, background-color 0.2s ease',
-            zIndex: 10001,
-          }}
-        />
+          )}
+        </div>
       )}
-
-      {/* Status bar — explicit tracking-status text so the user knows
-          why the cursor isn't moving (lost = camera can't see the
-          tracked body part; stopped = tracker not running; tracking =
-          all good). */}
-      <div className="shrink-0 px-6 py-3 flex items-center justify-center gap-2"
-           data-testid="tracking-wizard-status">
-        <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: cursorColor }} />
-        <span className="text-white/60 text-xs font-semibold">
-          {trackerStatus === 'tracking' && `Tracking ${selectedPart ? `your ${BODY_PARTS.find(b => b.target === selectedPart)?.label.toLowerCase() ?? 'finger'}` : 'you'}`}
-          {trackerStatus === 'lost' && (selectedPart ? `Camera can't see your ${BODY_PARTS.find(b => b.target === selectedPart)?.label.toLowerCase() ?? 'finger'} — move into frame` : 'Camera lost — move into frame')}
-          {trackerStatus === 'starting' && 'Loading camera…'}
-          {trackerStatus === 'stopped' && 'Camera not running'}
-        </span>
-      </div>
-
-      {/* Live camera PIP — confirms the camera is actually running.
-          Top-right corner so it doesn't fight with the diag panel. */}
+      <div className="tracking-wizard-support">
+      {/* Live preview and diagnostics share a reserved support region,
+          outside the calibration workarea and its capture controls. */}
       <div
+        className="tracking-wizard-preview"
         ref={pipWrapperRef}
         data-testid="tracking-wizard-pip-wrapper"
         style={{
-          position: 'fixed',
-          top: 80,
-          right: 12,
-          width: 200,
-          height: 150,
+
           borderRadius: 10,
           overflow: 'hidden',
           border: '2px solid rgba(76,175,80,0.6)',
@@ -1217,28 +1197,24 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         </div>
       </div>
 
-      {/* Live diagnostics overlay — shows raw pose, calibration, and
-          mapping math so screenshots make the failure mode visible.
-          Top-left of viewport, semi-transparent so it doesn't block
-          the targets. Visible during every camera-active phase. */}
+      {/* Raw pose/calibration diagnostics stay available during every
+          camera-active phase without covering any target. */}
       {(phase === 'detecting' || phase === 'calibrate-center' ||
         phase === 'calibrate-corners' || phase === 'accuracy-test') && (
         <div
+          className="tracking-wizard-diagnostics"
           ref={diagnosticRef}
           data-testid="tracking-wizard-diag"
           style={{
-            position: 'fixed',
-            top: 80,
-            left: 8,
+
             background: 'rgba(0,0,0,0.7)',
             color: '#9efc9e',
             fontFamily: 'ui-monospace, monospace',
-            fontSize: 11,
+
             padding: '8px 10px',
             borderRadius: 6,
             border: '1px solid rgba(78,255,78,0.3)',
-            maxWidth: 280,
-            lineHeight: 1.4,
+
             zIndex: 10002,
             pointerEvents: 'none',
           }}
@@ -1251,9 +1227,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           <div>selectedPart: <span style={{ color: '#fff' }}>{selectedPart || 'none'}</span></div>
           <div>samples in buffer: <span style={{ color: '#fff' }}>{sampleBufferRef.current.length}</span></div>
           <div>cornerSamples: <span style={{ color: '#fff' }}>{cornerSamples.length}/4</span></div>
+          <div>cursor: <span style={{ color: '#fff' }}>({Math.round(cursorPos.x)}, {Math.round(cursorPos.y)})</span></div>
           {latestSample && (
             <>
-              <div>
+              <div className="tracking-wizard-diagnostic-wide">
                 normX: <span style={{ color: '#fff' }}>{latestSample.normX.toFixed(3)}</span>{' '}
                 normY: <span style={{ color: '#fff' }}>{latestSample.normY.toFixed(3)}</span>{' '}
                 mirX: <span style={{ color: '#fff' }}>{(1 - latestSample.normX).toFixed(3)}</span>
@@ -1284,9 +1261,6 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               )}
             </>
           )}
-          <div>
-            cursor: <span style={{ color: '#fff' }}>({Math.round(cursorPos.x)}, {Math.round(cursorPos.y)})</span>
-          </div>
           {latestCal && (() => {
             const rangeX = latestCal.leftX - latestCal.rightX;
             const rangeY = latestCal.bottomY - latestCal.topY;
@@ -1294,16 +1268,16 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             const minRangeOK = rangeX >= POSE_CALIBRATION_MIN_RANGE && rangeY >= POSE_CALIBRATION_MIN_RANGE;
             return (
               <>
-                <div style={{ marginTop: 4, color: '#fff', fontWeight: 700 }}>cal:</div>
-                <div>
+                <div className="tracking-wizard-diagnostic-wide" style={{ marginTop: 4, color: '#fff', fontWeight: 700 }}>cal:</div>
+                <div className="tracking-wizard-diagnostic-wide">
                   L={latestCal.leftX.toFixed(3)} R={latestCal.rightX.toFixed(3)}{' '}
                   T={latestCal.topY.toFixed(3)} B={latestCal.bottomY.toFixed(3)}
                 </div>
-                <div>
+                <div className="tracking-wizard-diagnostic-wide">
                   rangeX=<span style={{ color: rangeX > 0 ? '#9efc9e' : '#ff7e7e' }}>{rangeX.toFixed(3)}</span>{' '}
                   rangeY=<span style={{ color: rangeY > 0 ? '#9efc9e' : '#ff7e7e' }}>{rangeY.toFixed(3)}</span>
                 </div>
-                <div>
+                <div className="tracking-wizard-diagnostic-wide">
                   convention: <span style={{ color: conventionOK ? '#9efc9e' : '#ff7e7e' }}>{conventionOK ? 'OK' : 'INVERTED'}</span>{' '}
                   min-range: <span style={{ color: minRangeOK ? '#9efc9e' : '#ff7e7e' }}>{minRangeOK ? 'OK' : 'TOO NARROW'}</span>
                 </div>
@@ -1312,6 +1286,49 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           })()}
         </div>
       )}
+      </div>
+      </div>
+
+      {/* Live camera-cursor — visible during every phase that uses
+          the camera so the user can verify in real time that pointing
+          their hand actually moves the cursor. Color reflects status:
+          green = tracking, orange = lost, grey = stopped/starting. */}
+      {cursorVisible && (
+        <div
+          data-testid="tracking-wizard-cursor"
+          style={{
+            position: 'fixed',
+            left: cursorPos.x - WIZARD_CURSOR_SIZE / 2,
+            top: cursorPos.y - WIZARD_CURSOR_SIZE / 2,
+            width: WIZARD_CURSOR_SIZE,
+            height: WIZARD_CURSOR_SIZE,
+            borderRadius: '50%',
+            backgroundColor: cursorColor,
+            border: '3px solid white',
+            boxShadow: `0 0 20px ${cursorColor}99, 0 0 40px ${cursorColor}55`,
+            pointerEvents: 'none',
+            transition: 'left 0.06s linear, top 0.06s linear, background-color 0.2s ease',
+            zIndex: 10001,
+          }}
+        />
+      )}
+
+      {/* Status bar — explicit tracking-status text so the user knows
+          why the cursor isn't moving (lost = camera can't see the
+          tracked body part; stopped = tracker not running; tracking =
+          all good). */}
+      <div className="tracking-wizard-status shrink-0 px-6 py-3 flex items-center justify-center gap-2"
+           data-testid="tracking-wizard-status">
+        <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: cursorColor }} />
+        <span className="text-white/60 text-xs font-semibold">
+          {trackerStatus === 'tracking' && `Tracking ${selectedPart ? `your ${BODY_PARTS.find(b => b.target === selectedPart)?.label.toLowerCase() ?? 'finger'}` : 'you'}`}
+          {trackerStatus === 'lost' && (selectedPart ? `Camera can't see your ${BODY_PARTS.find(b => b.target === selectedPart)?.label.toLowerCase() ?? 'finger'} — move into frame` : 'Camera lost — move into frame')}
+          {trackerStatus === 'starting' && 'Loading camera…'}
+          {trackerStatus === 'stopped' && 'Camera not running'}
+        </span>
+      </div>
+
+
     </div>
   );
 }

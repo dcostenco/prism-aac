@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { safeScreenshot } from './helpers/screenshot-validation';
@@ -13,6 +13,26 @@ const photograph = readFileSync(resolve(process.cwd(), 'e2e/_fixtures/wizard-sce
 const NEAR_CROPPED_PROFILE = { name: 'near-cropped-dim', width: 160, height: 120,
   zoom: 2.1, tilt: -0.15, brightness: 0.65, blur: 1, drift: 0.015 };
 const RANGE_COMPARE_EPSILON = 1e-9;
+
+async function expectTargetUncovered(page: Page, targetSelector: string) {
+  const failures = await page.locator(targetSelector).evaluate(target => {
+    const bounds = target.getBoundingClientRect();
+    const issues: string[] = [];
+    if (bounds.width === 0 || bounds.height === 0 || bounds.left < 0 || bounds.top < 0 ||
+      bounds.right > innerWidth || bounds.bottom > innerHeight) issues.push('target clipped');
+    for (const selector of ['[data-testid="tracking-wizard-pip-wrapper"]',
+      '[data-testid="tracking-wizard-diag"]', '[data-testid="tracking-wizard-guide"]',
+      '[data-testid="tracking-capture-center"]', '[data-testid="tracking-capture-corner"]']) {
+      const panel = document.querySelector(selector)?.getBoundingClientRect();
+      if (panel && panel.width > 0 && panel.height > 0 && bounds.left < panel.right &&
+        bounds.right > panel.left && bounds.top < panel.bottom && bounds.bottom > panel.top) {
+        issues.push(`target covered by ${selector}`);
+      }
+    }
+    return issues;
+  });
+  expect(failures, 'the camera cursor must aim at an unobscured visible target').toEqual([]);
+}
 
 // Camera inference and continuous trace screencasts compete on small devices.
 // Keep call/network diagnostics, plus explicit validated workflow screenshots.
@@ -80,6 +100,11 @@ for (const profile of [
     const toggle = page.getByRole('button', { name: 'Camera input', exact: true });
     if (await toggle.getAttribute('aria-pressed') !== 'true') await toggle.click();
     await page.getByRole('button', { name: /Set Up Tracking/ }).click();
+    await safeScreenshot(page, info.outputPath('setup-entry.png'), {
+      expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-setup-start"]'],
+      criticalSelectors: ['[data-testid="tracking-setup-start"]'],
+      occluderSelectors: ['[data-testid="tracking-wizard-pip-wrapper"]', '[data-testid="tracking-wizard-status"]'],
+    });
     await page.getByTestId('tracking-setup-start').click();
     await expectPhotographicCameraInput(page, '__cameraReplay');
     const wizard = page.getByTestId('tracking-setup-wizard');
@@ -115,14 +140,31 @@ for (const profile of [
     expect(Math.hypot(frozenCursor.x + frozenCursor.width / 2 - frozenCircle.x - frozenCircle.width / 2,
       frozenCursor.y + frozenCursor.height / 2 - frozenCircle.y - frozenCircle.height / 2) +
       frozenCursor.width / 2).toBeLessThan(55);
+    // Pointer-transparent instructions/diagnostics still obscure calibration.
+    // This is independent of cursor fit and must not be waived by it.
+    await expectTargetUncovered(page, '[data-testid="tracking-center-target"]');
+    const captureBounds = (await capture.boundingBox())!;
+    expect(captureBounds.height).toBeGreaterThanOrEqual(48);
+    expect(captureBounds.y + captureBounds.height).toBeLessThanOrEqual(page.viewportSize()!.height);
     await safeScreenshot(page, info.outputPath('center-with-drift.png'), {
       expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-center-target"]'],
+      criticalSelectors: ['[data-testid="tracking-capture-center"]', '[data-testid="tracking-calibrate-skip"]'],
+      occluderSelectors: ['[data-testid="tracking-wizard-pip-wrapper"]', '[data-testid="tracking-wizard-diag"]', '[data-testid="tracking-wizard-status"]'],
     });
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-center');
     expect(await page.getByTestId('tracking-wizard-cursor').boundingBox()).toEqual(frozenCursor);
     expect(await page.getByTestId('tracking-center-target').boundingBox()).toEqual(frozenCircle);
     await page.clock.resume();
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-corners', { timeout: 25_000 });
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+    await expectTargetUncovered(page, '[data-testid="tracking-corner-target-0"]');
+    await safeScreenshot(page, info.outputPath('corner-workarea.png'), {
+      expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-corner-target-0"]'],
+      criticalSelectors: ['[data-testid="tracking-capture-corner"]', '[data-testid="tracking-save-center-only"]',
+        '[data-testid="tracking-corners-skip"]'],
+      occluderSelectors: ['[data-testid="tracking-wizard-pip-wrapper"]', '[data-testid="tracking-wizard-diag"]', '[data-testid="tracking-wizard-status"]'],
+    });
+    await page.clock.resume();
     const centerOnly = 'centerOnly' in profile && profile.centerOnly;
     if (centerOnly) {
       await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
@@ -143,6 +185,7 @@ for (const profile of [
     }
     }
     await expect(wizard).toHaveAttribute('data-phase', 'accuracy-test', { timeout: 12_000 });
+    await expectTargetUncovered(page, '[data-active="true"][data-testid^="tracking-test-target-"]');
     // This limited-motion replay is accepted by the runtime. The visible
     // diagnostic must not contradict it with a legacy, stricter range floor.
     await expect(page.getByTestId('tracking-wizard-diag')).toContainText('min-range: OK');
@@ -160,6 +203,8 @@ for (const profile of [
     await expect(page.getByTestId('tracking-test-hits')).toHaveText(hits);
     await safeScreenshot(page, info.outputPath('lost-no-false-hit.png'), {
       expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-setup-wizard"]'],
+      criticalSelectors: ['[data-testid="tracking-test-skip"]', '[data-active="true"][data-testid^="tracking-test-target-"]'],
+      occluderSelectors: ['[data-testid="tracking-wizard-pip-wrapper"]', '[data-testid="tracking-wizard-diag"]', '[data-testid="tracking-wizard-status"]'],
     });
     // Manual escape remains usable; it is not recognition/accuracy proof.
     await page.getByTestId('tracking-test-skip').click();

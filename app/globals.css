@@ -1313,9 +1313,134 @@ input[type="range"] {
   min-width: 48px;
 }
 
+/* Targets and support never share a layer. Portrait uses stacked regions;
+   landscape reserves equal side rails so neutral stays at viewport center. */
+.tracking-wizard-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  gap: 12px;
+  padding: 0 12px;
+}
+.tracking-wizard-workarea {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tracking-wizard-intro > div:first-child { font-size: 64px; line-height: 72px; margin-bottom: 12px; }
+.tracking-wizard-intro > h2 { font-size: 28px; line-height: 32px; margin-bottom: 12px; }
+.tracking-wizard-layout[data-camera-active="true"] {
+  grid-template-columns: 260px minmax(120px, 1fr) 260px;
+}
+.tracking-wizard-layout[data-camera-active="true"] .tracking-wizard-workarea {
+  grid-column: 2;
+  grid-row: 1;
+}
+.tracking-wizard-support {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  overflow-y: auto;
+}
+.tracking-wizard-layout[data-camera-active="false"] .tracking-wizard-support {
+  grid-column: 2;
+}
+.tracking-wizard-preview {
+  position: relative;
+  width: 160px;
+  height: 120px;
+  flex-shrink: 0;
+}
+.tracking-wizard-diagnostics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 4px;
+  width: 100%;
+  font-size: 10px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.tracking-wizard-diagnostics > div:first-child,
+.tracking-wizard-diagnostic-wide { grid-column: 1 / -1; }
+.tracking-wizard-guide {
+  grid-column: 3;
+  grid-row: 1;
+  min-height: 0;
+  align-self: center;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.tracking-wizard-guide button {
+  min-height: 48px;
+}
+@media (max-width: 699px) {
+  .tracking-wizard-layout,
+  .tracking-wizard-layout[data-camera-active="true"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(120px, 1fr) auto;
+    gap: 8px;
+  }
+  .tracking-wizard-layout .tracking-wizard-support,
+  .tracking-wizard-layout[data-camera-active="false"] .tracking-wizard-support {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: row;
+    align-items: flex-start;
+    max-height: 24vh;
+  }
+  .tracking-wizard-layout .tracking-wizard-workarea,
+  .tracking-wizard-layout[data-camera-active="true"] .tracking-wizard-workarea {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .tracking-wizard-guide {
+    grid-column: 1;
+    grid-row: 3;
+    max-height: 35vh;
+  }
+  .tracking-wizard-preview { width: 96px; height: 72px; }
+  .tracking-wizard-diagnostics { flex: 1; min-width: 0; }
+  .tracking-wizard-guide p { font-size: 14px; line-height: 18px; margin-top: 4px; }
+  .tracking-wizard-guide p:first-child { font-size: 16px; line-height: 20px; margin-top: 0; }
+  .tracking-wizard-guide button { margin-top: 4px; padding: 6px 12px; font-size: 14px; line-height: 18px; }
+}
+
 /* Keep the accuracy result and its finish action together on short screens.
    No status text or escape option is hidden to make the panel fit. */
 @media (max-height: 500px) {
+  .tracking-wizard-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px 12px;
+    max-width: 640px;
+    padding-inline: 12px;
+  }
+  .tracking-wizard-intro > div:first-child { grid-column: 1; font-size: 32px; line-height: 36px; margin: 0; }
+  .tracking-wizard-intro > h2 { grid-column: 1; font-size: 20px; line-height: 24px; margin: 0; }
+  .tracking-wizard-intro > p { grid-column: 1; font-size: 12px; line-height: 16px; margin: 0; }
+  .tracking-wizard-intro > ul { grid-column: 2; grid-row: 1 / span 4; margin: 0; padding: 12px; font-size: 12px; line-height: 16px; }
+  .tracking-wizard-intro > button { grid-column: 1 / -1; min-height: 48px; padding-block: 8px; font-size: 16px; line-height: 20px; }
+  .tracking-wizard-header { padding-block: 8px; }
+  .tracking-wizard-header button { min-height: 48px; }
+  .tracking-wizard-progress { padding-bottom: 8px; }
+  .tracking-wizard-status { padding-block: 6px; }
+  .tracking-wizard-preview { width: 96px; height: 72px; }
+  .tracking-wizard-guide p { font-size: 12px; line-height: 16px; margin-top: 0; }
+  .tracking-wizard-guide p:first-child { font-size: 16px; line-height: 20px; margin-top: 0; }
+  .tracking-wizard-guide button {
+    margin-top: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    line-height: 16px;
+  }
   .tracking-wizard-complete .tracking-wizard-result-icon {
     font-size: 2rem;
     line-height: 2.5rem;

@@ -78,6 +78,7 @@ import TrackingSetupWizard from '@/components/TrackingSetupWizard';
 import { useSettingsStore } from '@/store/settingsStore';
 import { loadPoseCalibration, mapPoseToScreen } from '@/services/bodyPoseService';
 const BASE_SETTINGS = { ...useSettingsStore.getState() };
+const WIZARD_DRIFT_LEVELS = [0, 0.003, 0.015];
 
 const RANGE_DIAGNOSTIC_CASES = [
   { name: 'observed low-resolution range', x: 0.175, y: 0.178, accepted: true },
@@ -163,6 +164,64 @@ it.each(RANGE_DIAGNOSTIC_CASES)('diagnostics agree with actual mapping for $name
 });
 
 describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners → test)', () => {
+  it.each(WIZARD_DRIFT_LEVELS)('corner pause follows the visible DOM target after layout changes, drift %s', drift => {
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('nose', 0.5 + drift, 0.5);
+      vi.advanceTimersByTime(5000);
+    });
+    act(() => vi.advanceTimersByTime(1500));
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('nose', 0.5 + drift, 0.5);
+    });
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-corners');
+    const target = screen.getByTestId('tracking-corner-target-0');
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue({
+      x: 750, y: 150, left: 750, top: 150, right: 850, bottom: 250,
+      width: 100, height: 100, toJSON: () => ({}),
+    });
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('nose', 0.6 + drift, 0.4);
+      // This is deliberately far from the old viewport-percentage corner.
+      // Credit the real target's pause before the five-second fallback fires.
+      latestTracker().opts.onMove(800 + drift * 100, 200);
+    });
+    act(() => vi.advanceTimersByTime(1800));
+    expect(screen.getByTestId('tracking-capture-corner')).toHaveTextContent('Top Right');
+  });
+
+  it.each(WIZARD_DRIFT_LEVELS)('neutral near a reserved-workarea corner is not a proximity capture, drift %s', drift => {
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('nose', 0.5 + drift, 0.5);
+      vi.advanceTimersByTime(5000);
+    });
+    act(() => vi.advanceTimersByTime(1500));
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('nose', 0.5 + drift, 0.5);
+    });
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    const target = screen.getByTestId('tracking-corner-target-0');
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue({
+      x: 145, y: 282, left: 145, top: 282, right: 245, bottom: 382,
+      width: 100, height: 100, toJSON: () => ({}),
+    });
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('nose', 0.5 + drift, 0.5);
+      latestTracker().opts.onMove(195 + drift * 100, 422);
+    });
+    // Ninety pixels away is inside the old 200px radius but outside the
+    // actual ring. Preserve the user's time to make a comfortable movement.
+    act(() => vi.advanceTimersByTime(1800));
+    expect(screen.getByTestId('tracking-capture-corner')).toHaveTextContent('Top Left');
+    act(() => vi.advanceTimersByTime(3400));
+    // The explicitly best-effort timeout remains available, not a hit claim.
+    expect(screen.getByTestId('tracking-capture-corner')).toHaveTextContent('Top Right');
+  });
+
   it.each([1, 5, 10])('calibrates the actual body-camera pipeline at chosen sensitivity %s', sensitivity => {
     useSettingsStore.setState({ headTrackingSensitivity: sensitivity, headTrackingEyeGaze: true,
       headTrackingEyeGazeWeight: 0.8 });
