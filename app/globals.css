@@ -971,7 +971,13 @@ html, body {
     --aac-phone-prediction-size: 44px;
   }
 
-  [data-aac-device-class="phone"] [data-testid="prediction-bar"] .aac-prediction-tile {
+  [data-aac-device-class="phone"] [data-testid="prediction-bar"][data-aac-input-mode="picture"] {
+    --aac-phone-prediction-size: 44px;
+    height: 44px !important;
+  }
+
+  [data-aac-device-class="phone"] [data-testid="prediction-bar"] .aac-prediction-tile,
+  [data-aac-device-class="phone"] [data-testid="prediction-bar"][data-aac-input-mode="picture"] .aac-prediction-tile {
     flex: 1 1 0;
     width: auto;
     min-width: 0;
