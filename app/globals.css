@@ -338,10 +338,12 @@ html, body {
   }
 
   [data-testid="prediction-bar"] {
-    height: 48px !important;
+    /* Preserve the picture and its caption in compact landscape layouts. */
+    height: 96px !important;
   }
-  [data-testid="prediction-bar"] img {
-    display: none;
+  [data-testid="prediction-bar"] .aac-tile-icon > img {
+    max-width: 100%;
+    max-height: 100%;
   }
   .aac-tile-label {
     display: block;
