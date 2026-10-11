@@ -927,7 +927,7 @@ html, body {
   [data-aac-device-class="phone"] section[data-aac-mode="picture"] {
     display: grid;
     grid-template-columns: minmax(160px, 1fr) minmax(0, 2fr);
-    grid-template-rows: 48px minmax(0, 1fr);
+    grid-template-rows: 44px minmax(0, 1fr);
   }
 
   [data-aac-device-class="phone"] [data-aac-mode="picture"] > .aac-page-label {
@@ -948,11 +948,11 @@ html, body {
   [data-aac-device-class="phone"] [data-testid="picture-mode-sidebar"] {
     grid-column: 2;
     grid-row: 1;
-    height: 48px;
+    height: 44px;
   }
 
   [data-aac-device-class="phone"] [data-testid="picture-mode-sidebar"] > button {
-    min-height: 48px !important;
+    min-height: 44px !important;
   }
 
   /* Keep a real two-row vocabulary grid when the phone rotates. Compact the
@@ -990,8 +990,8 @@ html, body {
   }
 
   [data-aac-device-class="phone"] [data-testid="picture-board"] .aac-picture-grid {
-    gap: 4px;
-    padding: 4px;
+    gap: 2px;
+    padding: 3px;
   }
 
   [data-aac-device-class="phone"] [data-testid="picture-board"] .aac-phrase-tile,
@@ -1031,12 +1031,20 @@ html, body {
   }
 
   [data-aac-device-class="phone"] [data-scan-group="message-bar"][data-compact="1"] {
-    height: 48px;
-    min-height: 48px !important;
+    height: 46px;
+    min-height: 46px !important;
+  }
+
+  [data-aac-device-class="phone"] [data-scan-group="message-bar"][data-compact="1"] .aac-btn {
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
   }
 
   [data-aac-device-class="phone"] [data-testid="picture-board"] .aac-category-strip {
-    height: 48px;
+    height: calc(44px + var(--aac-safe-area-bottom));
+    padding-block: 0;
+    padding-bottom: var(--aac-safe-area-bottom) !important;
   }
 
   [data-aac-device-class="phone"] [data-aac-mode="picture"] .aac-phrase-label,

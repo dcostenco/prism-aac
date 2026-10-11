@@ -3,6 +3,11 @@ import { checkCriticalOcclusion, safeScreenshot } from './helpers/screenshot-val
 
 test.use({ serviceWorkers: 'block', hasTouch: true });
 const MINIMUM_WORD_TARGET_HEIGHT = 44;
+const COMMUNICATION_CONTROL_SELECTORS = [
+  '[data-scan-group="message-bar"] .aac-btn',
+  '[data-testid="picture-mode-sidebar"] > button',
+  '[data-testid="category-strip"] [data-testid="category-tile"]',
+] as const;
 
 async function swipe(page: Page, grid: Locator, dx: number, dy = 0) {
   const box = await grid.boundingBox();
@@ -238,6 +243,21 @@ for (const [size, cols] of [[4, 2], [6, 3]] as const) {
       expect(box.height).toBeGreaterThanOrEqual(MINIMUM_WORD_TARGET_HEIGHT);
       expect(box.y).toBeGreaterThanOrEqual(predictionBounds.y - 1);
       expect(box.y + box.height).toBeLessThanOrEqual(predictionBounds.y + predictionBounds.height + 1);
+    }
+    if (page.viewportSize()!.height <= 500) {
+      // Returning height to vocabulary must not shrink another communication
+      // target or remove the composer, navigation, or category controls.
+      for (const selector of COMMUNICATION_CONTROL_SELECTORS) {
+        const controls = page.locator(selector);
+        expect(await controls.count()).toBeGreaterThan(0);
+        for (const control of await controls.all()) {
+          await expect(control).toBeVisible();
+          expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(MINIMUM_WORD_TARGET_HEIGHT);
+        }
+      }
+      await expect.poll(() => checkCriticalOcclusion(page, {
+        criticalSelectors: [...COMMUNICATION_CONTROL_SELECTORS],
+      })).toEqual([]);
     }
     const capture = async (state: string, requireImages = true) => {
       if (requireImages || state === 'home') await expect.poll(() => grid.locator('[data-testid="phrase-tile-card"]').evaluateAll((cards, allowKnownMissingAsset) =>
