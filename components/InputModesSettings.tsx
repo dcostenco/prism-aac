@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
@@ -30,7 +30,7 @@ function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; la
   );
 }
 
-export default function InputModesSettings() {
+export default function InputModesSettings({ cameraOptions, touchOptions }: { cameraOptions?: ReactNode; touchOptions?: ReactNode } = {}) {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [isRecordingGesture, setIsRecordingGesture] = useState(false);
   const [recordingStep, setRecordingStep] = useState(0); // 0=idle, 1=prep, 2=record, 3=done
@@ -47,6 +47,16 @@ export default function InputModesSettings() {
 
   return (
     <div className="space-y-4" data-scan-group="input-modes-settings">
+      <div data-testid="camera-accessibility-settings" className="space-y-4">
+        <h3 className="text-primary font-bold">{t('camera_accessibility')}</h3>
+        <button
+          data-testid="camera-cursor-setup"
+          onClick={() => { tapFeedback(); setShowSetupWizard(true); }}
+          className="aac-btn w-full py-3 rounded-xl bg-[#2196F3] text-white font-bold"
+        >
+          {t('camera_cursor_setup')}
+        </button>
+        <p className="text-muted text-sm">{t('camera_cursor_setup_help')}</p>
       {/* Camera Finger/Body Tracking (opt-in — settings store default false) */}
       <div data-testid="camera-input-settings">
         <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Camera Input</h4>
@@ -72,14 +82,6 @@ export default function InputModesSettings() {
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => { tapFeedback(); setShowSetupWizard(true); }}
-              className="aac-btn w-full mt-2 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg active:scale-95 transition-transform"
-              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-            >
-              🎯 Set Up Tracking
-            </button>
-            <p className="text-muted text-xs mt-1">Guided setup: detects your body, calibrates cursor, tests accuracy</p>
           </div>
         )}
       </div>
@@ -87,10 +89,10 @@ export default function InputModesSettings() {
       {/* Hand Calibration visibility toggle */}
       <label className={INPUT_TOGGLE_ROW_CLASS}>
         <div className="min-w-0 flex-1">
-          <span className="text-primary text-sm font-semibold">Hand Calibration Settings</span>
-          <p className="text-muted text-xs">Show hand profile + per-finger button mapping in Settings</p>
+          <span className="text-primary text-sm font-semibold">{t('touch_accuracy_options')}</span>
+          <p className="text-muted text-xs">{t('touch_accuracy_help')}</p>
         </div>
-        <Toggle on={showHandCalibration} onToggle={() => update({ showHandCalibration: !showHandCalibration })} label="Hand calibration settings" />
+        <Toggle on={showHandCalibration} onToggle={() => update({ showHandCalibration: !showHandCalibration })} label={t('touch_accuracy_options')} />
       </label>
 
       {/* Vision Context — camera object detection for phrase suggestions */}
@@ -133,7 +135,7 @@ export default function InputModesSettings() {
           <span className="text-primary text-sm">{t('dwell_time')}</span>
           <span className="text-muted text-sm">{headTrackingDwellMs}ms</span>
         </label>
-        <input type="range" min="800" max="3000" step="100" value={headTrackingDwellMs}
+        <input aria-label={t('dwell_time')} type="range" min={headTrackingEnabled ? 500 : 800} max="3000" step="100" value={headTrackingDwellMs}
           onChange={(e) => update({ headTrackingDwellMs: parseInt(e.target.value) })}
           className="w-full accent-[#4CAF50]" />
       </div>
@@ -144,7 +146,7 @@ export default function InputModesSettings() {
           <span className="text-primary text-sm">{t('sensitivity')}</span>
           <span className="text-muted text-sm">{headTrackingSensitivity}</span>
         </label>
-        <input type="range" min="1" max="10" step="1" value={headTrackingSensitivity}
+        <input aria-label={t('sensitivity')} type="range" min="1" max="10" step="1" value={headTrackingSensitivity}
           onChange={(e) => update({ headTrackingSensitivity: parseInt(e.target.value) })}
           className="w-full accent-[#2196F3]" />
       </div>
@@ -155,11 +157,19 @@ export default function InputModesSettings() {
         />
       )}
 
-      {/* ─── Switch Scanning ────────────────────────────────────────────── */}
-      <SwitchScanSettings />
-
+      {cameraOptions}
+      {showHandCalibration && touchOptions && (
+        <details className="surface-key rounded-xl border border-theme p-3">
+          <summary className="aac-btn font-semibold text-primary cursor-pointer">{t('touch_accuracy_title')}</summary>
+          <p className="text-muted text-sm my-2">{t('touch_accuracy_help')}</p>
+          {touchOptions}
+        </details>
+      )}
       {/* ─── Gesture Recognition ──────────────────────────────────────── */}
       <GestureRecognitionSettings />
+      </div>
+      {/* Switch scanning does not require a camera. */}
+      <SwitchScanSettings />
     </div>
   );
 }

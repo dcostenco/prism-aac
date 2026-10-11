@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import InputModesSettings from '@/components/InputModesSettings';
+import english from '@/i18n/en.json';
 import type { GestureConfig } from '@/services/gestureService';
 
 // ── mocks ──────────────────────────────────────────────────────────────────────
@@ -47,7 +48,7 @@ vi.mock('@/services/gestureService', () => ({
 
 vi.mock('@/engine/useT', () => ({
   useT: () => ({
-    t: (k: string) => k,
+    t: (k: string) => english[k as keyof typeof english] ?? k,
     ttsCode: 'en-US',
     rtl: false,
     ready: true,
@@ -115,6 +116,30 @@ describe('InputModesSettings — camera input toggle', () => {
 describe('InputModesSettings — tracking targets', () => {
   beforeEach(() => { settingsState.cameraInputEnabled = true; });
 
+  it('offers one camera setup entry even when tracking is off without silently enabling it', () => {
+    settingsState.cameraInputEnabled = false;
+    render(<InputModesSettings />);
+    expect(screen.getAllByTestId('camera-cursor-setup')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: /set up tracking.*camera cursor/i }));
+    expect(screen.getByTestId('tracking-setup-wizard')).toBeInTheDocument();
+    expect(updateMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /cancel wizard/i }));
+    expect(screen.queryByTestId('tracking-setup-wizard')).toBeNull();
+    expect(settingsState.cameraInputEnabled).toBe(false);
+  });
+
+  it('keeps head options and optional touch profiles inside one camera accessibility group', () => {
+    settingsState.showHandCalibration = true;
+    render(<InputModesSettings cameraOptions={<div data-testid="head-options" />} touchOptions={<button>Saved touch profile</button>} />);
+    const group = screen.getByTestId('camera-accessibility-settings');
+    expect(group).toContainElement(screen.getByTestId('head-options'));
+    const details = screen.getByText('Touchscreen Accuracy & Hand Profiles').closest('details')!;
+    expect(group).toContainElement(details);
+    expect(details).not.toHaveAttribute('open');
+    expect(details).toContainElement(screen.getByText('Saved touch profile'));
+    expect(screen.getAllByTestId('camera-cursor-setup')).toHaveLength(1);
+  });
+
   it('shows tracking target chips when camera is enabled', () => {
     render(<InputModesSettings />);
     expect(screen.getByTestId('tracking-target-any_wrist')).toBeInTheDocument();
@@ -145,6 +170,17 @@ describe('InputModesSettings — tracking targets', () => {
 
 describe('InputModesSettings — setup wizard', () => {
   beforeEach(() => { settingsState.cameraInputEnabled = true; });
+
+  it('preserves the head mode timing range through the one shared control', () => {
+    settingsState.headTrackingEnabled = true;
+    render(<InputModesSettings />);
+    const dwell = screen.getByRole('slider', { name: /dwell time/i });
+    expect(dwell).toHaveAttribute('min', '500');
+    expect(screen.getAllByRole('slider', { name: /dwell time/i })).toHaveLength(1);
+    expect(screen.getAllByRole('slider', { name: /sensitivity/i })).toHaveLength(1);
+    fireEvent.change(dwell, { target: { value: '500' } });
+    expect(updateMock).toHaveBeenCalledWith({ headTrackingDwellMs: 500 });
+  });
 
   it('clicking Set Up Tracking opens wizard', () => {
     render(<InputModesSettings />);
@@ -183,12 +219,12 @@ describe('InputModesSettings — head tracking', () => {
 describe('InputModesSettings — hand calibration toggle', () => {
   it('renders hand calibration toggle', () => {
     render(<InputModesSettings />);
-    expect(screen.getByRole('button', { name: /hand calibration/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /show touch accuracy options/i })).toBeInTheDocument();
   });
 
   it('clicking hand calibration toggle calls update', () => {
     render(<InputModesSettings />);
-    fireEvent.click(screen.getByRole('button', { name: /hand calibration/i }));
+    fireEvent.click(screen.getByRole('button', { name: /show touch accuracy options/i }));
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ showHandCalibration: true }));
   });
 });

@@ -32,7 +32,7 @@ const CAL_POSITIONS = [
   { label: 'Bottom-Left', x: '10%', y: '90%' },
 ];
 
-export default function HeadTrackingSettings() {
+export default function HeadTrackingSettings({ showTimingControls = true }: { showTimingControls?: boolean } = {}) {
   const { t } = useT();
   const settings = useSettingsStore();
   const [cameras, setCameras] = useState<{ deviceId: string; label: string }[]>([]);
@@ -110,6 +110,7 @@ export default function HeadTrackingSettings() {
       {settings.headTrackingEnabled && (
         <div className="space-y-4 mt-3">
           {/* Dwell Time Slider */}
+          {showTimingControls && <>
           <div>
             <label className="flex items-center justify-between mb-2">
               <span className="text-primary text-base">{t('dwell_time')}</span>
@@ -155,6 +156,7 @@ export default function HeadTrackingSettings() {
             </div>
           </div>
 
+          </>}
           {/* Eye / Gaze tracking toggle */}
           <div className="flex items-center justify-between py-2 border-t border-theme">
             <div>

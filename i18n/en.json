@@ -1,4 +1,10 @@
 {
+  "camera_accessibility": "Camera Accessibility",
+  "camera_cursor_setup": "Set Up Tracking — Camera Cursor",
+  "camera_cursor_setup_help": "Start here to control the cursor with your head, hand, or body. Calibration includes a camera preview and an accuracy test.",
+  "touch_accuracy_options": "Show touch accuracy options",
+  "touch_accuracy_title": "Touchscreen Accuracy & Hand Profiles",
+  "touch_accuracy_help": "Optional touchscreen tap precision and finger-button mappings. This does not calibrate the camera cursor.",
   "tracking_accuracy_passed": "Camera accuracy test passed.",
   "tracking_accuracy_unverified": "Camera accuracy is not yet verified.",
   "tracking_camera_hits": "Camera selections: {hits}/{total}.",

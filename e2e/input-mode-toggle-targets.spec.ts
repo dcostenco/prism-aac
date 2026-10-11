@@ -8,7 +8,7 @@ const CAMERA_ROW = '[data-testid="camera-input-settings"] label:has(button[aria-
 const CAMERA_HEADING = '[data-testid="camera-input-settings"] > h4';
 const HEADING_REST_HEIGHT = 48;
 const CAMERA_DENIAL = 'No physical camera in this test';
-const AUXILIARY_TOGGLES = ['Hand calibration settings', 'Group scanning'];
+const AUXILIARY_TOGGLES = ['Show touch accuracy options', 'Group scanning'];
 const CAPTURE = { expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="camera-input-settings"]'],
   criticalSelectors: [`${CAMERA_ROW} > div`, `${CAMERA_ROW} > button`] };
 
@@ -25,6 +25,36 @@ async function waitForTogglePaint(page: Page) {
   await expect.poll(() => camera.evaluate(node => node.getAnimations({ subtree: true })
     .some(animation => animation.playState === 'running'))).toBe(false);
 }
+
+test('one Accessibility entry offers camera setup before enablement and keeps touch calibration separate', async ({ page, baseURL }, info) => {
+  await installLocalCameraAccess(page, baseURL, info);
+  await page.goto('/prism-aac');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  const entry = dialog.locator('button[aria-expanded]').first();
+  await expect(entry).toContainText('Accessibility & Input Modes');
+  await entry.click();
+  const group = page.getByTestId('camera-accessibility-settings');
+  const setup = group.getByTestId('camera-cursor-setup');
+  await expect(setup).toHaveCount(1);
+  await expect(setup).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Camera input', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await expect(dialog.getByRole('button', { name: 'Hand Calibration', exact: true })).toHaveCount(0);
+  await safeScreenshot(page, info.outputPath('central-camera-entry.png'), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="camera-accessibility-settings"]'],
+    criticalSelectors: ['[data-testid="camera-cursor-setup"]'], occluderSelectors: [],
+  });
+  await setup.click();
+  await expect(page.getByTestId('tracking-setup-wizard')).toBeVisible();
+  await page.getByTestId('tracking-setup-wizard').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByTestId('tracking-setup-wizard')).toHaveCount(0);
+  await expect(group.getByRole('button', { name: 'Camera input', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  const touch = group.getByText('Touchscreen Accuracy & Hand Profiles', { exact: true });
+  await touch.scrollIntoViewIfNeeded();
+  await touch.click();
+  await expect(group.getByRole('button', { name: /^(Scan Hand & Calibrate|Re-Calibrate)$/ })).toBeVisible();
+  await expect(group.getByText('Optional touchscreen tap precision and finger-button mappings. This does not calibrate the camera cursor.', { exact: true }).last()).toBeVisible();
+});
 
 test('native Settings targets remain reachable and preferences survive reopen and reload', async ({ page, baseURL }, info) => {
   const origin = new URL(baseURL!).origin;
