@@ -27,6 +27,17 @@ let now: number;
 let driftLevel: number;
 const drift = () => driftLevel * Math.min(now / 20_000, 1);
 const originalSettings = { ...useSettingsStore.getState() };
+const ORIGINAL_PROFILE_VALUES = {
+  'prism-pose-calibration-landscape': JSON.stringify({ leftX: 0.7, rightX: 0.38,
+    topY: 0.35, bottomY: 0.65, wizardCompleted: true, metadata: 'keep-landscape' }),
+  'prism-pose-calibration-portrait': JSON.stringify({ leftX: 0.67, rightX: 0.31,
+    topY: 0.27, bottomY: 0.59, wizardCompleted: true, metadata: 'keep-portrait' }),
+  prism_pose_wizard_completed: 'false',
+};
+
+function seedPreviousProfiles() {
+  for (const [key, raw] of Object.entries(ORIGINAL_PROFILE_VALUES)) localStorage.setItem(key, raw);
+}
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -130,6 +141,96 @@ async function centerOnlyWizard() {
 
 describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it('Cancel restores both orientation profiles and the original target after a manual mode change', async () => {
+    seedPreviousProfiles();
+    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'any_index' });
+    const cancel = vi.fn();
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={cancel} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(0.5, 0.5); await step(51);
+    fireEvent.click(screen.getByRole('button', { name: /Right Finger/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Calibrate Right Finger/ }));
+    await step(10);
+    Object.defineProperties(window, { innerWidth: { configurable: true, value: 390 },
+      innerHeight: { configurable: true, value: 844 } });
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    // Preview is live, but durable originals remain intact until confirmation.
+    expect(loadPoseCalibration()).not.toEqual(JSON.parse(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']));
+    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-landscape']);
+    expect(localStorage.getItem('prism-pose-calibration-portrait')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
+    expect(cancel).toHaveBeenCalledOnce();
+    for (const [key, raw] of Object.entries(ORIGINAL_PROFILE_VALUES)) expect(localStorage.getItem(key)).toBe(raw);
+    expect(useSettingsStore.getState()).toMatchObject({ cameraInputEnabled: false, cameraTrackingTarget: 'any_index' });
+  });
+
+  it('unmount rolls back an unfinished calibration and its legacy completion flag', async () => {
+    seedPreviousProfiles();
+    const view = await calibratedWizard();
+    expect(loadPoseCalibration().wizardCompleted).toBe(true);
+    expect(localStorage.getItem('prism_pose_wizard_completed')).toBe('false');
+    view.unmount();
+    for (const [key, raw] of Object.entries(ORIGINAL_PROFILE_VALUES)) expect(localStorage.getItem(key)).toBe(raw);
+  });
+
+  it('Cancel preserves a different calibration written concurrently', async () => {
+    seedPreviousProfiles();
+    const view = render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    // Simulate another tab, not a write through this wizard's draft writer.
+    localStorage.setItem('prism-pose-calibration-landscape', ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
+    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']);
+    view.unmount();
+  });
+
+  it('refuses confirmation after a concurrent profile change and visibly preserves the other saved profile', async () => {
+    seedPreviousProfiles();
+    const view = await calibratedWizard();
+    fireEvent.click(screen.getByTestId('tracking-test-skip'));
+    const concurrent = ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait'];
+    localStorage.setItem('prism-pose-calibration-landscape', concurrent);
+    fireEvent.click(screen.getByTestId('tracking-confirm'));
+    expect(screen.getByRole('alert')).toHaveTextContent('Saved calibration changed during setup');
+    expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'complete');
+    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(concurrent);
+    expect(localStorage.getItem('prism_pose_wizard_completed')).toBe('false');
+    view.unmount();
+    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(concurrent);
+  });
+
+  it('only explicit Save and Done replaces the durable calibration and survives unmount', async () => {
+    seedPreviousProfiles();
+    const { view } = await centerOnlyWizard();
+    const preview = loadPoseCalibration();
+    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-landscape']);
+    fireEvent.click(screen.getByTestId('tracking-test-skip'));
+    expect(screen.getByTestId('tracking-confirm')).toHaveTextContent('Save & Done');
+    fireEvent.click(screen.getByTestId('tracking-confirm'));
+    view.unmount();
+    expect(JSON.parse(localStorage.getItem('prism-pose-calibration-landscape')!)).toEqual(preview);
+    expect(loadPoseCalibration()).toEqual(preview);
+    expect(localStorage.getItem('prism-pose-calibration-portrait')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']);
+  });
+
+  it('confirming after rotation does not replace the inactive orientation with an earlier preview', async () => {
+    seedPreviousProfiles();
+    const view = render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(0.5, 0.5); await step(66); await step(10);
+    Object.defineProperties(window, { innerWidth: { configurable: true, value: 390 },
+      innerHeight: { configurable: true, value: 844 } });
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    fireEvent.click(screen.getByTestId('tracking-save-center-only'));
+    const preview = loadPoseCalibration();
+    fireEvent.click(screen.getByTestId('tracking-test-skip'));
+    fireEvent.click(screen.getByTestId('tracking-confirm'));
+    view.unmount();
+    expect(JSON.parse(localStorage.getItem('prism-pose-calibration-portrait')!)).toEqual(preview);
+    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-landscape']);
+  });
   it('retains wizard tracker ownership when a manual mode change rerenders the live overlay', async () => {
     useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'any_hand' });
     const view = render(<><CameraInputOverlay /><TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} /></>);
@@ -139,10 +240,13 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'detecting');
     fireEvent.click(screen.getByRole('button', { name: /Right Finger/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Calibrate Right Finger/ }));
+    // A live Settings change still must not let the overlay steal the
+    // wizard's tracker; target choice itself stays a draft until confirmation.
+    act(() => useSettingsStore.getState().update({ headTrackingSensitivity: 6 }));
     await step(20);
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-tracker-status', 'tracking');
     expect(screen.getByTestId('tracking-capture-center')).toBeEnabled();
-    expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_index');
+    expect(useSettingsStore.getState().cameraTrackingTarget).toBe('any_hand');
     expect(readCameraSelectionState().blocked).toBe(true);
     view.unmount();
     expect(readCameraSelectionState().blocked).toBe(false);
@@ -179,7 +283,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'complete');
     expect(loadPoseCalibration().leftX - loadPoseCalibration().rightX).toBeCloseTo(0.7, 2);
     expect(loadPoseCalibration().bottomY - loadPoseCalibration().topY).toBeCloseTo(0.6, 2);
-    fireEvent.click(screen.getByRole('button', { name: 'Start Using Prism AAC' }));
+    fireEvent.click(screen.getByTestId('tracking-confirm'));
     wizard.unmount();
     const overlay = render(<CameraInputOverlay />);
     await act(async () => { await Promise.resolve(); });

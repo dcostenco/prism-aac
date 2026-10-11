@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "Testul de precizie al camerei a fost trecut.",
-  "tracking_accuracy_unverified": "Calibrarea a fost salvată. Precizia camerei nu a fost încă verificată.",
+  "tracking_accuracy_unverified": "Precizia camerei nu a fost încă verificată.",
   "tracking_camera_hits": "Selecții prin cameră: {hits}/{total}.",
   "aac_chat_no_contacts": "Nu există contacte încă.",
   "aac_chat_setup_hint": "Un îngrijitor poate adăuga contacte din Setări → Contacte.",
@@ -491,5 +491,9 @@
   "scan_stopped": "Scanare în pauză",
   "scan_start": "Pornește scanarea",
   "scan_stop": "Oprește scanarea",
-  "scan_keys": "Space/Enter: selectează · Tab: următorul"
+  "scan_keys": "Space/Enter: selectează · Tab: următorul",
+  "tracking_setup_center_guide": "Țineți partea corpului selectată în câmpul vizual. Odihniți-vă într-o poziție neutră și confortabilă și faceți o pauză. Nu sunt necesare mișcări ample.",
+  "tracking_setup_center_hint": "Odihniți-vă confortabil, apoi capturați centrul.",
+  "tracking_setup_corner_guide": "Deplasați confortabil partea corpului selectată spre {corner}, apoi opriți-vă. Rămâneți în limita confortului dumneavoastră.",
+  "tracking_setup_center_only": "Folosiți calibrarea centrului"
 }

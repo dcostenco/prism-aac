@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "카메라 정확도 테스트를 통과했습니다.",
-  "tracking_accuracy_unverified": "보정이 저장되었습니다. 카메라 정확도는 아직 확인되지 않았습니다.",
+  "tracking_accuracy_unverified": "카메라 정확도는 아직 확인되지 않았습니다.",
   "tracking_camera_hits": "카메라로 선택: {hits}/{total}.",
   "aac_chat_no_contacts": "아직 연락처가 없습니다.",
   "aac_chat_setup_hint": "보호자가 설정 → 연락처에서 연락처를 추가할 수 있습니다.",
@@ -491,5 +491,9 @@
   "scan_stopped": "스캔 일시정지",
   "scan_start": "스캔 시작",
   "scan_stop": "스캔 중지",
-  "scan_keys": "Space/Enter: 선택 · Tab: 다음"
+  "scan_keys": "Space/Enter: 선택 · Tab: 다음",
+  "tracking_setup_center_guide": "선택한 신체 부위를 화면에 보이게 하세요. 편안한 중립 자세로 쉬면서 잠시 멈추세요. 큰 움직임은 필요하지 않습니다.",
+  "tracking_setup_center_hint": "편안히 쉰 다음 중앙을 캡처하세요.",
+  "tracking_setup_corner_guide": "선택한 신체 부위를 편안하게 {corner} 방향으로 움직인 다음 멈추세요. 편안한 범위 안에 머무르세요.",
+  "tracking_setup_center_only": "중앙 보정 사용"
 }

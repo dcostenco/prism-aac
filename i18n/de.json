@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "Kamera-Genauigkeitstest bestanden.",
-  "tracking_accuracy_unverified": "Kalibrierung gespeichert. Die Kameragenauigkeit ist noch nicht bestätigt.",
+  "tracking_accuracy_unverified": "Die Kameragenauigkeit ist noch nicht bestätigt.",
   "tracking_camera_hits": "Auswahl per Kamera: {hits}/{total}.",
   "aac_chat_no_contacts": "Noch keine Kontakte.",
   "aac_chat_setup_hint": "Eine Betreuungsperson kann Kontakte in Einstellungen → Kontakte hinzufügen.",
@@ -491,5 +491,9 @@
   "scan_stopped": "Scanning pausiert",
   "scan_start": "Scanning starten",
   "scan_stop": "Scanning stoppen",
-  "scan_keys": "Space/Enter: auswählen · Tab: weiter"
+  "scan_keys": "Space/Enter: auswählen · Tab: weiter",
+  "tracking_setup_center_guide": "Halten Sie den ausgewählten Körperteil im Blick. Ruhen Sie in einer bequemen neutralen Position und halten Sie inne. Große Bewegungen sind nicht erforderlich.",
+  "tracking_setup_center_hint": "Ruhen Sie bequem, und erfassen Sie dann die Mitte.",
+  "tracking_setup_corner_guide": "Bewegen Sie den ausgewählten Körperteil bequem in Richtung {corner}, und halten Sie dann inne. Bleiben Sie innerhalb Ihres angenehmen Bewegungsbereichs.",
+  "tracking_setup_center_only": "Mittelpunktkalibrierung verwenden"
 }

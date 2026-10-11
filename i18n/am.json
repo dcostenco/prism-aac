@@ -491,5 +491,9 @@
   "scan_stopped": "ቅኝት ለጊዜው ቆሟል",
   "scan_start": "ቅኝት ጀምር",
   "scan_stop": "ቅኝት አቁም",
-  "scan_keys": "Space/Enter: ምረጥ · Tab: ቀጣይ"
+  "scan_keys": "Space/Enter: ምረጥ · Tab: ቀጣይ",
+  "tracking_setup_center_guide": "የመረጡትን የሰውነት ክፍል በእይታ ውስጥ ያቆዩ። በምቾት ገለልተኛ አቋም ይውሰዱና ያቁሙ። ትልቅ እንቅስቃሴ አያስፈልግም።",
+  "tracking_setup_center_hint": "በምቾት ያርፉ፣ ከዚያ መሃልን ይቅረጹ።",
+  "tracking_setup_corner_guide": "የመረጡትን የሰውነት ክፍል ወደ {corner} በምቾት ያንቀሳቅሱ፣ ከዚያ ያቁሙ። በምቾት ክልልዎ ውስጥ ይቆዩ።",
+  "tracking_setup_center_only": "የመሃል ማስተካከያን ይጠቀሙ"
 }

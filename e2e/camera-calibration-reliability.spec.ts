@@ -13,6 +13,14 @@ const photograph = readFileSync(resolve(process.cwd(), 'e2e/_fixtures/wizard-sce
 const NEAR_CROPPED_PROFILE = { name: 'near-cropped-dim', width: 160, height: 120,
   zoom: 2.1, tilt: -0.15, brightness: 0.65, blur: 1, drift: 0.015 };
 const RANGE_COMPARE_EPSILON = 1e-9;
+// Freeze via Playwright's public clock API. A 100ms cross-process deadline
+// can already be in the past while WASM inference is busy; keep a lead
+// shorter than the calibration capture deadlines without retrying failures.
+const CLOCK_PAUSE_LEAD_MS = 1000;
+
+async function pauseReplayClock(page: Page) {
+  await page.clock.pauseAt(await page.evaluate(lead => Date.now() + lead, CLOCK_PAUSE_LEAD_MS));
+}
 
 async function expectTargetUncovered(page: Page, targetSelector: string) {
   const failures = await page.locator(targetSelector).evaluate(target => {
@@ -146,7 +154,7 @@ for (const profile of [
     // pauseAt can run queued tracker callbacks before pausing JS, and native
     // CSS transitions continue afterward. Credit only the settled frozen
     // geometry, not the earlier live fit. Never inject a pose or cursor.
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 200));
+    await pauseReplayClock(page);
     await expect.poll(() => page.getByTestId('tracking-wizard-cursor').evaluate(cursor =>
       cursor.getAnimations().some(animation => animation.playState === 'running'),
     ), { timeout: 2_000 }).toBe(false);
@@ -174,7 +182,7 @@ for (const profile of [
     expect(await page.getByTestId('tracking-center-target').boundingBox()).toEqual(frozenCircle);
     await page.clock.resume();
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-corners', { timeout: 25_000 });
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+    await pauseReplayClock(page);
     await expectTargetUncovered(page, '[data-testid="tracking-corner-target-0"]');
     await safeScreenshot(page, info.outputPath('corner-workarea.png'), {
       expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-corner-target-0"]'],
@@ -185,7 +193,7 @@ for (const profile of [
     await page.clock.resume();
     const centerOnly = 'centerOnly' in profile && profile.centerOnly;
     if (centerOnly) {
-      await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+      await pauseReplayClock(page);
       await page.getByTestId('tracking-save-center-only').click();
       await page.clock.resume();
     } else {
@@ -207,11 +215,22 @@ for (const profile of [
     // This limited-motion replay is accepted by the runtime. The visible
     // diagnostic must not contradict it with a legacy, stricter range floor.
     await expect(page.getByTestId('tracking-wizard-diag')).toContainText('min-range: OK');
-    const centerCalibration = centerOnly ? await page.evaluate(() => {
-      const orientation = innerWidth >= innerHeight ? 'landscape' : 'portrait';
-      return JSON.parse(localStorage.getItem(`prism-pose-calibration-${orientation}`)!);
-    }) : null;
-    if (centerOnly) expect(centerCalibration.wizardCompleted).toBe(true);
+    const centerCalibration = centerOnly ? await page.getByTestId('tracking-wizard-diag').evaluate(element => ({
+      leftX: Number(element.getAttribute('data-calibration-left-x')),
+      rightX: Number(element.getAttribute('data-calibration-right-x')),
+      topY: Number(element.getAttribute('data-calibration-top-y')),
+      bottomY: Number(element.getAttribute('data-calibration-bottom-y')),
+      wizardCompleted: element.getAttribute('data-calibration-completed') === 'true',
+    })) : null;
+    if (centerOnly) {
+      for (const attribute of ['data-calibration-left-x', 'data-calibration-right-x',
+        'data-calibration-top-y', 'data-calibration-bottom-y']) {
+        await expect(page.getByTestId('tracking-wizard-diag')).toHaveAttribute(attribute, /\d/);
+      }
+      for (const value of [centerCalibration.leftX, centerCalibration.rightX,
+        centerCalibration.topY, centerCalibration.bottomY]) expect(Number.isFinite(value)).toBe(true);
+      expect(centerCalibration.wizardCompleted).toBe(true);
+    }
     await expectPhotographicCameraInput(page, '__cameraReplay');
     const hits = await page.getByTestId('tracking-test-hits').innerText();
     await page.evaluate(() => Object.assign((window as unknown as {
@@ -229,7 +248,7 @@ for (const profile of [
     const result = page.getByTestId('tracking-accuracy-result');
     await expect(result).toHaveAttribute('data-accuracy-passed', 'false');
     await expect(result).toContainText('Camera accuracy is not yet verified');
-    const finishBounds = await page.getByRole('button', { name: 'Start Using Prism AAC' }).boundingBox();
+    const finishBounds = await page.getByTestId('tracking-confirm').boundingBox();
     expect(finishBounds).not.toBeNull();
     expect(finishBounds!.height).toBeGreaterThanOrEqual(48);
     expect(finishBounds!.y + finishBounds!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
@@ -240,7 +259,7 @@ for (const profile of [
     });
     await page.evaluate(() => Object.assign((window as unknown as {
       __cameraReplay: object }).__cameraReplay, { lost: false, x: 0, y: 0 }));
-    await page.getByRole('button', { name: 'Start Using Prism AAC' }).click();
+    await page.getByTestId('tracking-confirm').click();
     await expect(wizard).toHaveCount(0);
     // Return to the board before testing persistence. Remaining in Settings
     // lets a neutral camera dwell activate its controls; that separate
@@ -269,6 +288,38 @@ for (const profile of [
         .toBeGreaterThanOrEqual(centerCalibration.leftX - centerCalibration.rightX);
       expect(restored.bottomY - restored.topY + RANGE_COMPARE_EPSILON)
         .toBeGreaterThanOrEqual(centerCalibration.bottomY - centerCalibration.topY);
+      // Recalibration is a draft. Cancel after a real preview must preserve
+      // the accepted profile, and that preservation must survive a reload.
+      await pauseReplayClock(page);
+      const saved = await page.evaluate(() => {
+        const orientation = innerWidth >= innerHeight ? 'landscape' : 'portrait';
+        return localStorage.getItem(`prism-pose-calibration-${orientation}`);
+      });
+      await page.getByRole('button', { name: /Set Up Tracking/ }).click();
+      await page.getByTestId('tracking-setup-start').click();
+      await page.clock.resume();
+      await expect(wizard).toHaveAttribute('data-phase', 'calibrate-center', { timeout: 45_000 });
+      await expect(page.getByTestId('tracking-capture-center')).toBeEnabled();
+      await pauseReplayClock(page);
+      await page.getByTestId('tracking-capture-center').click();
+      await expect(wizard).toHaveAttribute('data-phase', 'calibrate-corners');
+      await wizard.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await expect(wizard).toHaveCount(0);
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      await page.clock.resume();
+      await page.reload();
+      expect(await page.evaluate(() => {
+        const orientation = innerWidth >= innerHeight ? 'landscape' : 'portrait';
+        return localStorage.getItem(`prism-pose-calibration-${orientation}`);
+      })).toBe(saved);
+      await page.getByRole('button', { name: 'Settings', exact: true }).click();
+      await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      await toggle.scrollIntoViewIfNeeded();
+      await safeScreenshot(page, info.outputPath('cancel-preserved-profile.png'), {
+        expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="camera-input-settings"]'],
+        criticalSelectors: ['button[aria-label="Camera input"]'],
+      });
     }
     expect(errors).toEqual([]);
   });

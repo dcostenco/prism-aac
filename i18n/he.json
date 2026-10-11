@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "בדיקת דיוק המצלמה הושלמה בהצלחה.",
-  "tracking_accuracy_unverified": "הכיול נשמר. דיוק המצלמה טרם אומת.",
+  "tracking_accuracy_unverified": "דיוק המצלמה טרם אומת.",
   "tracking_camera_hits": "בחירות באמצעות המצלמה: {hits}/{total}.",
   "aac_chat_no_contacts": "אין אנשי קשר עדיין.",
   "aac_chat_setup_hint": "מטפל יכול להוסיף אנשי קשר בהגדרות ← אנשי קשר.",
@@ -491,5 +491,9 @@
   "scan_stopped": "הסריקה מושהית",
   "scan_start": "התחלת סריקה",
   "scan_stop": "עצירת סריקה",
-  "scan_keys": "Space/Enter: בחירה · Tab: הבא"
+  "scan_keys": "Space/Enter: בחירה · Tab: הבא",
+  "tracking_setup_center_guide": "השאירו את איבר הגוף שבחרתם בטווח הראייה. נוחו בתנוחה ניטרלית ונוחה ועצרו. אין צורך בתנועות גדולות.",
+  "tracking_setup_center_hint": "נוחו בנוחות ואז צלמו את המרכז.",
+  "tracking_setup_corner_guide": "הזיזו בנוחות את איבר הגוף שבחרתם לכיוון {corner}, ואז עצרו. הישארו בטווח הנוח לכם.",
+  "tracking_setup_center_only": "השתמשו בכיול המרכז"
 }

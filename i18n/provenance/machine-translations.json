@@ -482,7 +482,11 @@
           "word_builder_desc",
           "word_visibility",
           "you",
-          "your_name"
+          "your_name",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -519,11 +523,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -1007,7 +1027,11 @@
           "word_builder_desc",
           "word_visibility",
           "you",
-          "your_name"
+          "your_name",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -1044,11 +1068,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -1532,7 +1572,11 @@
           "word_builder_desc",
           "word_visibility",
           "you",
-          "your_name"
+          "your_name",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -1569,11 +1613,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -1639,7 +1699,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -1676,11 +1740,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -1746,7 +1826,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -1783,11 +1867,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -1853,7 +1953,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -1890,11 +1994,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -1960,7 +2080,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -1997,11 +2121,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2067,7 +2207,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2104,11 +2248,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2174,7 +2334,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2211,11 +2375,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2281,7 +2461,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2318,11 +2502,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2388,7 +2588,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2425,11 +2629,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2495,7 +2715,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2532,11 +2756,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2602,7 +2842,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2639,11 +2883,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2709,7 +2969,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2746,11 +3010,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2816,7 +3096,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2853,11 +3137,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -2923,7 +3223,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -2960,11 +3264,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3030,7 +3350,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3067,11 +3391,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3137,7 +3477,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3174,11 +3518,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3244,7 +3604,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3281,11 +3645,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3351,7 +3731,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3388,11 +3772,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3458,7 +3858,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3495,11 +3899,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3565,7 +3985,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3602,11 +4026,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3672,7 +4112,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3709,11 +4153,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3779,7 +4239,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3816,11 +4280,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3886,7 +4366,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -3923,11 +4407,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -3993,7 +4493,11 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
-          "web_signin_still_signed_out"
+          "web_signin_still_signed_out",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -4030,11 +4534,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       },
@@ -4052,7 +4572,11 @@
           "tracking_accuracy_passed",
           "tracking_accuracy_unverified",
           "tracking_camera_hits",
-          "tracking_unavailable"
+          "tracking_unavailable",
+          "tracking_setup_center_guide",
+          "tracking_setup_center_hint",
+          "tracking_setup_corner_guide",
+          "tracking_setup_center_only"
         ],
         "generatorById": {
           "scan_active": {
@@ -4089,11 +4613,27 @@
           },
           "tracking_accuracy_unverified": {
             "generator": "host-ai-draft",
-            "generatedAt": "2026-10-10T22:09:15.409Z"
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           },
           "tracking_camera_hits": {
             "generator": "host-ai-draft",
             "generatedAt": "2026-10-10T22:09:15.409Z"
+          },
+          "tracking_setup_center_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_hint": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_corner_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
+          },
+          "tracking_setup_center_only": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-11T12:00:21.665Z"
           }
         }
       }

@@ -463,6 +463,65 @@ function calibrationKey(orientation?: 'landscape' | 'portrait'): string {
   return `prism-pose-calibration-${orientation || getOrientation()}`;
 }
 
+const POSE_WIZARD_COMPLETION_KEY = 'prism_pose_wizard_completed';
+const POSE_CALIBRATION_DRAFT_KEYS = [calibrationKey('portrait'), calibrationKey('landscape'), POSE_WIZARD_COMPLETION_KEY];
+const CALIBRATION_DRAFT_BUSY = 'Calibration is already in progress.';
+const CALIBRATION_DRAFT_CONFLICT = 'Saved calibration changed during setup. Cancel and reopen setup.';
+let calibrationDraft: { original: Map<string, string | null>; pending: Map<string, string> } | null = null;
+
+export interface PoseCalibrationDraft { commit(): void; rollback(): void }
+
+/** Keep preview writes in memory until setup is confirmed. Cancel, unmount
+ * and reload leave the previously usable saved profiles untouched. */
+export function beginPoseCalibrationDraft(): PoseCalibrationDraft {
+  if (calibrationDraft) throw new Error(CALIBRATION_DRAFT_BUSY);
+  const draft = { original: new Map<string, string | null>(POSE_CALIBRATION_DRAFT_KEYS.map(key => [key, localStorage.getItem(key)])),
+    pending: new Map<string, string>() };
+  calibrationDraft = draft;
+  return {
+    rollback() { if (calibrationDraft === draft) calibrationDraft = null; },
+    commit() {
+      if (calibrationDraft !== draft) return;
+      // Setup may rotate while showing factory/neutral previews. Confirm
+      // only the current orientation, never overwrite the other saved
+      // orientation with an unfinished preview from earlier in the run.
+      const pending = [...draft.pending].filter(([key]) =>
+        key === calibrationKey() || key === POSE_WIZARD_COMPLETION_KEY);
+      for (const [key] of pending) {
+        if (localStorage.getItem(key) !== draft.original.get(key)) throw new Error(CALIBRATION_DRAFT_CONFLICT);
+      }
+      const written: string[] = [];
+      try {
+        for (const [key, value] of pending) {
+          localStorage.setItem(key, value);
+          written.push(key);
+        }
+      } catch (error) {
+        for (const key of written.reverse()) {
+          const original = draft.original.get(key);
+          if (original == null) localStorage.removeItem(key);
+          else localStorage.setItem(key, original);
+        }
+        throw error;
+      }
+      calibrationDraft = null;
+    },
+  };
+}
+
+function readPoseCalibrationValue(key: string): string | null {
+  return calibrationDraft?.pending.get(key) ?? localStorage.getItem(key);
+}
+
+function writePoseCalibrationValue(key: string, value: string): void {
+  if (calibrationDraft) calibrationDraft.pending.set(key, value);
+  else localStorage.setItem(key, value);
+}
+
+export function markPoseWizardCompleted(): void {
+  writePoseCalibrationValue(POSE_WIZARD_COMPLETION_KEY, 'true');
+}
+
 /** Practical floor for a USABLE saved pose calibration range. Narrower
  *  than this and the cursor barely responds across the screen — the
  *  user is better off with DEFAULT_CALIBRATION until they re-run the
@@ -489,7 +548,7 @@ export function loadPoseCalibration(): PoseCalibrationData {
   // cursor by default, and the wizard's online learner will adapt
   // from there.
   try {
-    const raw = localStorage.getItem(calibrationKey());
+    const raw = readPoseCalibrationValue(calibrationKey());
     if (raw) {
       const parsed = JSON.parse(raw);
       if (isUsableCornerCalibration(parsed)) return parsed;
@@ -506,12 +565,12 @@ export function loadPoseCalibration(): PoseCalibrationData {
 }
 
 export function savePoseCalibration(data: PoseCalibrationData): void {
-  try { localStorage.setItem(calibrationKey(), JSON.stringify(data)); } catch { /* */ }
+  try { writePoseCalibrationValue(calibrationKey(), JSON.stringify(data)); } catch { /* */ }
 }
 
 export function hasCalibration(orientation?: 'landscape' | 'portrait'): boolean {
   if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem(calibrationKey(orientation));
+  return !!readPoseCalibrationValue(calibrationKey(orientation));
 }
 
 export { getOrientation };

@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "Uji akurasi kamera berhasil.",
-  "tracking_accuracy_unverified": "Kalibrasi tersimpan. Akurasi kamera belum diverifikasi.",
+  "tracking_accuracy_unverified": "Akurasi kamera belum diverifikasi.",
   "tracking_camera_hits": "Pilihan melalui kamera: {hits}/{total}.",
   "aac_chat_no_contacts": "Belum ada kontak.",
   "aac_chat_setup_hint": "Pengasuh dapat menambahkan kontak di Pengaturan → Kontak.",
@@ -491,5 +491,9 @@
   "scan_stopped": "Pemindaian dijeda",
   "scan_start": "Mulai pemindaian",
   "scan_stop": "Hentikan pemindaian",
-  "scan_keys": "Space/Enter: pilih · Tab: berikutnya"
+  "scan_keys": "Space/Enter: pilih · Tab: berikutnya",
+  "tracking_setup_center_guide": "Bagian tubuh yang dipilih tetap terlihat. Beristirahatlah dalam posisi netral yang nyaman dan berhenti sejenak. Gerakan besar tidak diperlukan.",
+  "tracking_setup_center_hint": "Beristirahatlah dengan nyaman, lalu ambil bagian tengah.",
+  "tracking_setup_corner_guide": "Gerakkan bagian tubuh yang dipilih dengan nyaman ke arah {corner}, lalu berhenti. Tetap dalam jangkauan yang nyaman.",
+  "tracking_setup_center_only": "Gunakan kalibrasi tengah"
 }

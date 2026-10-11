@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "Jaribio la usahihi wa kamera limefaulu.",
-  "tracking_accuracy_unverified": "Urekebishaji umehifadhiwa. Usahihi wa kamera bado haujathibitishwa.",
+  "tracking_accuracy_unverified": "Usahihi wa kamera bado haujathibitishwa.",
   "tracking_camera_hits": "Chaguo kupitia kamera: {hits}/{total}.",
   "aac_chat_no_contacts": "Hakuna majina bado.",
   "aac_chat_setup_hint": "Mlezi anaweza kuongeza majina kwenye Mpangilio → Majina.",
@@ -491,5 +491,9 @@
   "scan_stopped": "Uchanganuzi umesitishwa kwa muda",
   "scan_start": "Anza uchanganuzi",
   "scan_stop": "Simamisha uchanganuzi",
-  "scan_keys": "Space/Enter: chagua · Tab: inayofuata"
+  "scan_keys": "Space/Enter: chagua · Tab: inayofuata",
+  "tracking_setup_center_guide": "Weka sehemu ya mwili uliyochagua ionekane. Pumzika katika mkao wa kawaida unaokufaa na usimame. Mienendo mikubwa haihitajiki.",
+  "tracking_setup_center_hint": "Pumzika kwa raha, kisha nasa sehemu ya katikati.",
+  "tracking_setup_corner_guide": "Sogeza sehemu ya mwili uliyochagua kwa raha kuelekea {corner}, kisha simama. Kaa ndani ya kiwango chako cha faraja.",
+  "tracking_setup_center_only": "Tumia urekebishaji wa katikati"
 }

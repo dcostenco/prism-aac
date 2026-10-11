@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "Test de précision de la caméra réussi.",
-  "tracking_accuracy_unverified": "Étalonnage enregistré. La précision de la caméra n’est pas encore vérifiée.",
+  "tracking_accuracy_unverified": "La précision de la caméra n’est pas encore vérifiée.",
   "tracking_camera_hits": "Sélections par caméra : {hits}/{total}.",
   "aac_chat_no_contacts": "Aucun contact pour l'instant.",
   "aac_chat_setup_hint": "Un soignant peut ajouter des contacts dans Paramètres → Contacts.",
@@ -491,5 +491,9 @@
   "scan_stopped": "Balayage en pause",
   "scan_start": "Démarrer le balayage",
   "scan_stop": "Arrêter le balayage",
-  "scan_keys": "Space/Enter : sélectionner · Tab : suivant"
+  "scan_keys": "Space/Enter : sélectionner · Tab : suivant",
+  "tracking_setup_center_guide": "Gardez la partie du corps sélectionnée dans le champ de vision. Reposez-vous dans une position neutre confortable et faites une pause. Les grands mouvements ne sont pas nécessaires.",
+  "tracking_setup_center_hint": "Reposez-vous confortablement, puis capturez le centre.",
+  "tracking_setup_corner_guide": "Déplacez confortablement la partie du corps sélectionnée vers {corner}, puis faites une pause. Restez dans votre amplitude confortable.",
+  "tracking_setup_center_only": "Utiliser l’étalonnage du centre"
 }

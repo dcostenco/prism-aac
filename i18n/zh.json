@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "摄像头准确度测试已通过。",
-  "tracking_accuracy_unverified": "校准已保存。摄像头准确度尚未验证。",
+  "tracking_accuracy_unverified": "摄像头准确度尚未验证。",
   "tracking_camera_hits": "摄像头选择：{hits}/{total}。",
   "aac_chat_no_contacts": "暂无联系人。",
   "aac_chat_setup_hint": "看护者可以在设置 → 联系人中添加联系人。",
@@ -491,5 +491,9 @@
   "scan_stopped": "扫描已暂停",
   "scan_start": "开始扫描",
   "scan_stop": "停止扫描",
-  "scan_keys": "Space/Enter：选择 · Tab：下一个"
+  "scan_keys": "Space/Enter：选择 · Tab：下一个",
+  "tracking_setup_center_guide": "让您选择的身体部位保持在视野中。以舒适的中立姿势休息并暂停。不需要大幅度移动。",
+  "tracking_setup_center_hint": "舒适地休息，然后捕捉中心位置。",
+  "tracking_setup_corner_guide": "将您选择的身体部位舒适地移向{corner}，然后暂停。保持在舒适范围内。",
+  "tracking_setup_center_only": "使用中心校准"
 }

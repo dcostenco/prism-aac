@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "Pumasa ang pagsubok sa katumpakan ng kamera.",
-  "tracking_accuracy_unverified": "Na-save ang pagkakalibrate. Hindi pa napatutunayan ang katumpakan ng kamera.",
+  "tracking_accuracy_unverified": "Hindi pa napatutunayan ang katumpakan ng kamera.",
   "tracking_camera_hits": "Mga pagpili gamit ang kamera: {hits}/{total}.",
   "aac_chat_no_contacts": "Wala pang mga contact.",
   "aac_chat_setup_hint": "Maaaring magdagdag ng contact ang tagapag-alaga sa Settings → Contacts.",
@@ -491,5 +491,9 @@
   "scan_stopped": "Naka-pause ang pag-scan",
   "scan_start": "Simulan ang pag-scan",
   "scan_stop": "Ihinto ang pag-scan",
-  "scan_keys": "Space/Enter: piliin · Tab: susunod"
+  "scan_keys": "Space/Enter: piliin · Tab: susunod",
+  "tracking_setup_center_guide": "Panatilihing nakikita ang napiling bahagi ng katawan. Magpahinga sa komportableng neutral na posisyon at huminto. Hindi kailangan ang malalaking galaw.",
+  "tracking_setup_center_hint": "Magpahinga nang komportable, pagkatapos ay kunin ang gitna.",
+  "tracking_setup_corner_guide": "Kumportableng igalaw ang napiling bahagi ng katawan patungo sa {corner}, pagkatapos ay huminto. Manatili sa komportableng saklaw.",
+  "tracking_setup_center_only": "Gamitin ang pagkakalibrate sa gitna"
 }

@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "اجتاز اختبار دقة الكاميرا.",
-  "tracking_accuracy_unverified": "تم حفظ المعايرة. لم يتم التحقق من دقة الكاميرا بعد.",
+  "tracking_accuracy_unverified": "لم يتم التحقق من دقة الكاميرا بعد.",
   "tracking_camera_hits": "اختيارات الكاميرا: {hits}/{total}.",
   "aac_chat_no_contacts": "لا توجد جهات اتصال بعد.",
   "aac_chat_setup_hint": "يمكن لمقدم الرعاية إضافة جهات الاتصال في الإعدادات ← جهات الاتصال.",
@@ -491,5 +491,9 @@
   "scan_stopped": "المسح متوقف مؤقتًا",
   "scan_start": "بدء المسح",
   "scan_stop": "إيقاف المسح",
-  "scan_keys": "Space/Enter: اختيار · Tab: التالي"
+  "scan_keys": "Space/Enter: اختيار · Tab: التالي",
+  "tracking_setup_center_guide": "أبقِ الجزء المحدد من جسمك ضمن مجال الرؤية. استرح في وضع محايد ومريح وتوقف. لا حاجة إلى حركات كبيرة.",
+  "tracking_setup_center_hint": "استرح براحة، ثم التقط المركز.",
+  "tracking_setup_corner_guide": "حرّك الجزء المحدد من جسمك براحة نحو {corner}، ثم توقف. ابقَ ضمن نطاق راحتك.",
+  "tracking_setup_center_only": "استخدم معايرة المركز"
 }

@@ -198,6 +198,15 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
       expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
       expect(latestTracker().opts.trackingTarget).toBe(requested);
       expect(useSettingsStore.getState().cameraTrackingTarget).toBe(requested);
+      expect(screen.getByTestId('tracking-wizard-guide')).toHaveTextContent('selected body part');
+      expect(screen.getByTestId('tracking-wizard-guide')).toHaveTextContent('comfortable neutral position');
+      expect(screen.getByTestId('tracking-wizard-guide')).not.toHaveTextContent(/turn your head|exaggerate/i);
+      act(() => { for (let i = 0; i < 5; i++) dispatchPoseSample(observed, 0.5 + drift, 0.5); });
+      fireEvent.click(screen.getByTestId('tracking-capture-center'));
+      expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-corners');
+      expect(screen.getByTestId('tracking-wizard-guide')).toHaveTextContent('Stay within your comfortable range');
+      expect(screen.getByTestId('tracking-wizard-guide')).not.toHaveTextContent(/turn your head|exaggerate/i);
+      expect(screen.getByTestId('tracking-save-center-only')).toHaveTextContent('Use center calibration');
     });
 
     it('retains auto-side when short detections alternate between wrists', () => {
@@ -231,6 +240,10 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
       expect(useSettingsStore.getState().cameraTrackingTarget).toBe('any_hand');
       fireEvent.click(screen.getByRole('button', { name: /^Calibrate Right Finger/ }));
       expect(latestTracker().opts.trackingTarget).toBe('right_index');
+      expect(useSettingsStore.getState().cameraTrackingTarget).toBe('any_hand');
+      fireEvent.click(screen.getByTestId('tracking-calibrate-skip'));
+      fireEvent.click(screen.getByTestId('tracking-test-skip'));
+      fireEvent.click(screen.getByTestId('tracking-confirm'));
       expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_index');
     });
 
@@ -278,7 +291,7 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
       fireEvent.click(screen.getByRole('button', { name: /^Calibrate Head/ }));
       expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
       expect(latestTracker().opts.trackingTarget).toBe('nose');
-      expect(useSettingsStore.getState().cameraTrackingTarget).toBe('nose');
+      expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_index');
       act(() => vi.advanceTimersByTime(6000));
       expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
     });

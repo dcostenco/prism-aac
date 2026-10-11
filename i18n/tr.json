@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "Kamera doğruluk testi başarılı.",
-  "tracking_accuracy_unverified": "Kalibrasyon kaydedildi. Kamera doğruluğu henüz doğrulanmadı.",
+  "tracking_accuracy_unverified": "Kamera doğruluğu henüz doğrulanmadı.",
   "tracking_camera_hits": "Kamera ile seçimler: {hits}/{total}.",
   "aac_chat_no_contacts": "Henüz kişi yok.",
   "aac_chat_setup_hint": "Bir bakıcı Ayarlar → Kişiler bölümünden kişi ekleyebilir.",
@@ -491,5 +491,9 @@
   "scan_stopped": "Tarama duraklatıldı",
   "scan_start": "Taramayı başlat",
   "scan_stop": "Taramayı durdur",
-  "scan_keys": "Space/Enter: seç · Tab: sonraki"
+  "scan_keys": "Space/Enter: seç · Tab: sonraki",
+  "tracking_setup_center_guide": "Seçtiğiniz vücut bölümünü görünür tutun. Rahat ve nötr bir pozisyonda dinlenin ve duraklayın. Büyük hareketler gerekmez.",
+  "tracking_setup_center_hint": "Rahatça dinlenin, ardından merkezi yakalayın.",
+  "tracking_setup_corner_guide": "Seçtiğiniz vücut bölümünü rahatça {corner} yönüne hareket ettirin, ardından duraklayın. Rahat hareket alanınız içinde kalın.",
+  "tracking_setup_center_only": "Merkez kalibrasyonunu kullan"
 }

@@ -1,6 +1,6 @@
 {
   "tracking_accuracy_passed": "Nauwkeurigheidstest van de camera geslaagd.",
-  "tracking_accuracy_unverified": "Kalibratie opgeslagen. De nauwkeurigheid van de camera is nog niet bevestigd.",
+  "tracking_accuracy_unverified": "De nauwkeurigheid van de camera is nog niet bevestigd.",
   "tracking_camera_hits": "Selecties via de camera: {hits}/{total}.",
   "aac_chat_no_contacts": "Nog geen contacten.",
   "aac_chat_setup_hint": "Een verzorger kan contacten toevoegen in Instellingen → Contacten.",
@@ -491,5 +491,9 @@
   "scan_stopped": "Scannen gepauzeerd",
   "scan_start": "Scannen starten",
   "scan_stop": "Scannen stoppen",
-  "scan_keys": "Space/Enter: selecteren · Tab: volgende"
+  "scan_keys": "Space/Enter: selecteren · Tab: volgende",
+  "tracking_setup_center_guide": "Houd het geselecteerde lichaamsdeel in beeld. Rust in een comfortabele neutrale houding en pauzeer. Grote bewegingen zijn niet nodig.",
+  "tracking_setup_center_hint": "Rust comfortabel en leg daarna het midden vast.",
+  "tracking_setup_corner_guide": "Beweeg het geselecteerde lichaamsdeel comfortabel naar {corner} en pauzeer. Blijf binnen je comfortabele bereik.",
+  "tracking_setup_center_only": "Centr kalibreren"
 }
