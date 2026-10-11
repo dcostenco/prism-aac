@@ -214,6 +214,33 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(localStorage.getItem('prism-pose-calibration-portrait')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']);
   });
 
+  it('does not silently confirm a completed calibration after rotating to another orientation', async () => {
+    seedPreviousProfiles();
+    const complete = vi.fn();
+    const view = render(<TrackingSetupWizard onComplete={complete} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(0.5, 0.5); await step(66); await step(40);
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    fireEvent.click(screen.getByTestId('tracking-save-center-only'));
+    fireEvent.click(screen.getByTestId('tracking-test-skip'));
+    Object.defineProperties(window, { innerWidth: { configurable: true, value: 390 },
+      innerHeight: { configurable: true, value: 844 } });
+    fireEvent.click(screen.getByTestId('tracking-confirm'));
+    expect(complete).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Screen orientation changed');
+    for (const [key, raw] of Object.entries(ORIGINAL_PROFILE_VALUES)) expect(localStorage.getItem(key)).toBe(raw);
+    // Turning back allows the same reviewed calibration to be saved without
+    // forcing extra motion or overwriting the other orientation.
+    Object.defineProperties(window, { innerWidth: { configurable: true, value: 1280 },
+      innerHeight: { configurable: true, value: 720 } });
+    fireEvent.click(screen.getByTestId('tracking-confirm'));
+    expect(complete).toHaveBeenCalledOnce();
+    expect(JSON.parse(localStorage.getItem('prism-pose-calibration-landscape')!).wizardCompleted).toBe(true);
+    expect(localStorage.getItem('prism-pose-calibration-portrait')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']);
+    view.unmount();
+  });
+
   it('confirming after rotation does not replace the inactive orientation with an earlier preview', async () => {
     seedPreviousProfiles();
     const view = render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);

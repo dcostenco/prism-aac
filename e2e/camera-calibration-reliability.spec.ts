@@ -17,6 +17,8 @@ const RANGE_COMPARE_EPSILON = 1e-9;
 // can already be in the past while WASM inference is busy; keep a lead
 // shorter than the calibration capture deadlines without retrying failures.
 const CLOCK_PAUSE_LEAD_MS = 1000;
+const CALIBRATION_STORAGE_KEYS = ['prism-pose-calibration-portrait',
+  'prism-pose-calibration-landscape', 'prism_pose_wizard_completed'];
 
 async function pauseReplayClock(page: Page) {
   await page.clock.pauseAt(await page.evaluate(lead => Date.now() + lead, CLOCK_PAUSE_LEAD_MS));
@@ -257,13 +259,28 @@ for (const profile of [
       criticalSelectors: ['[data-testid="tracking-accuracy-result"]', '[data-phase="complete"] .max-w-md > button'],
       occluderSelectors: ['[data-testid="tracking-wizard-pip-wrapper"]'],
     });
+    if (centerOnly) {
+      const viewport = page.viewportSize()!;
+      const before = await page.evaluate(keys => keys.map(key => localStorage.getItem(key)), CALIBRATION_STORAGE_KEYS);
+      await page.setViewportSize({ width: viewport.height, height: viewport.width });
+      await page.getByTestId('tracking-confirm').click();
+      await expect(wizard).toHaveAttribute('data-phase', 'complete');
+      await expect(wizard.getByRole('alert')).toContainText('Screen orientation changed');
+      expect(await page.evaluate(keys => keys.map(key => localStorage.getItem(key)), CALIBRATION_STORAGE_KEYS)).toEqual(before);
+      await safeScreenshot(page, info.outputPath('orientation-save-rejected.png'), {
+        expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-setup-wizard"] [role="alert"]'],
+        criticalSelectors: ['[data-testid="tracking-confirm"]', '.tracking-wizard-header > button'],
+        occluderSelectors: ['[data-testid="tracking-wizard-pip-wrapper"]', '[data-testid="tracking-wizard-status"]'],
+      });
+      await page.setViewportSize(viewport);
+    }
     await page.evaluate(() => Object.assign((window as unknown as {
       __cameraReplay: object }).__cameraReplay, { lost: false, x: 0, y: 0 }));
     await page.getByTestId('tracking-confirm').click();
     await expect(wizard).toHaveCount(0);
     // Return to the board before testing persistence. Remaining in Settings
-    // lets a neutral camera dwell activate its controls; that separate
-    // interaction-policy issue is not storage loss or covered by this smoke.
+    // lets a camera dwell intentionally activate eligible buttons. That
+    // separate interaction policy is not storage loss or covered by this smoke.
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('tracking-target-nose')).toHaveAttribute('data-selected', 'true');
     await page.getByRole('button', { name: 'Close settings', exact: true }).click();

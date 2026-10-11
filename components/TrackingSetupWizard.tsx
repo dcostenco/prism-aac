@@ -5,6 +5,7 @@ import {
   startPoseTracker,
   savePoseCalibration,
   loadPoseCalibration,
+  getOrientation,
   DEFAULT_CALIBRATION,
   POSE_CALIBRATION_MIN_RANGE,
   freezeLearnerCalSaves,
@@ -97,6 +98,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const calibrationDraftRef = useRef<PoseCalibrationDraft | null>(null);
+  const completedOrientationRef = useRef<'landscape' | 'portrait' | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
   const samplingAllowedRef = useRef(false);
   const detectionCountRef = useRef<Record<string, number>>({});
@@ -259,6 +261,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     setStatusText('Looking for you...');
     speak('Hold still. I am looking for you.');
     detectionCountRef.current = {};
+    completedOrientationRef.current = null;
     centerSampleRef.current = null;
     // Freeze learner saves for the entire wizard run. The online learner
     // overwrites DEFAULT_CALIBRATION within seconds — freezing it keeps
@@ -588,6 +591,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       }));
       setTestTargets(targets);
       setTestIdx(0);
+      completedOrientationRef.current = getOrientation();
       setPhase('accuracy-test');
       setStatusText('Look at each red circle until it goes green');
     }
@@ -665,7 +669,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   }, [phase, trackerStatus, testIdx, testTargets, handleTestHit]);
 
   // Accuracy test auto-complete — after 10s per target, skip and
-  // advance without manufacturing a hit. Calibration was saved in captureCorner; the
+  // advance without manufacturing a hit. Calibration was staged in captureCorner; the
   // accuracy test is verification only. Limited-mobility users can't
   // reach all 5 randomly-placed targets so the test would never pass
   // otherwise. User confirmed (Image #62): 0/5 hits, no way to complete.
@@ -1028,8 +1032,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               onClick={() => {
                 tapFeedback();
                 try {
-                  calibrationDraftRef.current?.commit();
+                  calibrationDraftRef.current?.commit(completedOrientationRef.current ?? undefined);
                   calibrationDraftRef.current = null;
+                  setSetupError(null);
                 } catch (error) {
                   setSetupError(error instanceof Error ? error.message : t('error'));
                   return;
@@ -1078,6 +1083,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                   }));
                   setTestTargets(targets);
                   setTestIdx(0);
+                  completedOrientationRef.current = getOrientation();
                   setPhase('accuracy-test');
                   setStatusText('Look at each red circle until it goes green');
                 }}
@@ -1108,10 +1114,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 ✓ Capture {CORNER_TARGETS[cornerIdx]?.label}{sampleBufferRef.current.length > 0 ? ` (${sampleBufferRef.current.length})` : ''}
               </button>
               {/* Limited-mobility path — prominent, clearly worded.
-                  The temp cal saved at captureCenter (DEFAULT range
-                  anchored on captured neutral) is already live and
-                  correct. This button just finalises it as the saved
-                  cal without requiring 4 corner captures. */}
+                  The captured-neutral preview is already live. This
+                  button finalises the draft for accuracy testing without
+                  requiring 4 corners; Save & Done persists it. */}
               {centerSampleRef.current && (
                 <button
                   onClick={() => {
@@ -1136,6 +1141,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                     }));
                     setTestTargets(targets);
                     setTestIdx(0);
+                    completedOrientationRef.current = getOrientation();
                     setPhase('accuracy-test');
                     setStatusText('Look at each red circle until it goes green');
                     speak(t('tracking_accuracy_unverified'));
@@ -1159,6 +1165,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                   }));
                   setTestTargets(targets);
                   setTestIdx(0);
+                  completedOrientationRef.current = getOrientation();
                   setPhase('accuracy-test');
                   setStatusText('Look at each red circle until it goes green');
                 }}

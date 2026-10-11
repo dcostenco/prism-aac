@@ -103,7 +103,7 @@ Prism AAC underwent a [70-item adversarial accessibility audit](ACCESSIBILITY.md
 | **Voice input** | Dictation with AI autocorrect, hands-free, wake word | Mic button on toolbar |
 | **Simplified keyboard** | 15 most-frequent letters in 3×5 grid (auto for gridSize 4) | Settings → Grid Size → 4 |
 
-Camera calibration saves your neutral position and movement range. Its accuracy result counts camera-driven selections; manual taps and skipped targets do not verify camera accuracy. You can finish setup with an unverified result and recalibrate from Settings.
+Camera calibration saves your neutral position and movement range when you choose **Save & Done**. Cancel leaves your previously saved calibration unchanged. If you rotate after calibration finishes, return to that orientation before saving, or cancel and reopen setup in the new orientation. The accuracy result counts camera-driven selections; manual taps and skipped targets do not verify camera accuracy. You can finish setup with an unverified result and recalibrate from Settings.
 
 Picture-board navigation: swipe left/right within the vocabulary grid or bottom category strip to browse pages. On a Mac, use horizontal trackpad scrolling or click-and-drag; the edge arrows remain available. Paging does not choose a word—tap or click a tile deliberately to select it. Vertical scrolling and pinch zoom do not turn pages. See [swipe navigation and test boundaries](docs/SWIPE_NAVIGATION.md).
 

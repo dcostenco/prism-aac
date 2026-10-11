@@ -141,6 +141,22 @@ describe('pose calibration draft', () => {
     draft.rollback();
   });
 
+  it('rejects an orientation change even if the new orientation has a staged preview', () => {
+    const draft = beginPoseCalibrationDraft();
+    savePoseCalibration(PROFILE);
+    markPoseWizardCompleted();
+    setLandscape();
+    savePoseCalibration({ ...PROFILE, wizardCompleted: false });
+    expect(() => draft.commit('portrait')).toThrow('Screen orientation changed');
+    expect(localStorage.getItem(PORTRAIT_KEY)).toBeNull();
+    expect(localStorage.getItem(LANDSCAPE_KEY)).toBeNull();
+    expect(localStorage.getItem(COMPLETION_KEY)).toBeNull();
+    setPortrait();
+    draft.commit('portrait');
+    expect(JSON.parse(localStorage.getItem(PORTRAIT_KEY)!)).toEqual(PROFILE);
+    expect(localStorage.getItem(LANDSCAPE_KEY)).toBeNull();
+  });
+
   it.each([null, JSON.stringify({ ...PROFILE, leftX: 0.7 })])('restores the original %s when a later setItem fails', original => {
     if (original !== null) localStorage.setItem(PORTRAIT_KEY, original);
     const draft = beginPoseCalibrationDraft();

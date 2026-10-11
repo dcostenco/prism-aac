@@ -467,9 +467,13 @@ const POSE_WIZARD_COMPLETION_KEY = 'prism_pose_wizard_completed';
 const POSE_CALIBRATION_DRAFT_KEYS = [calibrationKey('portrait'), calibrationKey('landscape'), POSE_WIZARD_COMPLETION_KEY];
 const CALIBRATION_DRAFT_BUSY = 'Calibration is already in progress.';
 const CALIBRATION_DRAFT_CONFLICT = 'Saved calibration changed during setup. Cancel and reopen setup.';
+const CALIBRATION_ORIENTATION_CONFLICT = 'Screen orientation changed. Rotate back or cancel and reopen setup.';
 let calibrationDraft: { original: Map<string, string | null>; pending: Map<string, string> } | null = null;
 
-export interface PoseCalibrationDraft { commit(): void; rollback(): void }
+export interface PoseCalibrationDraft {
+  commit(expectedOrientation?: 'landscape' | 'portrait'): void;
+  rollback(): void;
+}
 
 /** Keep preview writes in memory until setup is confirmed. Cancel, unmount
  * and reload leave the previously usable saved profiles untouched. */
@@ -480,8 +484,11 @@ export function beginPoseCalibrationDraft(): PoseCalibrationDraft {
   calibrationDraft = draft;
   return {
     rollback() { if (calibrationDraft === draft) calibrationDraft = null; },
-    commit() {
+    commit(expectedOrientation) {
       if (calibrationDraft !== draft) return;
+      if (expectedOrientation && expectedOrientation !== getOrientation()) {
+        throw new Error(CALIBRATION_ORIENTATION_CONFLICT);
+      }
       // Setup may rotate while showing factory/neutral previews. Confirm
       // only the current orientation, never overwrite the other saved
       // orientation with an unfinished preview from earlier in the run.
