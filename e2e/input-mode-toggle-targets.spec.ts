@@ -1,9 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { safeScreenshot } from './helpers/screenshot-validation';
+import { installLocalCameraAccess } from './helpers/camera-access-fixture';
 
 const TARGET = { width: 64, height: 48, descriptionGap: 32 };
 const OFFLINE_RESPONSE = { status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Offline Settings target test' }) };
 const CAMERA_ROW = '[data-testid="camera-input-settings"] label:has(button[aria-label="Camera input"])';
+const CAMERA_HEADING = '[data-testid="camera-input-settings"] > h4';
+const HEADING_REST_HEIGHT = 48;
 const CAMERA_DENIAL = 'No physical camera in this test';
 const AUXILIARY_TOGGLES = ['Hand calibration settings', 'Group scanning'];
 const CAPTURE = { expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="camera-input-settings"]'],
@@ -36,6 +39,7 @@ test('native Settings targets remain reachable and preferences survive reopen an
     }
     return route.continue();
   });
+  await installLocalCameraAccess(page, baseURL, info);
   // This is a manual Settings workflow under explicit scanner ownership,
   // not a physical-camera or cloud/session test. Never request real hardware.
   await page.addInitScript(denial => {
@@ -51,6 +55,19 @@ test('native Settings targets remain reachable and preferences survive reopen an
   const camera = page.getByRole('button', { name: 'Camera input', exact: true });
   await expect(camera).toHaveAttribute('aria-pressed', 'false');
   await camera.click(); await expect(camera).toHaveAttribute('aria-pressed', 'true');
+  const heading = page.locator(CAMERA_HEADING);
+  await heading.scrollIntoViewIfNeeded();
+  const restBand = await heading.boundingBox();
+  expect(restBand).not.toBeNull();
+  expect(restBand!.height).toBeGreaterThanOrEqual(HEADING_REST_HEIGHT);
+  // The title is a noninteractive resting surface, not a larger toggle.
+  // A real native tap here must leave the chosen input mode alone.
+  await heading.click();
+  await expect(camera).toHaveAttribute('aria-pressed', 'true');
+  expect(await heading.evaluate(element => {
+    const b = element.getBoundingClientRect();
+    return document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2) === element;
+  })).toBe(true);
   await page.getByTestId('tracking-target-nose').click();
   await expect(page.getByTestId('tracking-target-nose')).toHaveAttribute('data-selected', 'true');
   for (const name of AUXILIARY_TOGGLES) {
