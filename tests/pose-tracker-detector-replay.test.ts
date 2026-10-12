@@ -23,6 +23,12 @@ const INVALID_CAMERA_COORDINATES = [
   { name: 'non-finite X', x: NaN, y: 0.5 },
   { name: 'non-finite Y', x: 0.5, y: Infinity },
 ];
+const UNBOUND_CONTROL_CALIBRATIONS = [
+  { name: 'legacy', binding: {} },
+  { name: 'other wrist', binding: { trackingTarget: 'left_wrist' as const, orientation: 'landscape' as const, wizardCompleted: true } },
+  { name: 'other orientation', binding: { trackingTarget: 'right_wrist' as const, orientation: 'portrait' as const, wizardCompleted: true } },
+  { name: 'unfinished setup', binding: { trackingTarget: 'right_wrist' as const, orientation: 'landscape' as const, wizardCompleted: false } },
+];
 
 // Mock only the detector boundary. Calibration, target resolution, real
 // filters, the frame loop and dwell selection must remain production code.
@@ -93,7 +99,7 @@ afterEach(() => {
 });
 
 async function start(target: TrackingTarget = 'right_index', options: Partial<Pick<
-  PoseTrackerOptions, 'sensitivity' | 'dwellMs' | 'useEyeGaze' | 'eyeGazeWeight' | 'selectedTargetOnly' | 'requireHeadPresence'
+  PoseTrackerOptions, 'sensitivity' | 'dwellMs' | 'useEyeGaze' | 'eyeGazeWeight' | 'selectedTargetOnly' | 'requireHeadPresence' | 'calibrationMode'
 >> = {}) {
   const service = await import('@/services/bodyPoseService');
   if (options.useEyeGaze) {
@@ -159,6 +165,98 @@ function step(count = 1) {
 
 describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it('an explicit control recenter requires a fresh dwell even on the same button', async () => {
+    const service = await import('@/services/bodyPoseService');
+    const cal = { ...service.DEFAULT_CALIBRATION, wizardCompleted: true,
+      trackingTarget: 'right_wrist' as const, orientation: 'landscape' as const };
+    service.savePoseCalibration(cal);
+    const { onDwell } = await start('right_wrist', { calibrationMode: 'control', selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+    step(3);
+    handle!.setCalibration({ ...cal, leftX: 0.66, rightX: 0.34 });
+    step(3);
+    expect(onDwell).not.toHaveBeenCalled();
+    step(4);
+    expect(onDwell).toHaveBeenCalledTimes(1);
+  });
+  it.each(UNBOUND_CONTROL_CALIBRATIONS)('control rejects $name calibration before detector/camera startup', async ({ binding }) => {
+    const service = await import('@/services/bodyPoseService');
+    const saved = { ...service.DEFAULT_CALIBRATION, ...binding };
+    service.savePoseCalibration(saved);
+    const onMove = vi.fn(), onStatusChange = vi.fn();
+    handle = service.startPoseTracker({ dwellMs: 500, sensitivity: 5, smoothing: 0.15,
+      trackingTarget: 'right_wrist', cursorSmoothing: 0.15, calibrationMode: 'control',
+      selectedTargetOnly: true, requireHeadPresence: true, onMove, onDwell: vi.fn(), onStatusChange });
+    step(10);
+    expect(onStatusChange).toHaveBeenLastCalledWith('stopped');
+    expect(detector.create).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
+    expect(service.loadPoseCalibration()).toEqual(saved);
+  });
+  it.each(['setup', 'control'] as const)('%s prevents both automatic mapping writers but preserves explicit calibration and noise learning', async calibrationMode => {
+    const service = await import('@/services/bodyPoseService');
+    const initialCal = { ...service.DEFAULT_CALIBRATION, wizardCompleted: true,
+      trackingTarget: 'right_wrist' as const, orientation: 'landscape' as const };
+    service.savePoseCalibration(initialCal);
+    const { BaselineTracker } = await import('@/services/recalibration');
+    const correction = vi.spyOn(BaselineTracker.prototype, 'suggestCorrection').mockReturnValue({
+      kind: 'offset', deltaNormX: 0.1, deltaNormY: 0.1,
+    });
+    const noise = vi.spyOn(BaselineTracker.prototype, 'getNoiseFloor');
+    const acceptedCorrection = vi.spyOn(BaselineTracker.prototype, 'acceptCorrection');
+    const diagnostics = await import('@/services/trackingDiagnostics');
+    diagnostics.startTrackingDiagnostics();
+    const { onMove } = await start('right_wrist', { calibrationMode, selectedTargetOnly: true, requireHeadPresence: true });
+    for (let i = 0; i < 180; i++) {
+      pose(16, 0.45 + Math.sin(i / 9) * 0.12, 0.55);
+      detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+      step();
+    }
+    diagnostics.stopTrackingDiagnostics();
+    const captured = JSON.parse(diagnostics.trackingDiagnosticReport());
+    expect(captured.frames).toHaveLength(180);
+    expect(captured.frames.every((frame: { calibration: number[] }) => JSON.stringify(frame.calibration) === JSON.stringify([
+      initialCal.leftX, initialCal.rightX, initialCal.topY, initialCal.bottomY,
+    ]))).toBe(true);
+    expect(correction).toHaveBeenCalled();
+    expect(acceptedCorrection).not.toHaveBeenCalled();
+    expect(noise).toHaveBeenCalled();
+    expect(captured.frames.some((frame: { noise: number }) => frame.noise > 0)).toBe(true);
+    expect(service.loadPoseCalibration()).toEqual(initialCal);
+    const explicit = { ...initialCal, leftX: 0.66, rightX: 0.34 };
+    handle!.setCalibration(explicit);
+    expect(service.loadPoseCalibration()).toEqual(explicit);
+    expect(service.hasPoseCalibrationForTarget('right_wrist')).toBe(true);
+    expect(service.hasPoseCalibrationForTarget('left_wrist')).toBe(false);
+    expect(() => handle!.setCalibration({ ...explicit, trackingTarget: 'left_wrist' })).toThrow();
+    expect(() => handle!.setCalibration({ ...explicit, leftX: NaN })).toThrow();
+    expect(service.loadPoseCalibration()).toEqual(explicit);
+    if (calibrationMode === 'setup') {
+      const { computeCenterPreviewCalibration } = await import('@/services/wizardCalibration');
+      const draft = service.beginPoseCalibrationDraft();
+      const centered = { ...computeCenterPreviewCalibration({ normX: 0.5, normY: 0.55 }),
+        wizardCompleted: true, trackingTarget: 'right_wrist' as const, orientation: 'landscape' as const };
+      handle!.setCalibration(centered);
+      // Center-only access must stay available without requiring four corners.
+      expect(JSON.parse(localStorage.getItem('prism-pose-calibration-landscape')!)).toEqual(explicit);
+      draft.commit('landscape');
+      expect(service.loadPoseCalibration()).toEqual(centered);
+      pose(16, 0.5 - drift(), 0.55 - drift() / 2);
+      detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+      step();
+      expect(onMove.mock.calls.at(-1)![0]).toBeCloseTo(window.innerWidth / 2);
+      expect(onMove.mock.calls.at(-1)![1]).toBeCloseTo(window.innerHeight / 2);
+    } else {
+      const moves = onMove.mock.calls.length;
+      Object.defineProperties(window, { innerWidth: { configurable: true, value: 720 },
+        innerHeight: { configurable: true, value: 1280 } });
+      step(5);
+      expect(onMove).toHaveBeenCalledTimes(moves);
+      expect(service.hasPoseCalibrationForTarget('right_wrist')).toBe(false);
+    }
+  });
   it.each([['left_wrist', 15, 16], ['right_wrist', 16, 15]] as const)('strict %s never switches to the opposite wrist or visible head', async (target, selected, other) => {
     const { onMove, onStatusChange } = await start(target, { selectedTargetOnly: true, requireHeadPresence: true });
     pose(selected, 0.5);
@@ -241,6 +339,8 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
     vi.spyOn(service, 'isPoseTrackingSupported').mockReturnValue(true);
     const { useSettingsStore } = await import('@/store/settingsStore');
     useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist', headTrackingDwellMs: 500 });
+    service.savePoseCalibration({ ...service.DEFAULT_CALIBRATION, wizardCompleted: true,
+      trackingTarget: 'right_wrist', orientation: 'landscape' });
     const { default: Overlay } = await import('@/components/CameraInputOverlay');
     const button = document.createElement('button'); document.body.append(button);
     const clicks = vi.fn(); button.addEventListener('click', clicks);

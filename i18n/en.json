@@ -1,4 +1,5 @@
 {
+  "camera_wrist_calibration_needed": "Set up this wrist in the current orientation before enabling the cursor. Existing head, automatic or other-wrist calibration is not reused.",
   "camera_wrist_scope": "Experimental wrist/arm control: choose one side. Your head must remain visible. Losing the head or chosen wrist pauses movement and selection; another body part will not take over. Physical-camera accuracy is not yet verified.",
   "camera_controls_disabled": "Head cursor, eye gaze, gestures and automatic body-part switching are disabled. Finger cursor control is not enabled yet.",
   "camera_choose_wrist": "Choose Left Wrist or Right Wrist before starting camera setup.",

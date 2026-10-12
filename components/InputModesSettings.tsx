@@ -8,6 +8,7 @@ import TrackingDiagnosticsSettings from './TrackingDiagnosticsSettings';
 import { CAMERA_CURSOR_TARGETS, HEAD_CURSOR_AVAILABLE, isCameraCursorTarget } from '@/services/cameraTrackingTargets';
 import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
 import { requestMotionPermission } from '@/services/deviceMotion';
+import { hasPoseCalibrationForTarget, type TrackingTarget } from '@/services/bodyPoseService';
 import { loadConfig as loadSwitchConfig, saveConfig as saveSwitchConfig, SWITCH_SCAN_CONFIG_EVENT, type SwitchScanConfig } from '@/services/switchScanService';
 
 // Legacy preferences are retained, but only an explicitly chosen wrist
@@ -34,6 +35,15 @@ export default function InputModesSettings({ cameraOptions, touchOptions }: { ca
   const [gestureName, setGestureName] = useState('');
   const cameraInputEnabled = useSettingsStore(s => s.cameraInputEnabled && isCameraCursorTarget(s.cameraTrackingTarget));
   const cameraTrackingTarget = useSettingsStore(s => s.cameraTrackingTarget);
+  const calGeneration = useSettingsStore(s => s.poseCalibrationGeneration);
+  const [calibrationReady, setCalibrationReady] = useState(false);
+  useEffect(() => {
+    const check = () => setCalibrationReady(isCameraCursorTarget(cameraTrackingTarget) && hasPoseCalibrationForTarget(cameraTrackingTarget as TrackingTarget));
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => { window.removeEventListener('resize', check); window.removeEventListener('orientationchange', check); };
+  }, [cameraTrackingTarget, calGeneration]);
   const showHandCalibration = useSettingsStore(s => s.showHandCalibration);
   const headTrackingEnabled = useSettingsStore(s => HEAD_CURSOR_AVAILABLE && s.headTrackingEnabled);
   const headTrackingDwellMs = useSettingsStore(s => s.headTrackingDwellMs);
@@ -49,6 +59,7 @@ export default function InputModesSettings({ cameraOptions, touchOptions }: { ca
         <p role="status" data-testid="camera-wrist-scope" className="text-muted text-sm">{t('camera_wrist_scope')}</p>
         <p className="text-muted text-sm">{t('camera_controls_disabled')}</p>
         {!isCameraCursorTarget(cameraTrackingTarget) && <p role="alert" className="text-muted text-sm">{t('camera_choose_wrist')}</p>}
+        {isCameraCursorTarget(cameraTrackingTarget) && !calibrationReady && <p role="status" className="text-muted text-sm">{t('camera_wrist_calibration_needed')}</p>}
         <div className="grid grid-cols-2 gap-2">
           {CAMERA_CURSOR_TARGETS.map(tt => (
             <button key={tt.id} onClick={() => { tapFeedback(); update({ cameraTrackingTarget: tt.id, cameraInputEnabled: false }); }}
@@ -79,7 +90,7 @@ export default function InputModesSettings({ cameraOptions, touchOptions }: { ca
             <span className="text-primary text-sm font-semibold">{t('camera_wrist_control')}</span>
             <p className="text-muted text-xs">{t('camera_wrist_control_help')}</p>
           </div>
-          <Toggle disabled={!isCameraCursorTarget(cameraTrackingTarget)} on={cameraInputEnabled} onToggle={() => update({ cameraInputEnabled: !cameraInputEnabled })} label="Camera input" />
+          <Toggle disabled={!isCameraCursorTarget(cameraTrackingTarget) || (!calibrationReady && !cameraInputEnabled)} on={cameraInputEnabled} onToggle={() => update({ cameraInputEnabled: !cameraInputEnabled })} label="Camera input" />
         </label>
       </div>
 

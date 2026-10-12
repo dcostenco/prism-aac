@@ -46,6 +46,7 @@ test('camera options require an explicit wrist and leave noncamera access availa
   await group.getByTestId('tracking-target-left_wrist').click();
   await expect(group.getByTestId('tracking-target-left_wrist')).toHaveAttribute('data-selected', 'true');
   await expect(group.getByRole('button', { name: 'Camera input', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await expect(group.getByRole('button', { name: 'Camera input', exact: true })).toBeDisabled();
   await expect(group.getByTestId('camera-cursor-setup')).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Switch scanning', exact: true })).toBeEnabled();
   expect(await page.evaluate(() => (window as unknown as { cameraRequests: number }).cameraRequests)).toBe(0);

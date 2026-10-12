@@ -130,6 +130,7 @@ export default function CameraInputOverlay() {
       trackingTarget: target,
       selectedTargetOnly: true,
       requireHeadPresence: true,
+      calibrationMode: 'control',
       cursorSmoothing: 0.12,
       onMove(x, y) {
         if (!mounted) return;

@@ -292,6 +292,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       trackingTarget: requested.target,
       selectedTargetOnly: true,
       requireHeadPresence: true,
+      calibrationMode: 'setup',
       cursorSmoothing: 0.12,
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
@@ -368,6 +369,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       trackingTarget: target,
       selectedTargetOnly: true,
       requireHeadPresence: true,
+      calibrationMode: 'setup',
       cursorSmoothing: 0.12,
       onMove(x, y) {
         if (samplingAllowedRef.current) setCursorPos({ x, y });
@@ -575,6 +577,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       console.log(`[wizard] final cal: L=${cal.leftX.toFixed(3)} R=${cal.rightX.toFixed(3)} T=${cal.topY.toFixed(3)} B=${cal.bottomY.toFixed(3)} rangeX=${rangeX.toFixed(3)} rangeY=${rangeY.toFixed(3)} fallback=${usedFallbackRange}`);
 
       cal.wizardCompleted = true;
+      cal.trackingTarget = selectedPart ?? undefined;
+      cal.orientation = getOrientation();
       savePoseCalibration(cal);
       applyCalibrationToActiveTracker(cal);
       unfreezeLearnerCalSaves();
@@ -1130,7 +1134,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                     tapFeedback();
                     // Finalize the same captured neutral mapping as preview,
                     // including the live learner's completed-calibration lock.
-                    const cal = { ...computeCenterPreviewCalibration(center), wizardCompleted: true };
+                    const cal = { ...computeCenterPreviewCalibration(center), wizardCompleted: true,
+                      trackingTarget: selectedPart ?? undefined, orientation: getOrientation() };
                     savePoseCalibration(cal);
                     applyCalibrationToActiveTracker(cal);
                     unfreezeLearnerCalSaves();

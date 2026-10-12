@@ -170,6 +170,8 @@ export interface PoseTrackerOptions {
   selectedTargetOnly?: boolean;
   /** Head is a presence prerequisite, never a cursor source. */
   requireHeadPresence?: boolean;
+  /** Explicit setup setters remain available; control holds a confirmed map. */
+  calibrationMode?: 'setup' | 'control';
 }
 
 export interface PoseTrackerHandle {
@@ -301,6 +303,8 @@ export interface PoseCalibrationData {
   // per-user on shared devices — when a caregiver resets calibration
   // for a new child, the flag resets with it.
   wizardCompleted?: boolean;
+  trackingTarget?: TrackingTarget;
+  orientation?: 'landscape' | 'portrait';
 }
 
 // After X-mirroring (1-normX): mirroredX maps user's physical position to screen.
@@ -580,6 +584,14 @@ export function savePoseCalibration(data: PoseCalibrationData): void {
   try { writePoseCalibrationValue(calibrationKey(), JSON.stringify(data)); } catch { /* */ }
 }
 
+function isPoseCalibrationForTarget(cal: PoseCalibrationData, target: TrackingTarget): boolean {
+  return isUsableCornerCalibration(cal) && cal.wizardCompleted === true &&
+    cal.trackingTarget === target && cal.orientation === getOrientation();
+}
+export function hasPoseCalibrationForTarget(target: TrackingTarget): boolean {
+  return isPoseCalibrationForTarget(loadPoseCalibration(), target);
+}
+
 export function hasCalibration(orientation?: 'landscape' | 'portrait'): boolean {
   if (typeof window === 'undefined') return false;
   return !!readPoseCalibrationValue(calibrationKey(orientation));
@@ -756,6 +768,7 @@ export function startPoseTracker(
   let lastFrameTime = 0;
 
   const loadedCal = loadPoseCalibration();
+  const controlCalibrationReady = opts.calibrationMode !== 'control' || isPoseCalibrationForTarget(loadedCal, opts.trackingTarget);
   // T-2 FIX (v2) + T-5 FIX (v3): wizard flag is now stored IN the
   // calibration data (per-user on shared devices). Falls back to the
   // global localStorage key for backward compat with existing installs.
@@ -778,6 +791,10 @@ export function startPoseTracker(
   const calibration: PoseCalibrationData = isCorruptNarrow
     ? { ...DEFAULT_CALIBRATION }
     : { ...loadedCal };
+  if (opts.calibrationMode === 'setup') {
+    calibration.trackingTarget = opts.trackingTarget;
+    calibration.orientation = getOrientation();
+  }
   if (isCorruptNarrow) {
     try { savePoseCalibration(calibration); } catch { /* */ }
   }
@@ -853,6 +870,10 @@ export function startPoseTracker(
   // ── Initialize camera + model ────────────────────────────────────────
 
   (async () => {
+    if (!controlCalibrationReady) {
+      recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
+      return;
+    }
     // Step 1: Set up video source
     if (videoElement && videoElement.srcObject) {
       // Legacy path — caller passed an explicit video element.
@@ -1115,6 +1136,10 @@ export function startPoseTracker(
             normY = null;
           }
         }
+        if (opts.calibrationMode === 'control' && calibration.orientation !== getOrientation()) {
+          normX = null;
+          normY = null;
+        }
 
         // Eye/iris gaze blend — when useEyeGaze is requested and
         // FaceLandmarker has iris data, blend iris position with pose.
@@ -1202,7 +1227,7 @@ export function startPoseTracker(
           const mirroredX = Math.max(0, Math.min(1, 1.0 - normX));
           const clampedY = Math.max(0, Math.min(1, normY));
           learner.push(mirroredX, clampedY);
-          const learned = learner.maybeEmitCalibration();
+          const learned = opts.calibrationMode ? null : learner.maybeEmitCalibration();
           if (learned) {
             if (isFactoryDefaults) {
               // BOOTSTRAP MODE — no wizard run yet. Aggressively
@@ -1398,7 +1423,7 @@ export function startPoseTracker(
             if (now - lastBaselineApplyTime > 5000) {
               lastBaselineApplyTime = now;
               const correction = baselineTracker.suggestCorrection(now);
-              if (correction?.kind === 'offset') {
+              if (!opts.calibrationMode && correction?.kind === 'offset') {
                 const dx = correction.deltaNormX ?? 0;
                 const dy = correction.deltaNormY ?? 0;
                 // Translate the rectangle without shrinking it at frame edges.
@@ -1518,9 +1543,23 @@ export function startPoseTracker(
       return video;
     },
     setCalibration(data: PoseCalibrationData) {
+      if (opts.calibrationMode && !isUsableCornerCalibration(data)) throw new Error(CALIBRATION_DRAFT_CONFLICT);
+      if (opts.calibrationMode && ((data.trackingTarget !== undefined && data.trackingTarget !== opts.trackingTarget) ||
+          (data.orientation !== undefined && data.orientation !== getOrientation()))) {
+        throw new Error(CALIBRATION_DRAFT_CONFLICT);
+      }
+      if (opts.calibrationMode === 'control' &&
+          (!isUsableCornerCalibration(data) || data.wizardCompleted !== true ||
+           data.trackingTarget !== opts.trackingTarget || data.orientation !== getOrientation())) {
+        throw new Error(CALIBRATION_DRAFT_CONFLICT);
+      }
       const mappingChanged = data.leftX !== calibration.leftX || data.rightX !== calibration.rightX ||
         data.topY !== calibration.topY || data.bottomY !== calibration.bottomY;
       if (mappingChanged) {
+        // A deliberate recenter must not inherit selection time from the old map.
+        dwellElement = null;
+        dwellStart = 0;
+        dwellTriggered = false;
         // Filter history is in screen pixels under the previous mapping.
         // Reinitialize from the next genuine usable pose, not a made-up center.
         oneEuroX.reset();
@@ -1532,6 +1571,10 @@ export function startPoseTracker(
       calibration.topY = data.topY;
       calibration.bottomY = data.bottomY;
       if (data.wizardCompleted !== undefined) calibration.wizardCompleted = data.wizardCompleted;
+      if (opts.calibrationMode) {
+        calibration.trackingTarget = opts.trackingTarget;
+        calibration.orientation = getOrientation();
+      }
       // Wizard completion changes the running learner too, not just the
       // persisted flag. Accuracy-test neutral frames cannot shrink its range.
       if (calibration.wizardCompleted) isFactoryDefaults = false;

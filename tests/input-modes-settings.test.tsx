@@ -15,6 +15,8 @@ import type { GestureConfig } from '@/services/gestureService';
 // ── mocks ──────────────────────────────────────────────────────────────────────
 
 const updateMock = vi.fn();
+const calibrationReadyMock = vi.fn(() => true);
+vi.mock('@/services/bodyPoseService', () => ({ hasPoseCalibrationForTarget: (target: string) => calibrationReadyMock(target) }));
 
 const settingsState = {
   cameraInputEnabled: false as boolean,
@@ -65,6 +67,7 @@ vi.mock('@/components/TrackingSetupWizard', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  calibrationReadyMock.mockReturnValue(true);
   settingsState.cameraInputEnabled = false;
   settingsState.cameraTrackingTarget = 'right_wrist';
   settingsState.showHandCalibration = false;
@@ -232,6 +235,13 @@ describe('InputModesSettings — head tracking', () => {
     render(<InputModesSettings />);
     expect(screen.getByTestId('gesture-recognition-details').querySelector('summary')).toHaveTextContent('off');
     expect(screen.getByRole('button', { name: 'Gesture recognition', hidden: true })).toHaveAttribute('aria-pressed', 'false');
+  });
+  it('requires setup rather than activating a wrist with inherited or missing calibration', () => {
+    calibrationReadyMock.mockReturnValue(false);
+    render(<InputModesSettings />);
+    expect(screen.getByRole('button', { name: 'Camera input', exact: true })).toBeDisabled();
+    expect(screen.getByTestId('camera-cursor-setup')).not.toBeDisabled();
+    expect(screen.getByText(english.camera_wrist_calibration_needed)).toBeInTheDocument();
   });
 });
 
