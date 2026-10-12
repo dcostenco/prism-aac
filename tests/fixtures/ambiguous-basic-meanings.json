@@ -1,0 +1,103 @@
+{
+  "de": {
+    "weiß": {
+      "files": [
+        "cw-know.png",
+        "co-white.png"
+      ],
+      "means": "Know or white; keep both meanings unless a clear verb or color context is present.",
+      "contexts": [
+        {
+          "before": [
+            "ich"
+          ],
+          "file": "cw-know.png"
+        },
+        {
+          "before": [
+            "ist",
+            "sind",
+            "bleibt"
+          ],
+          "file": "co-white.png"
+        }
+      ]
+    },
+    "sein": {
+      "files": [
+        "cw-is.png",
+        "cw-his.png"
+      ],
+      "means": "Be or his; modal-verb context supports the be meaning.",
+      "contexts": [
+        {
+          "before": [
+            "will",
+            "kann",
+            "möchte",
+            "muss",
+            "soll",
+            "darf",
+            "könnte",
+            "würde"
+          ],
+          "file": "cw-is.png"
+        }
+      ]
+    },
+    "waren": {
+      "files": [
+        "w-past-being.png",
+        "w-thing.png"
+      ],
+      "means": "Past being or goods/things; clear plural subject context supports past being.",
+      "contexts": [
+        {
+          "before": [
+            "wir",
+            "sie",
+            "ihr"
+          ],
+          "file": "w-past-being.png"
+        }
+      ]
+    }
+  },
+  "ko": {
+    "눈": {
+      "files": [
+        "hb-eye.png",
+        "w-snow.png"
+      ],
+      "means": "Eye or snow; a bare word does not establish either meaning."
+    },
+    "안": {
+      "files": [
+        "cw-not.png",
+        "pl-inside.png"
+      ],
+      "means": "Negation or inside; never substitute a spatial picture for unknown negation."
+    }
+  },
+  "ro": {
+    "mai": {
+      "files": [
+        "cw-more.png",
+        "tm-may.png"
+      ],
+      "means": "Comparative more or the month May; copula context supports the comparative.",
+      "contexts": [
+        {
+          "before": [
+            "ești",
+            "este",
+            "sunt",
+            "suntem",
+            "sunteți"
+          ],
+          "file": "cw-more.png"
+        }
+      ]
+    }
+  }
+}

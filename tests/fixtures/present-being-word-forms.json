@@ -1,0 +1,182 @@
+{
+  "file": "cw-is.png",
+  "meaning": "Present being or the be copula; not past being, a person pronoun, or an unrelated word.",
+  "languages": {
+    "am": [
+      "ነው",
+      "ነኝ",
+      "ናት"
+    ],
+    "ar": [
+      "يكون",
+      "تكون",
+      "أكون",
+      "نكون"
+    ],
+    "bg": [
+      "съм",
+      "си",
+      "е",
+      "сме",
+      "сте",
+      "са",
+      "бъда"
+    ],
+    "bn": [
+      "আছি",
+      "আছে",
+      "হওয়া"
+    ],
+    "de": [
+      "bin",
+      "bist",
+      "ist",
+      "sind",
+      "seid"
+    ],
+    "en": [
+      "am",
+      "is",
+      "are",
+      "be",
+      "being"
+    ],
+    "es": [
+      "soy",
+      "eres",
+      "es",
+      "somos",
+      "son",
+      "ser",
+      "estoy",
+      "estás",
+      "está",
+      "estar"
+    ],
+    "fr": [
+      "suis",
+      "es",
+      "est",
+      "sommes",
+      "êtes",
+      "être"
+    ],
+    "he": [
+      "להיות"
+    ],
+    "hi": [
+      "हूँ",
+      "है",
+      "हो",
+      "हैं",
+      "होना"
+    ],
+    "id": [
+      "adalah",
+      "ialah"
+    ],
+    "it": [
+      "sono",
+      "sei",
+      "è",
+      "siamo",
+      "siete",
+      "essere"
+    ],
+    "ja": [
+      "だ",
+      "です",
+      "である"
+    ],
+    "ko": [
+      "이다",
+      "입니다",
+      "이에요",
+      "예요"
+    ],
+    "nl": [
+      "ben",
+      "bent",
+      "is",
+      "zijn"
+    ],
+    "pl": [
+      "jestem",
+      "jesteś",
+      "jest",
+      "jesteśmy",
+      "jesteście",
+      "są",
+      "być"
+    ],
+    "pt": [
+      "sou",
+      "és",
+      "é",
+      "somos",
+      "são",
+      "ser",
+      "estou",
+      "está",
+      "estar"
+    ],
+    "ro": [
+      "sunt",
+      "ești",
+      "esti",
+      "este",
+      "suntem",
+      "sunteți",
+      "sunteti",
+      "fi"
+    ],
+    "ru": [
+      "быть",
+      "является",
+      "являться"
+    ],
+    "sw": [
+      "ni",
+      "kuwa"
+    ],
+    "tl": [
+      "ay",
+      "maging"
+    ],
+    "tr": [
+      "olmak"
+    ],
+    "uk": [
+      "є",
+      "бути"
+    ],
+    "vi": [
+      "là"
+    ],
+    "zh-Hans": [
+      "是"
+    ],
+    "zh-Hant": [
+      "是"
+    ],
+    "zh-HK": [
+      "係",
+      "是"
+    ]
+  },
+  "sharedMeanings": {
+    "bn": {
+      "আছে": "cw-have.png"
+    },
+    "zh-Hans": {
+      "是": "cw-yes-core.png"
+    },
+    "zh-Hant": {
+      "是": "cw-yes-core.png"
+    },
+    "zh-HK": {
+      "是": "cw-yes-core.png"
+    }
+  },
+  "preserve": "Existing affirmative/possession meanings of shared bare spellings remain unchanged; their precise phrase cards retain their IDs."
+}

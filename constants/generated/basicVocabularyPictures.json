@@ -241,6 +241,34 @@
       "ተከሰተ": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ጊዜ": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "ጊዜው": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "ነው": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "ነኝ": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "ናት": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "ስማ": {
+        "file": "cw-hear.png",
+        "means": "Primary everyday Hear meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "ተናድጃለሁ": {
+        "file": "fe-angry.png",
+        "means": "Primary everyday Angry meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "ar": {
@@ -535,6 +563,34 @@
       "حدثت": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "وقت": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "الوقت": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "يكون": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "تكون": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "أكون": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "نكون": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "مع السلامة": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "bg": {
@@ -805,6 +861,38 @@
       "случи": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "време": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "съм": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "си": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "е": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "сме": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "сте": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "са": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "бъда": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
       }
     },
     "bn": {
@@ -1051,6 +1139,26 @@
       "ঘটবে": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "সময়": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "আছি": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "হওয়া": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "মন খারাপ": {
+        "file": "fe-sad.png",
+        "means": "Primary everyday Sad meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "যখন": {
+        "file": "qu-when.png",
+        "means": "Primary everyday When meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "de": {
@@ -1294,10 +1402,6 @@
         "file": "w-past-being.png",
         "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
       },
-      "waren": {
-        "file": "w-past-being.png",
-        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
-      },
       "gewesen": {
         "file": "w-past-being.png",
         "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
@@ -1337,6 +1441,42 @@
       "geschehen": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "zeit": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "zeiten": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "bin": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "bist": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "ist": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "sind": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "seid": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "morgen": {
+        "file": "w-time.png",
+        "means": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings."
+      },
+      "groß": {
+        "file": "dw-big.png",
+        "means": "Primary everyday Big meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "en": {
@@ -1651,6 +1791,34 @@
       "occurring": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "time": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "times": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "am": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "is": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "are": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "be": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "being": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
       }
     },
     "es": {
@@ -1949,6 +2117,62 @@
       "ocurría": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "tiempo": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "tiempos": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "soy": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "eres": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "es": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "somos": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "son": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "ser": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "estoy": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "estás": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "está": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "estar": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "mañana": {
+        "file": "w-time.png",
+        "means": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings."
+      },
+      "tarde": {
+        "file": "w-time.png",
+        "means": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings."
       }
     },
     "fr": {
@@ -2267,6 +2491,38 @@
       "survenue": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "temps": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "suis": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "es": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "est": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "sommes": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "êtes": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "être": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "au revoir": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "he": {
@@ -2549,6 +2805,18 @@
       "התרחש": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "זמן": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "הזמן": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "להיות": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
       }
     },
     "hi": {
@@ -2787,6 +3055,38 @@
       "घटित हुआ": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "समय": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "हूँ": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "हो": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "हैं": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "होना": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "कल": {
+        "file": "w-time.png",
+        "means": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings."
+      },
+      "बुरा": {
+        "file": "dw-bad.png",
+        "means": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "अलविदा": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "id": {
@@ -3017,6 +3317,26 @@
       "terjadinya": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "waktu": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "waktunya": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "adalah": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "ialah": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "telinga": {
+        "file": "hb-ear.png",
+        "means": "Primary everyday Ear meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "it": {
@@ -3307,6 +3627,42 @@
       "accaduta": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "tempo": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "sono": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "sei": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "è": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "siamo": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "siete": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "essere": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "senti": {
+        "file": "cw-hear.png",
+        "means": "Primary everyday Hear meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "cattivo": {
+        "file": "dw-bad.png",
+        "means": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "ja": {
@@ -3573,6 +3929,38 @@
       "起きた": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "時間": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "だ": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "です": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "である": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "て": {
+        "file": "hb-hand.png",
+        "means": "Primary everyday Hand meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "かく": {
+        "file": "cw-write.png",
+        "means": "Primary everyday Write meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "きいて": {
+        "file": "cw-listen.png",
+        "means": "Primary everyday Listen meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "遅い": {
+        "file": "dw-slow.png",
+        "means": "Primary everyday Slow meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "ko": {
@@ -3831,6 +4219,34 @@
       "일어나다": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "시간": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "이다": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "입니다": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "이에요": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "예요": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "써요": {
+        "file": "cw-write.png",
+        "means": "Primary everyday Write meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "나빠요": {
+        "file": "dw-bad.png",
+        "means": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "nl": {
@@ -4085,6 +4501,30 @@
       "gebeurd": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "tijd": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "ben": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "bent": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "is": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "zijn": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "tot ziens": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "pl": {
@@ -4383,6 +4823,42 @@
       "wydarzyło": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "czas": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "czasu": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "jestem": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "jesteś": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "jest": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "jesteśmy": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "jesteście": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "są": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "być": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
       }
     },
     "pt": {
@@ -4673,6 +5149,50 @@
       "acontecia": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "tempo": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "tempos": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "sou": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "és": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "é": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "somos": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "são": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "ser": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "estou": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "está": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "estar": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
       }
     },
     "ro": {
@@ -4939,6 +5459,74 @@
       "întâmpla": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "timp": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "timpul": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "vreme": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "vremuri": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "vremurile": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "sunt": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "ești": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "esti": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "este": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "suntem": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "sunteți": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "sunteti": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "fi": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "vreo": {
+        "file": "cw-some.png",
+        "means": "Indefinite some or any quantity; not the time noun."
+      },
+      "vreun": {
+        "file": "cw-some.png",
+        "means": "Indefinite some or any quantity; not the time noun."
+      },
+      "așa": {
+        "file": "cw-this.png",
+        "means": "General deictic reference cue for so or like this; the caption retains the manner word."
+      },
+      "atât": {
+        "file": "cw-very.png",
+        "means": "General degree/intensity cue for so or that much; the caption retains the degree word."
       }
     },
     "ru": {
@@ -5425,6 +6013,34 @@
       "бывшею": {
         "file": "w-former.png",
         "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "время": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "времени": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "времён": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "быть": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "является": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "являться": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "пока": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "sw": {
@@ -5675,6 +6291,26 @@
       "ilitokea": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "muda": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "ni": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "kuwa": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "meza": {
+        "file": "sw-table.png",
+        "means": "Primary everyday Table meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "jua": {
+        "file": "cw-know.png",
+        "means": "Primary everyday Know meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "tl": {
@@ -5917,6 +6553,30 @@
       "nangyayari": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "oras": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "ay": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "maging": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "bukas": {
+        "file": "ti-tomorrow.png",
+        "means": "Primary everyday Tomorrow meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "basa": {
+        "file": "cw-read.png",
+        "means": "Primary everyday Read meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "sa labas": {
+        "file": "pl-outside.png",
+        "means": "Primary everyday Outside meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "tr": {
@@ -6155,6 +6815,30 @@
       "gerçekleşmek": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "zaman": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "zamanı": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "olmak": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "yaz": {
+        "file": "cw-write.png",
+        "means": "Primary everyday Write meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "hoşça kal": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "özür dilerim": {
+        "file": "qt-sorry.png",
+        "means": "Primary everyday Sorry meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "uk": {
@@ -6521,6 +7205,30 @@
       "колишню": {
         "file": "w-former.png",
         "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "час": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "часу": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "є": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "бути": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "будь ласка": {
+        "file": "qt-please.png",
+        "means": "Primary everyday Please meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "бувай": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "vi": {
@@ -6739,6 +7447,46 @@
       "xảy ra": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "thời gian": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "là": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "bánh mì": {
+        "file": "fd-bread.png",
+        "means": "Primary everyday Bread meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "đầu": {
+        "file": "hb-head.png",
+        "means": "Primary everyday Head meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "to": {
+        "file": "dw-big.png",
+        "means": "Primary everyday Big meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "cảm ơn": {
+        "file": "qt-thank-you.png",
+        "means": "Primary everyday Thank you meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "xin chào": {
+        "file": "qt-hello.png",
+        "means": "Primary everyday Hello meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "tạm biệt": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "xin lỗi": {
+        "file": "qt-sorry.png",
+        "means": "Primary everyday Sorry meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "thời": {
+        "file": "w-time.png",
+        "means": "Time or a temporal period/era; a complete standalone temporal word, not a split of an unrelated phrase."
       }
     },
     "zh-HK": {
@@ -6989,6 +7737,26 @@
       "發生咗": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "時間": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "係": {
+        "file": "cw-is.png",
+        "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "開心": {
+        "file": "fe-happy.png",
+        "means": "Primary everyday Happy meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "壞": {
+        "file": "dw-bad.png",
+        "means": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "再見": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
       }
     },
     "zh-Hans": {
@@ -7235,6 +8003,10 @@
       "发生了": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "时间": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
       }
     },
     "zh-Hant": {
@@ -7477,6 +8249,125 @@
       "發生了": {
         "file": "w-happen.png",
         "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "時間": {
+        "file": "w-time.png",
+        "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "開心": {
+        "file": "fe-happy.png",
+        "means": "Primary everyday Happy meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "壞": {
+        "file": "dw-bad.png",
+        "means": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "再見": {
+        "file": "qt-goodbye.png",
+        "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      }
+    }
+  },
+  "alternatives": {
+    "de": {
+      "weiß": {
+        "files": [
+          "cw-know.png",
+          "co-white.png"
+        ],
+        "means": "Know or white; keep both meanings unless a clear verb or color context is present.",
+        "contexts": [
+          {
+            "before": [
+              "ich"
+            ],
+            "file": "cw-know.png"
+          },
+          {
+            "before": [
+              "ist",
+              "sind",
+              "bleibt"
+            ],
+            "file": "co-white.png"
+          }
+        ]
+      },
+      "sein": {
+        "files": [
+          "cw-is.png",
+          "cw-his.png"
+        ],
+        "means": "Be or his; modal-verb context supports the be meaning.",
+        "contexts": [
+          {
+            "before": [
+              "will",
+              "kann",
+              "möchte",
+              "muss",
+              "soll",
+              "darf",
+              "könnte",
+              "würde"
+            ],
+            "file": "cw-is.png"
+          }
+        ]
+      },
+      "waren": {
+        "files": [
+          "w-past-being.png",
+          "w-thing.png"
+        ],
+        "means": "Past being or goods/things; clear plural subject context supports past being.",
+        "contexts": [
+          {
+            "before": [
+              "wir",
+              "sie",
+              "ihr"
+            ],
+            "file": "w-past-being.png"
+          }
+        ]
+      }
+    },
+    "ko": {
+      "눈": {
+        "files": [
+          "hb-eye.png",
+          "w-snow.png"
+        ],
+        "means": "Eye or snow; a bare word does not establish either meaning."
+      },
+      "안": {
+        "files": [
+          "cw-not.png",
+          "pl-inside.png"
+        ],
+        "means": "Negation or inside; never substitute a spatial picture for unknown negation."
+      }
+    },
+    "ro": {
+      "mai": {
+        "files": [
+          "cw-more.png",
+          "tm-may.png"
+        ],
+        "means": "Comparative more or the month May; copula context supports the comparative.",
+        "contexts": [
+          {
+            "before": [
+              "ești",
+              "este",
+              "sunt",
+              "suntem",
+              "sunteți"
+            ],
+            "file": "cw-more.png"
+          }
+        ]
       }
     }
   }

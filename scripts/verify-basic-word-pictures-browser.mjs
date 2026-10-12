@@ -32,15 +32,22 @@ const BASIC_LANGUAGE_CASES = {
   ar: [{ text: 'زجاج', word: 'زجاجة', file: 'w-bottle.png' }],
 };
 const FORM_FIXTURES = JSON.parse(readFileSync(new URL('../tests/fixtures/event-status-word-forms.json', import.meta.url), 'utf8'));
+const BLOCKER_FIXTURES = JSON.parse(readFileSync(new URL('../tests/fixtures/basic-language-blocker-browser-cases.json', import.meta.url), 'utf8'));
 const FORM_LANGUAGE_CASES = {};
 for (const { lang, ...fixture } of FORM_FIXTURES.predictionCases) {
   (FORM_LANGUAGE_CASES[lang] ??= []).push(fixture);
 }
-const LANGUAGE_CASES = process.env.PICTURE_TEST_SUITE === 'forms' ? FORM_LANGUAGE_CASES : BASIC_LANGUAGE_CASES;
-if (process.env.PICTURE_TEST_SUITE && !['basic', 'forms'].includes(process.env.PICTURE_TEST_SUITE)) {
+const BLOCKER_LANGUAGE_CASES = {};
+for (const { lang, ...fixture } of BLOCKER_FIXTURES.cases) {
+  (BLOCKER_LANGUAGE_CASES[lang] ??= []).push(fixture);
+}
+const LANGUAGE_CASES = process.env.PICTURE_TEST_SUITE === 'blocker' ? BLOCKER_LANGUAGE_CASES
+  : process.env.PICTURE_TEST_SUITE === 'forms' ? FORM_LANGUAGE_CASES : BASIC_LANGUAGE_CASES;
+if (process.env.PICTURE_TEST_SUITE && !['basic', 'forms', 'blocker'].includes(process.env.PICTURE_TEST_SUITE)) {
   throw new Error('The requested picture suite does not exist.');
 }
 const VIEWPORTS = ['1140x1180', '390x844'];
+const COMPATIBILITY_JAMO = Array.from({ length: 0x318f - 0x3131 }, (_, index) => String.fromCodePoint(0x3131 + index));
 const GENERATED_PICTURE_ENDPOINT = '/prism-aac/pictogram';
 const SETTINGS = { state: { language: 'en', outputLanguage: 'en', theme: 'light', gridSize: 12,
   cloudPredictionEnabled: false, aiAutocorrectEnabled: false }, version: 22 };
@@ -96,14 +103,21 @@ try {
       `eval localStorage.setItem('prism-aac-settings',${JSON.stringify(JSON.stringify(settings))});localStorage.setItem('prism-aac-message',${JSON.stringify(JSON.stringify(MESSAGE))});localStorage.setItem('prism-cat-kb-open','true');localStorage.setItem('prism-kb-max','true');sessionStorage.setItem('prism-greeting-dismissed','1');`,
       `open ${origin}/prism-aac`, 'wait-for [data-key]'];
     for (const fixture of fixtures) {
-      commands.push(...[...fixture.text].map(letter => letter === ' ' ? 'click [data-action="space"]'
+      const expectedText = fixture.expectedText ??
+        (fixture.text.includes(' ') ? fixture.text.slice(0, fixture.text.lastIndexOf(' ') + 1) : '') + fixture.word.toLowerCase();
+      const keys = language === 'ko' ? [...fixture.text.normalize('NFKD')]
+        .map(letter => COMPATIBILITY_JAMO.find(key => key.normalize('NFKD') === letter) ?? letter).join('') : fixture.text;
+      const fileCheck = fixture.files
+        ? `assert-eval new Promise(resolve=>{const end=Date.now()+15000;const check=async()=>{const node=document.querySelector(${JSON.stringify(tile(fixture.word))});const imgs=[...node?.querySelectorAll('img')??[]];if(imgs.length===${fixture.files.length}&&imgs.every(img=>img.complete&&img.naturalWidth>0)){const hashes=await Promise.all(imgs.map(async img=>{const bytes=await(await fetch(img.currentSrc)).arrayBuffer();return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');}));if(hashes.join('|')===${JSON.stringify(fixture.files.map(file=>FILES[file].sha256).join('|'))})return resolve(true);}if(Date.now()>end)resolve(false);else setTimeout(check,100);};check();})`
+        : picture(fixture.word, fixture.file);
+      commands.push(...[...keys].map(letter => letter === ' ' ? 'click [data-action="space"]'
         : `click [data-key=${JSON.stringify(letter.toLocaleUpperCase(language))}]`),
         'eval Array.from(document.querySelectorAll("[data-testid=prediction-tile]")).map(n=>({word:n.title,picture:n.dataset.picture}))',
         'eval ({text:document.querySelector("[data-testid=message-text]")?.textContent,active:document.activeElement?.outerHTML?.slice(0,300)})',
-        picture(fixture.word, fixture.file), targetsVisible,
+        fileCheck, targetsVisible,
         `screenshot ${path.join(dir, fixture.word + '.png')}`, `click ${tile(fixture.word)}`,
-        `assert-eval document.querySelector('[data-testid="message-text"]').textContent.trim().toLowerCase()===${JSON.stringify((fixture.text.includes(' ') ? fixture.text.slice(0, fixture.text.lastIndexOf(' ') + 1) : '') + fixture.word.toLowerCase())}`,
-        ...Array.from({ length: fixture.text.trim().split(/\s+/).length }, () => 'click button.aac-delete'),
+        `assert-eval document.querySelector('[data-testid="message-text"]').textContent.trim().toLowerCase()===${JSON.stringify(expectedText)}`,
+        ...Array.from({ length: expectedText.trim().split(/\s+/).length }, () => 'click button.aac-delete'),
         'assert-visible [data-testid="message-empty-prompt"]');
     }
     commands.push('assert-eval !performance.getEntriesByType("resource").some(e=>/arasaac\\.org/.test(e.name))', 'assert-no-page-errors');

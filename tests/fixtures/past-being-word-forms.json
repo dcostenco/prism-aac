@@ -26,7 +26,6 @@
     ],
     "de": [
       "war",
-      "waren",
       "gewesen"
     ],
     "en": [
@@ -155,6 +154,7 @@
   "preserve": [
     "French été remains ambiguous with summer",
     "Dutch was remains a keep-text homograph",
-    "Spanish fue and Portuguese foi are not assigned a past-copula picture by spelling alone"
+    "Spanish fue and Portuguese foi are not assigned a past-copula picture by spelling alone",
+    "German waren remains ambiguous with goods until its meaning is established."
   ]
 }

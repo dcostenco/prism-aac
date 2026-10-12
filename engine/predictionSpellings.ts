@@ -2,6 +2,7 @@ import spellingAliases from '@/constants/generated/predictionSpellingAliases.jso
 import { foldPictureWordCase } from '@/lib/wordCase';
 
 const SPELLING_ALIASES = spellingAliases as Record<string, Record<string, string>>;
+const VIETNAMESE_TONE_MARKS = /[\u0300\u0301\u0303\u0309\u0323]/g;
 
 /** Keep edge punctuation separate so prediction and selection agree on the token. */
 export function predictionTokenParts(value: string): { leading: string; word: string; trailing: string } {
@@ -30,11 +31,27 @@ export function preferredPredictionSpelling(value: string, lang = 'en'): string 
   return aliases && Object.prototype.hasOwnProperty.call(aliases, key) ? aliases[key] : value;
 }
 
-/** Russian e typing also finds ё spellings; this never merges their meanings. */
+/** Reviewed alternate spellings complete the same word; distinct accented words stay separate. */
 export function matchesPredictionPrefix(word: string, prefix: string, lang = 'en'): boolean {
   const candidate = normalizePredictionSpelling(word, lang);
   const typed = normalizePredictionSpelling(prefix, lang);
-  if (candidate.startsWith(typed)) return true;
+  const candidateKey = predictionWordKey(candidate, lang);
+  const typedKey = predictionWordKey(typed, lang);
+  if (candidateKey.startsWith(typedKey)) return true;
+  // A complete approved alias is already a word, not a prefix of unrelated
+  // spellings: Romanian esti means ești, never estic or estimat.
+  if (typedKey !== typed) return false;
+  const aliases = Object.prototype.hasOwnProperty.call(SPELLING_ALIASES, lang) ? SPELLING_ALIASES[lang] : undefined;
+  if (aliases && Object.entries(aliases).some(([alternate, standard]) =>
+    standard === candidateKey && alternate.startsWith(typed))) return true;
+  // A Korean syllable can still be awaiting its final consonant.
+  if (lang === 'ko') return candidate.normalize('NFD').startsWith(typed.normalize('NFKD'));
+  // The software keyboard supplies Vietnamese base vowels. Omitted tone
+  // marks may find completions, but explicit tones and vowel shapes stay precise.
+  if (lang === 'vi' && candidate.length >= typed.length) {
+    return [...typed].every((letter, index) => candidate[index] === letter ||
+      candidate[index].normalize('NFD').replace(VIETNAMESE_TONE_MARKS, '') === letter.normalize('NFD'));
+  }
   if (lang !== 'ru' || candidate.length < typed.length) return false;
   // Omitted ё is tolerated; explicitly typed ё remains precise.
   return [...typed].every((letter, index) => candidate[index] === letter ||

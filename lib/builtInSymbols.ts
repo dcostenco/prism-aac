@@ -7,6 +7,7 @@ import { SYMBOL_BASE_PATH } from '@/lib/pictogramSources';
 import type { SupportedLanguage } from '@/engine/i18n';
 import spatialGrammarPictures from '@/constants/generated/spatialGrammarPictures.json';
 import basicVocabularyPictures from '@/constants/generated/basicVocabularyPictures.json';
+import { matchesPredictionPrefix, predictionTokenParts, predictionWordKey } from '@/engine/predictionSpellings';
 
 /**
  * Picture symbols for built-in phrases and categories, bundled with the app.
@@ -43,6 +44,26 @@ const DATE_TILE_PREFIX = 'tdate-';
 const symbolUrl = (file: string) => `${SYMBOL_BASE_PATH}${file}`;
 const BASIC_VOCABULARY = basicVocabularyPictures.languages as Record<string, Record<string, { file: string; means: string }>>;
 const APPROVED_SYMBOL_FILES = new Set([...SYMBOL_FILES.values(), ...CATEGORY_FILES.values(), ...WORD_FILES.values()]);
+interface AlternativeMeaning {
+  files: string[];
+  contexts?: Array<{ before: string[]; file: string }>;
+}
+const ALTERNATIVE_MEANINGS = (basicVocabularyPictures as unknown as {
+  alternatives?: Record<string, Record<string, AlternativeMeaning>>;
+}).alternatives ?? {};
+
+/** Reviewed meanings remain separate when the sentence does not establish one. */
+export function reviewedVocabularyPictureChoices(word: string, lang: SupportedLanguage, context = ''): string[] {
+  const table = Object.prototype.hasOwnProperty.call(ALTERNATIVE_MEANINGS, lang) ? ALTERNATIVE_MEANINGS[lang] : undefined;
+  const key = predictionWordKey(predictionTokenParts(word).word, lang);
+  const entry = table && Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined;
+  if (!entry || !entry.files.every(file => APPROVED_SYMBOL_FILES.has(file))) return [];
+  const tokens = context.trim().split(/\s+/).filter(Boolean).map(token => predictionTokenParts(token).word);
+  if (!/\s$/u.test(context) && tokens.length && matchesPredictionPrefix(word, tokens[tokens.length - 1], lang)) tokens.pop();
+  const previous = predictionWordKey(tokens[tokens.length - 1] ?? '', lang);
+  const selected = entry.contexts?.find(rule => rule.before.includes(previous));
+  return selected ? [selected.file] : entry.files;
+}
 
 /** True for the id of a phrase that ships with the app. */
 export function isBuiltInPhraseId(id: string | undefined | null): id is string {

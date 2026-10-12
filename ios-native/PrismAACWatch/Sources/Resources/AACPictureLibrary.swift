@@ -34,6 +34,11 @@ final class AACPictureLibrary {
     private struct BasicVocabulary: Decodable {
         let generatedFrom: String
         let languages: [String: [String: BasicEntry]]
+        let alternatives: [String: [String: AlternativeEntry]]?
+    }
+    private struct AlternativeEntry: Decodable {
+        let files: [String]
+        let means: String
     }
     private struct Symbols: Decodable {
         let phrases: [String: String]
@@ -74,6 +79,16 @@ final class AACPictureLibrary {
             filename(word: legacyWord, language: $0, allowEnglishWordFallback: false)
         })
         return candidates.count == 1 ? approved(candidates.first) : nil
+    }
+    /// A known-language word can show its reviewed meanings without guessing one.
+    func alternativeFilenames(word: String, language: String) -> [String] {
+        let code = language.replacingOccurrences(of: "_", with: "-").split(separator: "-").first?.lowercased() ?? ""
+        guard let table = storage?.symbols.basicVocabulary?.alternatives?[code] else { return [] }
+        let key = Self.normalizedWord(word, language: language, stripEdgePunctuation: true)
+        guard let entry = table[key], (2...3).contains(entry.files.count),
+              Set(entry.files).count == entry.files.count,
+              entry.files.allSatisfy({ approved($0) != nil }) else { return [] }
+        return entry.files
     }
     func filename(word: String, language: String, allowEnglishWordFallback: Bool = true) -> String? {
         guard let storage else { return nil }
@@ -251,8 +266,10 @@ final class AACPictureLibrary {
             offset += entry.length
         }
         let basicFiles = symbols.basicVocabulary?.languages.values.flatMap { $0.values.map(\.file) } ?? []
+        let alternativeFiles = symbols.basicVocabulary?.alternatives?.values.flatMap { $0.values.flatMap(\.files) } ?? []
         let wordFiles = symbols.words.map { Array($0.values) } ?? []
         guard offset == bytes.count - dataStart,
+              alternativeFiles.allSatisfy({ index.files[$0] != nil }),
               Array(symbols.phrases.values).allSatisfy({ index.files[$0] != nil }),
               Array(symbols.categories.values).allSatisfy({ index.files[$0] != nil }),
               wordFiles.allSatisfy({ index.files[$0] != nil }),

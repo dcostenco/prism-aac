@@ -4,7 +4,11 @@ import { getPredictions, recordWord, recordBigram, recordTrigram } from '@/engin
 import { isAllowedInLang } from '@/lib/langAllowlist';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
 import type { WordFreqEntry } from '@/types';
-import { predictionWordKey, preferredPredictionSpelling } from '@/engine/predictionSpellings';
+import { predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext } from '@/engine/predictionSpellings';
+import { ensureLangCorpusLoaded } from '@/lib/langAllowlist';
+import { usePredictionStore } from '@/store/predictionStore';
+import { resolveVocabularyPicture, reviewedVocabularyPictureChoices } from '@/lib/builtInSymbols';
+import { loadPictureWords } from '@/constants/pictureWords';
 const entry = (count: number): WordFreqEntry => ({ count, lastUsed: 0 });
 const predict = (text: string, lang: string, words: Record<string, WordFreqEntry>, bigrams: Record<string, WordFreqEntry> = {}) =>
  getPredictions(text, words, bigrams, {bigramWeight:.8,frequencyWeight:.2,recencyWeight:0,maxResults:5,recencyWindowMs:0}, undefined, [], new Set(), undefined, lang);
@@ -37,6 +41,46 @@ it('Hindi vowel marks retain the partial word for completion', () => {
 it('Romanian legacy cedilla input finds comma-below dictionary spelling', () => {
  expect(predict('eu şco', 'ro', {'școală':entry(20),'acasă':entry(500)})).toContain('școală');
 });
+it('Romanian accentless be input retains its complete-word context', () => {
+ const words={'ești':entry(80),'obosit':entry(20),'estic':entry(200),'estimat':entry(180)};
+ const out=predict('tu esti','ro',words,{'ești|obosit':entry(100)});
+ expect(out).toContain('obosit');
+ expect(out).not.toContain('estic');expect(out).not.toContain('estimat');
+});
+it('an explicit accentless alias can complete from a shorter ordinary spelling', () => {
+ expect(matchesPredictionPrefix('ești','est','ro')).toBe(true);
+ expect(preferredPredictionSpelling('esti','ro')).toBe('ești');
+ expect(predictionWordKey('est','ro')).toBe('est');
+});
+it('accentless matching never merges different standard meanings', () => {
+ for(const [lang,a,b] of [['ro','fata','fața'],['es','si','sí'],['pt','e','é'],['fr','sur','sûr'],['de','schon','schön']] as const){
+  expect(predictionWordKey(a,lang)).not.toBe(predictionWordKey(b,lang));
+ }
+});
+it('actual Romanian accentless and accented copula input agree and retain illustrated context', async () => {
+ await Promise.all([ensureLangCorpusLoaded('ro'), loadPictureWords('ro')]);
+ usePredictionStore.getState().updatePredictions('tu esti','ro');
+ const plain=[...usePredictionStore.getState().predictions];
+ usePredictionStore.getState().updatePredictions('tu ești','ro');
+ expect(usePredictionStore.getState().predictions).toEqual(plain);
+ expect(plain).toContain('bine');
+ expect(plain.some(word=>/^estim|^estic/.test(word))).toBe(false);
+ expect(plain.every(word=>!!resolveVocabularyPicture(word,'ro').url || reviewedVocabularyPictureChoices(word,'ro','tu esti').length>0)).toBe(true);
+});
+it('Vietnamese base-vowel typing finds time without merging poetry or another explicit tone', () => {
+ expect(matchesPredictionPrefix('thời','thơ','vi')).toBe(true);
+ expect(matchesPredictionPrefix('thời','thờ','vi')).toBe(true);
+ expect(matchesPredictionPrefix('thời','thở','vi')).toBe(false);
+ expect(matchesPredictionPrefix('thời','tho','vi')).toBe(false);
+ expect(predictionWordKey('thơ','vi')).not.toBe(predictionWordKey('thời','vi'));
+ expect(matchesPredictionContext('thời|gian','thơ|','vi')).toBe(false);
+});
+it('Korean unfinished syllable input finds eyes without rewriting the complete-word identity', () => {
+ expect(matchesPredictionPrefix('눈','누','ko')).toBe(true);
+ expect(matchesPredictionPrefix('눈','ㄴ','ko')).toBe(true);
+ expect(predictionWordKey('눈','ko')).not.toBe(predictionWordKey('누','ko'));
+ expect(matchesPredictionContext('눈|아파요','누|','ko')).toBe(false);
+});
 it('Turkish capital I preserves dotless-I word identity', () => {
  const out=predict('ben IŞ', 'tr', {'ışık':entry(20),'işçi':entry(500)});
  expect(out).toContain('ışık');expect(out).not.toContain('işçi');
@@ -44,6 +88,21 @@ it('Turkish capital I preserves dotless-I word identity', () => {
 it('spelling-aware matching leaves caller dictionaries unchanged', () => {
  const words={'идет':entry(80),'идёт':entry(70)};const before=JSON.stringify(words);
  predict('я ид','ru',words);expect(JSON.stringify(words)).toBe(before);
+});
+
+it('reviewed same-word spellings combine context and prefix evidence before ranking', () => {
+ const words={'weiß':entry(1),'weiss':entry(100),'weit':entry(99),'weihnachten':entry(98)};
+ const before=JSON.stringify(words);
+ expect(predict('ich wei','de',words,{'ich|weiß':entry(10)})[0]).toBe('weiß');
+ expect(JSON.stringify(words)).toBe(before);
+ expect(predictionWordKey('weiss','de')).toBe('weiß');
+});
+
+it('actual German basic know completes from ordinary keys and keeps its context picture', async () => {
+ await Promise.all([ensureLangCorpusLoaded('de'), loadPictureWords('de')]);
+ usePredictionStore.getState().updatePredictions('ich wei','de');
+ expect(usePredictionStore.getState().predictions).toContain('weiß');
+ expect(reviewedVocabularyPictureChoices('weiß','de','ich wei')).toEqual(['cw-know.png']);
 });
 
 it('explicit Russian ё input does not broaden to a distinct е meaning', () => {

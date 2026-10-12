@@ -9,7 +9,7 @@ import forms from './fixtures/past-being-word-forms.json';
 
 const EXPECTED = `/prism-aac/symbols/${forms.file}`;
 const PREFIX_CASES = [
-  { lang: 'de', prefix: 'ware', word: 'waren' },
+  { lang: 'de', prefix: 'gewes', word: 'gewesen' },
   { lang: 'fr', prefix: 'étai', word: 'était' },
   { lang: 'uk', prefix: 'бул', word: 'була' },
   { lang: 'ar', prefix: 'كان', word: 'كانت' },

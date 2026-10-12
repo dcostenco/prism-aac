@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState, useRef, useCallback, memo } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, useRef, useCallback, memo } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -194,10 +194,14 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
+  const contextText = useMessageStore((s) => s.text);
+  const committedContextRef = useRef(contextText);
+  useLayoutEffect(() => { committedContextRef.current = contextText; }, [contextText]);
   type FrozenVisual = {
     word: string;
     color: string;
     visionBoosted: boolean;
+    context: string;
   };
   const [pointerVisual, setPointerVisual] = useState<FrozenVisual | null>(null);
   const [focusVisual, setFocusVisual] = useState<FrozenVisual | null>(null);
@@ -212,7 +216,8 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
   const visibleColor = visibleVisual?.color ?? color;
   const visibleVisionBoosted = visibleVisual?.visionBoosted ?? visionBoosted;
 
-  const { picture, pictureUrl, onImageError, imageKey, reason } = usePredictionPicture(visibleWord, language, pictureMode);
+  const { picture, pictureUrl, onImageError, imageKey, reason, alternativeImages } =
+    usePredictionPicture(visibleWord, language, pictureMode, visibleVisual?.context ?? contextText);
   // No picture is coming: show the word alone, centred, like a board text
   // tile, instead of a caption under an empty well. A generated picture that
   // is still loading keeps the well so the word does not jump.
@@ -222,6 +227,7 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
     word: visibleWord,
     color: visibleColor,
     visionBoosted: !!visibleVisionBoosted,
+    context: visibleVisual?.context ?? contextText,
   });
 
   const clearPointerVisual = () => {
@@ -244,6 +250,7 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
           word,
           color,
           visionBoosted: !!visionBoosted,
+          context: committedContextRef.current,
         });
       } else if (!highlighted && switchWordRef.current) {
         switchWordRef.current = null;
@@ -327,12 +334,18 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
       data-testid="prediction-tile"
       data-picture={picture}
       data-picture-reason={reason}
+      data-picture-choices={alternativeImages.length || undefined}
       className={`aac-btn aac-prediction-tile flex-1 min-w-0 rounded-xl flex flex-col items-center${textTile ? ' justify-center' : ''} overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
       style={{ borderLeftColor: visibleColor, backgroundColor: visibleColor }}
     >
       {!textTile && (
         <span className="aac-tile-icon flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0 bg-white">
-          {pictureUrl && (
+          {alternativeImages.length > 0 ? (
+            <span className="aac-picture-choices">
+              {alternativeImages.map(image => <img key={image.key} src={image.url} alt="" aria-hidden
+                data-picture-file={image.file} loading="eager" className="object-contain" onError={image.onError} />)}
+            </span>
+          ) : pictureUrl && (
             <img key={imageKey} src={pictureUrl} alt="" aria-hidden loading="eager" className="w-full h-full max-w-full max-h-full object-contain" onError={onImageError} />
           )}
         </span>

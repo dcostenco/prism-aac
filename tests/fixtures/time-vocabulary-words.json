@@ -1,0 +1,105 @@
+{
+  "file": "w-time.png",
+  "meaning": "Time or duration; weather remains a separate category/qualified meaning.",
+  "languages": {
+    "am": [
+      "ጊዜ",
+      "ጊዜው"
+    ],
+    "ar": [
+      "وقت",
+      "الوقت"
+    ],
+    "bg": [
+      "време"
+    ],
+    "bn": [
+      "সময়"
+    ],
+    "de": [
+      "zeit",
+      "zeiten"
+    ],
+    "en": [
+      "time",
+      "times"
+    ],
+    "es": [
+      "tiempo",
+      "tiempos"
+    ],
+    "fr": [
+      "temps"
+    ],
+    "he": [
+      "זמן",
+      "הזמן"
+    ],
+    "hi": [
+      "समय"
+    ],
+    "id": [
+      "waktu",
+      "waktunya"
+    ],
+    "it": [
+      "tempo"
+    ],
+    "ja": [
+      "時間"
+    ],
+    "ko": [
+      "시간"
+    ],
+    "nl": [
+      "tijd"
+    ],
+    "pl": [
+      "czas",
+      "czasu"
+    ],
+    "pt": [
+      "tempo",
+      "tempos"
+    ],
+    "ro": [
+      "timp",
+      "timpul",
+      "vreme",
+      "vremuri",
+      "vremurile"
+    ],
+    "ru": [
+      "время",
+      "времени",
+      "времён"
+    ],
+    "sw": [
+      "muda"
+    ],
+    "tl": [
+      "oras"
+    ],
+    "tr": [
+      "zaman",
+      "zamanı"
+    ],
+    "uk": [
+      "час",
+      "часу"
+    ],
+    "vi": [
+      "thời gian",
+      "thời"
+    ],
+    "zh-Hans": [
+      "时间"
+    ],
+    "zh-Hant": [
+      "時間"
+    ],
+    "zh-HK": [
+      "時間"
+    ]
+  }
+}

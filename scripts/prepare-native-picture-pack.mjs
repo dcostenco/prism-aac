@@ -178,6 +178,28 @@ function validateBasicVocabulary(basicVocabulary, approvedNames) {
       }
     }
   }
+  if (basicVocabulary.alternatives !== undefined) {
+    if (!isRecord(basicVocabulary.alternatives)) throw new Error('Alternative vocabulary metadata is invalid');
+    for (const [language, words] of Object.entries(basicVocabulary.alternatives)) {
+      if (!Object.prototype.hasOwnProperty.call(basicVocabulary.languages, language) || !isRecord(words)) {
+        throw new Error('Alternative vocabulary language is invalid');
+      }
+      for (const [word, entry] of Object.entries(words)) {
+        if (!word.trim() || word.length > 128 || !isRecord(entry) || !Array.isArray(entry.files)
+          || entry.files.length < 2 || entry.files.length > 3 || new Set(entry.files).size !== entry.files.length
+          || entry.files.some(file => typeof file !== 'string' || !PNG_NAME_RE.test(file) || !approved.has(file))
+          || typeof entry.means !== 'string' || !entry.means.trim()) {
+          throw new Error(`Alternative vocabulary entry is invalid: ${language}:${word}`);
+        }
+        if (entry.contexts !== undefined && (!Array.isArray(entry.contexts) || entry.contexts.length > 32
+          || entry.contexts.some(context => !isRecord(context) || !entry.files.includes(context.file)
+            || !Array.isArray(context.before) || context.before.length > 32
+            || context.before.some(value => typeof value !== 'string' || !value.trim())))) {
+          throw new Error(`Alternative vocabulary context is invalid: ${language}:${word}`);
+        }
+      }
+    }
+  }
   return basicVocabulary;
 }
 

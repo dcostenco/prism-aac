@@ -1506,11 +1506,19 @@ struct PairCard: View {
             return AACPictureLibrary.shared.filename(legacyWord: phrase.canonicalLabel)
         }
         let sourcePicture = AACPictureLibrary.shared.filename(word: phrase.canonicalLabel, language: phrase.sourceLanguage)
+        if sourcePicture == nil && !AACPictureLibrary.shared.alternativeFilenames(word: phrase.canonicalLabel, language: phrase.sourceLanguage).isEmpty {
+            return nil
+        }
         let displayPicture = AACPictureLibrary.shared.filename(word: phrase.label, language: vocab.inputLanguage)
         let sourceCode = (phrase.sourceLanguage.isEmpty ? vocab.inputLanguage : phrase.sourceLanguage)
             .split(whereSeparator: { $0 == "-" || $0 == "_" }).first?.lowercased()
         let englishPicture = sourceCode == "en" ? AACVocab.picturesByEnglishLabel[phrase.canonicalLabel.lowercased()] : nil
         return sourcePicture ?? displayPicture ?? englishPicture
+    }
+    private var pictureChoices: [String] {
+        guard pictureFile == nil, phrase.pictureID == nil, phrase.allowsLabelPicture,
+              !phrase.sourceLanguage.isEmpty else { return [] }
+        return AACPictureLibrary.shared.alternativeFilenames(word: phrase.canonicalLabel, language: phrase.sourceLanguage)
     }
 
     var body: some View {
@@ -1518,7 +1526,7 @@ struct PairCard: View {
             VStack(spacing: 4) {
                 // Artwork comes from the same approved library as the phone.
                 // Unmapped meanings retain their written word.
-                if pictureFile == nil {
+                if pictureFile == nil && pictureChoices.isEmpty {
                     Text(phrase.label)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.primary)
@@ -1527,8 +1535,18 @@ struct PairCard: View {
                         .minimumScaleFactor(0.7)
                         .frame(maxWidth: .infinity, minHeight: 52)
                 } else {
-                    GeneratedWatchPicture(filename: pictureFile!)
-                        .frame(maxWidth: .infinity, maxHeight: 52)
+                    if let pictureFile {
+                        GeneratedWatchPicture(filename: pictureFile)
+                            .frame(maxWidth: .infinity, maxHeight: 52)
+                    } else {
+                        HStack(spacing: 2) {
+                            ForEach(pictureChoices, id: \.self) { file in
+                                GeneratedWatchPicture(filename: file)
+                                    .frame(maxWidth: .infinity, maxHeight: 52)
+                            }
+                        }
+                        .frame(maxHeight: 52)
+                    }
                     Text(phrase.label)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.primary)
@@ -1545,7 +1563,7 @@ struct PairCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Say: \(phrase.label)")
-        .accessibilityIdentifier("aac-picture-\(pictureFile ?? "text")")
+        .accessibilityIdentifier("aac-picture-\(pictureFile ?? (pictureChoices.isEmpty ? "text" : "alternatives"))")
     }
 }
 

@@ -87,6 +87,9 @@ export default function FittedTileLabel({
       : new ResizeObserver(scheduleFit);
     if (resizeObserver) {
       resizeObserver.observe(label.parentElement ?? label);
+      // A loaded picture can shrink the caption without resizing its tile.
+      // Refitting only the parent then silently clips the second word.
+      if (label.parentElement) resizeObserver.observe(label);
     } else {
       window.addEventListener('resize', scheduleFit);
       window.addEventListener('orientationchange', scheduleFit);

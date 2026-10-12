@@ -2,6 +2,7 @@ import { WordFreqEntry, PredictionConfig } from '@/types';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { getStemmer, type Stemmer } from '@/engine/stemmers';
 import { normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts } from '@/engine/predictionSpellings';
+import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
 
 const DEFAULT_CONFIG: PredictionConfig = {
   bigramWeight: 0.5,
@@ -98,6 +99,9 @@ export function isConfidentCompleteWord(
   if (!word) return false;
   const artifacts = ARTIFACTS_BY_LANG[lang] ?? new Set<string>();
   if (artifacts.has(word)) return false;
+  // Locale corpora have different count scales. Exact reviewed vocabulary is
+  // a real complete word even below the English-derived frequency threshold.
+  if (getReviewedBasicWords(lang).has(word)) return true;
   if ((wordFreq[word]?.count ?? 0) >= TUNING.completeWordCount) return true;
   return Object.entries(wordFreq).some(([key, entry]) =>
     entry.count >= TUNING.completeWordCount && predictionWordKey(key, lang) === word);
@@ -266,8 +270,12 @@ export function getPredictions(
   const isSentenceStart = trimmed === '' || /[.!?]$/.test(trimmed);
 
   const candidateMap = new Map<string, Scores>();
-  const getOrCreate = (w: string) =>
-    candidateMap.get(w) ?? (() => { const s: Scores = { bigram: 0, trigram: 0, freq: 0, recency: 0, prefix: 0 }; candidateMap.set(w, s); return s; })();
+  // Equivalent reviewed spellings share evidence before ranking, rather than
+  // discarding a duplicate after one spelling has lost its context score.
+  const getOrCreate = (w: string) => {
+    const key = predictionWordKey(w, lang);
+    return candidateMap.get(key) ?? (() => { const s: Scores = { bigram: 0, trigram: 0, freq: 0, recency: 0, prefix: 0 }; candidateMap.set(key, s); return s; })();
+  };
   const boost = (word: string, part: keyof Scores, value: number) => {
     const scores = getOrCreate(word);
     scores[part] = Math.max(scores[part], value);

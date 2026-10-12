@@ -181,6 +181,39 @@ test('rejects basic vocabulary entries whose filename is unsafe or outside the a
   }
 });
 
+test('preserves both reviewed meanings and their context in the installed native metadata', async (t) => {
+  const fixture = await makeFixture(await temporaryRoot(t));
+  const basic = JSON.parse(fixture.basicVocabularyBytes);
+  basic.alternatives = { en: { sample: { files: ['test_one.png', 'test-two.png'],
+    means: 'Two explicitly reviewed sample meanings',
+    contexts: [{ before: ['known'], file: 'test_one.png' }] } } };
+  fixture.basicVocabularyBytes = Buffer.from(JSON.stringify(basic));
+  await installNativePicturePack(fixture);
+  const installed = JSON.parse(await readFile(path.join(fixture.outputDir, 'aacPictureSymbols.json'), 'utf8'));
+  assert.deepEqual(installed.basicVocabulary.alternatives, basic.alternatives);
+});
+
+test('rejects ambiguous meanings that would show an unapproved picture or duplicate a single sense', async (t) => {
+  for (const files of [['test_one.png', '../outside.png'], ['test_one.png', 'unpacked.png'], ['test_one.png', 'test_one.png']]) {
+    const fixture = await makeFixture(await temporaryRoot(t));
+    const basic = JSON.parse(fixture.basicVocabularyBytes);
+    basic.alternatives = { en: { sample: { files, means: 'Reviewed sample meanings' } } };
+    fixture.basicVocabularyBytes = Buffer.from(JSON.stringify(basic));
+    await assert.rejects(installNativePicturePack(fixture), /Alternative vocabulary entry is invalid/);
+    await assertOutputAbsent(fixture.outputDir);
+  }
+});
+
+test('rejects a context that could select a picture outside the word’s reviewed meanings', async (t) => {
+  const fixture = await makeFixture(await temporaryRoot(t));
+  const basic = JSON.parse(fixture.basicVocabularyBytes);
+  basic.alternatives = { en: { sample: { files: ['test_one.png', 'test-two.png'],
+    means: 'Reviewed sample meanings', contexts: [{ before: ['known'], file: 'unpacked.png' }] } } };
+  fixture.basicVocabularyBytes = Buffer.from(JSON.stringify(basic));
+  await assert.rejects(installNativePicturePack(fixture), /Alternative vocabulary context is invalid/);
+  await assertOutputAbsent(fixture.outputDir);
+});
+
 test('rejects English word-map filenames outside the reviewed pack', async (t) => {
   for (const file of ['../outside.png', 'unpacked.png']) {
     const root = await temporaryRoot(t);

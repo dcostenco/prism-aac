@@ -1,0 +1,93 @@
+{
+  "cases": [
+    {
+      "lang": "ro",
+      "text": "tu vr",
+      "word": "vreme",
+      "file": "w-time.png"
+    },
+    {
+      "lang": "ro",
+      "text": "tu vrem",
+      "word": "vremuri",
+      "file": "w-time.png"
+    },
+    {
+      "lang": "ro",
+      "text": "tu vrem",
+      "word": "vremea",
+      "file": "cat-weather.png"
+    },
+    {
+      "lang": "ro",
+      "text": "tu est",
+      "word": "ești",
+      "file": "cw-is.png"
+    },
+    {
+      "lang": "ro",
+      "text": "tu esti",
+      "word": "bine",
+      "file": "qt-okay.png",
+      "expectedText": "tu esti bine"
+    },
+    {
+      "lang": "ro",
+      "text": "tu esti",
+      "word": "așa",
+      "file": "cw-this.png",
+      "expectedText": "tu esti așa"
+    },
+    {
+      "lang": "de",
+      "text": "ze",
+      "word": "zeit",
+      "file": "w-time.png"
+    },
+    {
+      "lang": "fr",
+      "text": "tem",
+      "word": "temps",
+      "file": "w-time.png"
+    },
+    {
+      "lang": "it",
+      "text": "temp",
+      "word": "tempo",
+      "file": "w-time.png"
+    },
+    {
+      "lang": "es",
+      "text": "tiem",
+      "word": "tiempos",
+      "file": "w-time.png"
+    },
+    {
+      "lang": "bg",
+      "text": "вре",
+      "word": "време",
+      "file": "w-time.png"
+    },
+    {
+      "lang": "vi",
+      "text": "thơ",
+      "word": "thời",
+      "file": "w-time.png"
+    },
+    {
+      "lang": "de",
+      "text": "ich wei",
+      "word": "weiß",
+      "file": "cw-know.png"
+    },
+    {
+      "lang": "ko",
+      "text": "누",
+      "word": "눈",
+      "files": [
+        "hb-eye.png",
+        "w-snow.png"
+      ]
+    }
+  ]
+}

@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { getPictogramUrl, typedWordPicturesEnabled } from '@/services/pictogramService';
-import { resolveVocabularyPicture } from '@/lib/builtInSymbols';
+import { resolveVocabularyPicture, reviewedVocabularyPictureChoices } from '@/lib/builtInSymbols';
 import { englishSourceFor } from '@/constants/reverseTranslation';
 import { watchPictureWords, pictureWordsVersion, subscribePictureWords } from '@/constants/pictureWords';
 import { useRecoverablePicture } from '@/hooks/useRecoverablePicture';
+import { useVocabularyPictureChoices } from '@/hooks/useVocabularyPictureChoices';
 import type { PictureMode } from '@/store/settingsStore';
 import type { SupportedLanguage } from '@/engine/i18n';
 
@@ -22,7 +23,8 @@ export function usePredictionPicture(
   word: string,
   language: SupportedLanguage,
   pictureMode: PictureMode,
-): { picture: PredictionPictureKind; pictureUrl: string | null; onImageError: () => void; imageKey: string; reason: string } {
+  context?: string,
+) {
   const [generatedIcon, setGeneratedIcon] = useState<{ key: string; url: string | null } | null>(null);
 
   // A predicted word that is built-in vocabulary follows its board tile: the
@@ -77,8 +79,20 @@ export function usePredictionPicture(
     picture = pictureUrl ? 'generated' : 'text';
   }
   const image = useRecoverablePicture(pictureUrl, key);
+  const files = context !== undefined && (resolution.kind === 'ambiguous' || resolution.kind === 'loading')
+    ? reviewedVocabularyPictureChoices(word, language, context) : [];
+  const alternatives = useVocabularyPictureChoices(files, `${key}|${files.join('|')}`);
+  if (files.length) {
+    return { picture: (alternatives.ready ? 'symbol' : 'pending') as PredictionPictureKind,
+      pictureUrl: alternatives.images.length === 1 ? alternatives.images[0].url : null,
+      onImageError: alternatives.images[0]?.onError ?? image.onError,
+      imageKey: alternatives.images[0]?.key ?? image.imageKey,
+      reason: files.length === 1 ? 'context-meaning' : 'alternative-meanings',
+      alternativeImages: alternatives.images };
+  }
   const failedImage = !!pictureUrl && !image.url;
   return { picture: failedImage ? 'text' : picture, pictureUrl: image.url, onImageError: image.onError,
     imageKey: image.imageKey, reason: failedImage ? 'image-error' : picture === 'generated' ? 'generated'
-      : picture === 'pending' && resolution.kind === 'unmapped' ? 'generation-loading' : resolution.kind };
+      : picture === 'pending' && resolution.kind === 'unmapped' ? 'generation-loading' : resolution.kind,
+    alternativeImages: [] };
 }
