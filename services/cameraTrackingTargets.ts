@@ -18,3 +18,12 @@ export const CAMERA_TRACKING_TARGETS: Array<{
   { id: 'right_shoulder', label: 'Right Shoulder', setupLabel: 'Right Shoulder', emoji: '💪' },
   { id: 'left_shoulder', label: 'Left Shoulder', setupLabel: 'Left Shoulder', emoji: '💪' },
 ];
+
+// Product scope, not a hardware capability claim. Finger control remains
+// unavailable until the dedicated hand detector is wired and qualified.
+export const HEAD_CURSOR_AVAILABLE = false;
+const WRIST_CURSOR_TARGETS = new Set(['left_wrist', 'right_wrist']);
+export function isCameraCursorTarget(target: string): boolean {
+  return WRIST_CURSOR_TARGETS.has(target);
+}
+export const CAMERA_CURSOR_TARGETS = CAMERA_TRACKING_TARGETS.filter(target => isCameraCursorTarget(target.id));

@@ -33,6 +33,7 @@ import {
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import TrackingSelectionNotice from './TrackingSelectionNotice';
+import { HEAD_CURSOR_AVAILABLE } from '@/services/cameraTrackingTargets';
 
 /* ─────────────────────────────────────────────────────────────────────────────
  *  HeadTrackingOverlay
@@ -155,7 +156,7 @@ function useMotionMonitor(active: boolean): React.MutableRefObject<boolean> {
 }
 
 export default function HeadTrackingOverlay() {
-  const enabled = useSettingsStore((s) => s.headTrackingEnabled);
+  const enabled = useSettingsStore((s) => HEAD_CURSOR_AVAILABLE && s.headTrackingEnabled);
   const ownershipEpoch = useSyncExternalStore(subscribeCameraSelection,
     () => readCameraSelectionState().epoch, () => 0);
   const selectionBlocked = readCameraSelectionState().blocked;
@@ -195,7 +196,7 @@ export default function HeadTrackingOverlay() {
   const { safeMode, effectiveSensitivity, effectiveDwellMs, effectiveGestureConfig } =
     useSafeModeCaps({ sensitivity, dwellMs, gestureConfig });
   const probeProgress = useReliabilityProbe(
-    !enabled && Boolean(driftToast) && !driftToast?.manual && driftAutoDisable && !selectionBlocked,
+    HEAD_CURSOR_AVAILABLE && !enabled && Boolean(driftToast) && !driftToast?.manual && driftAutoDisable && !selectionBlocked,
     ownershipEpoch,
     useCallback(() => {
       if (manualStopRef.current) return;

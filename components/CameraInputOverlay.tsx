@@ -13,6 +13,7 @@ import {
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import TrackingSelectionNotice from './TrackingSelectionNotice';
+import { isCameraCursorTarget } from '@/services/cameraTrackingTargets';
 
 /**
  * Camera Input Overlay — opt-in camera-based finger/arm tracking.
@@ -37,7 +38,7 @@ function cameraKeyTarget(target: Element | null): HTMLElement | null {
 
 export default function CameraInputOverlay() {
   const { t } = useT();
-  const enabled = useSettingsStore(s => s.cameraInputEnabled);
+  const enabled = useSettingsStore(s => s.cameraInputEnabled && isCameraCursorTarget(s.cameraTrackingTarget));
   const ownershipEpoch = useSyncExternalStore(subscribeCameraSelection,
     () => readCameraSelectionState().epoch, () => 0);
   const selectionBlocked = readCameraSelectionState().blocked;
@@ -127,6 +128,8 @@ export default function CameraInputOverlay() {
       sensitivity,
       smoothing: 0.15,
       trackingTarget: target,
+      selectedTargetOnly: true,
+      requireHeadPresence: true,
       cursorSmoothing: 0.12,
       onMove(x, y) {
         if (!mounted) return;

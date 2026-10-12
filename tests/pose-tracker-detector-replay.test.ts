@@ -93,7 +93,7 @@ afterEach(() => {
 });
 
 async function start(target: TrackingTarget = 'right_index', options: Partial<Pick<
-  PoseTrackerOptions, 'sensitivity' | 'dwellMs' | 'useEyeGaze' | 'eyeGazeWeight'
+  PoseTrackerOptions, 'sensitivity' | 'dwellMs' | 'useEyeGaze' | 'eyeGazeWeight' | 'selectedTargetOnly' | 'requireHeadPresence'
 >> = {}) {
   const service = await import('@/services/bodyPoseService');
   if (options.useEyeGaze) {
@@ -159,6 +159,43 @@ function step(count = 1) {
 
 describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it.each([['left_wrist', 15, 16], ['right_wrist', 16, 15]] as const)('strict %s never switches to the opposite wrist or visible head', async (target, selected, other) => {
+    const { onMove, onStatusChange } = await start(target, { selectedTargetOnly: true, requireHeadPresence: true });
+    pose(selected, 0.5);
+    detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.99 };
+    for (let frame = 0; frame < 20; frame++) {
+      detector.poses[0][0].x = frame % 2 ? 0.3 : 0.7;
+      detector.poses[0][other] = { x: frame % 2 ? 0.2 : 0.8, y: 0.8, visibility: 0.99 };
+      step();
+    }
+    expect(onMove).toHaveBeenCalledTimes(20);
+    expect(onStatusChange.mock.calls.filter(call => call[0] === 'tracking').every(call => call[1] === target)).toBe(true);
+    detector.poses[0][selected].visibility = 0.2;
+    const moves = onMove.mock.calls.length;
+    step(5);
+    expect(onMove).toHaveBeenCalledTimes(moves);
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+  });
+
+  it('strict wrist stops movement and cancels pending selection when head presence is lost', async () => {
+    const { onMove, onDwell, onStatusChange } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5);
+    detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+    step(3);
+    const moves = onMove.mock.calls.length;
+    detector.poses[0][0].visibility = 0;
+    step(8);
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+    expect(onMove).toHaveBeenCalledTimes(moves);
+    expect(onDwell).not.toHaveBeenCalled();
+    detector.poses[0][0].visibility = 0.9;
+    step(3);
+    expect(onDwell).not.toHaveBeenCalled();
+    step(4);
+    expect(onDwell).toHaveBeenCalledTimes(1);
+  });
   it.each(INVALID_CAMERA_COORDINATES)('rejects $name even with high visibility', async ({ x, y }) => {
     const { onMove, onStatusChange } = await start('right_index');
     pose(20, x, y); step(6);
@@ -203,7 +240,7 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
     });
     vi.spyOn(service, 'isPoseTrackingSupported').mockReturnValue(true);
     const { useSettingsStore } = await import('@/store/settingsStore');
-    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'nose', headTrackingDwellMs: 500 });
+    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist', headTrackingDwellMs: 500 });
     const { default: Overlay } = await import('@/components/CameraInputOverlay');
     const button = document.createElement('button'); document.body.append(button);
     const clicks = vi.fn(); button.addEventListener('click', clicks);
@@ -211,7 +248,7 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
     const view = render(createElement(Overlay));
     expect(startSpy).toHaveBeenCalledTimes(1);
     await act(() => vi.waitFor(() => expect(frames.size).toBeGreaterThan(0)));
-    pose(0, 0.5); act(() => step(8));
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; act(() => step(8));
     expect(clicks).toHaveBeenCalledTimes(1);
     const { suspendCameraSelection } = await import('@/services/cameraSelection');
     let release!: () => void;

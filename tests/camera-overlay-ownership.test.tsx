@@ -27,7 +27,7 @@ function SetupOwner() {
 
 beforeEach(() => {
   tracker.start.mockClear(); tracker.stop.mockClear(); tracker.options = [];
-  useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'nose' });
+  useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist' });
 });
 afterEach(() => { cleanup(); releases.splice(0).forEach(release => release()); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); document.body.replaceChildren(); });
 

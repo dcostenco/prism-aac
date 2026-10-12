@@ -7,6 +7,7 @@ import { isHeadTrackingSupported, listCameras, saveCalibration, type Calibration
 import { isSafeMode, clearDriftHistory } from '@/services/safeMode';
 import { useT } from '@/engine/useT';
 import { tapFeedback } from '@/services/feedback';
+import { HEAD_CURSOR_AVAILABLE } from '@/services/cameraTrackingTargets';
 
 /* ─────────────────────────────────────────────────────────────────────────────
  *  HeadTrackingSettings
@@ -43,6 +44,7 @@ export default function HeadTrackingSettings({ showTimingControls = true }: { sh
 
   // Enumerate cameras on mount
   useEffect(() => {
+    if (!HEAD_CURSOR_AVAILABLE) return;
     listCameras().then((cams) => {
       setCameras(cams);
       if (cams.length > 0) setSelectedCamera((prev) => prev || cams[0].deviceId);
@@ -84,6 +86,8 @@ export default function HeadTrackingSettings({ showTimingControls = true }: { sh
       return { active: true, step: nextStep, data: updatedData };
     });
   }, []);
+
+  if (!HEAD_CURSOR_AVAILABLE) return <p className="text-muted text-sm">{t('camera_controls_disabled')}</p>;
 
   if (!supported) {
     return (

@@ -9,6 +9,9 @@ import type { ReliabilityProbeOpts } from '@/services/reliabilityProbe';
 import type { GestureEvent } from '@/services/gestureService';
 import { clearDriftHistory, recordDriftEvent } from '@/services/safeMode';
 import { DWELL_FEEDBACK_CASES, feedbackTarget, feedbackClock } from './helpers/dwell-feedback';
+// Preserve dormant engine coverage; default production availability has its
+// own negative startup regression in narrow-camera-availability.test.tsx.
+vi.mock('@/services/cameraTrackingTargets', () => ({ HEAD_CURSOR_AVAILABLE: true }));
 const releases: (() => void)[] = [];
 const RECOVERY_REASONS = ['escape', 'drift'] as const;
 const MOTION_PERMISSION_RESULTS = ['granted', 'denied'] as const;

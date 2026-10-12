@@ -166,6 +166,10 @@ export interface PoseTrackerOptions {
   useEyeGaze?: boolean;
   /** Weight 0–1, default 0.8. Only used when useEyeGaze is true. */
   eyeGazeWeight?: number;
+  /** Production wrist control never falls back to another body part. */
+  selectedTargetOnly?: boolean;
+  /** Head is a presence prerequisite, never a cursor source. */
+  requireHeadPresence?: boolean;
 }
 
 export interface PoseTrackerHandle {
@@ -925,7 +929,7 @@ export function startPoseTracker(
     }
 
     // Step 2: Initialize MediaPipe Pose Landmarker (and optionally FaceLandmarker for iris/gaze)
-    if (opts.useEyeGaze) {
+    if (opts.useEyeGaze && !opts.selectedTargetOnly) {
       // Fire-and-forget — iris blend will start as soon as it's ready;
       // cursor still works from pose-only in the meantime.
       void initFaceLandmarkerForGaze();
@@ -986,7 +990,7 @@ export function startPoseTracker(
         let frameLandmarks: Array<{ x: number; y: number; visibility?: number }> | null = null;
         let frameChosenVis = 0.5;
 
-        if (useFaceDetectorFallback) {
+        if (useFaceDetectorFallback && !opts.selectedTargetOnly) {
           const det = results?.detections?.[0];
           if (det?.boundingBox) {
             const bb = det.boundingBox;
@@ -1036,7 +1040,7 @@ export function startPoseTracker(
           // the user switch hands or be left-handed without changing config.
           const requested = opts.trackingTarget;
           let chosen: { mark: { x: number; y: number }; target: TrackingTarget; vis: number } | null = null;
-          if (requested === 'any_wrist' || requested === 'any_index' || requested === 'any_hand') {
+          if (!opts.selectedTargetOnly && (requested === 'any_wrist' || requested === 'any_index' || requested === 'any_hand')) {
             const agg = resolveAggregateTarget(requested, lm);
             if (agg && agg.vis >= 0.3) {
               chosen = { mark: agg.mark, target: agg.target, vis: agg.vis };
@@ -1048,9 +1052,8 @@ export function startPoseTracker(
           // both wrists below threshold). Two-pass:
           //   A — accept first landmark with vis >= 0.3 (good signal)
           //   B — if A failed, accept first with vis >= 0.1 (weak fallback)
-          const FALLBACK_CHAIN: TrackingTarget[] = [
-            requested, ...POSE_FALLBACK_TARGETS,
-          ];
+          const FALLBACK_CHAIN: TrackingTarget[] = opts.selectedTargetOnly
+            ? [requested] : [requested, ...POSE_FALLBACK_TARGETS];
           if (!chosen) {
             for (const target of FALLBACK_CHAIN) {
               if (target === 'any_wrist' || target === 'any_index' || target === 'any_hand') continue;
@@ -1062,7 +1065,7 @@ export function startPoseTracker(
               if (vis >= 0.3) { chosen = { mark, target, vis }; break; }
             }
           }
-          if (!chosen) {
+          if (!chosen && !opts.selectedTargetOnly) {
             // Aggregate weak-signal fallback before going to chain pass B,
             // so a low-vis matching wrist still beats a low-vis nose.
             if (requested === 'any_wrist' || requested === 'any_index' || requested === 'any_hand') {
@@ -1072,7 +1075,7 @@ export function startPoseTracker(
               }
             }
           }
-          if (!chosen) {
+          if (!chosen && !opts.selectedTargetOnly) {
             for (const target of FALLBACK_CHAIN) {
               if (target === 'any_wrist' || target === 'any_index' || target === 'any_hand') continue;
               const idx = LANDMARK_INDEX[target];
@@ -1105,6 +1108,14 @@ export function startPoseTracker(
           }
         }
 
+        if (opts.requireHeadPresence) {
+          const head = frameLandmarks?.[LANDMARK_INDEX.nose];
+          if (!isInCameraFrame(head) || (head?.visibility ?? 0) < 0.3) {
+            normX = null;
+            normY = null;
+          }
+        }
+
         // Eye/iris gaze blend — when useEyeGaze is requested and
         // FaceLandmarker has iris data, blend iris position with pose.
         // Iris moves with GAZE direction (not just head rotation), giving
@@ -1118,7 +1129,7 @@ export function startPoseTracker(
         const headNormX = normX;
         const headNormY = normY;
 
-        if (opts.useEyeGaze && normX !== null && normY !== null && faceLandmarkerForGaze && video) {
+        if (opts.useEyeGaze && !opts.selectedTargetOnly && normX !== null && normY !== null && faceLandmarkerForGaze && video) {
           try {
             const faceResult = (faceLandmarkerForGaze as {
               detectForVideo: (v: HTMLVideoElement, t: number) => {

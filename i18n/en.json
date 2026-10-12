@@ -1,4 +1,9 @@
 {
+  "camera_wrist_scope": "Experimental wrist/arm control: choose one side. Your head must remain visible. Losing the head or chosen wrist pauses movement and selection; another body part will not take over. Physical-camera accuracy is not yet verified.",
+  "camera_controls_disabled": "Head cursor, eye gaze, gestures and automatic body-part switching are disabled. Finger cursor control is not enabled yet.",
+  "camera_choose_wrist": "Choose Left Wrist or Right Wrist before starting camera setup.",
+  "camera_wrist_control": "Wrist / arm cursor",
+  "camera_wrist_control_help": "Move the chosen wrist to control the cursor while your head stays in view.",
   "tracking_diagnostics_title": "Local tracking diagnostics",
   "tracking_diagnostics_empty": "No movement samples were captured. Save the report: startup and tracking-loss events can help identify why. This is not a successful tracking test.",
   "tracking_diagnostics_privacy": "Opt-in movement numbers only: no video, audio, names or message text; this recorder does not upload the report. Use a manual click or keyboard to start and save; camera-generated clicks cannot do either. Start before calibration. Stops after two minutes or 6,000 samples. Save the sensitive report locally before refreshing; unsaved data stays on this page, including after tracking stops. One recording per page load.",

@@ -32,6 +32,7 @@ import TrackingDebugOverlay from './TrackingDebugOverlay';
 import TtsDebugOverlay from './TtsDebugOverlay';
 import CameraInputOverlay from './CameraInputOverlay';
 import { useVisionContext } from '@/hooks/useVisionContext';
+import { HEAD_CURSOR_AVAILABLE } from '@/services/cameraTrackingTargets';
 import GreetingBanner from './GreetingBanner';
 import SyncProvider from './SyncProvider';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -245,7 +246,7 @@ export default function PrismApp() {
     && categoryKeyboardOpen
     && keyboardMaximized;
   const { rtl } = useT();
-  const headTrackingEnabled = useSettingsStore((s) => s.headTrackingEnabled);
+  const headTrackingEnabled = useSettingsStore((s) => HEAD_CURSOR_AVAILABLE && s.headTrackingEnabled);
   const [compactMode, setCompactMode] = useState(false);
 
   useEffect(() => {

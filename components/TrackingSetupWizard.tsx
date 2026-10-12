@@ -20,7 +20,7 @@ import {
   type TrackingTarget,
   type PoseCalibrationData,
 } from '@/services/bodyPoseService';
-import { CAMERA_TRACKING_TARGETS } from '@/services/cameraTrackingTargets';
+import { CAMERA_CURSOR_TARGETS as CAMERA_TRACKING_TARGETS, isCameraCursorTarget } from '@/services/cameraTrackingTargets';
 import { suspendCameraSelection } from '@/services/cameraSelection';
 import {
   computeWizardCalibration,
@@ -247,6 +247,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
   // ── PHASE: Detection ──
   const startDetection = useCallback(() => {
+    if (!isCameraCursorTarget(useSettingsStore.getState().cameraTrackingTarget)) {
+      setSetupError(t('camera_choose_wrist'));
+      return;
+    }
     try {
       calibrationDraftRef.current = beginPoseCalibrationDraft();
       setSetupError(null);
@@ -255,7 +259,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       return;
     }
     const requested = BODY_PARTS.find(part => part.target === useSettingsStore.getState().cameraTrackingTarget)
-      ?? BODY_PARTS.find(part => part.target === 'any_wrist')!;
+      ?? BODY_PARTS.find(part => part.target === 'right_wrist')!;
     setPhase('detecting');
     setSelectedPart(null);
     setStatusText('Looking for you...');
@@ -286,6 +290,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       sensitivity: cameraSensitivity,
       smoothing: 0.15,
       trackingTarget: requested.target,
+      selectedTargetOnly: true,
+      requireHeadPresence: true,
       cursorSmoothing: 0.12,
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
@@ -360,6 +366,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       sensitivity: cameraSensitivity,
       smoothing: 0.15,
       trackingTarget: target,
+      selectedTargetOnly: true,
+      requireHeadPresence: true,
       cursorSmoothing: 0.12,
       onMove(x, y) {
         if (samplingAllowedRef.current) setCursorPos({ x, y });
@@ -838,10 +846,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           <div className="tracking-wizard-intro text-center px-8 max-w-lg">
             <div className="text-8xl mb-6">🎯</div>
             <h2 className="text-white text-3xl font-black mb-4">Let&apos;s Set Up Tracking</h2>
-            <p className="text-white/70 text-lg mb-4">
-              We&apos;ll find what you can move (head / hand), then teach
-              the app where your screen edges are.
-            </p>
+            <p className="text-white/70 text-lg mb-4">{t('camera_wrist_scope')}</p>
             <ul className="text-white/80 text-sm mb-6 text-left bg-white/5 rounded-xl p-4 space-y-2">
               <li className="flex gap-2"><span>1️⃣</span><span>{t('tracking_setup_center_guide')}</span></li>
               <li className="flex gap-2"><span>2️⃣</span><span>{t('tracking_setup_corner_guide').replace('{corner}', CORNER_TARGETS[0].label)}</span></li>
