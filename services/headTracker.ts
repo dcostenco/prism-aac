@@ -35,6 +35,7 @@ import { BaselineTracker } from './recalibration';
 import { isValidCornerCalibration } from '@/lib/safeValidation';
 import { acquireCamera, type CameraLease } from './cameraStream';
 import { emitTrackingEvent } from './trackingTelemetry';
+import { isTrackingDiagnosticsActive, recordTrackingDiagnosticFrame, recordTrackingDiagnosticState } from './trackingDiagnostics';
 import { readCameraSelectionState, canActivateCameraSelection } from './cameraSelection';
 import { resolveDwellTarget } from './dwellTarget';
 import {
@@ -826,7 +827,7 @@ export function startHeadTracker(
   const calibration = loadCalibration();
   const sensitivityScale = opts.sensitivity / 5;
 
-  opts.onStatusChange('starting');
+  recordTrackingDiagnosticState('head', 'starting'); opts.onStatusChange('starting');
 
   // Always initialize FaceLandmarker. Two reasons:
   //   1. Gesture detection (only used when onLandmarks is provided) — opt-in.
@@ -852,7 +853,7 @@ export function startHeadTracker(
     if (activeSources.length === 0) {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('keydown', escHandler);
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('head', 'stopped'); opts.onStatusChange('stopped');
       return;
     }
 
@@ -1101,7 +1102,7 @@ export function startHeadTracker(
     // camera's detection loop hangs or its WebGL context crashes.
     const now = Date.now();
     const activeSources = sources.filter(s => s.active);
-    if (activeSources.length === 0) { opts.onLandmarks?.(null); opts.onStatusChange('lost'); return; }
+    if (activeSources.length === 0) { opts.onLandmarks?.(null); recordTrackingDiagnosticState('head', 'lost'); opts.onStatusChange('lost'); return; }
 
     const detections = activeSources.map(s => {
       const d = s.lastDetection;
@@ -1115,14 +1116,14 @@ export function startHeadTracker(
     if (!fused) {
       gestureSourceIndex = null;
       opts.onLandmarks?.(null);
-      opts.onStatusChange('lost');
+      recordTrackingDiagnosticState('head', 'lost'); opts.onStatusChange('lost');
       dwellElement = null;
       dwellStart = 0;
       dwellTriggered = false;
       return;
     }
 
-    opts.onStatusChange('tracking');
+    recordTrackingDiagnosticState('head', 'tracking'); opts.onStatusChange('tracking');
 
     // Landmarks, gaze and ego-motion must use the camera that actually
     // supplied the fused coordinates, including temporary failover. Raw
@@ -1146,6 +1147,13 @@ export function startHeadTracker(
     // Ego-motion suppression (gap E) — see suppressOnEgoMotion below.
     if (suppressOnEgoMotion(primarySource)) {
       // Camera shake — keep last cursor position, skip dwell increment.
+      if (isTrackingDiagnosticsActive()) recordTrackingDiagnosticFrame({
+        pipeline: 'head', target: 'head', requestedTarget: 'head', rawNorm: [fused.normX, fused.normY], inputNorm: [null, null],
+        mapped: [null, null], filtered: [sx, sy], confidence: null, filterConfidence: null, noise: null, cursorHeld: true,
+        calibration: [calibration.leftX, calibration.rightX, calibration.topY, calibration.bottomY], sensitivity: sensitivityScale,
+        cameraIndex: primarySource.index, videoSize: [primarySource.video.videoWidth, primarySource.video.videoHeight],
+        screenSize: [window.innerWidth, window.innerHeight], detectionAgeMs: now - primarySource.lastDetection.timestamp,
+      });
       opts.onMove(sx, sy);
       return;
     }
@@ -1196,6 +1204,14 @@ export function startHeadTracker(
     const trackingConfidence = Math.max(0, Math.min(1,
       primarySource.lastDetection.confidence * FACE_AREA_TO_KALMAN_SCALE));
 
+    if (isTrackingDiagnosticsActive()) recordTrackingDiagnosticFrame({
+      pipeline: 'head', target: 'head', requestedTarget: 'head', rawNorm: [fused.normX, fused.normY], inputNorm: [normX, normY],
+      mapped: [rawX, rawY], filtered: [sx, sy], confidence: trackingConfidence, filterConfidence: avgConfidence, noise: null,
+      calibration: [calibration.leftX, calibration.rightX, calibration.topY, calibration.bottomY], sensitivity: sensitivityScale,
+      cameraIndex: primarySource.index, videoSize: [primarySource.video.videoWidth, primarySource.video.videoHeight],
+      screenSize: [window.innerWidth, window.innerHeight],
+      detectionAgeMs: now - primarySource.lastDetection.timestamp,
+    });
     opts.onMove(sx, sy);
 
     // ── Dwell Detection ───────────────────────────────────────────
@@ -1330,7 +1346,7 @@ export function startHeadTracker(
       cancelAnimationFrame(rafId);
       sources.forEach(stopCameraSource);
       window.removeEventListener('keydown', escHandler);
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('head', 'stopped'); opts.onStatusChange('stopped');
       // Keep legacy telemetry/callback behavior, but distinguish explicit
       // user intent so an ownership fence cannot swallow the escape hatch.
       const firstDrift = !driftFired;
@@ -1368,7 +1384,7 @@ export function startHeadTracker(
       mpFaceLandmarker = null;
       mpLoadPromise = null;
       mpLandmarkerLoadPromise = null;
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('head', 'stopped'); opts.onStatusChange('stopped');
     },
     get videoElement() {
       return sources[0]?.video ?? null;

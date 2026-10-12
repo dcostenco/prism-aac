@@ -1,6 +1,7 @@
 import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
 import { customizeWebpack } from './lib/webpackBuildConfig';
+import { trackingBuildFingerprint } from './lib/trackingBuildFingerprint';
 import {
   PRISM_AAC_BASE_PATH,
   PRISM_AAC_PUBLIC_PRECACHE_PATTERNS,
@@ -45,6 +46,7 @@ const nextConfig: NextConfig = {
     // Unique per-deploy build ID — consumed by the SW killswitch in layout.tsx
     // so every Vercel deploy automatically invalidates stale SW caches.
     NEXT_PUBLIC_BUILD_ID: buildId,
+    NEXT_PUBLIC_AAC_DIAGNOSTIC_BUILD_ID: trackingBuildFingerprint(),
     NEXT_PUBLIC_DD_CLIENT_TOKEN: process.env.NEXT_PUBLIC_DD_CLIENT_TOKEN || '',
     NEXT_PUBLIC_DD_APPLICATION_ID: process.env.NEXT_PUBLIC_DD_APPLICATION_ID || '',
     NEXT_PUBLIC_DD_SITE: process.env.NEXT_PUBLIC_DD_SITE || 'datadoghq.com',

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { safeScreenshot } from './helpers/screenshot-validation';
 import { installLocalCameraAccess } from './helpers/camera-access-fixture';
 
@@ -25,6 +26,32 @@ async function waitForTogglePaint(page: Page) {
   await expect.poll(() => camera.evaluate(node => node.getAnimations({ subtree: true })
     .some(animation => animation.playState === 'running'))).toBe(false);
 }
+
+test('diagnostic recording preserves camera-off state and exports a clearly failed zero-sample session', async ({ page, baseURL }, info) => {
+  await installLocalCameraAccess(page, baseURL, info);
+  await page.goto('/prism-aac');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
+  const diagnostics = page.getByTestId('tracking-diagnostics');
+  await diagnostics.locator('summary').click();
+  await page.getByTestId('tracking-diagnostics-start').evaluate(button => (button as HTMLButtonElement).click());
+  await expect(page.getByTestId('tracking-diagnostics-save')).toBeDisabled();
+  await page.getByTestId('tracking-diagnostics-start').click();
+  await expect(page.getByRole('button', { name: 'Camera input', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await diagnostics.getByRole('button', { name: 'Stop recording', exact: true }).click();
+  await expect(page.getByTestId('tracking-diagnostics-empty')).toBeVisible();
+  const downloading = page.waitForEvent('download');
+  await page.getByTestId('tracking-diagnostics-save').click();
+  const downloaded = await downloading;
+  const report = JSON.parse(readFileSync((await downloaded.path())!, 'utf8'));
+  expect(report.frames).toEqual([]);
+  expect(report.startedAt).not.toBe('');
+  expect(report.buildFingerprint).toMatch(/^[a-f0-9]{64}$/);
+  await safeScreenshot(page, info.outputPath('diagnostics-zero-samples.png'), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-diagnostics-empty"]'],
+    criticalSelectors: ['[data-testid="tracking-diagnostics-save"]', '[data-testid="tracking-diagnostics-empty"]'], occluderSelectors: [],
+  });
+});
 
 test('one Accessibility entry offers camera setup before enablement and keeps touch calibration separate', async ({ page, baseURL }, info) => {
   await installLocalCameraAccess(page, baseURL, info);

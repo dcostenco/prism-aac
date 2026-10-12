@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import TrackingSetupWizard from './TrackingSetupWizard';
+import TrackingDiagnosticsSettings from './TrackingDiagnosticsSettings';
 import { CAMERA_TRACKING_TARGETS } from '@/services/cameraTrackingTargets';
 import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
 import { requestMotionPermission } from '@/services/deviceMotion';
@@ -57,6 +58,7 @@ export default function InputModesSettings({ cameraOptions, touchOptions }: { ca
           {t('camera_cursor_setup')}
         </button>
         <p className="text-muted text-sm">{t('camera_cursor_setup_help')}</p>
+        <TrackingDiagnosticsSettings />
       {/* Camera Finger/Body Tracking (opt-in — settings store default false) */}
       <div data-testid="camera-input-settings">
         <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Camera Input</h4>

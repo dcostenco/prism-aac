@@ -13,6 +13,7 @@ const photograph = readFileSync(resolve(process.cwd(), 'e2e/_fixtures/wizard-sce
 const NEAR_CROPPED_PROFILE = { name: 'near-cropped-dim', width: 160, height: 120,
   zoom: 2.1, tilt: -0.15, brightness: 0.65, blur: 1, drift: 0.015 };
 const RANGE_COMPARE_EPSILON = 1e-9;
+const DIAGNOSTIC_CAPTURE_SMOKE = process.env.AAC_DIAGNOSTIC_CAPTURE_SMOKE === '1';
 // Freeze via Playwright's public clock API. A 100ms cross-process deadline
 // can already be in the past while WASM inference is busy; keep a lead
 // shorter than the calibration capture deadlines without retrying failures.
@@ -59,7 +60,7 @@ for (const profile of [
   { ...NEAR_CROPPED_PROFILE, name: 'near-cropped-dim-center-only', centerOnly: true },
   { ...NEAR_CROPPED_PROFILE, name: 'near-cropped-dim-selected-finger', explicitFallback: true },
 ]) {
-  test(`synthetic camera smoke ${profile.name}, drift ${profile.drift}`, async ({ page }, info) => {
+  test(`${DIAGNOSTIC_CAPTURE_SMOKE ? 'diagnostic capture smoke' : 'synthetic camera smoke'} ${profile.name}, drift ${profile.drift}`, async ({ page }, info) => {
     test.setTimeout(120_000);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -108,6 +109,14 @@ for (const profile of [
     await page.goto('/prism-aac');
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
+    if (DIAGNOSTIC_CAPTURE_SMOKE) {
+      await page.getByTestId('tracking-diagnostics').locator('summary').click();
+      await page.getByTestId('tracking-diagnostics-start').evaluate(button => (button as HTMLButtonElement).click());
+      await expect(page.getByTestId('tracking-diagnostics-save')).toBeDisabled();
+      const callsBeforeConsent = await page.evaluate(() => (window as unknown as { __cameraReplay: { calls: number } }).__cameraReplay.calls);
+      await page.getByTestId('tracking-diagnostics-start').click();
+      expect(await page.evaluate(() => (window as unknown as { __cameraReplay: { calls: number } }).__cameraReplay.calls)).toBe(callsBeforeConsent);
+    }
     const toggle = page.getByRole('button', { name: 'Camera input', exact: true });
     if (await toggle.getAttribute('aria-pressed') !== 'true') await toggle.click();
     // Head-only photo: the finger case checks honest explicit fallback,
@@ -125,6 +134,29 @@ for (const profile of [
     await page.getByTestId('tracking-setup-start').click();
     await expectPhotographicCameraInput(page, '__cameraReplay');
     const wizard = page.getByTestId('tracking-setup-wizard');
+    if (DIAGNOSTIC_CAPTURE_SMOKE) {
+      // Recorder wiring only, never physical-camera or calibration acceptance.
+      await page.waitForTimeout(1800);
+      await wizard.getByRole('button', { name: 'Cancel', exact: true }).click();
+      const save = page.getByTestId('tracking-diagnostics-save');
+      await expect(save).toBeEnabled({ timeout: 10_000 });
+      const downloading = page.waitForEvent('download');
+      await save.click();
+      const downloaded = await downloading;
+      const report = JSON.parse(readFileSync((await downloaded.path())!, 'utf8'));
+      expect(report.schemaVersion).toBe(1);
+      expect(report.buildFingerprint).toBe(process.env.AAC_EXPECTED_DIAGNOSTIC_BUILD_ID);
+      expect(report.frames.length).toBeGreaterThan(0);
+      expect(report.frames.some((frame: { pipeline: string; rawNorm: number[]; mapped: number[]; filtered: number[] }) =>
+        frame.pipeline === 'pose' && frame.rawNorm.every(Number.isFinite) && frame.mapped.every(Number.isFinite) && frame.filtered.every(Number.isFinite))).toBe(true);
+      expect(report.frames.length).toBeLessThanOrEqual(6000);
+      await info.attach('diagnostic-report', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+      await safeScreenshot(page, info.outputPath('diagnostics-retained-after-tracker-stop.png'), {
+        expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-diagnostics"]'],
+        criticalSelectors: ['[data-testid="tracking-diagnostics-save"]'], occluderSelectors: [],
+      });
+      return;
+    }
     if (explicitFallback) {
       await expect(wizard.getByRole('button', { name: /Head/ })).toBeVisible({ timeout: 45_000 });
       await page.waitForTimeout(1800);

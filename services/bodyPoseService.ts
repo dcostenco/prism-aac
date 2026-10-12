@@ -46,6 +46,7 @@ import {
 } from './egoMotion';
 import { BaselineTracker } from './recalibration';
 import { emitTrackingEvent } from './trackingTelemetry';
+import { isTrackingDiagnosticsActive, recordTrackingDiagnosticFrame, recordTrackingDiagnosticState } from './trackingDiagnostics';
 import { readCameraSelectionState, canActivateCameraSelection } from './cameraSelection';
 import { resolveDwellTarget } from './dwellTarget';
 
@@ -843,7 +844,7 @@ export function startPoseTracker(
   // Clamp cursor smoothing to valid range
   const cursorAlpha = Math.max(0.05, Math.min(0.3, opts.cursorSmoothing));
 
-  opts.onStatusChange('starting');
+  recordTrackingDiagnosticState('pose', 'starting'); opts.onStatusChange('starting');
 
   // ── Initialize camera + model ────────────────────────────────────────
 
@@ -859,7 +860,7 @@ export function startPoseTracker(
       if (cameraDeviceId) {
         const isBack = await isEnvironmentCamera(cameraDeviceId);
         if (isBack) {
-          opts.onStatusChange('stopped');
+          recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
           return;
         }
       }
@@ -882,7 +883,7 @@ export function startPoseTracker(
 
         if (!lease) {
           console.error('[PoseTracker] Camera acquire failed (permission denied or no device).');
-          opts.onStatusChange('stopped');
+          recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
           return;
         }
 
@@ -894,7 +895,7 @@ export function startPoseTracker(
         const settings = track?.getSettings?.();
         if (settings?.facingMode === 'environment') {
           lease.release();
-          opts.onStatusChange('stopped');
+          recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
           return;
         }
 
@@ -902,7 +903,7 @@ export function startPoseTracker(
         video = lease.video;
       } catch (camErr) {
         console.error('[PoseTracker] Camera access failed:', camErr instanceof Error ? camErr.message : camErr);
-        opts.onStatusChange('stopped');
+        recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
         return;
       }
     }
@@ -918,7 +919,7 @@ export function startPoseTracker(
         });
       }
       if (!video || video.readyState < 2) {
-        opts.onStatusChange('stopped');
+        recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
         return;
       }
     }
@@ -932,11 +933,11 @@ export function startPoseTracker(
     const modelReady = await initPoseLandmarker();
     if (!modelReady) {
       console.error('[PoseTracker] Model failed to load — cursor will use pointer fallback');
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
       return;
     }
     if (stopped) {
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
       return;
     }
     console.log('[PoseTracker] Model loaded, starting detection loop');
@@ -958,6 +959,7 @@ export function startPoseTracker(
       detecting = true;
 
       try {
+        const diagnosticFrameStart = isTrackingDiagnosticsActive() ? performance.now() : null;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const results = (poseLandmarker as any).detectForVideo(video, performance.now());
 
@@ -1157,7 +1159,7 @@ export function startPoseTracker(
         if (normX !== null && normY !== null) {
           consecutiveErrors = 0;
 
-          opts.onStatusChange('tracking', activeTarget);
+          recordTrackingDiagnosticState('pose', 'tracking'); opts.onStatusChange('tracking', activeTarget);
 
           // FPS watchdog — only ticks on frames where we got a valid
           // pose, so dropped/blank frames don't artificially deflate
@@ -1274,6 +1276,8 @@ export function startPoseTracker(
           );
           const rawX = mapped.x;
           const rawY = mapped.y;
+          const diagnosticCalibration = isTrackingDiagnosticsActive()
+            ? [calibration.leftX, calibration.rightX, calibration.topY, calibration.bottomY] : null;
 
           // ── Ego-motion compensation (TRACKING_RELIABILITY.md item E) ──
           //
@@ -1400,6 +1404,16 @@ export function startPoseTracker(
           }
 
           if (!suppressForEgoMotion) {
+            if (diagnosticCalibration && isTrackingDiagnosticsActive()) recordTrackingDiagnosticFrame({
+              pipeline: 'pose', target: activeTarget, requestedTarget: opts.trackingTarget,
+              rawNorm: [headNormX, headNormY], inputNorm: [normX, normY],
+              mapped: [rawX, rawY], filtered: [sx, sy], confidence: frameChosenVis,
+              filterConfidence: measurementConfidence, noise: baselineTracker.getNoiseFloor(),
+              calibration: diagnosticCalibration, sensitivity: sensitivityScale, cameraIndex: 0,
+              videoSize: [video.videoWidth, video.videoHeight], screenSize: [window.innerWidth, window.innerHeight],
+              processingMs: diagnosticFrameStart === null ? null : performance.now() - diagnosticFrameStart,
+              calibrationFallback: !mapped.rangeOK,
+            });
             opts.onMove(sx, sy);
           }
 
@@ -1444,7 +1458,7 @@ export function startPoseTracker(
           }
         } else {
           // No pose detected
-          opts.onStatusChange('lost');
+          recordTrackingDiagnosticState('pose', 'lost'); opts.onStatusChange('lost');
           dwellElement = null;
           dwellStart = 0;
           dwellTriggered = false;
@@ -1452,7 +1466,7 @@ export function startPoseTracker(
       } catch {
         consecutiveErrors++;
         if (consecutiveErrors > 10) {
-          opts.onStatusChange('lost');
+          recordTrackingDiagnosticState('pose', 'lost'); opts.onStatusChange('lost');
         }
       } finally {
         detecting = false;
@@ -1483,7 +1497,7 @@ export function startPoseTracker(
       // For the legacy `videoElement` reuse path, we never owned the
       // element either, so no removal is needed there either.
       video = null;
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
 
       if (activeHandle === handle) {
         activeHandle = null;
@@ -1560,12 +1574,12 @@ interface PoseTestDriveAPI {
 function startTestDrivenTracker(opts: PoseTrackerOptions): PoseTrackerHandle {
   let stopped = false;
   // Status flips to 'starting' synchronously, mirroring the real path.
-  opts.onStatusChange('starting');
+  recordTrackingDiagnosticState('pose', 'starting'); opts.onStatusChange('starting');
 
   const api: PoseTestDriveAPI = {
     simulatePose(target, normX, normY, vis = 0.9) {
       if (stopped) return;
-      opts.onStatusChange('tracking', target);
+      recordTrackingDiagnosticState('pose', 'tracking'); opts.onStatusChange('tracking', target);
       // Wizard listens for prism-pose-sample to fill its sample buffer.
       // Detail mirrors what the real tick() loop dispatches.
       emitPoseSample({
@@ -1577,7 +1591,7 @@ function startTestDrivenTracker(opts: PoseTrackerOptions): PoseTrackerHandle {
     },
     simulatePoseLost() {
       if (stopped) return;
-      opts.onStatusChange('lost');
+      recordTrackingDiagnosticState('pose', 'lost'); opts.onStatusChange('lost');
     },
   };
 
@@ -1606,7 +1620,7 @@ function startTestDrivenTracker(opts: PoseTrackerOptions): PoseTrackerHandle {
   const handle: PoseTrackerHandle = {
     stop() {
       stopped = true;
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
       if (activeHandle === handle) activeHandle = null;
       if (pipVideo?.parentNode) pipVideo.remove();
     },

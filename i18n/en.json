@@ -1,4 +1,13 @@
 {
+  "tracking_diagnostics_title": "Local tracking diagnostics",
+  "tracking_diagnostics_empty": "No movement samples were captured. Save the report: startup and tracking-loss events can help identify why. This is not a successful tracking test.",
+  "tracking_diagnostics_privacy": "Opt-in movement numbers only: no video, audio, names or message text; this recorder does not upload the report. Use a manual click or keyboard to start and save; camera-generated clicks cannot do either. Start before calibration. Stops after two minutes or 6,000 samples. Save the sensitive report locally before refreshing; unsaved data stays on this page, including after tracking stops. One recording per page load.",
+  "tracking_diagnostics_active": "Recording samples",
+  "tracking_diagnostics_stopped": "Recording off",
+  "tracking_diagnostics_limit": "Recording stopped at limit",
+  "tracking_diagnostics_start": "Start diagnostic recording",
+  "tracking_diagnostics_stop": "Stop recording",
+  "tracking_diagnostics_save": "Save local report",
   "camera_accessibility": "Camera Accessibility",
   "camera_cursor_setup": "Set Up Tracking — Camera Cursor",
   "camera_cursor_setup_help": "Start here to control the cursor with your head, hand, or body. Calibration includes a camera preview and an accuracy test.",

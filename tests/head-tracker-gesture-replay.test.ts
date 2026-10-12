@@ -119,6 +119,22 @@ async function start(count = 1) {
   expect(queue.size).toBe(count + 1);
 }
 
+it('retains the emitted head cursor and selected camera in an opt-in diagnostic capture', async () => {
+  const recorder = await import('@/services/trackingDiagnostics');
+  expect(recorder.startTrackingDiagnostics()).toBe(true);
+  await start();
+  await frame(80); await frame(160); await frame(240);
+  recorder.stopTrackingDiagnostics();
+  const report = JSON.parse(recorder.trackingDiagnosticReport());
+  expect(report.frames.length).toBeGreaterThan(0);
+  expect(report.frames.length).toBe(onMove.mock.calls.length);
+  report.frames.forEach((sample: { pipeline: string; filtered: number[]; cameraIndex: number }, i: number) => {
+    expect(sample.pipeline).toBe('head');
+    expect(sample.filtered).toEqual(onMove.mock.calls[i]);
+    expect(sample.cameraIndex).toBe(0);
+  });
+});
+
 // Execute actual scheduled camera loops, then actual fusion tick. Skipping a
 // camera callback simulates a stalled loop, not a fabricated tracker callback.
 async function frame(time: number, stalled: number[] = []) {

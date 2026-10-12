@@ -123,6 +123,24 @@ async function start(target: TrackingTarget = 'right_index', options: Partial<Pi
   return { ...service, onMove, onDwell, onStatusChange };
 }
 
+it('records the production pose input and exact emitted cursor, not a separate mocked trace', async () => {
+  driftLevel = 0.003;
+  const recorder = await import('@/services/trackingDiagnostics');
+  expect(recorder.startTrackingDiagnostics()).toBe(true);
+  const { onMove } = await start('nose');
+  pose(0, 0.51, 0.5); step(4);
+  recorder.stopTrackingDiagnostics();
+  const report = JSON.parse(recorder.trackingDiagnosticReport());
+  expect(report.frames.length).toBeGreaterThan(0);
+  expect(report.frames.length).toBe(onMove.mock.calls.length);
+  report.frames.forEach((frame: { pipeline: string; target: string; filtered: number[]; rawNorm: number[]; calibration: number[] }, i: number) => {
+    expect(frame.pipeline).toBe('pose'); expect(frame.target).toBe('nose');
+    expect(frame.filtered).toEqual(onMove.mock.calls[i]);
+    expect(frame.rawNorm[0]).toBeGreaterThanOrEqual(0.51);
+    expect(frame.calibration).toHaveLength(4);
+  });
+});
+
 function pose(index: number, x: number, y = 0.5) {
   const landmarks = Array.from({ length: 33 }, () => ({ x: 0.5, y: 0.5, visibility: 0 }));
   landmarks[index] = { x, y, visibility: 0.9 };
