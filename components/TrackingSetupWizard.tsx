@@ -418,18 +418,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     return () => clearInterval(interval);
   }, [phase]);
 
-  // Live recentering + auto-capture during Step 1.
-  //
-  // Every 2 s once ≥ 20 samples exist:
-  //   1. Apply a running-mean temporary cal (cursor drifts to center).
-  //   2. Check auto-capture condition: if buffer has ≥ 50 samples AND
-  //      pose variance is low (user holding still ≤ 0.004 σ in both
-  //      axes), trigger captureCenter automatically. The user just
-  //      holds still for ~3 s and the step advances without a tap.
-  //
-  // Without the live recentering, DEFAULT_CALIBRATION's midpoint
-  // (0.400, 0.500) rarely matches the user's reclining neutral posture
-  // so the cursor appears offset no matter how well the user centers.
+  // Observe for accessible auto-capture, but do not chase the running
+  // mean with a new map every two seconds. captureCenter applies the
+  // neutral mapping once, after a capture, without erasing measured noise.
   useEffect(() => {
     if (phase !== 'calibrate-center') return;
     let stableCount = 0;
@@ -438,12 +429,6 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       if (buf.length < 20) return;
       const sx = buf.reduce((s, v) => s + v.normX, 0) / buf.length;
       const sy = buf.reduce((s, v) => s + v.normY, 0) / buf.length;
-      // Update the RUNNING TRACKER's in-memory calibration with the current
-      // running mean as the anchor — cursor drifts to center as user holds still.
-      handleRef.current?.setCalibration(
-        computeCenterPreviewCalibration({ normX: sx, normY: sy })
-      );
-
       // Auto-capture: stable-hold path (best case — low jitter users).
       if (buf.length >= 50) {
         const varX = buf.reduce((s, v) => s + (v.normX - sx) ** 2, 0) / buf.length;

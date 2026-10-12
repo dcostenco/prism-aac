@@ -1580,7 +1580,9 @@ export function startPoseTracker(
       if (calibration.wizardCompleted) isFactoryDefaults = false;
       learner.reset();
       lastLearnerCommitFrame = 0;
-      baselineTracker.reset();
+      // Recentring changes screen mapping, not measured camera-space
+      // tremor. Keep its history in the explicit wrist setup/control path.
+      if (!opts.calibrationMode) baselineTracker.reset();
       try { savePoseCalibration(calibration); } catch { /* */ }
     },
   };
