@@ -345,6 +345,10 @@ html, body {
     max-width: 100%;
     max-height: 100%;
   }
+  [data-testid="prediction-bar"] .aac-prediction-tile > .aac-tile-icon {
+    /* Keep the complete drawing when the picture well becomes a small square. */
+    border-radius: 0;
+  }
   .aac-tile-label {
     display: block;
     padding-block: 0.1rem;
