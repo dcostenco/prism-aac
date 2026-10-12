@@ -2900,7 +2900,9 @@
     "g-third-person": "w-g-third-person.png",
     "g-past-being": "w-past-being.png",
     "quarter": "w-quarter.png",
-    "quality": "w-quality.png"
+    "quality": "w-quality.png",
+    "former": "w-former.png",
+    "happen": "w-happen.png"
   },
   "wordOnly": [
     "may"

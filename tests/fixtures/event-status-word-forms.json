@@ -1,0 +1,352 @@
+{
+  "former": {
+    "file": "w-former.png",
+    "meaning": "A former or previous role or status; the person had the role earlier and no longer has it.",
+    "languages": {
+      "am": [
+        "የቀድሞ"
+      ],
+      "ar": [
+        "سابق",
+        "سابقة",
+        "السابق",
+        "السابقة"
+      ],
+      "bg": [
+        "бивш",
+        "бивша",
+        "бивше",
+        "бивши",
+        "бившия"
+      ],
+      "bn": [
+        "সাবেক",
+        "প্রাক্তন"
+      ],
+      "de": [
+        "ehemalig",
+        "ehemaliger",
+        "ehemalige",
+        "ehemaliges",
+        "ehemaligen"
+      ],
+      "en": [
+        "former"
+      ],
+      "es": [
+        "anterior",
+        "anteriores"
+      ],
+      "fr": [
+        "ancien",
+        "ancienne",
+        "anciens",
+        "anciennes"
+      ],
+      "he": [
+        "לשעבר"
+      ],
+      "hi": [
+        "भूतपूर्व"
+      ],
+      "id": [
+        "mantan"
+      ],
+      "it": [
+        "precedente",
+        "precedenti"
+      ],
+      "ja": [
+        "かつての"
+      ],
+      "ko": [
+        "전직"
+      ],
+      "nl": [
+        "voormalig",
+        "voormalige"
+      ],
+      "pl": [
+        "poprzedni",
+        "poprzednia",
+        "poprzednie"
+      ],
+      "pt": [
+        "anterior",
+        "anteriores"
+      ],
+      "ro": [
+        "anterior",
+        "anterioară"
+      ],
+      "ru": [
+        "бывший",
+        "бывшая",
+        "бывшее",
+        "бывшие",
+        "бывшего",
+        "бывшей",
+        "бывших",
+        "бывшему",
+        "бывшим",
+        "бывшими",
+        "бывшем",
+        "бывшую",
+        "бывшею"
+      ],
+      "sw": [
+        "aliyekuwa"
+      ],
+      "tl": [
+        "dating"
+      ],
+      "tr": [
+        "önceki"
+      ],
+      "uk": [
+        "колишній",
+        "колишня",
+        "колишні",
+        "колишнього",
+        "колишніх",
+        "колишнє",
+        "колишньої",
+        "колишньому",
+        "колишнім",
+        "колишньою",
+        "колишніми",
+        "колишню"
+      ],
+      "vi": [
+        "cựu"
+      ],
+      "zh-Hans": [
+        "前任"
+      ],
+      "zh-Hant": [
+        "前任"
+      ],
+      "zh-HK": [
+        "前任"
+      ]
+    }
+  },
+  "happens": {
+    "file": "w-happen.png",
+    "meaning": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened.",
+    "languages": {
+      "am": [
+        "ይከሰታል",
+        "ተከሰተ"
+      ],
+      "ar": [
+        "يحدث",
+        "تحدث",
+        "حدث",
+        "حدثت"
+      ],
+      "bg": [
+        "случва",
+        "случи"
+      ],
+      "bn": [
+        "ঘটে",
+        "ঘটা",
+        "ঘটেছে",
+        "ঘটবে"
+      ],
+      "de": [
+        "passieren",
+        "passiert",
+        "passierte",
+        "geschehen"
+      ],
+      "en": [
+        "happen",
+        "happens",
+        "happened",
+        "happening",
+        "occur",
+        "occurs",
+        "occurred",
+        "occurring"
+      ],
+      "es": [
+        "ocurrir",
+        "ocurre",
+        "ocurren",
+        "ocurrió",
+        "ocurría"
+      ],
+      "fr": [
+        "survenir",
+        "survient",
+        "surviennent",
+        "survenu",
+        "survenue"
+      ],
+      "he": [
+        "קורה",
+        "קרה",
+        "קרתה",
+        "מתרחש",
+        "מתרחשת",
+        "התרחש"
+      ],
+      "hi": [
+        "घटित",
+        "घटित होना",
+        "घटित हुआ"
+      ],
+      "id": [
+        "terjadi",
+        "terjadinya"
+      ],
+      "it": [
+        "accadere",
+        "accade",
+        "accadono",
+        "accaduto",
+        "accaduta"
+      ],
+      "ja": [
+        "起こる",
+        "起きる",
+        "起こった",
+        "起きた"
+      ],
+      "ko": [
+        "발생하다",
+        "발생한다",
+        "발생했다",
+        "일어나다"
+      ],
+      "nl": [
+        "gebeuren",
+        "gebeurt",
+        "gebeurde",
+        "gebeurd"
+      ],
+      "pl": [
+        "zdarza",
+        "zdarzyć",
+        "zdarzyło",
+        "wydarzyć",
+        "wydarzyło"
+      ],
+      "pt": [
+        "acontecer",
+        "acontece",
+        "acontecem",
+        "aconteceu",
+        "acontecia"
+      ],
+      "ro": [
+        "întâmplă",
+        "întâmplat",
+        "întâmpla"
+      ],
+      "ru": [
+        "бывает",
+        "бывают",
+        "бывать",
+        "случается",
+        "случаются",
+        "случилось",
+        "случиться",
+        "происходит",
+        "происходят",
+        "произошло",
+        "происходить"
+      ],
+      "sw": [
+        "kutokea",
+        "hutokea",
+        "ilitokea"
+      ],
+      "tl": [
+        "mangyari",
+        "nangyari",
+        "nangyayari"
+      ],
+      "tr": [
+        "gerçekleşir",
+        "gerçekleşti",
+        "gerçekleşmek"
+      ],
+      "uk": [
+        "трапляється",
+        "трапляються",
+        "трапилося",
+        "трапитися",
+        "відбувається",
+        "відбуваються"
+      ],
+      "vi": [
+        "xảy ra"
+      ],
+      "zh-Hans": [
+        "发生",
+        "发生了"
+      ],
+      "zh-Hant": [
+        "發生",
+        "發生了"
+      ],
+      "zh-HK": [
+        "發生",
+        "發生咗"
+      ]
+    }
+  },
+  "predictionCases": [
+    {
+      "lang": "ru",
+      "text": "я быв",
+      "word": "бывший",
+      "file": "w-former.png"
+    },
+    {
+      "lang": "ru",
+      "text": "я быв",
+      "word": "бывает",
+      "file": "w-happen.png"
+    },
+    {
+      "lang": "en",
+      "text": "happe",
+      "word": "happens",
+      "file": "w-happen.png"
+    },
+    {
+      "lang": "en",
+      "text": "form",
+      "word": "former",
+      "file": "w-former.png"
+    },
+    {
+      "lang": "de",
+      "text": "passi",
+      "word": "passiert",
+      "file": "w-happen.png"
+    },
+    {
+      "lang": "fr",
+      "text": "survi",
+      "word": "survient",
+      "file": "w-happen.png"
+    },
+    {
+      "lang": "uk",
+      "text": "колиш",
+      "word": "колишній",
+      "file": "w-former.png"
+    },
+    {
+      "lang": "uk",
+      "text": "колиш",
+      "word": "колишньої",
+      "file": "w-former.png"
+    }
+  ]
+}

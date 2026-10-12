@@ -1,0 +1,160 @@
+{
+  "meaning": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression.",
+  "file": "w-past-being.png",
+  "languages": {
+    "am": [
+      "ነበር",
+      "ነበሩ",
+      "ነበረች"
+    ],
+    "ar": [
+      "كان",
+      "كانت",
+      "كنت",
+      "كانوا"
+    ],
+    "bg": [
+      "бях",
+      "беше",
+      "бяхме",
+      "бяха"
+    ],
+    "bn": [
+      "ছিল",
+      "ছিলাম",
+      "ছিলেন"
+    ],
+    "de": [
+      "war",
+      "waren",
+      "gewesen"
+    ],
+    "en": [
+      "was",
+      "were",
+      "been"
+    ],
+    "es": [
+      "era",
+      "eras",
+      "éramos",
+      "eran",
+      "estaba",
+      "estaban"
+    ],
+    "fr": [
+      "étais",
+      "était",
+      "étions",
+      "étiez",
+      "étaient"
+    ],
+    "he": [
+      "היה",
+      "הייתה",
+      "היו",
+      "הייתי"
+    ],
+    "hi": [
+      "था",
+      "थी",
+      "थे"
+    ],
+    "id": [
+      "dulu adalah"
+    ],
+    "it": [
+      "ero",
+      "eri",
+      "era",
+      "eravamo",
+      "eravate",
+      "erano"
+    ],
+    "ja": [
+      "だった",
+      "でした",
+      "であった"
+    ],
+    "ko": [
+      "였다",
+      "이었다",
+      "이었어요",
+      "였어요"
+    ],
+    "nl": [
+      "geweest"
+    ],
+    "pl": [
+      "byłem",
+      "byłam",
+      "był",
+      "była",
+      "było",
+      "byli",
+      "były"
+    ],
+    "pt": [
+      "era",
+      "eras",
+      "éramos",
+      "eram",
+      "estava",
+      "estavam"
+    ],
+    "ro": [
+      "eram",
+      "erai",
+      "era",
+      "erau"
+    ],
+    "ru": [
+      "был",
+      "была",
+      "было",
+      "были",
+      "бывал",
+      "бывала",
+      "бывало",
+      "бывали"
+    ],
+    "sw": [
+      "alikuwa",
+      "walikuwa",
+      "nilikuwa",
+      "tulikuwa"
+    ],
+    "tl": [
+      "noon ay"
+    ],
+    "tr": [
+      "idi"
+    ],
+    "uk": [
+      "був",
+      "була",
+      "було",
+      "були"
+    ],
+    "vi": [
+      "đã là"
+    ],
+    "zh-Hans": [
+      "曾是",
+      "以前是"
+    ],
+    "zh-Hant": [
+      "曾是",
+      "以前是"
+    ],
+    "zh-HK": [
+      "曾是",
+      "以前係"
+    ]
+  },
+  "preserve": [
+    "French été remains ambiguous with summer",
+    "Dutch was remains a keep-text homograph",
+    "Spanish fue and Portuguese foi are not assigned a past-copula picture by spelling alone"
+  ]
+}

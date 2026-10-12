@@ -217,6 +217,30 @@
       "ጥራት": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "ነበር": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "ነበሩ": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "ነበረች": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "የቀድሞ": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "ይከሰታል": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ተከሰተ": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "ar": {
@@ -463,6 +487,54 @@
       "الجودة": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "كان": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "كانت": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "كنت": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "كانوا": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "سابق": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "سابقة": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "السابق": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "السابقة": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "يحدث": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "تحدث": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "حدث": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "حدثت": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "bg": {
@@ -689,6 +761,50 @@
       "качество": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "бях": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "беше": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "бяхме": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "бяха": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "бивш": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бивша": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бивше": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бивши": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бившия": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "случва": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "случи": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "bn": {
@@ -899,6 +1015,42 @@
       "গুণমান": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "ছিল": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "ছিলাম": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "ছিলেন": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "সাবেক": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "প্রাক্তন": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "ঘটে": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ঘটা": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ঘটেছে": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ঘটবে": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "de": {
@@ -1137,6 +1289,54 @@
       "qualität": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "war": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "waren": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "gewesen": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "ehemalig": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "ehemaliger": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "ehemalige": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "ehemaliges": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "ehemaligen": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "passieren": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "passiert": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "passierte": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "geschehen": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "en": {
@@ -1411,6 +1611,46 @@
       "quality": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "been": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "former": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "happen": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "happens": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "happened": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "happening": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "occur": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "occurs": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "occurred": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "occurring": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "es": {
@@ -1657,6 +1897,58 @@
       "calidad": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "era": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "eras": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "éramos": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "eran": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "estaba": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "estaban": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "anterior": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "anteriores": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "ocurrir": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ocurre": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ocurren": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ocurrió": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ocurría": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "fr": {
@@ -1919,6 +2211,62 @@
       "qualité": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "étais": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "était": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "étions": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "étiez": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "étaient": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "ancien": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "ancienne": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "anciens": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "anciennes": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "survenir": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "survient": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "surviennent": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "survenu": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "survenue": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "he": {
@@ -2157,6 +2505,50 @@
       "האיכות": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "היה": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "הייתה": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "היו": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "הייתי": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "לשעבר": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "קורה": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "קרה": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "קרתה": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "מתרחש": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "מתרחשת": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "התרחש": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "hi": {
@@ -2367,6 +2759,34 @@
       "गुणवत्ता": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "था": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "थी": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "थे": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "भूतपूर्व": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "घटित": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "घटित होना": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "घटित हुआ": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "id": {
@@ -2581,6 +3001,22 @@
       "mutu": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "dulu adalah": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "mantan": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "terjadi": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "terjadinya": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "it": {
@@ -2819,6 +3255,58 @@
       "qualità": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "ero": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "eri": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "era": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "eravamo": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "eravate": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "erano": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "precedente": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "precedenti": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "accadere": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "accade": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "accadono": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "accaduto": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "accaduta": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "ja": {
@@ -3053,6 +3541,38 @@
       "品質": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "だった": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "でした": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "であった": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "かつての": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "起こる": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "起きる": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "起こった": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "起きた": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "ko": {
@@ -3275,6 +3795,42 @@
       "품질": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "였다": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "이었다": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "이었어요": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "였어요": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "전직": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "발생하다": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "발생한다": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "발생했다": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "일어나다": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "nl": {
@@ -3501,6 +4057,34 @@
       "kwaliteit": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "geweest": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "voormalig": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "voormalige": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "gebeuren": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "gebeurt": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "gebeurde": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "gebeurd": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "pl": {
@@ -3739,6 +4323,66 @@
       "jakość": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "byłem": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "byłam": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "był": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "była": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "było": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "byli": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "były": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "poprzedni": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "poprzednia": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "poprzednie": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "zdarza": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "zdarzyć": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "zdarzyło": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "wydarzyć": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "wydarzyło": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "pt": {
@@ -3977,6 +4621,58 @@
       "qualidade": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "era": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "eras": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "éramos": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "eram": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "estava": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "estavam": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "anterior": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "anteriores": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "acontecer": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "acontece": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "acontecem": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "aconteceu": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "acontecia": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "ro": {
@@ -4207,6 +4903,42 @@
       "calitate": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "eram": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "erai": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "era": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "erau": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "anterior": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "anterioară": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "întâmplă": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "întâmplat": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "întâmpla": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "ru": {
@@ -4581,6 +5313,118 @@
       "качестве": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "бывал": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "бывала": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "бывало": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "бывали": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "бывший": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшая": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшее": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшие": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшего": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшей": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывших": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшему": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшим": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшими": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшем": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывает": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "бывают": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "бывать": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "случается": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "случаются": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "случилось": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "случиться": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "происходит": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "происходят": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "произошло": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "происходить": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "бывшую": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "бывшею": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
       }
     },
     "sw": {
@@ -4799,6 +5643,38 @@
       "ubora": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "alikuwa": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "walikuwa": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "nilikuwa": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "tulikuwa": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "aliyekuwa": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "kutokea": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "hutokea": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "ilitokea": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "tl": {
@@ -5021,6 +5897,26 @@
       "kalidad": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "noon ay": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "dating": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "mangyari": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "nangyari": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "nangyayari": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "tr": {
@@ -5239,6 +6135,26 @@
       "kalite": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "idi": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "önceki": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "gerçekleşir": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "gerçekleşti": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "gerçekleşmek": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "uk": {
@@ -5517,6 +6433,94 @@
       "якістю": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "був": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "була": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "було": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "були": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "колишній": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишня": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишні": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишнього": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишніх": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "трапляється": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "трапляються": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "трапилося": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "трапитися": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "відбувається": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "відбуваються": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "колишнє": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишньої": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишньому": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишнім": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишньою": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишніми": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "колишню": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
       }
     },
     "vi": {
@@ -5723,6 +6727,18 @@
       "chất lượng": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "đã là": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "cựu": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "xảy ra": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "zh-HK": {
@@ -5953,6 +6969,26 @@
       "品質": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "曾是": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "以前係": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "前任": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "發生": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "發生咗": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "zh-Hans": {
@@ -6179,6 +7215,26 @@
       "品质": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "曾是": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "以前是": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "前任": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "发生": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "发生了": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     },
     "zh-Hant": {
@@ -6401,6 +7457,26 @@
       "品質": {
         "file": "w-quality.png",
         "means": "Quality assessed as how good or well-made an object is. The inspection and rating picture does not depict an arbitrary characteristic, personality trait, physical mass, cleanliness, or approval alone."
+      },
+      "曾是": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "以前是": {
+        "file": "w-past-being.png",
+        "means": "Being at an earlier time; a past copula, not a present copula or a distinct event. Unmarked-tense languages use a qualified expression."
+      },
+      "前任": {
+        "file": "w-former.png",
+        "means": "A former or previous role or status; the person had the role earlier and no longer has it."
+      },
+      "發生": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
+      },
+      "發生了": {
+        "file": "w-happen.png",
+        "means": "An event happens or occurs, shown by an intact object tipping; this is not a question about what happened."
       }
     }
   }

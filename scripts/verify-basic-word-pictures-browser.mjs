@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 const FILES = JSON.parse(readFileSync(new URL('../constants/generated/phraseSymbolFiles.json', import.meta.url), 'utf8')).files;
-const LANGUAGE_CASES = {
+const BASIC_LANGUAGE_CASES = {
   en: [
     { text: 'bot', word: 'bottles', file: 'w-bottle.png' },
     { text: 'bot', word: 'bother', file: 'w-bother.png' },
@@ -31,6 +31,15 @@ const LANGUAGE_CASES = {
   fr: [{ text: 'fill', word: 'filles', file: 'pp-girl.png' }],
   ar: [{ text: 'زجاج', word: 'زجاجة', file: 'w-bottle.png' }],
 };
+const FORM_FIXTURES = JSON.parse(readFileSync(new URL('../tests/fixtures/event-status-word-forms.json', import.meta.url), 'utf8'));
+const FORM_LANGUAGE_CASES = {};
+for (const { lang, ...fixture } of FORM_FIXTURES.predictionCases) {
+  (FORM_LANGUAGE_CASES[lang] ??= []).push(fixture);
+}
+const LANGUAGE_CASES = process.env.PICTURE_TEST_SUITE === 'forms' ? FORM_LANGUAGE_CASES : BASIC_LANGUAGE_CASES;
+if (process.env.PICTURE_TEST_SUITE && !['basic', 'forms'].includes(process.env.PICTURE_TEST_SUITE)) {
+  throw new Error('The requested picture suite does not exist.');
+}
 const VIEWPORTS = ['1140x1180', '390x844'];
 const GENERATED_PICTURE_ENDPOINT = '/prism-aac/pictogram';
 const SETTINGS = { state: { language: 'en', outputLanguage: 'en', theme: 'light', gridSize: 12,
@@ -117,7 +126,7 @@ try {
   }
   }
   writeFileSync(path.join(artifacts, 'requests.json'), JSON.stringify(requests, null, 2) + '\n');
-  writeFileSync(path.join(artifacts, 'scope.json'), JSON.stringify({ language: process.env.PICTURE_TEST_LANGUAGE ?? 'all',
+  writeFileSync(path.join(artifacts, 'scope.json'), JSON.stringify({ suite: process.env.PICTURE_TEST_SUITE ?? 'basic', language: process.env.PICTURE_TEST_LANGUAGE ?? 'all',
     word: process.env.PICTURE_TEST_WORD ?? 'all', viewports: VIEWPORTS }, null, 2) + '\n');
   if (requests.some(request => request.path.split('?')[0].endsWith(GENERATED_PICTURE_ENDPOINT))) throw new Error('An approved noun image triggered generation.');
   console.log(`Basic word pictures and exact word selection passed: ${artifacts}`);

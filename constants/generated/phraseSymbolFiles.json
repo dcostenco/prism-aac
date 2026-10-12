@@ -5419,6 +5419,12 @@
     },
     "w-quality.png": {
       "sha256": "5659eee67e390b0e3a83dc78170fc146ebebf0804a4f17747fe12238daafec53"
+    },
+    "w-former.png": {
+      "sha256": "f50781002f416bdaa9b7c3c301610dd3fdec737e7d4bb471f2be1d691813f6f8"
+    },
+    "w-happen.png": {
+      "sha256": "ff1025cebc80b9c3d4e44737e0c8747565218f6e0102058c8f7aaf6ab4649688"
     }
   },
   "retainedFiles": [
