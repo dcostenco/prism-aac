@@ -81,12 +81,19 @@ function record(surface, lang, ids) {
   if (!ids.length || lang === SOURCE_LANG) return;
   const reviewed = reviewedOf(surface, lang);
   const unreviewed = ids.filter((id) => !reviewed.has(id)).sort();
+  // Specific recorded origins override the legacy campaign-wide generator.
+  // Regeneration must not relabel a newer translation as that old model.
+  const retainedIds = new Set([...ids, ...reviewed]);
+  const generatorById = Object.fromEntries(Object.entries(
+    prev.surfaces?.[surface]?.[lang]?.generatorById ?? {},
+  ).filter(([id]) => retainedIds.has(id)));
   surfaces[surface] ??= {};
   surfaces[surface][lang] = {
     generator: GENERATOR,
     generatedAt: stamp,
     reviewed: [...reviewed].sort(),
     unreviewed,
+    ...(Object.keys(generatorById).length ? { generatorById } : {}),
   };
 }
 
@@ -222,8 +229,9 @@ fs.writeFileSync(
       _README:
         'DERIVED FILE — regenerate with scripts/rebuild-translation-provenance.mjs. ' +
         'Lists strings added by machine translation and not yet checked by a native speaker. ' +
-        'Anything present in git HEAD before this work is treated as pre-existing and is not listed. ' +
-        'Move an id into `reviewed` only after a native speaker has actually checked it.',
+        'Anything present at the pinned provenance baseline is treated as pre-existing and is not listed. ' +
+        'Move an id into `reviewed` only after a native speaker has actually checked it. ' +
+        'Per-key generatorById records override the legacy campaign-wide generator; recorded origins do not certify translation quality.',
       surfaces,
     },
     null,

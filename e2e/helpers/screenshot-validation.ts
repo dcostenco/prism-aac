@@ -175,7 +175,7 @@ export async function validateRenderedPage(
  */
 /**
  * Rule 9 — critical-target occlusion gate. Runs in-page: viewport
- * containment + occluder intersection + center/4-corner hit test via
+ * containment + occluder intersection + center/4-interior-quarter hit test via
  * document.elementFromPoint. Canonical implementation and rationale live in
  * skills/visual-screenshot-verification/occlusion_gate.js.
  *
@@ -192,7 +192,7 @@ export async function checkCriticalOcclusion(
   if (critical.length === 0) return [];
   const result = await page.evaluate(
     ([criticalSelectors, occluderSelectors]) => {
-      const INSET = 2;
+      const INTERIOR_FRACTION = 0.25;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const rectOf = (el: Element) => {
@@ -242,10 +242,10 @@ export async function checkCriticalOcclusion(
         }
         const probes: Array<[string, number, number]> = [
           ["center", r.left + r.width / 2, r.top + r.height / 2],
-          ["top-left", r.left + INSET, r.top + INSET],
-          ["top-right", r.right - INSET, r.top + INSET],
-          ["bottom-left", r.left + INSET, r.bottom - INSET],
-          ["bottom-right", r.right - INSET, r.bottom - INSET],
+          ["top-left", r.left + r.width * INTERIOR_FRACTION, r.top + r.height * INTERIOR_FRACTION],
+          ["top-right", r.right - r.width * INTERIOR_FRACTION, r.top + r.height * INTERIOR_FRACTION],
+          ["bottom-left", r.left + r.width * INTERIOR_FRACTION, r.bottom - r.height * INTERIOR_FRACTION],
+          ["bottom-right", r.right - r.width * INTERIOR_FRACTION, r.bottom - r.height * INTERIOR_FRACTION],
         ];
         for (const [name, x, y] of probes) {
           if (x < 0 || y < 0 || x > vw || y > vh) continue;

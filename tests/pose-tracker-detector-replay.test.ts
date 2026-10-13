@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { createElement } from 'react';
+import { act, cleanup, render } from '@testing-library/react';
 import type { PoseTrackerHandle, PoseTrackerOptions, TrackingTarget } from '@/services/bodyPoseService';
+import { wristNoise } from './helpers/wrist-noise';
+import { MIN_WRIST_SELECTION_MS } from '@/services/wristMotion';
 
 // MediaPipe's documented pose indices: synthetic detector output, not
 // pixel-level recognition evidence. Keep every Settings target in coverage.
@@ -14,6 +18,32 @@ const aggregateTargets = [
   ['any_index', 19, 20, 'left_index', 'right_index'],
   ['any_hand', 15, 20, 'left_wrist', 'right_index'],
 ] as const;
+const INVALID_CAMERA_COORDINATES = [
+  { name: 'left of frame', x: -0.1, y: 0.5 },
+  { name: 'right of frame', x: 1.1, y: 0.5 },
+  { name: 'above frame', x: 0.5, y: -0.1 },
+  { name: 'non-finite X', x: NaN, y: 0.5 },
+  { name: 'non-finite Y', x: 0.5, y: Infinity },
+];
+const NOISE_FPS = [4.5, 6, 15];
+const NOISE_SIGMA = 0.01;
+const NOISE_CORRELATION = 0.6;
+const NOISE_SEED = 59331;
+const NOISE_OBSERVATION_MS = 20_000;
+const DEFAULT_DWELL_MS = 1200;
+const DECODE_POLL_MS = 1000 / 15;
+const SHORT_DWELL_MS = 200;
+const SLOW_TRAVEL_PER_SECOND = 0.02;
+const FRAME_STEP_MS = 100;
+const DRIFT_RAMP_MS = 5000;
+const SETTLED_SELECTION_LIMIT_MS = DRIFT_RAMP_MS + 2 * MIN_WRIST_SELECTION_MS + 2000;
+const FRESH_SELECTION_FRAMES = Math.ceil(2 * MIN_WRIST_SELECTION_MS / FRAME_STEP_MS);
+const UNBOUND_CONTROL_CALIBRATIONS = [
+  { name: 'legacy', binding: {} },
+  { name: 'other wrist', binding: { trackingTarget: 'left_wrist' as const, orientation: 'landscape' as const, wizardCompleted: true } },
+  { name: 'other orientation', binding: { trackingTarget: 'right_wrist' as const, orientation: 'portrait' as const, wizardCompleted: true } },
+  { name: 'unfinished setup', binding: { trackingTarget: 'right_wrist' as const, orientation: 'landscape' as const, wizardCompleted: false } },
+];
 
 // Mock only the detector boundary. Calibration, target resolution, real
 // filters, the frame loop and dwell selection must remain production code.
@@ -24,6 +54,9 @@ const detector = vi.hoisted(() => ({
   face: [] as Array<{ x: number; y: number }>,
   faceDetect: vi.fn(),
   faceCreate: vi.fn(),
+  presenceDetect: vi.fn(), presenceCreate: vi.fn(),
+  verify: vi.fn(),
+  verificationCrop: { x: 0, y: 0, side: 1 },
 }));
 vi.mock('@mediapipe/tasks-vision', () => ({
   FilesetResolver: { forVisionTasks: vi.fn(async () => ({})) },
@@ -31,6 +64,7 @@ vi.mock('@mediapipe/tasks-vision', () => ({
     createFromOptions: detector.create,
   },
   FaceLandmarker: { createFromOptions: detector.faceCreate },
+  FaceDetector: { createFromOptions: detector.presenceCreate },
 }));
 
 let handle: PoseTrackerHandle | undefined;
@@ -38,7 +72,7 @@ let frames: Map<number, FrameRequestCallback>;
 let frameID: number;
 let now: number;
 let driftLevel: number;
-const drift = () => driftLevel * Math.min(now / 5_000, 1);
+const drift = () => driftLevel * Math.min(now / DRIFT_RAMP_MS, 1);
 
 beforeEach(() => {
   vi.resetModules();
@@ -53,11 +87,28 @@ beforeEach(() => {
   detector.faceDetect.mockReset().mockImplementation(() => ({ faceLandmarks: [detector.face.map(mark => ({
     x: mark.x + drift(), y: mark.y + drift() / 2,
   }))] }));
-  detector.faceCreate.mockReset().mockResolvedValue({ detectForVideo: detector.faceDetect });
+  detector.verify.mockReset().mockImplementation(() => {
+      const nose = detector.poses[0]?.[0] ?? { x: 0.5, y: 0.3 };
+      const crop = detector.verificationCrop;
+      return { faceLandmarks: [Array.from({ length: 468 }, () => ({
+        x: (nose.x * 320 - crop.x) / crop.side, y: (nose.y * 240 - crop.y) / crop.side,
+      }))] };
+  });
+  detector.faceCreate.mockReset().mockImplementation(async (_fileset, options) => options.runningMode === 'IMAGE'
+    ? { detect: detector.verify, close: vi.fn() }
+    : { detectForVideo: detector.faceDetect });
   detector.detect.mockReset().mockImplementation(() => ({ landmarks: detector.poses.map(p => p.map(mark => ({
     ...mark, x: mark.x + drift(), y: mark.y + drift() / 2,
   }))) }));
   detector.create.mockReset().mockResolvedValue({ detectForVideo: detector.detect });
+  detector.presenceDetect.mockReset().mockImplementation((video: HTMLCanvasElement) => {
+    const nose = detector.poses[0]?.[0];
+    return { detections: nose && nose.visibility >= 0.3 ? [{ categories: [{ score: 0.9 }], boundingBox: {
+      originX: (nose.x - 0.15) * video.width, originY: (nose.y - 0.15) * video.height,
+      width: video.width * 0.3, height: video.height * 0.3,
+    } }] : [] };
+  });
+  detector.presenceCreate.mockReset().mockResolvedValue({ detectForVideo: detector.presenceDetect, close: vi.fn() });
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
     frames.set(++frameID, callback);
     return frameID;
@@ -70,19 +121,27 @@ beforeEach(() => {
   Object.defineProperty(document, 'elementFromPoint', {
     configurable: true, value: vi.fn(() => null),
   });
+  // Detector-boundary suite: ROI pixels are exercised by the real-model E2E.
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement) {
+    return { drawImage: (...args: unknown[]) => {
+      if (this.width === 256 && args.length === 9) detector.verificationCrop = { x: args[1] as number, y: args[2] as number, side: args[3] as number };
+    } } as never;
+  });
 });
 
 afterEach(() => {
+  cleanup();
   handle?.stop();
   handle = undefined;
   document.body.replaceChildren();
   window.localStorage.clear();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
 async function start(target: TrackingTarget = 'right_index', options: Partial<Pick<
-  PoseTrackerOptions, 'sensitivity' | 'dwellMs' | 'useEyeGaze' | 'eyeGazeWeight'
+  PoseTrackerOptions, 'sensitivity' | 'dwellMs' | 'useEyeGaze' | 'eyeGazeWeight' | 'selectedTargetOnly' | 'requireHeadPresence' | 'calibrationMode'
 >> = {}) {
   const service = await import('@/services/bodyPoseService');
   if (options.useEyeGaze) {
@@ -93,24 +152,46 @@ async function start(target: TrackingTarget = 'right_index', options: Partial<Pi
   }
   const video = document.createElement('video');
   Object.defineProperties(video, {
-    readyState: { value: 4 },
+    readyState: { configurable: true, value: 4 },
     videoWidth: { value: 640 },
     videoHeight: { value: 480 },
     srcObject: { value: {} },
+    currentTime: { configurable: true, get: () => now / 1000 },
   });
   const onMove = vi.fn();
   const onDwell = vi.fn();
   const onStatusChange = vi.fn();
+  const onTrackingLoss = vi.fn();
+  const onMotionStateChange = vi.fn();
+  const onDwellLockChange = vi.fn();
   handle = service.startPoseTracker({
     dwellMs: 500, sensitivity: 5, smoothing: 0.15,
     trackingTarget: target, cursorSmoothing: 0.15,
     ...options,
-    onMove, onDwell, onStatusChange,
+    onMove, onDwell, onStatusChange, onTrackingLoss, onMotionStateChange, onDwellLockChange,
   }, undefined, video);
   await vi.waitFor(() => expect(frames.size).toBe(1));
   expect(detector.create).toHaveBeenCalledTimes(1);
-  return { ...service, onMove, onDwell, onStatusChange };
+  return { ...service, onMove, onDwell, onStatusChange, onTrackingLoss, onMotionStateChange, onDwellLockChange };
 }
+
+it('records the production pose input and exact emitted cursor, not a separate mocked trace', async () => {
+  driftLevel = 0.003;
+  const recorder = await import('@/services/trackingDiagnostics');
+  expect(recorder.startTrackingDiagnostics()).toBe(true);
+  const { onMove } = await start('nose');
+  pose(0, 0.51, 0.5); step(4);
+  recorder.stopTrackingDiagnostics();
+  const report = JSON.parse(recorder.trackingDiagnosticReport());
+  expect(report.frames.length).toBeGreaterThan(0);
+  expect(report.frames.length).toBe(onMove.mock.calls.length);
+  report.frames.forEach((frame: { pipeline: string; target: string; filtered: number[]; rawNorm: number[]; calibration: number[] }, i: number) => {
+    expect(frame.pipeline).toBe('pose'); expect(frame.target).toBe('nose');
+    expect(frame.filtered).toEqual(onMove.mock.calls[i]);
+    expect(frame.rawNorm[0]).toBeGreaterThanOrEqual(0.51);
+    expect(frame.calibration).toHaveLength(4);
+  });
+});
 
 function pose(index: number, x: number, y = 0.5) {
   const landmarks = Array.from({ length: 33 }, () => ({ x: 0.5, y: 0.5, visibility: 0 }));
@@ -127,9 +208,480 @@ function step(count = 1) {
     scheduled.forEach(callback => callback(now));
   }
 }
+/** The camera needs fresh measurement qualification AND a fresh target hold.
+ * Assert the pre-deadline state, not merely a later eventual click. */
+function finishFreshWristDwell(callback: ReturnType<typeof vi.fn>, observedFrames = 3) {
+  step(FRESH_SELECTION_FRAMES - observedFrames);
+  expect(callback).not.toHaveBeenCalled();
+  while (callback.mock.calls.length === 0 && now < SETTLED_SELECTION_LIMIT_MS) step();
+  expect(callback).toHaveBeenCalledOnce(); // Recovery after the finite drift ramp, not permission to select through it.
+}
+async function startControlledWrist(dwellMs = DEFAULT_DWELL_MS) {
+  const service = await import('@/services/bodyPoseService');
+  service.savePoseCalibration({ ...service.DEFAULT_CALIBRATION, wizardCompleted: true,
+    trackingTarget: 'right_wrist', orientation: 'landscape' });
+  return start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true, calibrationMode: 'control', dwellMs });
+}
 
 describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it('conditions wrist observations using captured media time, not variable inference completion time', async () => {
+    const { WristMotion } = await import('@/services/wristMotion');
+    const update = vi.spyOn(WristMotion.prototype, 'update');
+    await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    detector.detect.mockImplementation(() => { vi.advanceTimersByTime(40); return { landmarks: detector.poses }; });
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+    step(3);
+    expect(update.mock.calls.map(call => call[1])).toEqual([100, 200, 300]);
+  });
+  it('a media-time discontinuity at normal poll cadence cancels unfinished dwell', async () => {
+    const { onDwell } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true, dwellMs: DEFAULT_DWELL_MS });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+    step(10); expect(onDwell).not.toHaveBeenCalled();
+    Object.defineProperty(handle!.videoElement!, 'currentTime', { get: () => now / 1000 + 0.52 });
+    step(7); // The old hold would have expired; a new qualified hold has not.
+    expect(onDwell).not.toHaveBeenCalled();
+    finishFreshWristDwell(onDwell, 7);
+  });
+  it.each(NOISE_FPS)('keeps cursor and manual selection usable while correlated jitter at %s fps blocks automatic selection', async fps => {
+    const { onDwell, onTrackingLoss } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true, dwellMs: DEFAULT_DWELL_MS });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    const click = vi.fn(); button.addEventListener('click', click);
+    const next = wristNoise(NOISE_SEED, fps, NOISE_SIGMA, NOISE_CORRELATION, level);
+    let sample = next(), frameTime = 0;
+    Object.defineProperty(handle!.videoElement!, 'currentTime', { get: () => frameTime / 1000 });
+    for (let elapsed = 0; elapsed < NOISE_OBSERVATION_MS && onDwell.mock.calls.length === 0; elapsed += DECODE_POLL_MS) {
+      if (elapsed >= sample.time) {
+        frameTime = sample.time;
+        pose(16, sample.point.x, sample.point.y);
+        detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+        sample = next();
+      }
+      now += DECODE_POLL_MS; vi.advanceTimersByTime(DECODE_POLL_MS);
+      const pending = [...frames.values()]; frames.clear(); pending.forEach(cb => cb(now));
+    }
+    expect(onTrackingLoss.mock.calls.some(call => call[0] === 'camera-frame-stale')).toBe(false);
+    expect(onDwell).not.toHaveBeenCalled(); expect(click).not.toHaveBeenCalled();
+    button.click(); expect(click).toHaveBeenCalledOnce(); // Manual AAC is not withdrawn with uncertain camera selection.
+  });
+  it.each([SHORT_DWELL_MS, DEFAULT_DWELL_MS])('does not select a broad target during correlated noisy travel with dwell=%s', async dwellMs => {
+    const { onDwell } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true, dwellMs });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    const next = wristNoise(NOISE_SEED, 6, NOISE_SIGMA, NOISE_CORRELATION, level);
+    let sample = next(), frameTime = 0;
+    Object.defineProperty(handle!.videoElement!, 'currentTime', { get: () => frameTime / 1000 });
+    for (let elapsed = 0; elapsed < 10_000; elapsed += DECODE_POLL_MS) {
+      if (elapsed >= sample.time) {
+        frameTime = sample.time;
+        pose(16, sample.point.x - 0.2 + SLOW_TRAVEL_PER_SECOND * sample.time / 1000, sample.point.y);
+        detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+        sample = next();
+      }
+      now += DECODE_POLL_MS; vi.advanceTimersByTime(DECODE_POLL_MS);
+      const pending = [...frames.values()]; frames.clear(); pending.forEach(cb => cb(now));
+    }
+    expect(onDwell).not.toHaveBeenCalled();
+  });
+  it.each([SHORT_DWELL_MS, DEFAULT_DWELL_MS])('departure from a mature low-noise pause cannot select a newly encountered target, dwell=%s', async dwellMs => {
+    const { onDwell, onMotionStateChange } = await startControlledWrist(dwellMs);
+    pose(16, 0.4, 0.55); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(60);
+    expect(onMotionStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ selectionReady: true }));
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    for (let i = 1; i <= 20; i++) {
+      pose(16, 0.4 + i * 0.002, 0.55); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step();
+    }
+    expect(onDwell).not.toHaveBeenCalled();
+  });
+  it('a short legacy dwell can still select a quiet target, but not before the fresh camera minimum', async () => {
+    now = DRIFT_RAMP_MS; vi.advanceTimersByTime(DRIFT_RAMP_MS); // The same drift offset is present, now stationary.
+    const { onDwell } = await startControlledWrist(SHORT_DWELL_MS);
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+    step(FRESH_SELECTION_FRAMES); expect(onDwell).not.toHaveBeenCalled();
+    step(); expect(onDwell).toHaveBeenCalledOnce();
+  });
+  it('observed cursor departure during non-ready motion rearms the same symbol after a fresh hold', async () => {
+    const { onMove, onDwell, onMotionStateChange, onDwellLockChange } = await startControlledWrist();
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(80);
+    const [x, y] = onMove.mock.calls.at(-1)!;
+    const button = document.createElement('button'); document.body.append(button);
+    const rect = new DOMRect(x - 48, y - 48, 96, 96);
+    vi.mocked(document.elementFromPoint).mockImplementation((cx, cy) =>
+      cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom ? button : null);
+    step(16); expect(onDwell).toHaveBeenCalledOnce();
+    const firstDeparture = onMove.mock.calls.length;
+    for (let i = 1; i <= 8; i++) {
+      pose(16, 0.5 + i * 0.01); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step();
+    }
+    expect(onMove.mock.calls.slice(firstDeparture).some(([cx, cy]) => !document.elementFromPoint(cx, cy))).toBe(true);
+    expect(onMotionStateChange.mock.calls.slice(firstDeparture).some(([motion]) => motion.selectionReady === false)).toBe(true);
+    for (let i = 7; i >= 0; i--) {
+      pose(16, 0.5 + i * 0.01); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step();
+    }
+    expect(onDwell).toHaveBeenCalledOnce(); step(60);
+    expect(onDwellLockChange.mock.calls.map(([el]) => el ? 'target' : 'reset')).toEqual(['target', 'reset', 'target']);
+    expect(onDwell).toHaveBeenCalledTimes(2);
+  });
+  // A lost frame is not an observed departure: a completed selection must stay locked through head loss, wrist loss or a
+  // detector error, so a cursor that never left the symbol cannot select it a second time when tracking recovers.
+  it.each(['head', 'wrist', 'detector error'] as const)('keeps a completed selection locked through %s loss without departure', async (loss) => {
+    const { onMove, onDwellLockChange } = await startControlledWrist();
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(80);
+    const [x, y] = onMove.mock.calls.at(-1)!;
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    const rect = new DOMRect(x - 48, y - 48, 96, 96);
+    vi.mocked(document.elementFromPoint).mockImplementation((cx, cy) =>
+      cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom ? button : null);
+    step(16); expect(clicks).toHaveBeenCalledOnce();
+    const afterSelection = onMove.mock.calls.length;
+    if (loss === 'head') detector.poses[0][0].visibility = 0;
+    if (loss === 'wrist') detector.poses[0][16].visibility = 0;
+    if (loss === 'detector error') detector.detect.mockImplementationOnce(() => { throw new Error('transient model failure'); });
+    step();
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(60);
+    // The cursor stayed on the symbol the whole time, so nothing may count as a departure.
+    expect(onMove.mock.calls.slice(afterSelection).every(([cx, cy]) => document.elementFromPoint(cx, cy) === button)).toBe(true);
+    expect(clicks).toHaveBeenCalledOnce();
+    expect(onDwellLockChange.mock.calls.map(([el]) => el ? 'target' : 'reset')).toEqual(['target']);
+  });
+  it('does not select a large button while the wrist keeps travelling through tremor', async () => {
+    const { onDwell } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    for (let i = 0; i < 35; i++) {
+      const jitter = i % 2 ? 0.015 : -0.015;
+      pose(16, 0.4 + i * 0.002 + jitter, 0.55 + jitter);
+      detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step();
+    }
+    expect(onDwell).not.toHaveBeenCalled();
+  });
+  it('a low-noise measured pause can select exactly once without requiring perfect stillness', async () => {
+    const { onDwell } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    for (let i = 0; i < 60; i++) {
+      const jitter = i % 2 ? 0.001 : -0.001;
+      pose(16, 0.5 + jitter, 0.55 + jitter);
+      detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step();
+    }
+    expect(onDwell).toHaveBeenCalledOnce();
+  });
+  it('an explicit control recenter requires a fresh dwell even on the same button', async () => {
+    const service = await import('@/services/bodyPoseService');
+    const cal = { ...service.DEFAULT_CALIBRATION, wizardCompleted: true,
+      trackingTarget: 'right_wrist' as const, orientation: 'landscape' as const };
+    service.savePoseCalibration(cal);
+    const { onDwell } = await start('right_wrist', { calibrationMode: 'control', selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+    step(3);
+    handle!.setCalibration({ ...cal, leftX: 0.66, rightX: 0.34 });
+    step(3);
+    expect(onDwell).not.toHaveBeenCalled();
+    finishFreshWristDwell(onDwell);
+  });
+  it.each(UNBOUND_CONTROL_CALIBRATIONS)('control rejects $name calibration before detector/camera startup', async ({ binding }) => {
+    const service = await import('@/services/bodyPoseService');
+    const saved = { ...service.DEFAULT_CALIBRATION, ...binding };
+    service.savePoseCalibration(saved);
+    const onMove = vi.fn(), onStatusChange = vi.fn();
+    handle = service.startPoseTracker({ dwellMs: 500, sensitivity: 5, smoothing: 0.15,
+      trackingTarget: 'right_wrist', cursorSmoothing: 0.15, calibrationMode: 'control',
+      selectedTargetOnly: true, requireHeadPresence: true, onMove, onDwell: vi.fn(), onStatusChange });
+    step(10);
+    expect(onStatusChange).toHaveBeenLastCalledWith('stopped');
+    expect(detector.create).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
+    expect(service.loadPoseCalibration()).toEqual(saved);
+  });
+  it.each(['setup', 'control'] as const)('%s prevents both automatic mapping writers but preserves explicit calibration and noise learning', async calibrationMode => {
+    const service = await import('@/services/bodyPoseService');
+    const initialCal = { ...service.DEFAULT_CALIBRATION, wizardCompleted: true,
+      trackingTarget: 'right_wrist' as const, orientation: 'landscape' as const };
+    service.savePoseCalibration(initialCal);
+    const { BaselineTracker } = await import('@/services/recalibration');
+    const correction = vi.spyOn(BaselineTracker.prototype, 'suggestCorrection').mockReturnValue({
+      kind: 'offset', deltaNormX: 0.1, deltaNormY: 0.1,
+    });
+    const noise = vi.spyOn(BaselineTracker.prototype, 'getNoiseFloor');
+    const acceptedCorrection = vi.spyOn(BaselineTracker.prototype, 'acceptCorrection');
+    const diagnostics = await import('@/services/trackingDiagnostics');
+    diagnostics.startTrackingDiagnostics();
+    const { onMove } = await start('right_wrist', { calibrationMode, selectedTargetOnly: true, requireHeadPresence: true });
+    for (let i = 0; i < 180; i++) {
+      pose(16, 0.45 + Math.sin(i / 9) * 0.12, 0.55);
+      detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+      step();
+    }
+    diagnostics.stopTrackingDiagnostics();
+    const captured = JSON.parse(diagnostics.trackingDiagnosticReport());
+    expect(captured.frames).toHaveLength(180);
+    expect(captured.frames.every((frame: { calibration: number[] }) => JSON.stringify(frame.calibration) === JSON.stringify([
+      initialCal.leftX, initialCal.rightX, initialCal.topY, initialCal.bottomY,
+    ]))).toBe(true);
+    expect(correction).toHaveBeenCalled();
+    expect(acceptedCorrection).not.toHaveBeenCalled();
+    // Selected wrists estimate short-window jitter, not whole-position variance.
+    expect(captured.frames.some((frame: { noise: number }) => Number.isFinite(frame.noise))).toBe(true);
+    expect(captured.frames.some((frame: { noise: number }) => frame.noise > 0)).toBe(true);
+    expect(service.loadPoseCalibration()).toEqual(initialCal);
+    const explicit = { ...initialCal, leftX: 0.66, rightX: 0.34 };
+    handle!.setCalibration(explicit);
+    expect(service.loadPoseCalibration()).toEqual(explicit);
+    expect(service.hasPoseCalibrationForTarget('right_wrist')).toBe(true);
+    expect(service.hasPoseCalibrationForTarget('left_wrist')).toBe(false);
+    expect(() => handle!.setCalibration({ ...explicit, trackingTarget: 'left_wrist' })).toThrow();
+    expect(() => handle!.setCalibration({ ...explicit, leftX: NaN })).toThrow();
+    expect(service.loadPoseCalibration()).toEqual(explicit);
+    if (calibrationMode === 'setup') {
+      const { computeCenterPreviewCalibration } = await import('@/services/wizardCalibration');
+      const draft = service.beginPoseCalibrationDraft();
+      const centered = { ...computeCenterPreviewCalibration({ normX: 0.5, normY: 0.55 }),
+        wizardCompleted: true, trackingTarget: 'right_wrist' as const, orientation: 'landscape' as const };
+      handle!.setCalibration(centered);
+      // Center-only access must stay available without requiring four corners.
+      expect(JSON.parse(localStorage.getItem('prism-pose-calibration-landscape')!)).toEqual(explicit);
+      draft.commit('landscape');
+      expect(service.loadPoseCalibration()).toEqual(centered);
+      pose(16, 0.5 - drift(), 0.55 - drift() / 2);
+      detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+      step();
+      expect(onMove.mock.calls.at(-1)![0]).toBeCloseTo(window.innerWidth / 2);
+      expect(onMove.mock.calls.at(-1)![1]).toBeCloseTo(window.innerHeight / 2);
+    } else {
+      const moves = onMove.mock.calls.length;
+      Object.defineProperties(window, { innerWidth: { configurable: true, value: 720 },
+        innerHeight: { configurable: true, value: 1280 } });
+      step(5);
+      expect(onMove).toHaveBeenCalledTimes(moves);
+      expect(service.hasPoseCalibrationForTarget('right_wrist')).toBe(false);
+    }
+  });
+  it.each([['left_wrist', 15, 16], ['right_wrist', 16, 15]] as const)('strict %s never switches to the opposite wrist or visible head', async (target, selected, other) => {
+    const { onMove, onStatusChange } = await start(target, { selectedTargetOnly: true, requireHeadPresence: true });
+    pose(selected, 0.5);
+    detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.99 };
+    for (let frame = 0; frame < 20; frame++) {
+      detector.poses[0][0].x = frame % 2 ? 0.3 : 0.7;
+      detector.poses[0][other] = { x: frame % 2 ? 0.2 : 0.8, y: 0.8, visibility: 0.99 };
+      step();
+    }
+    expect(onMove).toHaveBeenCalledTimes(20);
+    expect(onStatusChange.mock.calls.filter(call => call[0] === 'tracking').every(call => call[1] === target)).toBe(true);
+    detector.poses[0][selected].visibility = 0.2;
+    const moves = onMove.mock.calls.length;
+    step(5);
+    expect(onMove).toHaveBeenCalledTimes(moves);
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+  });
+
+  it('strict wrist stops movement and cancels pending selection when head presence is lost', async () => {
+    const { onMove, onDwell, onStatusChange } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5);
+    detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 };
+    step(3);
+    const moves = onMove.mock.calls.length;
+    detector.poses[0][0].visibility = 0;
+    step(8);
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+    expect(onMove).toHaveBeenCalledTimes(moves);
+    expect(onDwell).not.toHaveBeenCalled();
+    detector.poses[0][0].visibility = 0.9;
+    step(3);
+    expect(onDwell).not.toHaveBeenCalled();
+    finishFreshWristDwell(onDwell);
+  });
+  it('a pose-model phantom nose cannot unlock wrist inference without a fresh detected face', async () => {
+    detector.presenceDetect.mockReturnValue({ detections: [] });
+    const { onMove, onDwell, onStatusChange } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.999 };
+    step(8);
+    expect(detector.detect).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled(); expect(onDwell).not.toHaveBeenCalled();
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+  });
+  it('an unverified coarse face pauses wrist inference and resets the pending selection', async () => {
+    const recorder = await import('@/services/trackingDiagnostics'); recorder.startTrackingDiagnostics();
+    const { onMove, onDwell } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(3);
+    const verification = detector.verify.getMockImplementation()!;
+    const moves = onMove.mock.calls.length, poses = detector.detect.mock.calls.length;
+    detector.verify.mockReturnValue({ faceLandmarks: [] }); step(8);
+    expect(onMove).toHaveBeenCalledTimes(moves); expect(detector.detect).toHaveBeenCalledTimes(poses);
+    expect(onDwell).not.toHaveBeenCalled();
+    expect(JSON.parse(recorder.trackingDiagnosticReport()).states).toContainEqual(expect.objectContaining({ status: 'lost', reason: 'head-unverified' }));
+    detector.verify.mockImplementation(verification); step(3); expect(onDwell).not.toHaveBeenCalled();
+    finishFreshWristDwell(onDwell);
+    recorder.stopTrackingDiagnostics();
+  });
+  it('a stopped camera clock cannot finish a dwell from previously confirmed head pixels', async () => {
+    const { onMove, onDwell } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(3);
+    const v = handle!.videoElement!;
+    Object.defineProperty(v, 'currentTime', { configurable: true, value: now / 1000 });
+    const moves = onMove.mock.calls.length, poses = detector.detect.mock.calls.length;
+    step(8);
+    expect(onMove).toHaveBeenCalledTimes(moves); expect(detector.detect).toHaveBeenCalledTimes(poses);
+    expect(onDwell).not.toHaveBeenCalled();
+    Object.defineProperty(v, 'currentTime', { get: () => now / 1000 });
+    step(3); expect(onDwell).not.toHaveBeenCalled(); finishFreshWristDwell(onDwell);
+  });
+  it('a camera with no decoded frame reports loss and cannot retain a partial hold', async () => {
+    const { onMove, onDwell, onStatusChange, onTrackingLoss } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(7);
+    const moves = onMove.mock.calls.length;
+    Object.defineProperty(handle!.videoElement!, 'readyState', { configurable: true, value: 1 });
+    step(8);
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+    expect(onTrackingLoss).toHaveBeenLastCalledWith('camera-frame-stale');
+    expect(onMove).toHaveBeenCalledTimes(moves); expect(onDwell).not.toHaveBeenCalled();
+    Object.defineProperty(handle!.videoElement!, 'readyState', { value: 4 });
+    step(3); expect(onDwell).not.toHaveBeenCalled();
+    finishFreshWristDwell(onDwell);
+  });
+  it('fresh face presence does not depend on pose nose visibility', async () => {
+    const { onMove } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    detector.presenceDetect.mockReturnValue({ detections: [{ categories: [{ score: 0.9 }],
+      boundingBox: { originX: 120, originY: 48, width: 80, height: 48 } }] });
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.01 }; step(4);
+    expect(onMove).toHaveBeenCalledTimes(4);
+    const snapshot = detector.detect.mock.calls[0][0];
+    expect(snapshot).toBeInstanceOf(HTMLCanvasElement);
+    expect(snapshot.width).toBe(640); expect(snapshot.height).toBe(480);
+  });
+  it('a detector error cancels pending dwell instead of counting unobserved time', async () => {
+    const { onDwell } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
+    const button = document.createElement('button'); document.body.append(button);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(3);
+    detector.presenceDetect.mockImplementation(() => { throw new Error('test detector failure'); }); step(8);
+    detector.presenceDetect.mockReturnValue({ detections: [{ categories: [{ score: 0.9 }],
+      boundingBox: { originX: 120, originY: 48, width: 80, height: 48 } }] });
+    step(3); expect(onDwell).not.toHaveBeenCalled(); finishFreshWristDwell(onDwell);
+  });
+  it.each(INVALID_CAMERA_COORDINATES)('rejects $name even with high visibility', async ({ x, y }) => {
+    const { onMove, onStatusChange } = await start('right_index');
+    pose(20, x, y); step(6);
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+  });
+  it('retains a valid head fallback when the requested finger is outside the camera frame', async () => {
+    const { onStatusChange } = await start('right_index');
+    pose(20, 0.243, 1.767);
+    detector.poses[0][0] = { x: 0.5, y: 0.5, visibility: 0.9 };
+    step(5);
+    expect(onStatusChange).toHaveBeenLastCalledWith('tracking', 'nose');
+  });
+  it.each(concreteTargets)('rejects off-frame %s rather than moving or dwelling on an extrapolated landmark', async (target, index) => {
+    const { onMove, onDwell, onStatusChange } = await start(target);
+    pose(index, 0.243, 1.767); step(6);
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onDwell).not.toHaveBeenCalled();
+    expect(onStatusChange).toHaveBeenLastCalledWith('lost');
+    pose(index, 0.5, 0.5); step(3);
+    expect(onStatusChange).toHaveBeenLastCalledWith('tracking', target);
+    expect(onMove).toHaveBeenCalled();
+  });
+  it.each(aggregateTargets)('%s ignores a high-visibility off-frame side and retains the in-frame side', async (target, first, second, firstTarget, secondTarget) => {
+    const { onStatusChange } = await start(target);
+    pose(first, 0.243, 1.767);
+    detector.poses[0][second] = { x: 0.5, y: 0.5, visibility: 0.4 };
+    step(5);
+    expect(onStatusChange).toHaveBeenLastCalledWith('tracking', secondTarget);
+    expect(onStatusChange).not.toHaveBeenCalledWith('tracking', firstTarget);
+  });
+  it('keeps a completed native selection locked through overlay → scanner → overlay until observed departure', async () => {
+    await start('nose');
+    const service = await import('@/services/bodyPoseService');
+    handle!.stop(); frames.clear();
+    const video = document.createElement('video');
+    Object.defineProperties(video, { readyState: { value: 4 }, videoWidth: { value: 640 },
+      videoHeight: { value: 480 }, srcObject: { value: {} }, currentTime: { get: () => now / 1000 } });
+    const realStart = service.startPoseTracker;
+    const startSpy = vi.spyOn(service, 'startPoseTracker').mockImplementation(options => {
+      handle = realStart(options, undefined, video); return handle;
+    });
+    vi.spyOn(service, 'isPoseTrackingSupported').mockReturnValue(true);
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist', headTrackingDwellMs: 500 });
+    service.savePoseCalibration({ ...service.DEFAULT_CALIBRATION, wizardCompleted: true,
+      trackingTarget: 'right_wrist', orientation: 'landscape' });
+    const { default: Overlay } = await import('@/components/CameraInputOverlay');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    const view = render(createElement(Overlay));
+    expect(startSpy).toHaveBeenCalledTimes(1);
+    await act(() => vi.waitFor(() => expect(frames.size).toBeGreaterThan(0)));
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; act(() => step(FRESH_SELECTION_FRAMES));
+    expect(clicks).not.toHaveBeenCalled();
+    while (clicks.mock.calls.length === 0 && now < SETTLED_SELECTION_LIMIT_MS) act(() => step());
+    expect(clicks).toHaveBeenCalledTimes(1);
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    let release!: () => void;
+    act(() => { release = suspendCameraSelection(); });
+    try {
+      act(() => step(20));
+      expect(clicks).toHaveBeenCalledTimes(1);
+    } finally { act(() => release()); }
+    act(() => step(15));
+    expect(startSpy).toHaveBeenCalledTimes(1);
+    expect(clicks).toHaveBeenCalledTimes(1);
+    pose(16, 0.85); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; act(() => step());
+    expect(view.getByTestId('camera-input-overlay')).toHaveAttribute('data-status', 'lost');
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; act(() => step(40));
+    expect(clicks).toHaveBeenCalledTimes(1);
+    expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0); // A held/rejected frame didn't release the service lock.
+    vi.mocked(document.elementFromPoint).mockReturnValue(null); act(() => step());
+    vi.mocked(document.elementFromPoint).mockReturnValue(button); act(() => step(14));
+    expect(clicks).toHaveBeenCalledTimes(2);
+    view.unmount(); vi.restoreAllMocks();
+  });
+  it('camera ownership cancels pending body dwell but preserves manual access and fresh rearming', async () => {
+    const { onMove, onDwell } = await start('nose');
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    pose(0, 0.5); step(4);
+    const release = suspendCameraSelection();
+    try {
+      step(20); expect(clicks).not.toHaveBeenCalled(); expect(onDwell).not.toHaveBeenCalled();
+      expect(onMove).toHaveBeenCalled();
+      button.click(); expect(clicks).toHaveBeenCalledTimes(1); clicks.mockClear();
+    } finally { release(); }
+    step(5); expect(clicks).not.toHaveBeenCalled();
+    step(); expect(clicks).toHaveBeenCalledTimes(1);
+    step(20); expect(clicks).toHaveBeenCalledTimes(1);
+  });
+  it('does not deliver body native clicks across a completion callback ownership cycle', async () => {
+    const { onDwell } = await start('nose');
+    const { suspendCameraSelection } = await import('@/services/cameraSelection');
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    vi.mocked(document.elementFromPoint).mockReturnValue(button);
+    onDwell.mockImplementationOnce(() => { const release = suspendCameraSelection(); release(); });
+    pose(0, 0.5); step(6);
+    expect(onDwell).toHaveBeenCalledTimes(1); expect(clicks).not.toHaveBeenCalled();
+    step(5); expect(clicks).not.toHaveBeenCalled();
+    step(); expect(clicks).toHaveBeenCalledTimes(1);
+  });
   it.each([false, true])('neutral gaze stays centered and deliberate eye movement is retained, eye gaze=%s', async useEyeGaze => {
     detector.face = Array.from({ length: 478 }, () => ({ x: 0.5, y: 0.5 }));
     detector.face[468] = { x: 0.54, y: 0.4 };
@@ -226,6 +778,43 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
     expect(onMove.mock.calls.at(-1)![0]).toBeGreaterThan(1000);
   });
 
+  it('uses only the new mapping on the first valid frame after a warmed tracker is recalibrated', async () => {
+    const { onMove, mapPoseToScreen } = await start();
+    pose(20, 0.5, 0.5); step(20);
+    // Warm the real filters under the factory mapping before changing it.
+    // Testing setCalibration before any frame cannot catch old-pixel history.
+    const neutralX = 0.5 + drift();
+    const neutralY = 0.5 + drift() / 2;
+    const calibration = { leftX: 1 - neutralX + 0.15, rightX: 1 - neutralX - 0.15,
+      topY: neutralY - 0.12, bottomY: neutralY + 0.12, wizardCompleted: true };
+    handle!.setCalibration(calibration);
+    const expectedDrift = driftLevel * Math.min((now + 100) / 5_000, 1);
+    const expected = mapPoseToScreen(0.5 + expectedDrift, 0.5 + expectedDrift / 2,
+      calibration, 1, 1280, 720);
+    step();
+    expect(onMove.mock.calls.at(-1)![0]).toBeCloseTo(expected.x);
+    expect(onMove.mock.calls.at(-1)![1]).toBeCloseTo(expected.y);
+  });
+
+  it('retains smoothing for an unchanged mapping and completion metadata update', async () => {
+    const { DEFAULT_CALIBRATION } = await start();
+    pose(20, 0.5); step(20);
+    const { ConfidenceAwareOneEuro } = await import('@/services/oneEuroFilter');
+    const reset = vi.spyOn(ConfidenceAwareOneEuro.prototype, 'reset');
+    handle!.setCalibration({ ...DEFAULT_CALIBRATION, wizardCompleted: true });
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it('never manufactures a centered cursor when a new calibration is applied without a usable frame', async () => {
+    const { onMove } = await start();
+    pose(20, 0.5); step(20);
+    const moves = onMove.mock.calls.length;
+    detector.poses = [];
+    handle!.setCalibration({ leftX: 0.65, rightX: 0.35, topY: 0.38, bottomY: 0.62 });
+    step(3);
+    expect(onMove).toHaveBeenCalledTimes(moves);
+  });
+
   it('uses the tested safe mapping for a degenerate live calibration rather than pinning the cursor', async () => {
     const { onMove, mapPoseToScreen } = await start();
     const calibration = { leftX: 0.505, rightX: 0.5, topY: 0.3, bottomY: 0.8 };
@@ -296,8 +885,7 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
 });
 
 it('covers every camera target offered by Settings, so a new option cannot silently escape the replay matrix', () => {
-  const settings = readFileSync('components/InputModesSettings.tsx', 'utf8');
-  const section = settings.slice(settings.indexOf('const TRACKING_TARGETS = ['), settings.indexOf('function Toggle('));
+  const section = readFileSync('services/cameraTrackingTargets.ts', 'utf8');
   const offered = [...section.matchAll(/id: '([^']+)'/g)].map(match => match[1]);
   expect(offered.length).toBeGreaterThan(0);
   expect(offered.sort()).toEqual([...concreteTargets, ...aggregateTargets].map(([target]) => target).sort());

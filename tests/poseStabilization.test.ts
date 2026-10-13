@@ -28,6 +28,28 @@ import { describe, it, expect } from 'vitest';
 import { Kalman1D } from '@/services/kalmanFilter1D';
 import { classifyMotion, centroid, type Point2D } from '@/services/egoMotion';
 import { BaselineTracker } from '@/services/recalibration';
+import { ConfidenceAwareOneEuro } from '@/services/oneEuroFilter';
+
+const NOISE_UNIT_DRIFT_LEVELS = [0, 0.003, 0.015];
+const NOISE_UNIT_AMPLITUDE = 0.03;
+
+it.each(NOISE_UNIT_DRIFT_LEVELS)('measured jitter reaches the smoother in standard-deviation units, baseline offset=%s', drift => {
+  const tracker = new BaselineTracker();
+  for (let i = 0; i < 600; i++) {
+    const movement = i % 2 ? NOISE_UNIT_AMPLITUDE : -NOISE_UNIT_AMPLITUDE;
+    tracker.push({ normX: 0.5 + drift + movement, normY: 0.5 + drift + movement, timestamp: 1000 + i * 70 });
+  }
+  const noise = tracker.getNoiseFloor();
+  expect(noise).toBeGreaterThan(NOISE_UNIT_AMPLITUDE * 0.9);
+  expect(noise).toBeLessThan(NOISE_UNIT_AMPLITUDE * 1.1);
+  const measured = new ConfidenceAwareOneEuro();
+  const quiet = new ConfidenceAwareOneEuro();
+  measured.setNoiseFloor(noise);
+  for (let i = 0; i < 20; i++) { measured.update(0, 0.9, 1000 + i * 70); quiet.update(0, 0.9, 1000 + i * 70); }
+  // The real estimator, not a manually injected noise constant, must
+  // reduce the response to a small discontinuity without changing tuning.
+  expect(measured.update(10, 0.9, 2400)).toBeLessThan(quiet.update(10, 0.9, 2400));
+});
 
 describe('Kalman1D — confidence-aware smoothing replaces EMA', () => {
   it('high-confidence measurement converges close to truth', () => {

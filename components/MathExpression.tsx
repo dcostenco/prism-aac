@@ -41,7 +41,7 @@ export default function MathExpression({ expression, placeholder, className }: M
 
         (async () => {
             // Dynamic import keeps the 280KB KaTeX engine out of the main
-            // bundle. Lazy-loaded only when the math panel actually renders.
+            // bundle. Lazy-loaded only when this component is mounted.
             const katex = (await import('katex')).default;
             if (cancelled) return;
             const latex = expressionToLatex(expression);
@@ -49,6 +49,7 @@ export default function MathExpression({ expression, placeholder, className }: M
                 katex.render(latex, node, {
                     displayMode: true,
                     throwOnError: false,
+                    trust: false,
                     // 'html' only — skip MathML to eliminate the duplicate-render
                     // failure mode where MathML shows alongside HTML when CSS
                     // is missing or partially loaded. Screen readers can read

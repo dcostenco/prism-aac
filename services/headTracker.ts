@@ -35,9 +35,12 @@ import { BaselineTracker } from './recalibration';
 import { isValidCornerCalibration } from '@/lib/safeValidation';
 import { acquireCamera, type CameraLease } from './cameraStream';
 import { emitTrackingEvent } from './trackingTelemetry';
+import { isTrackingDiagnosticsActive, recordTrackingDiagnosticFrame, recordTrackingDiagnosticState } from './trackingDiagnostics';
+import { readCameraSelectionState, canActivateCameraSelection } from './cameraSelection';
+import { resolveDwellTarget } from './dwellTarget';
+import { acquireFaceDetector } from './sharedFaceDetector';
 import {
   MEDIAPIPE_WASM_URL,
-  FACE_DETECTOR_URL,
   FACE_LANDMARKER_URL,
 } from './mediapipeRuntime';
 
@@ -65,6 +68,9 @@ export interface HeadTrackerOptions {
    * surface a toast. See services/headTrackerStability.ts.
    */
   onDrift?: (reason: 'cursor-drift' | 'confidence-collapse') => void;
+  /** Explicit user stop, independent of automatic drift/selection ownership.
+   * Legacy consumers without this callback still receive onDrift on Escape. */
+  onEscape?: () => void;
   /** Drift detector tuning (defaults from settingsStore). */
   driftThresholdPx?: number;
   driftWindowMs?: number;
@@ -138,17 +144,7 @@ async function initMediaPipeFace(): Promise<boolean> {
   mpDisposed = false;
   mpLoadPromise = (async () => {
     try {
-      const vision = await import('@mediapipe/tasks-vision');
-      const { FaceDetector: MPFace, FilesetResolver } = vision;
-      const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
-      const detector = await MPFace.createFromOptions(fileset, {
-        baseOptions: {
-          modelAssetPath: FACE_DETECTOR_URL,
-          delegate: 'GPU',
-        },
-        runningMode: 'VIDEO',
-        minDetectionConfidence: 0.5,
-      });
+      const detector = await acquireFaceDetector();
       // T-10 race guard: if stop() ran while we were loading, dispose
       // immediately instead of leaking an unclosed model.
       if (mpDisposed) {
@@ -801,6 +797,10 @@ export function startHeadTracker(
   let dwellElement: Element | null = null;
   let dwellStart = 0;
   let dwellTriggered = false;
+  let selectionEpoch = readCameraSelectionState().epoch;
+  const pauseDwell = () => {
+    if (!dwellTriggered) { dwellElement = null; dwellStart = 0; }
+  };
   let lastFrameTime = 0;
 
   // Subscribe to gesture-claim AFTER dwell vars exist. When a gesture
@@ -817,7 +817,7 @@ export function startHeadTracker(
   const calibration = loadCalibration();
   const sensitivityScale = opts.sensitivity / 5;
 
-  opts.onStatusChange('starting');
+  recordTrackingDiagnosticState('head', 'starting'); opts.onStatusChange('starting');
 
   // Always initialize FaceLandmarker. Two reasons:
   //   1. Gesture detection (only used when onLandmarks is provided) — opt-in.
@@ -843,7 +843,7 @@ export function startHeadTracker(
     if (activeSources.length === 0) {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('keydown', escHandler);
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('head', 'stopped'); opts.onStatusChange('stopped');
       return;
     }
 
@@ -984,8 +984,8 @@ export function startHeadTracker(
    * With sensitivity applied: shift_pre = (cursor_post - target_post) /
    * sensitivityScale, and δ = shift_pre * rangeX / W.
    */
-  function applyAnchorCorrection(targetEl: Element): void {
-    if (!(targetEl instanceof Element)) return;
+  function prepareAnchorCorrection(targetEl: Element) {
+    if (!(targetEl instanceof Element)) return null;
     const rect = targetEl.getBoundingClientRect();
     const tx = rect.left + rect.width / 2;
     const ty = rect.top + rect.height / 2;
@@ -994,17 +994,23 @@ export function startHeadTracker(
     const offsetMag = Math.hypot(dx, dy);
     // Below noise floor: cursor was effectively on target — nothing to learn.
     // Above outlier ceiling: probably a missed click that bubbled to a parent.
-    if (offsetMag < ANCHOR_MIN_PIXEL_OFFSET || offsetMag > ANCHOR_MAX_PIXEL_OFFSET) return;
-    if (sensitivityScale <= 0) return;
+    if (offsetMag < ANCHOR_MIN_PIXEL_OFFSET || offsetMag > ANCHOR_MAX_PIXEL_OFFSET) return null;
+    if (sensitivityScale <= 0) return null;
 
     const W = window.innerWidth;
     const H = window.innerHeight;
     const rangeX = calibration.leftX - calibration.rightX;
     const rangeY = calibration.bottomY - calibration.topY;
-    if (rangeX === 0 || rangeY === 0) return;
+    if (rangeX === 0 || rangeY === 0) return null;
 
     const deltaX = (dx / sensitivityScale) * rangeX / W * ANCHOR_LEARNING_RATE;
     const deltaY = (dy / sensitivityScale) * rangeY / H * ANCHOR_LEARNING_RATE;
+    return { deltaX, deltaY, offsetMag };
+  }
+
+  function applyAnchorCorrection(correction: ReturnType<typeof prepareAnchorCorrection>): void {
+    if (!correction) return;
+    const { deltaX, deltaY, offsetMag } = correction;
     calibration.leftX  += deltaX;
     calibration.rightX += deltaX;
     calibration.topY   += deltaY;
@@ -1086,7 +1092,7 @@ export function startHeadTracker(
     // camera's detection loop hangs or its WebGL context crashes.
     const now = Date.now();
     const activeSources = sources.filter(s => s.active);
-    if (activeSources.length === 0) { opts.onLandmarks?.(null); opts.onStatusChange('lost'); return; }
+    if (activeSources.length === 0) { opts.onLandmarks?.(null); recordTrackingDiagnosticState('head', 'lost'); opts.onStatusChange('lost'); return; }
 
     const detections = activeSources.map(s => {
       const d = s.lastDetection;
@@ -1100,25 +1106,28 @@ export function startHeadTracker(
     if (!fused) {
       gestureSourceIndex = null;
       opts.onLandmarks?.(null);
-      opts.onStatusChange('lost');
+      recordTrackingDiagnosticState('head', 'lost'); opts.onStatusChange('lost');
       dwellElement = null;
       dwellStart = 0;
       dwellTriggered = false;
       return;
     }
 
-    opts.onStatusChange('tracking');
+    recordTrackingDiagnosticState('head', 'tracking'); opts.onStatusChange('tracking');
 
     // Landmarks, gaze and ego-motion must use the camera that actually
     // supplied the fused coordinates, including temporary failover. Raw
     // confidence fluctuates and can also be high on a stale cached result.
     const primarySource = activeSources.find(s => s.index === fused.cameraIndex)!;
+    const selection = readCameraSelectionState();
+    const selectionChanged = selection.epoch !== selectionEpoch;
+    if (selectionChanged) { pauseDwell(); selectionEpoch = selection.epoch; }
 
     // Emit face landmarks from the primary camera for gesture detection
     if (opts.onLandmarks) {
-      if (gestureSourceIndex !== null && gestureSourceIndex !== primarySource.index) opts.onLandmarks(null);
+      if (selectionChanged || (gestureSourceIndex !== null && gestureSourceIndex !== primarySource.index)) opts.onLandmarks(null);
       gestureSourceIndex = primarySource.index;
-      if (primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_DETECTION_MS) {
+      if (!selection.blocked && primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_DETECTION_MS) {
         opts.onLandmarks(primarySource.lastLandmarks);
       } else {
         opts.onLandmarks(null);
@@ -1128,6 +1137,13 @@ export function startHeadTracker(
     // Ego-motion suppression (gap E) — see suppressOnEgoMotion below.
     if (suppressOnEgoMotion(primarySource)) {
       // Camera shake — keep last cursor position, skip dwell increment.
+      if (isTrackingDiagnosticsActive()) recordTrackingDiagnosticFrame({
+        pipeline: 'head', target: 'head', requestedTarget: 'head', rawNorm: [fused.normX, fused.normY], inputNorm: [null, null],
+        mapped: [null, null], filtered: [sx, sy], confidence: null, filterConfidence: null, noise: null, cursorHeld: true,
+        calibration: [calibration.leftX, calibration.rightX, calibration.topY, calibration.bottomY], sensitivity: sensitivityScale,
+        cameraIndex: primarySource.index, videoSize: [primarySource.video.videoWidth, primarySource.video.videoHeight],
+        screenSize: [window.innerWidth, window.innerHeight], detectionAgeMs: now - primarySource.lastDetection.timestamp,
+      });
       opts.onMove(sx, sy);
       return;
     }
@@ -1178,6 +1194,14 @@ export function startHeadTracker(
     const trackingConfidence = Math.max(0, Math.min(1,
       primarySource.lastDetection.confidence * FACE_AREA_TO_KALMAN_SCALE));
 
+    if (isTrackingDiagnosticsActive()) recordTrackingDiagnosticFrame({
+      pipeline: 'head', target: 'head', requestedTarget: 'head', rawNorm: [fused.normX, fused.normY], inputNorm: [normX, normY],
+      mapped: [rawX, rawY], filtered: [sx, sy], confidence: trackingConfidence, filterConfidence: avgConfidence, noise: null,
+      calibration: [calibration.leftX, calibration.rightX, calibration.topY, calibration.bottomY], sensitivity: sensitivityScale,
+      cameraIndex: primarySource.index, videoSize: [primarySource.video.videoWidth, primarySource.video.videoHeight],
+      screenSize: [window.innerWidth, window.innerHeight],
+      detectionAgeMs: now - primarySource.lastDetection.timestamp,
+    });
     opts.onMove(sx, sy);
 
     // ── Dwell Detection ───────────────────────────────────────────
@@ -1185,22 +1209,29 @@ export function startHeadTracker(
     // gesture has just committed, the user's blink/smile is an
     // intentional gesture, not a dwell action.
     const nowTs = Date.now();
-    const dwellLocked = isLocked(lastGestureClaimTs, nowTs);
+    const dwellLocked = isLocked(lastGestureClaimTs, nowTs) || !canActivateCameraSelection(selection.epoch);
 
     const elementUnder = document.elementFromPoint(sx, sy);
-    const interactiveEl = elementUnder?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? elementUnder;
+    const interactiveEl = resolveDwellTarget(elementUnder);
 
     let dwellFiredThisFrame = false;
-    if (!dwellLocked && interactiveEl && interactiveEl === dwellElement) {
+    if (dwellLocked) {
+      pauseDwell();
+    } else if (interactiveEl && interactiveEl === dwellElement) {
       if (!dwellTriggered && nowTs - dwellStart >= opts.dwellMs) {
         dwellTriggered = true;
+        if (stopped || !canActivateCameraSelection(selection.epoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { dwellTriggered = false; pauseDwell(); return; }
         dwellFiredThisFrame = true;
+        const correction = prepareAnchorCorrection(interactiveEl);
         // Use this successful dwell as ground-truth for calibration —
         // the cursor was AT (sx,sy), the user wanted (tx,ty). Shift
         // anchors by a fraction of that offset.
-        applyAnchorCorrection(interactiveEl);
         opts.onDwell(interactiveEl);
+        if (stopped || !canActivateCameraSelection(selection.epoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { dwellTriggered = false; pauseDwell(); return; }
         if (interactiveEl instanceof HTMLElement) interactiveEl.click();
+        // Teach only an executed interaction, not a tentative callback cancelled
+        // by another selection owner. Do not update a retired tracker.
+        if (!stopped && canActivateCameraSelection(selection.epoch)) applyAnchorCorrection(correction);
       }
     } else {
       dwellElement = interactiveEl ?? null;
@@ -1220,6 +1251,7 @@ export function startHeadTracker(
     // jumping but it's environmental — auto-disabling would be wrong.
     // We still PUSH the sample so the rolling window stays continuous;
     // we just skip the `check()` while motion is active.
+    if (stopped || !canActivateCameraSelection(selection.epoch)) return;
     const deviceShaking = opts.isDeviceShaking?.() ?? false;
 
     // ── Recovery probe — uses the exported pure function so the REAL
@@ -1304,14 +1336,16 @@ export function startHeadTracker(
       cancelAnimationFrame(rafId);
       sources.forEach(stopCameraSource);
       window.removeEventListener('keydown', escHandler);
-      opts.onStatusChange('stopped');
-      // Surface as a drift event so the consumer's UX (toast, recovery
-      // probe) reacts the same way as an auto-trigger.
-      if (opts.onDrift && !driftFired) {
+      recordTrackingDiagnosticState('head', 'stopped'); opts.onStatusChange('stopped');
+      // Keep legacy telemetry/callback behavior, but distinguish explicit
+      // user intent so an ownership fence cannot swallow the escape hatch.
+      const firstDrift = !driftFired;
+      if (firstDrift && (opts.onEscape || opts.onDrift)) {
         driftFired = true;
         emitTrackingEvent({ type: 'drift', reason: 'cursor-drift', timestamp: Date.now() });
-        opts.onDrift('cursor-drift');
       }
+      if (opts.onEscape) opts.onEscape();
+      else if (firstDrift) opts.onDrift?.('cursor-drift');
     }
   };
   if (typeof window !== 'undefined') {
@@ -1340,7 +1374,7 @@ export function startHeadTracker(
       mpFaceLandmarker = null;
       mpLoadPromise = null;
       mpLandmarkerLoadPromise = null;
-      opts.onStatusChange('stopped');
+      recordTrackingDiagnosticState('head', 'stopped'); opts.onStatusChange('stopped');
     },
     get videoElement() {
       return sources[0]?.video ?? null;

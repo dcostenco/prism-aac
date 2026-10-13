@@ -2,6 +2,12 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { checkCriticalOcclusion, safeScreenshot } from './helpers/screenshot-validation';
 
 test.use({ serviceWorkers: 'block', hasTouch: true });
+const MINIMUM_WORD_TARGET_HEIGHT = 44;
+const COMMUNICATION_CONTROL_SELECTORS = [
+  '[data-scan-group="message-bar"] .aac-btn',
+  '[data-testid="picture-mode-sidebar"] > button',
+  '[data-testid="category-strip"] [data-testid="category-tile"]',
+] as const;
 
 async function swipe(page: Page, grid: Locator, dx: number, dy = 0) {
   const box = await grid.boundingBox();
@@ -45,6 +51,11 @@ async function expectFilledGrid(grid: Locator, size: number, cols: number) {
   for (let i = 0; i < boxes.length; i++) {
     const box = boxes[i]!;
     expect(box.width).toBeGreaterThan(bounds.width / cols - 20);
+    // The two-row settings must retain touch-sized words. Higher-density
+    // settings have a separate, existing compact-landscape layout contract.
+    if (size === 4 || size === 6) {
+      expect(box.height, 'AAC words need usable touch targets, not merely a filled remaining grid').toBeGreaterThanOrEqual(MINIMUM_WORD_TARGET_HEIGHT);
+    }
     expect(box.height).toBeGreaterThan(bounds.height / rows - 20);
     expect(box.y).toBeCloseTo(boxes[Math.floor(i / cols) * cols]!.y, 0);
     if (i >= cols) expect(box.y).toBeGreaterThan(boxes[i - cols]!.y + boxes[i - cols]!.height);
@@ -224,6 +235,30 @@ for (const [size, cols] of [[4, 2], [6, 3]] as const) {
       });
     }));
     await expectFilledGrid(grid, size, cols);
+    const predictions = page.getByTestId('prediction-bar');
+    await expect(predictions.getByTestId('prediction-tile')).toHaveCount(5);
+    const predictionBounds = (await predictions.boundingBox())!;
+    for (const tile of await predictions.getByTestId('prediction-tile').all()) {
+      const box = (await tile.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(MINIMUM_WORD_TARGET_HEIGHT);
+      expect(box.y).toBeGreaterThanOrEqual(predictionBounds.y - 1);
+      expect(box.y + box.height).toBeLessThanOrEqual(predictionBounds.y + predictionBounds.height + 1);
+    }
+    if (page.viewportSize()!.height <= 500) {
+      // Returning height to vocabulary must not shrink another communication
+      // target or remove the composer, navigation, or category controls.
+      for (const selector of COMMUNICATION_CONTROL_SELECTORS) {
+        const controls = page.locator(selector);
+        expect(await controls.count()).toBeGreaterThan(0);
+        for (const control of await controls.all()) {
+          await expect(control).toBeVisible();
+          expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(MINIMUM_WORD_TARGET_HEIGHT);
+        }
+      }
+      await expect.poll(() => checkCriticalOcclusion(page, {
+        criticalSelectors: [...COMMUNICATION_CONTROL_SELECTORS],
+      })).toEqual([]);
+    }
     const capture = async (state: string, requireImages = true) => {
       if (requireImages || state === 'home') await expect.poll(() => grid.locator('[data-testid="phrase-tile-card"]').evaluateAll((cards, allowKnownMissingAsset) =>
         cards.length > 0 && cards.every(card => {
@@ -234,7 +269,7 @@ for (const [size, cols] of [[4, 2], [6, 3]] as const) {
       { timeout: 20_000 }).toBe(true);
       await safeScreenshot(page, testInfo.outputPath(`${state}-${size}.png`), {
         expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="picture-board"]'],
-        criticalSelectors: ['.aac-picture-grid .aac-tile-label', '.aac-page-label > button'],
+        criticalSelectors: ['.aac-picture-grid .aac-tile-label', '.aac-page-label > button', '.aac-prediction-label'],
         occluderSelectors: ['[data-testid="category-strip"]', '[data-testid="picture-mode-sidebar"]'],
       });
     };

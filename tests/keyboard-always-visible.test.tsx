@@ -127,11 +127,13 @@ describe('Head-tracking runtime lifecycle', () => {
     expect(integrationMocks.prewarmHeadTracker).not.toHaveBeenCalled();
   });
 
-  it('pre-warms MediaPipe after the user enables head tracking', async () => {
+  it('does not pre-warm MediaPipe from a saved unsupported head-tracking flag', async () => {
     useSettingsStore.setState({ headTrackingEnabled: true });
     render(<PrismApp />);
 
-    await waitFor(() => expect(integrationMocks.prewarmHeadTracker).toHaveBeenCalledOnce());
+    await screen.findByTestId('panel-toolbar');
+    await Promise.resolve();
+    expect(integrationMocks.prewarmHeadTracker).not.toHaveBeenCalled();
   });
 });
 

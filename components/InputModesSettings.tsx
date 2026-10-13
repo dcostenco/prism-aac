@@ -1,52 +1,51 @@
 'use client';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import TrackingSetupWizard from './TrackingSetupWizard';
+import TrackingDiagnosticsSettings from './TrackingDiagnosticsSettings';
+import { CAMERA_CURSOR_TARGETS, HEAD_CURSOR_AVAILABLE, isCameraCursorTarget } from '@/services/cameraTrackingTargets';
 import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
 import { requestMotionPermission } from '@/services/deviceMotion';
-import { loadConfig as loadSwitchConfig, saveConfig as saveSwitchConfig, startScan, stopScan, type SwitchScanConfig } from '@/services/switchScanService';
+import { hasPoseCalibrationForTarget, type TrackingTarget } from '@/services/bodyPoseService';
+import { loadConfig as loadSwitchConfig, saveConfig as saveSwitchConfig, SWITCH_SCAN_CONFIG_EVENT, type SwitchScanConfig } from '@/services/switchScanService';
 
-// 'any_*' targets let bodyPoseService pick the more visible side per
-// frame (services/bodyPoseService.ts:78 chooseAggregateTarget). The
-// settings store defaults cameraTrackingTarget to 'any_wrist' — without
-// the matching chip, no target appeared selected and the user was
-// forced to pick a specific side, losing the auto-side fallback that
-// matters for users with asymmetric reach (May 2026 prod probe).
-const TRACKING_TARGETS = [
-  { id: 'any_wrist', label: 'Any Wrist (auto)' },
-  { id: 'any_index', label: 'Any Index (auto)' },
-  { id: 'any_hand', label: 'Any Hand (auto)' },
-  { id: 'right_index', label: 'Right Index Finger' },
-  { id: 'left_index', label: 'Left Index Finger' },
-  { id: 'right_wrist', label: 'Right Wrist' },
-  { id: 'left_wrist', label: 'Left Wrist' },
-  { id: 'right_elbow', label: 'Right Elbow' },
-  { id: 'left_elbow', label: 'Left Elbow' },
-  { id: 'nose', label: 'Nose (Head)' },
-  { id: 'right_shoulder', label: 'Right Shoulder' },
-  { id: 'left_shoulder', label: 'Left Shoulder' },
-];
+// Legacy preferences are retained, but only an explicitly chosen wrist
+// can start the narrowed cursor pipeline. Selection never chooses a side.
 
-function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+const INPUT_TOGGLE_ROW_CLASS = 'flex items-center justify-between gap-8 py-3';
+
+function Toggle({ on, onToggle, label, disabled = false }: { on: boolean; onToggle: () => void; label: string; disabled?: boolean }) {
   return (
-    <button onClick={() => { tapFeedback(); onToggle(); }} aria-pressed={on} aria-label={label}
-      className={`w-12 h-7 rounded-full transition-colors shrink-0 ${on ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}>
-      <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${on ? 'translate-x-5' : ''}`} />
+    <button disabled={disabled} onClick={() => { if (disabled) return; tapFeedback(); onToggle(); }} aria-pressed={on} aria-label={label}
+      data-input-mode-toggle="true"
+      className="relative w-16 h-12 inline-flex items-center rounded-none bg-transparent shrink-0">
+      {/* Paint the pill without clipping the native 64×48 selection surface. */}
+      <span aria-hidden="true" className={`absolute inset-0 rounded-full pointer-events-none transition-colors ${on ? 'bg-[#4CAF50]' : 'bg-[#999]'}`} />
+      <div className={`relative w-8 h-8 rounded-full bg-white pointer-events-none transition-transform mx-1 ${on ? 'translate-x-6' : ''}`} />
     </button>
   );
 }
 
-export default function InputModesSettings() {
+export default function InputModesSettings({ cameraOptions, touchOptions }: { cameraOptions?: ReactNode; touchOptions?: ReactNode } = {}) {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [isRecordingGesture, setIsRecordingGesture] = useState(false);
   const [recordingStep, setRecordingStep] = useState(0); // 0=idle, 1=prep, 2=record, 3=done
   const [gestureName, setGestureName] = useState('');
-  const cameraInputEnabled = useSettingsStore(s => s.cameraInputEnabled);
+  const cameraInputEnabled = useSettingsStore(s => s.cameraInputEnabled && isCameraCursorTarget(s.cameraTrackingTarget));
   const cameraTrackingTarget = useSettingsStore(s => s.cameraTrackingTarget);
+  const calGeneration = useSettingsStore(s => s.poseCalibrationGeneration);
+  const [calibrationReady, setCalibrationReady] = useState(false);
+  useEffect(() => {
+    const check = () => setCalibrationReady(isCameraCursorTarget(cameraTrackingTarget) && hasPoseCalibrationForTarget(cameraTrackingTarget as TrackingTarget));
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => { window.removeEventListener('resize', check); window.removeEventListener('orientationchange', check); };
+  }, [cameraTrackingTarget, calGeneration]);
   const showHandCalibration = useSettingsStore(s => s.showHandCalibration);
-  const headTrackingEnabled = useSettingsStore(s => s.headTrackingEnabled);
+  const headTrackingEnabled = useSettingsStore(s => HEAD_CURSOR_AVAILABLE && s.headTrackingEnabled);
   const headTrackingDwellMs = useSettingsStore(s => s.headTrackingDwellMs);
   const headTrackingSensitivity = useSettingsStore(s => s.headTrackingSensitivity);
   const visionContextEnabled = useSettingsStore(s => s.visionContextEnabled);
@@ -55,57 +54,61 @@ export default function InputModesSettings() {
 
   return (
     <div className="space-y-4" data-scan-group="input-modes-settings">
+      <div data-testid="camera-accessibility-settings" className="space-y-4">
+        <h3 className="text-primary font-bold">{t('camera_accessibility')}</h3>
+        <p role="status" data-testid="camera-wrist-scope" className="text-muted text-sm">{t('camera_wrist_scope')}</p>
+        <p data-testid="camera-pause-help" className="text-muted text-sm">{t('camera_pause_help')}</p>
+        <p className="text-muted text-sm">{t('camera_controls_disabled')}</p>
+        {!isCameraCursorTarget(cameraTrackingTarget) && <p role="alert" className="text-muted text-sm">{t('camera_choose_wrist')}</p>}
+        {isCameraCursorTarget(cameraTrackingTarget) && !calibrationReady && <p role="status" className="text-muted text-sm">{t('camera_wrist_calibration_needed')}</p>}
+        <div className="grid grid-cols-2 gap-2">
+          {CAMERA_CURSOR_TARGETS.map(tt => (
+            <button key={tt.id} onClick={() => { tapFeedback(); update({ cameraTrackingTarget: tt.id, cameraInputEnabled: false }); }}
+              data-testid={`tracking-target-${tt.id}`}
+              data-selected={cameraTrackingTarget === tt.id ? 'true' : 'false'}
+              className={`aac-btn min-h-12 rounded-lg px-3 py-2 text-sm font-semibold border border-theme ${
+                cameraTrackingTarget === tt.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+              }`}>
+              {tt.label}
+            </button>
+          ))}
+        </div>
+        <button
+          data-testid="camera-cursor-setup"
+          disabled={!isCameraCursorTarget(cameraTrackingTarget)}
+          onClick={() => { tapFeedback(); setShowSetupWizard(true); }}
+          className="aac-btn w-full py-3 rounded-xl bg-[#2196F3] text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {t('camera_cursor_setup')}
+        </button>
+        <p className="text-muted text-sm">{t('camera_wrist_control_help')}</p>
+        <TrackingDiagnosticsSettings />
       {/* Camera Finger/Body Tracking (opt-in — settings store default false) */}
       <div data-testid="camera-input-settings">
         <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Camera Input</h4>
-        <label className="flex items-center justify-between py-1.5">
-          <div>
-            <span className="text-primary text-sm font-semibold">Camera Finger Tracking</span>
-            <p className="text-muted text-xs">Camera tracks your finger/arm and moves cursor on screen</p>
+        <label className={INPUT_TOGGLE_ROW_CLASS}>
+          <div className="min-w-0 flex-1">
+            <span className="text-primary text-sm font-semibold">{t('camera_wrist_control')}</span>
+            <p className="text-muted text-xs">{t('camera_wrist_control_help')}</p>
           </div>
-          <Toggle on={cameraInputEnabled} onToggle={() => update({ cameraInputEnabled: !cameraInputEnabled })} label="Camera input" />
+          <Toggle disabled={!isCameraCursorTarget(cameraTrackingTarget) || (!calibrationReady && !cameraInputEnabled)} on={cameraInputEnabled} onToggle={() => update({ cameraInputEnabled: !cameraInputEnabled })} label="Camera input" />
         </label>
-        {cameraInputEnabled && (
-          <div className="ml-2 mt-1 space-y-1">
-            <label className="text-muted text-xs">Track:</label>
-            <div className="grid grid-cols-3 gap-1">
-              {TRACKING_TARGETS.map(tt => (
-                <button key={tt.id} onClick={() => { tapFeedback(); update({ cameraTrackingTarget: tt.id }); }}
-                  data-testid={`tracking-target-${tt.id}`}
-                  data-selected={cameraTrackingTarget === tt.id ? 'true' : 'false'}
-                  className={`aac-btn rounded-lg px-2 py-1.5 text-xs font-semibold border border-theme ${
-                    cameraTrackingTarget === tt.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
-                  }`}>
-                  {tt.label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => { tapFeedback(); setShowSetupWizard(true); }}
-              className="aac-btn w-full mt-2 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg active:scale-95 transition-transform"
-              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-            >
-              🎯 Set Up Tracking
-            </button>
-            <p className="text-muted text-xs mt-1">Guided setup: detects your body, calibrates cursor, tests accuracy</p>
-          </div>
-        )}
       </div>
 
       {/* Hand Calibration visibility toggle */}
-      <label className="flex items-center justify-between py-1.5">
-        <div>
-          <span className="text-primary text-sm font-semibold">Hand Calibration Settings</span>
-          <p className="text-muted text-xs">Show hand profile + per-finger button mapping in Settings</p>
+      <label className={INPUT_TOGGLE_ROW_CLASS}>
+        <div className="min-w-0 flex-1">
+          <span className="text-primary text-sm font-semibold">{t('touch_accuracy_options')}</span>
+          <p className="text-muted text-xs">{t('touch_accuracy_help')}</p>
         </div>
-        <Toggle on={showHandCalibration} onToggle={() => update({ showHandCalibration: !showHandCalibration })} label="Hand calibration settings" />
+        <Toggle on={showHandCalibration} onToggle={() => update({ showHandCalibration: !showHandCalibration })} label={t('touch_accuracy_options')} />
       </label>
 
       {/* Vision Context — camera object detection for phrase suggestions */}
       <div data-testid="vision-context-settings">
         <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Vision Context</h4>
-        <label className="flex items-center justify-between py-1.5">
-          <div>
+        <label className={INPUT_TOGGLE_ROW_CLASS}>
+          <div className="min-w-0 flex-1">
             <span className="text-primary text-sm font-semibold">Camera Phrase Suggestions</span>
             <p className="text-muted text-xs">Camera detects objects and suggests relevant phrases (e.g. cup → &quot;I want a drink&quot;)</p>
           </div>
@@ -114,12 +117,13 @@ export default function InputModesSettings() {
       </div>
 
       {/* Head Tracking (opt-in) */}
-      <label className="flex items-center justify-between py-1.5">
-        <div>
+      <label className={INPUT_TOGGLE_ROW_CLASS}>
+        <div className="min-w-0 flex-1">
           <span className="text-primary text-sm font-semibold">{t('enable_head_tracking')}</span>
           <p className="text-muted text-xs">Move cursor by moving your head (uses camera)</p>
         </div>
         <Toggle
+          disabled={!HEAD_CURSOR_AVAILABLE}
           on={headTrackingEnabled}
           onToggle={async () => {
             const willEnable = !headTrackingEnabled;
@@ -141,7 +145,7 @@ export default function InputModesSettings() {
           <span className="text-primary text-sm">{t('dwell_time')}</span>
           <span className="text-muted text-sm">{headTrackingDwellMs}ms</span>
         </label>
-        <input type="range" min="800" max="3000" step="100" value={headTrackingDwellMs}
+        <input aria-label={t('dwell_time')} type="range" min="800" max="3000" step="100" value={headTrackingDwellMs}
           onChange={(e) => update({ headTrackingDwellMs: parseInt(e.target.value) })}
           className="w-full accent-[#4CAF50]" />
       </div>
@@ -152,7 +156,7 @@ export default function InputModesSettings() {
           <span className="text-primary text-sm">{t('sensitivity')}</span>
           <span className="text-muted text-sm">{headTrackingSensitivity}</span>
         </label>
-        <input type="range" min="1" max="10" step="1" value={headTrackingSensitivity}
+        <input aria-label={t('sensitivity')} type="range" min="1" max="10" step="1" value={headTrackingSensitivity}
           onChange={(e) => update({ headTrackingSensitivity: parseInt(e.target.value) })}
           className="w-full accent-[#2196F3]" />
       </div>
@@ -163,41 +167,49 @@ export default function InputModesSettings() {
         />
       )}
 
-      {/* ─── Switch Scanning ────────────────────────────────────────────── */}
-      <SwitchScanSettings />
-
+      {HEAD_CURSOR_AVAILABLE && cameraOptions}
+      {showHandCalibration && touchOptions && (
+        <details className="surface-key rounded-xl border border-theme p-3">
+          <summary className="aac-btn font-semibold text-primary cursor-pointer">{t('touch_accuracy_title')}</summary>
+          <p className="text-muted text-sm my-2">{t('touch_accuracy_help')}</p>
+          {touchOptions}
+        </details>
+      )}
       {/* ─── Gesture Recognition ──────────────────────────────────────── */}
-      <GestureRecognitionSettings />
+      <fieldset disabled={!HEAD_CURSOR_AVAILABLE} data-testid="camera-gestures-disabled">
+        <GestureRecognitionSettings />
+      </fieldset>
+      </div>
+      {/* Switch scanning does not require a camera. */}
+      <SwitchScanSettings />
     </div>
   );
 }
 
 function SwitchScanSettings() {
   const [config, setConfig] = useState<SwitchScanConfig>(() => loadSwitchConfig());
-  const [running, setRunning] = useState(false);
+  useEffect(() => {
+    const change = (event: Event) => setConfig((event as CustomEvent<SwitchScanConfig>).detail);
+    window.addEventListener(SWITCH_SCAN_CONFIG_EVENT, change);
+    return () => window.removeEventListener(SWITCH_SCAN_CONFIG_EVENT, change);
+  }, []);
 
   const persist = (patch: Partial<SwitchScanConfig>) => {
     const next = { ...config, ...patch };
     setConfig(next);
     saveSwitchConfig(next);
-    if (running && !next.enabled) { stopScan(); setRunning(false); }
-    if (running && next.enabled) { stopScan(); startScan(next); }
   };
 
   const toggleEnabled = () => {
     const willEnable = !config.enabled;
     persist({ enabled: willEnable });
-    if (willEnable) { startScan({ ...config, enabled: true }); setRunning(true); }
-    else { stopScan(); setRunning(false); }
   };
-
-  useEffect(() => () => { stopScan(); }, []);
 
   return (
     <div data-testid="switch-scan-settings" data-scan-group="switch-scan-settings">
       <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Switch Scanning</h4>
-      <label className="flex items-center justify-between py-1.5">
-        <div>
+      <label className={INPUT_TOGGLE_ROW_CLASS}>
+        <div className="min-w-0 flex-1">
           <span className="text-primary text-sm font-semibold">Enable Switch Scanning</span>
           <p className="text-muted text-xs">Use a Bluetooth switch, keyboard key, or gamepad to navigate</p>
         </div>
@@ -227,8 +239,8 @@ function SwitchScanSettings() {
                 className="w-full accent-[#4CAF50]" />
             </div>
           )}
-          <label className="flex items-center justify-between py-1">
-            <span className="text-primary text-sm">Group scanning</span>
+          <label className={INPUT_TOGGLE_ROW_CLASS}>
+            <span className="text-primary text-sm min-w-0 flex-1">Group scanning</span>
             <Toggle on={config.groupScan} onToggle={() => persist({ groupScan: !config.groupScan })} label="Group scanning" />
           </label>
           <p className="text-muted text-xs">Press <strong>Space</strong> or <strong>Enter</strong> to select. Connect a Bluetooth switch for hands-free use.</p>
@@ -266,6 +278,7 @@ const ASSIGNABLE_ACTIONS = [
 
 function GestureRecognitionSettings() {
   const gestureConfig = useSettingsStore(s => s.gestureConfig);
+  const gestureEnabled = HEAD_CURSOR_AVAILABLE && gestureConfig.enabled;
   const update = useSettingsStore(s => s.update);
   const { t } = useT();
 
@@ -301,8 +314,8 @@ function GestureRecognitionSettings() {
           Gesture Recognition
         </h4>
         <span className="flex items-center gap-2">
-          <span className={`text-xs font-bold ${gestureConfig.enabled ? 'text-[#4CAF50]' : 'text-muted'}`}>
-            {gestureConfig.enabled ? 'ON' : 'off'}
+          <span className={`text-xs font-bold ${gestureEnabled ? 'text-[#4CAF50]' : 'text-muted'}`}>
+            {gestureEnabled ? 'ON' : 'off'}
           </span>
           {/* Chevron rotates when open via group-open: utility */}
           <span className="text-muted text-xs group-open:rotate-90 transition-transform inline-block">▶</span>
@@ -310,19 +323,19 @@ function GestureRecognitionSettings() {
       </summary>
 
       {/* Enable toggle */}
-      <label className="flex items-center justify-between py-1.5 mt-2">
-        <div>
+      <label className={`${INPUT_TOGGLE_ROW_CLASS} mt-2`}>
+        <div className="min-w-0 flex-1">
           <span className="text-primary text-sm font-semibold">Enable Gestures</span>
           <p className="text-muted text-xs">Detect head, eye, lip, and brow gestures via camera</p>
         </div>
         <Toggle
-          on={gestureConfig.enabled}
+          on={gestureEnabled}
           onToggle={() => updateGesture({ enabled: !gestureConfig.enabled })}
           label="Gesture recognition"
         />
       </label>
 
-      {gestureConfig.enabled && (
+      {gestureEnabled && (
         <div className="ml-2 mt-2 space-y-3">
           {/* Mode selector */}
           <div>
