@@ -37,6 +37,9 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
     return () => { cancelled = true; };
   }, [phrase, englishPhrase, customImageUrl, pictureMode, language, isNearViewport]);
   const iconUrl = customImageUrl || fetchedIconUrl;
+  const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null);
+  // No picture, or one that failed to load: the words get the whole tile.
+  const wordsOnly = !iconUrl || failedIconUrl === iconUrl;
 
   return (
     <button
@@ -44,32 +47,35 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
       onClick={onClick}
       aria-label={ariaLabel ?? phrase}
       data-testid="phrase-tile-card"
+      data-tile-picture={wordsOnly ? 'none' : 'shown'}
       className={`aac-phrase-tile ${className ?? ''}`}
       style={{
         border: '2px solid var(--border-strong, #000)',
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: wordsOnly ? 'center' : undefined,
         overflow: 'hidden',
         ...style,
       }}
     >
-      <div className="aac-tile-icon" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
-        {iconUrl && (
+      {!wordsOnly && (
+        <div className="aac-tile-icon" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
           <img
             src={iconUrl}
             alt=""
             aria-hidden
             loading="lazy"
             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            onError={() => setFailedIconUrl(iconUrl)}
           />
-        )}
-      </div>
+        </div>
+      )}
       <FittedTileLabel
         text={phrase}
         testId="phrase-tile-label"
         className="aac-tile-label aac-phrase-label"
-        style={{ borderTop: '1px solid rgba(0,0,0,0.2)' }}
+        growToFit={wordsOnly ? 1.3 : undefined}
+        style={wordsOnly ? undefined : { borderTop: '1px solid rgba(0,0,0,0.2)' }}
       />
     </button>
   );

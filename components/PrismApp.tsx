@@ -274,10 +274,9 @@ export default function PrismApp() {
     import('@/services/aiService').then(m => m.autoSideload?.()).catch(() => {});
     // HRR contextual memory — 229KB WASM, loads lazily
     import('@/services/hrrContext').then(m => m.initAacHrr()).catch(() => {});
-    // Pictograms load and persist on demand. Do not pre-cache the full
-    // 1,500+ phrase corpus on every mount: that creates hundreds of immediate
-    // ARASAAC requests, duplicate work on reload, and avoidable memory/network
-    // pressure before the AAC user has selected a category.
+    // Third-party pictograms are no longer shown or downloaded. Delete the
+    // copies earlier versions cached on this device, once.
+    import('@/services/pictogramService').then(m => m.clearLegacyPictogramCache()).catch(() => {});
     const unregisterPanic = registerPanicListeners();
     const cleanupConnectivity = registerConnectivityListener();
     // Drain incoming caregiver/contact messages onto the schedule. The

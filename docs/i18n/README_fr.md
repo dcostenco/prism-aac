@@ -429,7 +429,7 @@ Tuiles d'images style PECS. Appuyez sur une catégorie, appuyez sur une tuile, �
 - 22 catégories par défaut : personnes, nourriture, émotions, corps, vêtements, animaux, lieux, etc.
 - L'aidant peut ajouter / supprimer / réordonner les tuiles pour chaque enfant
 - Chaque tuile possède une clé `textKey` pour l'i18n — changer la langue de l'application réétiquette toutes les tuiles en un seul geste
-- Les pictogrammes proviennent d'ARASAAC + d'un jeu sélectionné ; le clonage vocal permet d'associer la voix de la tuile aux frères, sœurs ou parents de l'enfant (forfait payant)
+- Les tuiles affichent leurs mots, et les mots saisis peuvent recevoir des images générées avec les offres payantes ; le clonage vocal permet d'associer la voix de la tuile aux frères, sœurs ou parents de l'enfant (forfait payant)
 - Apprentissage des n-grammes par utilisateur : un enfant qui clique trois fois sur "Je veux manger" verra "manger" remonter après "veux" lors de la session suivante
 - Mémoire holographique HRR : prédictions contextuelles sans recherche en ~0,2ms via Rust WASM — +27% de précision Top-1 sur les phrases clés de CAA
 

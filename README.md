@@ -432,7 +432,7 @@ PECS-style picture tiles. Tap a category, tap a tile, hear the word, watch it la
 - 22 default categories: people, food, feelings, body, clothes, animals, places, etc.
 - Caregiver can add / remove / reorder tiles per child
 - Each tile carries a `textKey` for i18n — switching the app language re-labels every tile in one tap
-- Tile pictograms come from ARASAAC + a curated set; voice cloning lets you match the tile's voice to the child's siblings or parents (paid tier)
+- Tiles show their words, and typed words can get generated pictures on paid plans; voice cloning lets you match the tile's voice to the child's siblings or parents (paid tier)
 - Per-user n-gram learning: a child who taps "I want eat" three times sees "eat" rise after "want" the next session
 - HRR holographic memory: zero-search contextual predictions in ~0.2ms via Rust WASM — +27% Top-1 accuracy on core AAC phrases
 

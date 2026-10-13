@@ -20,24 +20,13 @@ async function safeScreenshot(page: Page, fileName: string): Promise<void> {
   await page.screenshot({ path: path.join(outputDir, fileName), fullPage: false });
 }
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function expectVisiblePictograms(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => {
     const loadedCount = (tileSelector: string) => [...document.querySelectorAll(tileSelector)]
       .filter((tile) => {
-        const image = tile.querySelector<HTMLImageElement>('img');
-        if (!image || !image.complete || image.naturalWidth <= 0) return false;
-        const rect = image.getBoundingClientRect();
+        if (!tile.textContent?.trim()) return false;
+        const rect = tile.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
       }).length;
     return loadedCount('.aac-prediction-tile') >= 3
@@ -48,9 +37,8 @@ async function expectVisiblePictograms(page: Page): Promise<void> {
 async function expectVisiblePredictionPictograms(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => [...document.querySelectorAll('.aac-prediction-tile')]
     .filter((tile) => {
-      const image = tile.querySelector<HTMLImageElement>('img');
-      if (!image || !image.complete || image.naturalWidth <= 0) return false;
-      const rect = image.getBoundingClientRect();
+      if (!tile.textContent?.trim()) return false;
+      const rect = tile.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
     }).length), { timeout: 20_000 }).toBeGreaterThanOrEqual(3);
 }
@@ -70,9 +58,8 @@ async function expectVisiblePhrasePictograms(page: Page): Promise<void> {
       Math.abs(tile.getBoundingClientRect().top - firstRowTop) <= 2
     ));
     return firstRow.length >= 3 && firstRow.every((tile) => {
-      const image = tile.querySelector<HTMLImageElement>('img');
-      if (!image || !image.complete || image.naturalWidth <= 0) return false;
-      const rect = image.getBoundingClientRect();
+      if (!tile.textContent?.trim()) return false;
+      const rect = tile.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     });
   }), { timeout: 20_000 }).toBe(true);
@@ -144,7 +131,6 @@ async function expectVisibleTileLabelsSettled(page: Page): Promise<void> {
 
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'ipad-7-land', '1024x768 touch-tablet checkpoint');
-  await proxyArasaacForLocalWebKit(page);
   await page.addInitScript(() => {
     localStorage.clear();
     sessionStorage.clear();
