@@ -18,9 +18,9 @@ async function seed(name: string, value: string) {
   });
 }
 
-it('removes only retired origin HTTP entries and the retired DB, preserving current Flux and pack caches', async () => {
+it('removes only retired-host HTTP entries and the retired database, keeping other caches and databases', async () => {
   await seed('prism-aac-pictograms', 'retired bytes');
-  await seed('prism-aac-generated-pictures', 'current Flux bytes');
+  await seed('prism-aac-generated-pictures', 'other bytes');
   localStorage.setItem('prism-legacy-pictograms-cleared', '1');
   localStorage.setItem('prism-arasaac-misses', '["en:fixture"]');
   const entries = new Set([
@@ -59,5 +59,32 @@ it('does not mark a blocked database deletion complete until its old connection 
   expect(localStorage.getItem('prism-legacy-pictograms-cleared')).not.toBe('2');
   database.close();
   await removal;
+  expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('2');
+});
+
+it('runs once: after a completed cleanup, later loads touch neither the database nor Cache Storage', async () => {
+  localStorage.setItem('prism-legacy-pictograms-cleared', '2');
+  const deleteDatabase = vi.spyOn(indexedDB, 'deleteDatabase');
+  const cacheKeys = vi.fn(async () => [] as string[]);
+  vi.stubGlobal('caches', { keys: cacheKeys, open: vi.fn() });
+  const { clearLegacyPictogramCache } = await import('@/services/legacyPictogramCache');
+  await clearLegacyPictogramCache();
+  await clearLegacyPictogramCache();
+  expect(deleteDatabase).not.toHaveBeenCalled();
+  expect(cacheKeys).not.toHaveBeenCalled();
+});
+
+it('an earlier cleanup version runs again, and a failed cleanup is retried on the next load', async () => {
+  localStorage.setItem('prism-legacy-pictograms-cleared', '1');
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const cacheKeys = vi.fn()
+    .mockRejectedValueOnce(new Error('storage error'))
+    .mockResolvedValue([] as string[]);
+  vi.stubGlobal('caches', { keys: cacheKeys, open: vi.fn() });
+  const { clearLegacyPictogramCache } = await import('@/services/legacyPictogramCache');
+  await expect(clearLegacyPictogramCache()).rejects.toThrow('storage error');
+  expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('1');
+  await clearLegacyPictogramCache();
+  expect(cacheKeys).toHaveBeenCalledTimes(2);
   expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('2');
 });

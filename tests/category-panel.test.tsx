@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import CategoryPanel from '@/components/CategoryPanel';
+import { useAuthStore } from '@/store/authStore';
 
 // ── vi.hoisted ────────────────────────────────────────────────────────────────
 
@@ -599,6 +600,24 @@ describe('CategoryPanel — search', () => {
       // Multiple categories may each return a 'yes' phrase → use getAllByText
       expect(screen.getAllByText('yes').length).toBeGreaterThan(0);
     });
+  });
+
+  it('search results on a paid plan never start picture generation', async () => {
+    const fetchSpy = vi.fn(async () => new Response(new ArrayBuffer(8), { status: 200, headers: { 'Content-Type': 'image/png' } }));
+    vi.stubGlobal('fetch', fetchSpy);
+    useAuthStore.setState({ profile: { email: 'paid@example.test', name: 'Paid', plan: 'standard', isPlatformAdmin: false } });
+    try {
+      render(<CategoryPanel />);
+      fireEvent.click(screen.getByRole('button', { name: /search/i }));
+      fireEvent.change(screen.getByRole('textbox', { name: /search all vocabulary/i }), { target: { value: 'yes' } });
+      await waitFor(() => expect(screen.getAllByText('yes').length).toBeGreaterThan(0));
+      // Long enough for each result icon's picture lookup (hash + request) to run.
+      await new Promise(resolve => setTimeout(resolve, 200));
+      expect(fetchSpy.mock.calls.filter(([url]) => String(url).includes('/prism-aac/pictogram'))).toEqual([]);
+    } finally {
+      useAuthStore.setState({ profile: null });
+      vi.unstubAllGlobals();
+    }
   });
 
   it('clicking ✕ closes search', () => {
