@@ -53,13 +53,16 @@ let pairs = try JSONDecoder().decode([Pair].self, from: FileHandle.standardInput
 let ids = pairs.map { AACPhrase(label: $0.label, sfSymbol: $0.symbol, color: .blue).id }
 print(String(data: try JSONEncoder().encode(ids), encoding: .utf8)!)
 `);
-  const binary = path.join(dir, 'ids');
-  const build = spawnSync('xcrun', ['swiftc', path.join(dir, 'AACPhrase.swift'), path.join(dir, 'main.swift'), '-o', binary], { encoding: 'utf8' });
-  expect(build.status, build.stderr).toBe(0);
-  const run = spawnSync(binary, [], { input: JSON.stringify(pairs), encoding: 'utf8' });
-  expect(run.status, run.stderr).toBe(0);
-  fs.rmSync(dir, { recursive: true, force: true });
-  return JSON.parse(run.stdout);
+  try {
+    const binary = path.join(dir, 'ids');
+    const build = spawnSync('xcrun', ['swiftc', path.join(dir, 'AACPhrase.swift'), path.join(dir, 'main.swift'), '-o', binary], { encoding: 'utf8' });
+    expect(build.status, build.stderr).toBe(0);
+    const run = spawnSync(binary, [], { input: JSON.stringify(pairs), encoding: 'utf8' });
+    expect(run.status, run.stderr).toBe(0);
+    return JSON.parse(run.stdout);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 describe.skipIf(!hasSwift)('Watch card ids', () => {
