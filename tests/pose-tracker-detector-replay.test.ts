@@ -328,6 +328,29 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
     expect(onDwellLockChange.mock.calls.map(([el]) => el ? 'target' : 'reset')).toEqual(['target', 'reset', 'target']);
     expect(onDwell).toHaveBeenCalledTimes(2);
   });
+  // A lost frame is not an observed departure: a completed selection must stay locked through head loss, wrist loss or a
+  // detector error, so a cursor that never left the symbol cannot select it a second time when tracking recovers.
+  it.each(['head', 'wrist', 'detector error'] as const)('keeps a completed selection locked through %s loss without departure', async (loss) => {
+    const { onMove, onDwellLockChange } = await startControlledWrist();
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(80);
+    const [x, y] = onMove.mock.calls.at(-1)!;
+    const button = document.createElement('button'); document.body.append(button);
+    const clicks = vi.fn(); button.addEventListener('click', clicks);
+    const rect = new DOMRect(x - 48, y - 48, 96, 96);
+    vi.mocked(document.elementFromPoint).mockImplementation((cx, cy) =>
+      cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom ? button : null);
+    step(16); expect(clicks).toHaveBeenCalledOnce();
+    const afterSelection = onMove.mock.calls.length;
+    if (loss === 'head') detector.poses[0][0].visibility = 0;
+    if (loss === 'wrist') detector.poses[0][16].visibility = 0;
+    if (loss === 'detector error') detector.detect.mockImplementationOnce(() => { throw new Error('transient model failure'); });
+    step();
+    pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(60);
+    // The cursor stayed on the symbol the whole time, so nothing may count as a departure.
+    expect(onMove.mock.calls.slice(afterSelection).every(([cx, cy]) => document.elementFromPoint(cx, cy) === button)).toBe(true);
+    expect(clicks).toHaveBeenCalledOnce();
+    expect(onDwellLockChange.mock.calls.map(([el]) => el ? 'target' : 'reset')).toEqual(['target']);
+  });
   it('does not select a large button while the wrist keeps travelling through tremor', async () => {
     const { onDwell } = await start('right_wrist', { selectedTargetOnly: true, requireHeadPresence: true });
     const button = document.createElement('button'); document.body.append(button);

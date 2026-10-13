@@ -1041,7 +1041,8 @@ export function startPoseTracker(
           if (observedHead.pending) return; // No inference or selection from duplicate polls.
           if (!observedHead.present) {
             wristMotion?.interrupt();
-            dwellElement = null; dwellStart = 0; setDwellTriggered(false);
+            // A lost frame is not a departure: clear an unfinished dwell, keep a completed selection locked.
+            pauseDwell();
             recordTrackingDiagnosticState('pose', 'lost', { reason: observedHead.reason ?? 'head-missing', headConfidence: observedHead.confidence });
             opts.onTrackingLoss?.(observedHead.reason ?? 'head-missing');
             opts.onStatusChange('lost');
@@ -1611,15 +1612,13 @@ export function startPoseTracker(
           opts.onTrackingLoss?.(lossReason);
           // No pose detected
           recordTrackingDiagnosticState('pose', 'lost', { reason: lossReason, headConfidence: observedHead?.confidence ?? null }); opts.onStatusChange('lost');
-          dwellElement = null;
-          dwellStart = 0;
-          setDwellTriggered(false);
+          pauseDwell(); // unfinished dwell only; a completed selection stays locked until an observed departure
         }
       } catch {
         wristMotion?.interrupt();
         opts.onTrackingLoss?.(failure);
-        // An unobserved frame cannot count as a hold, even on the first error.
-        dwellElement = null; dwellStart = 0; setDwellTriggered(false);
+        // An unobserved frame cannot count as a hold, even on the first error, nor as a departure from a completed one.
+        pauseDwell();
         recordTrackingDiagnosticState('pose', 'lost', { reason: failure, headConfidence: observedHead?.confidence ?? null });
         opts.onStatusChange('lost');
       } finally {
