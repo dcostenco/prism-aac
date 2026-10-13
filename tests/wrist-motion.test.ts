@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { WristMotion, limitWristCursorStep, wristCursorSettled, wristSelectionDwellMs } from '@/services/wristMotion';
+import { WRIST_SELECTION_NOISE_CEILING, WristMotion, limitWristCursorStep, wristCursorSettled, wristSelectionDwellMs } from '@/services/wristMotion';
 import { wristNoise } from './helpers/wrist-noise';
 
 const DRIFTS = [0, 0.003, 0.015];
@@ -136,6 +136,31 @@ describe.each(DRIFTS)('wrist motion at drift=%s', drift => {
     gate.interrupt();
     const first = gate.update(point(46, drift, TREMOR), 46 * FRAME_MS, CAMERA_WIDTH);
     expect(first.paused).toBe(false); expect(first.noise).toBeGreaterThan(noise * 0.8);
+  });
+  it.each([false, true])('withholds selection while a noisy estimate is inside the quality window (interrupted=%s)', interrupted => {
+    const gate = new WristMotion(); let lastNoisy = -Infinity, firstReady: number | null = null, pending = interrupted;
+    for (let time = 0; time <= 8000; time += 100) {
+      const jitter = time <= 4000 ? TREMOR : 0;
+      // Lose tracking on the first frame after the estimate settles, while the noisy one is still in the window.
+      if (pending && lastNoisy > 0 && time - lastNoisy === 200) { gate.interrupt(); pending = false; }
+      const x = 0.5 + drift * time / DRIFT_DURATION + ((time / 100) % 2 ? jitter : -jitter);
+      const result = gate.update({ x, y: 0.5 }, time, CAMERA_WIDTH);
+      if (result.noise > WRIST_SELECTION_NOISE_CEILING) lastNoisy = time;
+      if (result.selectionReady && firstReady === null) firstReady = time;
+    }
+    expect(lastNoisy).toBeGreaterThan(4000); expect(pending).toBe(false);
+    expect(firstReady).not.toBeNull();
+    expect(firstReady! - lastNoisy).toBeGreaterThan(2000);
+  });
+  it('neither hides nor indefinitely holds a noisy estimate across a camera clock reset', () => {
+    const gate = new WristMotion(); let lastNoisy = -Infinity, time = 0;
+    const update = (t: number, jitter: number) => gate.update({ x: 0.5 + drift * t / DRIFT_DURATION + ((t / 100) % 2 ? jitter : -jitter), y: 0.5 }, t, CAMERA_WIDTH);
+    for (; time <= 4000 || time - lastNoisy < 200; time += 100) if (update(time, time <= 4000 ? TREMOR : 0).noise > WRIST_SELECTION_NOISE_CEILING) lastNoisy = time;
+    expect(update(100, 0).rejected).toBe(true); // The clock went backwards.
+    let firstReady: number | null = null;
+    for (let t = 200; t <= 4000 && firstReady === null; t += 100) if (update(t, 0).selectionReady) firstReady = t;
+    expect(firstReady).not.toBeNull();
+    expect(firstReady! - 200).toBeGreaterThan(2000);
   });
   it('bounds even a confirmed cursor discontinuity and does not call that in-flight cursor settled', () => {
     const target = { x: 700, y: 400 }, start = { x: 300, y: 400 };

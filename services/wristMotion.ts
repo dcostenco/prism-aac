@@ -105,7 +105,7 @@ export class WristMotion {
    * noise history; losing tracking is not evidence that tremor disappeared. */
   interrupt(): void {
     this.accepted = []; this.previous = null; this.candidate = null; this.latch = null;
-    this.lastTime = null; this.quality = [];
+    this.lastTime = null;
   }
 
   update(point: WristPoint, time: number, cameraLongSide: number): WristMotionResult {
@@ -153,8 +153,11 @@ export class WristMotion {
     const qualified = this.noise <= NOISY_INPUT_FLOOR || time - this.accepted[0].time >= NOISY_QUALIFICATION_MS;
     const ready = qualified && recent.length >= WRIST_PAUSE_SAMPLE_COUNT && span >= MIN_PAUSE_SPAN_MS;
     const travel = ready ? this.trendTravel(recent, span) : Infinity;
+    // After a clock rollback the retained estimates count as current, so a
+    // reset cannot hide noise either; they still age out of the bounded window.
     this.quality.push({ time, noise: this.noise });
-    this.quality = this.quality.filter(p => time - p.time <= HISTORY_MS).slice(-MAX_SAMPLES);
+    this.quality = this.quality.map(p => p.time > time ? { ...p, time } : p)
+      .filter(p => time - p.time <= HISTORY_MS).slice(-MAX_SAMPLES);
     const intervals = this.accepted.slice(1).map((p, i) => p.time - this.accepted[i].time);
     const trustedMeasurement = time - this.accepted[0].time >= MIN_WRIST_SELECTION_MS &&
       this.quality.every(p => p.noise <= WRIST_SELECTION_NOISE_CEILING) &&
