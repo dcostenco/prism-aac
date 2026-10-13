@@ -6,7 +6,18 @@ import { createHash } from 'node:crypto';
 
 // Actual production presence/ownership code + actual installed SDK/models.
 // Only module transport and the photographic camera source are test fixtures.
-const SOURCE_MODULES = ['headPresence', 'sharedFaceDetector', 'sharedHeadVerifier', 'mediapipeRuntime'] as const;
+// Serve the entry module's whole relative-import graph, so a new production
+// dependency is digested and served instead of silently aborted.
+function sourceGraph(entry: string): string[] {
+  const seen = new Set<string>(), queue = [entry];
+  for (let name = queue.shift(); name !== undefined; name = queue.shift()) {
+    if (seen.has(name)) continue;
+    seen.add(name);
+    for (const [, dependency] of readFileSync(resolve(process.cwd(), `services/${name}.ts`), 'utf8').matchAll(/from '\.\/(\w+)'/g)) queue.push(dependency);
+  }
+  return [...seen];
+}
+const SOURCE_MODULES = sourceGraph('headPresence');
 const PIXEL_FIXTURES = {
   head: 'e2e/_fixtures/wizard-scenarios/person-on-sofa.jpg',
   absent: 'e2e/_fixtures/wizard-scenarios/head-out-body-only.jpg',
