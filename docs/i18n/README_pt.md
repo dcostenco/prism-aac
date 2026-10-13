@@ -275,7 +275,7 @@ Funciona sem o iPhone — modo autônomo com dicionário de frases offline.
 </p>
 
 - **Tradução offline:** 1.261 frases × 20 idiomas incluídos (JSON de 411 KB) — busca instantânea, 100% precisa, sem necessidade de rede
-- Grade de pictogramas de 2 colunas com imagens ARASAAC
+- Grade de 2 colunas de cartões de frases com SF Symbols
 - Chat de IA com entrada por ditado + teclado (nuvem quando online, dicionário de frases quando offline)
 - Sistema de emergência: contagem regressiva → WCSession → rede celular alternativa → TTS
 - Tradução com saída de áudio TTS (dicionário offline primeiro, nuvem como alternativa)

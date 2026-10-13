@@ -275,7 +275,7 @@ Funcționează fără iPhone — autonom, cu dicționar de expresii offline.
 </p>
 
 - **Traducere offline:** 1.261 expresii × 20 limbi incluse (JSON 411 KB) — căutare instantanee, 100% precisă, fără rețea
-- Grilă de pictagrame pe 2 coloane cu imagini ARASAAC
+- Grilă pe 2 coloane de carduri cu fraze și SF Symbols
 - Chat AI cu dictare + introducere de la tastatură (cloud când este conectat, dicționar de expresii când este offline)
 - Sistem de urgență: numărătoare inversă → WCSession → rezervă pe rețeaua celulară → TTS
 - Traducere cu redare vocală TTS (dicționar offline mai întâi, rezervă în cloud)

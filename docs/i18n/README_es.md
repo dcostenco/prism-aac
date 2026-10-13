@@ -275,7 +275,7 @@ Funciona sin iPhone — de forma independiente con un diccionario de frases sin 
 </p>
 
 - **Traducción sin conexión:** 1261 frases × 20 idiomas incluidos (JSON de 411 KB) — búsqueda instantánea, 100 % precisa, sin red
-- Cuadrícula de pictogramas de 2 columnas con imágenes de ARASAAC
+- Cuadrícula de 2 columnas de tarjetas de frases con SF Symbols
 - Chat IA con dictado + entrada por teclado (nube con conexión, diccionario de frases sin conexión)
 - Sistema de emergencia: cuenta atrás → WCSession → respaldo celular → TTS
 - Traducción con salida por voz TTS (diccionario sin conexión primero, respaldo en la nube)
