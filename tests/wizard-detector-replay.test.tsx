@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import TrackingSetupWizard from '@/components/TrackingSetupWizard';
 import CameraInputOverlay from '@/components/CameraInputOverlay';
-import { loadPoseCalibration, stopPoseTracker } from '@/services/bodyPoseService';
+import { DEFAULT_CALIBRATION, loadPoseCalibration, stopPoseTracker } from '@/services/bodyPoseService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { readCameraSelectionState } from '@/services/cameraSelection';
 
@@ -11,11 +11,17 @@ import { readCameraSelectionState } from '@/services/cameraSelection';
 const io = vi.hoisted(() => ({
   poses: [] as Array<Array<{ x: number; y: number; visibility: number }>>,
   detect: vi.fn(), release: vi.fn(), acquire: vi.fn(),
+  presenceDetect: vi.fn(), verify: vi.fn(),
+  verificationCrop: { x: 0, y: 0, side: 1 },
   cameraDelay: 0,
 }));
 vi.mock('@mediapipe/tasks-vision', () => ({
   FilesetResolver: { forVisionTasks: vi.fn(async () => ({})) },
   PoseLandmarker: { createFromOptions: vi.fn(async () => ({ detectForVideo: io.detect })) },
+  // Head presence and verification: the same detector boundary the runtime
+  // requires before any wrist sample may calibrate or select.
+  FaceDetector: { createFromOptions: vi.fn(async () => ({ detectForVideo: io.presenceDetect, close: vi.fn() })) },
+  FaceLandmarker: { createFromOptions: vi.fn(async () => ({ detect: io.verify, close: vi.fn() })) },
 }));
 vi.mock('@/services/cameraStream', () => ({ acquireCamera: io.acquire }));
 vi.mock('@/services/aacSpeak', () => ({ aacSpeak: vi.fn() }));
@@ -44,7 +50,7 @@ beforeEach(() => {
   vi.setSystemTime(10_000);
   localStorage.clear();
   useSettingsStore.setState({ ...originalSettings, cameraInputEnabled: false,
-    cameraTrackingTarget: 'right_index',
+    cameraTrackingTarget: 'right_wrist',
     headTrackingEyeGaze: false, headTrackingSensitivity: 5 });
   frames = new Map(); id = 0; now = 0;
   io.poses = [];
@@ -52,6 +58,20 @@ beforeEach(() => {
   io.detect.mockReset().mockImplementation(() => ({ landmarks: io.poses.map(p => p.map(mark => ({
     ...mark, x: mark.x + drift(), y: mark.y + drift() / 2,
   }))) }));
+  io.presenceDetect.mockReset().mockImplementation((video: HTMLCanvasElement) => {
+    const nose = io.poses[0]?.[0];
+    return { detections: nose && nose.visibility >= 0.3 ? [{ categories: [{ score: 0.9 }], boundingBox: {
+      originX: (nose.x + drift() - 0.15) * video.width, originY: (nose.y + drift() / 2 - 0.15) * video.height,
+      width: video.width * 0.3, height: video.height * 0.3,
+    } }] : [] };
+  });
+  io.verify.mockReset().mockImplementation(() => {
+    const nose = io.poses[0]?.[0] ?? { x: 0.5, y: 0.3 };
+    const crop = io.verificationCrop;
+    return { faceLandmarks: [Array.from({ length: 468 }, () => ({
+      x: ((nose.x + drift()) * 320 - crop.x) / crop.side, y: ((nose.y + drift() / 2) * 240 - crop.y) / crop.side,
+    }))] };
+  });
   io.release.mockClear();
   io.acquire.mockReset().mockImplementation(async () => {
     if (io.cameraDelay) await new Promise(resolve => setTimeout(resolve, io.cameraDelay));
@@ -59,6 +79,7 @@ beforeEach(() => {
     const track = { readyState: 'live', getSettings: () => ({ facingMode: 'user' }) };
     Object.defineProperties(video, {
       readyState: { value: 4 }, videoWidth: { value: 640 }, videoHeight: { value: 480 },
+      currentTime: { get: () => now / 1000 }, // Advancing media clock: every frame is a new observation.
       srcObject: { value: { getTracks: () => [track], getVideoTracks: () => [track] } },
     });
     return { video, release: io.release };
@@ -77,6 +98,12 @@ beforeEach(() => {
   Object.defineProperty(document, 'elementFromPoint', {
     configurable: true, value: vi.fn(() => null),
   });
+  // Detector-boundary suite: verification-crop pixels are covered by the real-model browser test.
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement) {
+    return { drawImage: (...args: unknown[]) => {
+      if (this.width === 256 && args.length === 9) io.verificationCrop = { x: args[1] as number, y: args[2] as number, side: args[3] as number };
+    } } as never;
+  });
 });
 
 afterEach(() => {
@@ -86,9 +113,15 @@ afterEach(() => {
   vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers();
 });
 
+const RIGHT_WRIST = 16;
+// Rest where the factory preview maps to the screen center (the front camera
+// image is mirrored), so Step 1 shows the preview, not a stale profile, drives the cursor.
+const NEUTRAL_X = 1 - (DEFAULT_CALIBRATION.leftX + DEFAULT_CALIBRATION.rightX) / 2;
+const CORNER_REACH = 0.3; // Inside the calibration's frame-edge clamp at every drift level.
 function pose(x: number, y: number) {
   const landmarks = Array.from({ length: 33 }, () => ({ x: 0.5, y: 0.5, visibility: 0 }));
-  landmarks[20] = { x, y, visibility: 0.9 };
+  landmarks[0] = { x: 0.5, y: 0.3, visibility: 0.9 }; // A verified head must accompany the wrist.
+  landmarks[RIGHT_WRIST] = { x, y, visibility: 0.9 };
   io.poses = [landmarks];
 }
 
@@ -107,17 +140,18 @@ async function calibratedWizard() {
   const view = render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
   fireEvent.click(screen.getByTestId('tracking-setup-start'));
   await act(async () => { await Promise.resolve(); });
-  pose(0.5, 0.5);
+  pose(NEUTRAL_X, 0.5);
   await step(66);
   expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'calibrate-center');
-  expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_index');
+  expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_wrist');
   await step(40);
   const cursor = screen.getByTestId('tracking-wizard-cursor');
   expect(Math.hypot(parseFloat(cursor.style.left) + 18 - 640,
     parseFloat(cursor.style.top) + 18 - 360)).toBeLessThan(55);
   expect(screen.getByTestId('tracking-capture-center')).not.toBeDisabled();
   fireEvent.click(screen.getByTestId('tracking-capture-center'));
-  for (const [x, y] of [[0.85, 0.2], [0.15, 0.2], [0.15, 0.8], [0.85, 0.8]]) {
+  for (const [dx, y] of [[CORNER_REACH, 0.2], [-CORNER_REACH, 0.2], [-CORNER_REACH, 0.8], [CORNER_REACH, 0.8]]) {
+    const x = NEUTRAL_X + dx;
     pose(x, y); await step(3);
     fireEvent.click(screen.getByTestId('tracking-capture-corner'));
   }
@@ -141,16 +175,16 @@ async function centerOnlyWizard() {
 
 describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
-  it('Cancel restores both orientation profiles and the original target after a manual mode change', async () => {
+  it('Cancel restores both orientation profiles and the original target after a manual wrist choice', async () => {
     seedPreviousProfiles();
-    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'any_index' });
+    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist' });
     const cancel = vi.fn();
     render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={cancel} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
     await act(async () => { await Promise.resolve(); });
     pose(0.5, 0.5); await step(51);
-    fireEvent.click(screen.getByRole('button', { name: /Right Finger/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^Calibrate Right Finger/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Right Wrist\s*\d+%/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Calibrate Right Wrist/ }));
     await step(10);
     Object.defineProperties(window, { innerWidth: { configurable: true, value: 390 },
       innerHeight: { configurable: true, value: 844 } });
@@ -162,7 +196,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
     expect(cancel).toHaveBeenCalledOnce();
     for (const [key, raw] of Object.entries(ORIGINAL_PROFILE_VALUES)) expect(localStorage.getItem(key)).toBe(raw);
-    expect(useSettingsStore.getState()).toMatchObject({ cameraInputEnabled: false, cameraTrackingTarget: 'any_index' });
+    expect(useSettingsStore.getState()).toMatchObject({ cameraInputEnabled: false, cameraTrackingTarget: 'right_wrist' });
   });
 
   it('unmount rolls back an unfinished calibration and its legacy completion flag', async () => {
@@ -259,21 +293,21 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-landscape']);
   });
   it('retains wizard tracker ownership when a manual mode change rerenders the live overlay', async () => {
-    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'any_hand' });
+    useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist' });
     const view = render(<><CameraInputOverlay /><TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} /></>);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
     await act(async () => { await Promise.resolve(); });
     pose(0.5, 0.5); await step(51);
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'detecting');
-    fireEvent.click(screen.getByRole('button', { name: /Right Finger/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^Calibrate Right Finger/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Right Wrist\s*\d+%/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Calibrate Right Wrist/ }));
     // A live Settings change still must not let the overlay steal the
     // wizard's tracker; target choice itself stays a draft until confirmation.
     act(() => useSettingsStore.getState().update({ headTrackingSensitivity: 6 }));
     await step(20);
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-tracker-status', 'tracking');
     expect(screen.getByTestId('tracking-capture-center')).toBeEnabled();
-    expect(useSettingsStore.getState().cameraTrackingTarget).toBe('any_hand');
+    expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_wrist');
     expect(readCameraSelectionState().blocked).toBe(true);
     view.unmount();
     expect(readCameraSelectionState().blocked).toBe(false);
@@ -298,30 +332,31 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(saved.wizardCompleted).toBe(true);
   });
 
-  it('saves selected-finger calibration and restores its real cursor mapping in the application overlay', async () => {
+  it('saves selected-wrist calibration and restores its real cursor mapping in the application overlay', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1);
     const wizard = await calibratedWizard();
     const saved = loadPoseCalibration();
     expect(saved.wizardCompleted).toBe(true);
-    expect(saved.leftX - saved.rightX).toBeCloseTo(0.7, 2);
+    expect(saved.leftX - saved.rightX).toBeCloseTo(2 * CORNER_REACH, 2);
     // The tracker stays alive throughout accuracy testing. Neutral frames
     // must not bootstrap-shrink the user's just-captured reachable range.
     pose(0.5, 0.5); await step(530);
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'complete');
-    expect(loadPoseCalibration().leftX - loadPoseCalibration().rightX).toBeCloseTo(0.7, 2);
+    expect(loadPoseCalibration().leftX - loadPoseCalibration().rightX).toBeCloseTo(2 * CORNER_REACH, 2);
     expect(loadPoseCalibration().bottomY - loadPoseCalibration().topY).toBeCloseTo(0.6, 2);
     fireEvent.click(screen.getByTestId('tracking-confirm'));
     wizard.unmount();
     const overlay = render(<CameraInputOverlay />);
     await act(async () => { await Promise.resolve(); });
-    pose(0.5, 0.5); await step(3);
+    pose(NEUTRAL_X, 0.5); await step(3);
     const root = screen.getByTestId('camera-input-overlay');
     expect(root).toHaveAttribute('data-status', 'tracking');
-    expect(root).toHaveAttribute('data-target', 'right_index');
-    const dot = root.querySelector<HTMLElement>('div[style*="border-radius"]')!;
-    expect(Math.abs(parseFloat(dot.style.left) - 626)).toBeLessThan(30);
-    pose(0.25, 0.5); await step(10);
-    expect(parseFloat(dot.style.left)).toBeGreaterThan(900);
+    expect(root).toHaveAttribute('data-target', 'right_wrist');
+    const dot = () => root.querySelector<HTMLElement>('div[style*="border-radius"]')!;
+    expect(Math.abs(parseFloat(dot().style.left) - 626)).toBeLessThan(30);
+    // The isolated jump is withheld for a frame, which remounts the dot: read the current one.
+    pose(NEUTRAL_X - 0.25, 0.5); await step(10);
+    expect(parseFloat(dot().style.left)).toBeGreaterThan(900);
     expect(loadPoseCalibration()).toEqual(saved);
     overlay.unmount();
     const calls = io.detect.mock.calls.length;
@@ -334,10 +369,10 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     // Put accuracy targets at center to isolate loss gating from reachability.
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
     await calibratedWizard();
-    pose(0.5, 0.5); await step(3);
+    pose(NEUTRAL_X, 0.5); await step(3);
     io.poses = [];
     await step(9);
-    expect(screen.getByTestId('tracking-wizard-status')).toHaveTextContent('Camera');
+    expect(screen.getByTestId('tracking-wizard-status')).toHaveTextContent('Face not verified'); // Head gate first.
     expect(screen.getByTestId('tracking-test-hits')).toHaveTextContent('0/5');
     await step(110); // Automatic escape must skip, not manufacture an accuracy hit.
     expect(screen.getByTestId('tracking-test-hits')).toHaveTextContent('0/5');
@@ -353,7 +388,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'detecting');
     await step(45);
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'calibrate-center');
-    expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_index');
+    expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_wrist');
   });
 
   it('releases a late camera lease without processing frames after cancel/unmount', async () => {
