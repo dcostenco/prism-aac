@@ -8,18 +8,6 @@ or later. See LICENSE for the full text.
 THIRD-PARTY MATERIAL
 ================================================================================
 
-ARASAAC pictograms
-------------------
-Prism AAC displays pictograms from the ARASAAC collection. They are retrieved at
-runtime from ARASAAC's public servers, cached on the end user's device, and are
-not redistributed with this software.
-
-    Author of the pictograms: Sergio Palao
-    Origin: ARASAAC (https://arasaac.org)
-    Licence: CC BY-NC-SA 4.0
-             (https://creativecommons.org/licenses/by-nc-sa/4.0/)
-    Owner: Government of Aragon (Spain)
-
 MediaPipe
 ---------
 public/models/mediapipe/ contains Google MediaPipe WASM runtimes and task

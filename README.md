@@ -274,7 +274,7 @@ Works without iPhone — standalone with offline phrase dictionary.
 </p>
 
 - **Offline translation:** 1,261 phrases × 20 languages bundled (411 KB JSON) — instant lookup, 100% accurate, no network
-- 2-column pictogram grid with ARASAAC images
+- 2-column grid of phrase cards with SF Symbols
 - AI Chat with dictation + keyboard input (cloud when online, phrase dict when offline)
 - Emergency system: countdown → WCSession → cellular fallback → TTS
 - Translation with TTS output (offline dictionary first, cloud fallback)

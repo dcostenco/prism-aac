@@ -22,6 +22,10 @@ struct PrismAACWatchApp: App {
     @StateObject private var translation  = WatchTranslation()
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        LegacyPictogramCache.clearOnce()
+    }
+
     var body: some Scene {
         WindowGroup {
             WatchRootView()
@@ -38,5 +42,20 @@ struct PrismAACWatchApp: App {
                     }
                 }
         }
+    }
+}
+
+/// Earlier versions showed third-party pictograms, downloaded at runtime and
+/// kept in the shared URL cache. Cards now show SF Symbols only, so delete
+/// those copies once. Every other Watch session is ephemeral, and the AI
+/// stream that uses the shared session posts, which is never cached, so the
+/// shared cache held nothing else worth keeping.
+enum LegacyPictogramCache {
+    static let clearedKey = "prism-legacy-pictograms-cleared"
+
+    static func clearOnce(defaults: UserDefaults = .standard, cache: URLCache = .shared) {
+        guard !defaults.bool(forKey: clearedKey) else { return }
+        cache.removeAllCachedResponses()
+        defaults.set(true, forKey: clearedKey)
     }
 }

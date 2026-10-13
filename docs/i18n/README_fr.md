@@ -275,7 +275,7 @@ Fonctionne sans iPhone — mode autonome avec dictionnaire de phrases hors ligne
 </p>
 
 - **Traduction hors ligne :** 1 261 phrases × 20 langues intégrées (JSON de 411 Ko) — recherche instantanée, 100% précise, sans réseau
-- Grille de pictogrammes à 2 colonnes avec images ARASAAC
+- Grille de cartes de phrases à 2 colonnes avec SF Symbols
 - Chat IA avec dictée + saisie au clavier (cloud en ligne, dictionnaire de phrases hors ligne)
 - Système d'urgence : compte à rebours → WCSession → repli cellulaire → synthèse vocale
 - Traduction avec sortie vocale (dictionnaire hors ligne en priorité, repli cloud)

@@ -273,7 +273,7 @@ Funktioniert ohne iPhone — eigenständig mit Offline-Phrasenwörterbuch.
 </p>
 
 - **Offline-Übersetzung:** 1.261 Phrasen × 20 Sprachen integriert (411 KB JSON) — sofortiges Nachschlagen, 100% genau, kein Netzwerk erforderlich
-- 2-spaltiges Piktogramm-Raster mit ARASAAC-Bildern
+- 2-spaltiges Raster aus Satzkarten mit SF Symbols
 - KI-Chat mit Diktat + Tastatureingabe (Cloud im Online-Zustand, Phrasenwörterbuch im Offline-Zustand)
 - Notfallsystem: Countdown → WCSession → Mobilfunk-Rückfallebene → TTS
 - Übersetzung mit TTS-Ausgabe (zuerst Offline-Wörterbuch, Cloud als Rückfallebene)
