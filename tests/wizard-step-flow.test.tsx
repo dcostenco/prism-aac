@@ -121,6 +121,16 @@ function dispatchPoseSample(target: TrackingTarget, normX: number, normY: number
   }
 }
 
+/** A camera keeps delivering frames while the user holds still; readiness
+ *  is per-frame evidence, so a hold without frames is not a hold. */
+function holdStill(ms: number, target: TrackingTarget, normX: number, normY: number, cursor?: { x: number; y: number }) {
+  for (let elapsed = 0; elapsed < ms; elapsed += 100) act(() => {
+    dispatchPoseSample(target, normX, normY);
+    if (cursor) latestTracker().opts.onMove(cursor.x, cursor.y);
+    vi.advanceTimersByTime(100);
+  });
+}
+
 /** Simulate the tracker losing the user (out-of-view). Status flips to
  *  'lost' and NO prism-pose-sample fires. */
 function simulatePoseLost() {
@@ -325,7 +335,7 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
       // Credit the real target's pause before the five-second fallback fires.
       latestTracker().opts.onMove(800 + drift * 100, 200);
     });
-    act(() => vi.advanceTimersByTime(1800));
+    holdStill(1800, 'right_wrist', 0.6 + drift, 0.4, { x: 800 + drift * 100, y: 200 });
     expect(screen.getByTestId('tracking-capture-corner')).toHaveTextContent('Top Right');
   });
 
@@ -353,9 +363,9 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
     });
     // Ninety pixels away is inside the old 200px radius but outside the
     // actual ring. Preserve the user's time to make a comfortable movement.
-    act(() => vi.advanceTimersByTime(1800));
+    holdStill(1800, 'right_wrist', 0.5 + drift, 0.5, { x: 195 + drift * 100, y: 422 });
     expect(screen.getByTestId('tracking-capture-corner')).toHaveTextContent('Top Left');
-    act(() => vi.advanceTimersByTime(3400));
+    holdStill(3400, 'right_wrist', 0.5 + drift, 0.5, { x: 195 + drift * 100, y: 422 });
     // The explicitly best-effort timeout remains available, not a hit claim.
     expect(screen.getByTestId('tracking-capture-corner')).toHaveTextContent('Top Right');
   });
@@ -585,7 +595,10 @@ describe('TrackingSetupWizard — accuracy evidence', () => {
     enterAccuracy();
     for (let target = 0; target < 5; target++) {
       for (let frame = 0; frame < 18; frame++) {
-        act(() => latestTracker().opts.onMove(512 + Math.sin(frame) * 2, 384 + 0.015 * 768));
+        act(() => {
+          dispatchPoseSample('right_wrist', 0.5, 0.5);
+          latestTracker().opts.onMove(512 + Math.sin(frame) * 2, 384 + 0.015 * 768);
+        });
         act(() => vi.advanceTimersByTime(33));
       }
       if (target < 4) expect(screen.getByTestId(`tracking-test-target-${target}`)).toHaveAttribute('data-camera-hit', 'true');

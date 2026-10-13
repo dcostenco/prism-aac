@@ -173,6 +173,30 @@ async function centerOnlyWizard() {
   return { view, preview };
 }
 
+async function cornersWizard() {
+  const view = render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+  fireEvent.click(screen.getByTestId('tracking-setup-start'));
+  await act(async () => { await Promise.resolve(); });
+  pose(NEUTRAL_X, 0.5); await step(66); await step(16);
+  fireEvent.click(screen.getByTestId('tracking-capture-center'));
+  expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'calibrate-corners');
+  return view;
+}
+
+/** Camera callbacks stop (background tab, stalled stream) while the wizard's own timers keep running. */
+async function suspendCamera(ms: number) {
+  await act(async () => { vi.advanceTimersByTime(ms); });
+}
+
+function rotateTo(orientation: 'portrait' | 'landscape') {
+  Object.defineProperties(window, orientation === 'portrait'
+    ? { innerWidth: { configurable: true, value: 390 }, innerHeight: { configurable: true, value: 844 } }
+    : { innerWidth: { configurable: true, value: 1280 }, innerHeight: { configurable: true, value: 720 } });
+}
+
+const heading = () => screen.getByRole('heading', { level: 1 });
+const wizardPhase = () => screen.getByTestId('tracking-setup-wizard').getAttribute('data-phase');
+
 describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
   it('Cancel restores both orientation profiles and the original target after a manual wrist choice', async () => {
@@ -402,5 +426,85 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(io.detect).not.toHaveBeenCalled();
     expect(io.release).toHaveBeenCalledTimes(io.acquire.mock.calls.length);
     expect(screen.queryByTestId('tracking-setup-wizard')).toBeNull();
+  });
+  it('never auto-captures a corner from readiness that went stale while camera callbacks stopped', async () => {
+    await cornersWizard();
+    await step(28);
+    expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-selection-ready', 'true');
+    expect(heading()).toHaveTextContent('Step 2: Corners (1/4)');
+    await suspendCamera(6000); // Past the 5 s comfortable-range timeout, with no new observation.
+    expect(heading()).toHaveTextContent('Step 2: Corners (1/4)');
+    // Fresh frames requalify after the gap (a new measurement window), then the same timeout path captures.
+    for (let i = 0; i < 40 && /\(1\/4\)/.test(heading().textContent ?? ''); i++) await step();
+    expect(heading()).toHaveTextContent('Step 2: Corners (2/4)');
+  });
+
+  it('never auto-captures the center from readiness that went stale while camera callbacks stopped', async () => {
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(NEUTRAL_X, 0.5); await step(66); await step(30);
+    expect(wizardPhase()).toBe('calibrate-center');
+    expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-selection-ready', 'true');
+    await suspendCamera(25_000); // Past the 20 s fallback, with no new observation.
+    expect(wizardPhase()).toBe('calibrate-center');
+  });
+
+  it('awards no accuracy hit from a cursor pause that went stale while camera callbacks stopped', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // Every target at the same spot under the resting cursor.
+    await calibratedWizard();
+    const active = () => document.querySelector(`[data-testid="tracking-test-target-${Number(/Test \((\d+)\//.exec(heading().textContent ?? '')?.[1]) - 1}"]`);
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return this.dataset.testid?.startsWith('tracking-test-target-') ? new DOMRect(640 - 70, 360 - 70, 140, 140) : new DOMRect(0, 0, 0, 0);
+    });
+    vi.mocked(document.elementFromPoint).mockImplementation(() => active());
+    pose(NEUTRAL_X, 0.5);
+    for (let i = 0; i < 60 && !/\b1\/5/.test(screen.getByTestId('tracking-test-hits').textContent ?? ''); i++) await step();
+    expect(screen.getByTestId('tracking-test-hits')).toHaveTextContent('1/5'); // A fresh camera hit lands.
+    await suspendCamera(600); // A hold begun on fresh evidence may finish inside the freshness limit.
+    const settled = screen.getByTestId('tracking-test-hits').textContent;
+    await suspendCamera(12_000);
+    expect(screen.getByTestId('tracking-test-hits').textContent).toBe(settled);
+    expect(settled).toMatch(/\b[12]\/5/);
+  });
+
+  it('requires a fresh center after rotation instead of saving a landscape center as portrait', async () => {
+    seedPreviousProfiles();
+    const complete = vi.fn();
+    const view = render(<TrackingSetupWizard onComplete={complete} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(NEUTRAL_X, 0.5); await step(66); await step(16);
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    rotateTo('portrait');
+    fireEvent.click(screen.getByTestId('tracking-save-center-only'));
+    expect(wizardPhase()).toBe('calibrate-center');
+    expect(screen.getByTestId('tracking-wizard-guide')).toHaveTextContent('Orientation changed');
+    for (const [key, raw] of Object.entries(ORIGINAL_PROFILE_VALUES)) expect(localStorage.getItem(key)).toBe(raw);
+    // A center captured in this orientation completes setup for it, and only for it.
+    await step(16);
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    fireEvent.click(screen.getByTestId('tracking-save-center-only'));
+    fireEvent.click(screen.getByTestId('tracking-test-skip'));
+    fireEvent.click(screen.getByTestId('tracking-confirm'));
+    expect(complete).toHaveBeenCalledOnce();
+    expect(JSON.parse(localStorage.getItem('prism-pose-calibration-portrait')!)).toMatchObject({ orientation: 'portrait', trackingTarget: 'right_wrist', wizardCompleted: true });
+    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-landscape']);
+    view.unmount();
+  });
+
+  it('requires a fresh center when the screen rotates between corner captures', async () => {
+    seedPreviousProfiles();
+    await cornersWizard();
+    for (const [dx, y] of [[CORNER_REACH, 0.2], [-CORNER_REACH, 0.2]]) {
+      pose(NEUTRAL_X + dx, y); await step(3);
+      fireEvent.click(screen.getByTestId('tracking-capture-corner'));
+    }
+    expect(heading()).toHaveTextContent('Step 2: Corners (3/4)');
+    rotateTo('portrait');
+    pose(NEUTRAL_X - CORNER_REACH, 0.8); await step(3);
+    fireEvent.click(screen.getByTestId('tracking-capture-corner'));
+    expect(wizardPhase()).toBe('calibrate-center');
+    for (const [key, raw] of Object.entries(ORIGINAL_PROFILE_VALUES)) expect(localStorage.getItem(key)).toBe(raw);
   });
 });

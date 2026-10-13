@@ -33,6 +33,7 @@ import { useT } from '@/engine/useT';
 import { trackingLossKey } from '@/services/trackingFeedback';
 import type { TrackingLossReason } from '@/services/trackingDiagnostics';
 import { WRIST_PAUSE_SAMPLE_COUNT } from '@/services/wristMotion';
+import { CAMERA_FRAME_STALE_MS } from '@/services/cameraFrameTiming';
 
 const WIZARD_CURSOR_SIZE = 36;
 const ACCURACY_DWELL_MS = 400;
@@ -114,6 +115,19 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const motionPausedRef = useRef(false);
   const selectionReadyRef = useRef(false);
   const cursorPausedRef = useRef(false);
+  // Readiness and a cursor pause describe one camera frame. The wizard's
+  // timers keep running when frames stop (background tab, stalled stream),
+  // so automatic captures and hits accept only a recent observation.
+  const selectionReadyAtRef = useRef(0);
+  const cursorPausedAtRef = useRef(0);
+  const freshSelectionReady = () => selectionReadyRef.current && Date.now() - selectionReadyAtRef.current < CAMERA_FRAME_STALE_MS;
+  const freshCursorPause = () => cursorPausedRef.current && Date.now() - cursorPausedAtRef.current < CAMERA_FRAME_STALE_MS;
+  const resetMotionEvidence = () => {
+    motionPausedRef.current = false; selectionReadyRef.current = false; cursorPausedRef.current = false;
+  };
+  const observeCursorMotion = (motion: { selectionReady?: boolean }) => {
+    cursorPausedRef.current = motion.selectionReady === true; cursorPausedAtRef.current = Date.now();
+  };
 
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const calibrationDraftRef = useRef<PoseCalibrationDraft | null>(null);
@@ -128,6 +142,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // physically reach screen corners (head tracking on a sofa, limited
   // mobility) still get a usable cursor mapping.
   const centerSampleRef = useRef<{ normX: number; normY: number } | null>(null);
+  // Captures belong to the camera framing they were taken in; a rotated
+  // screen needs a fresh center rather than a relabelled one.
+  const centerOrientationRef = useRef<'landscape' | 'portrait' | null>(null);
   // Tracks setTimeout handles spawned by startDetection so we can
   // clear them on unmount. Without this, a fast Cancel after Get
   // Started left two timers (5000ms + 1500ms) firing on a stale
@@ -208,6 +225,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       if (samplingAllowedRef.current && detail?.normX != null) {
         motionPausedRef.current = detail.motionPaused === true;
         selectionReadyRef.current = detail.selectionReady === true;
+        selectionReadyAtRef.current = Date.now();
         sampleBufferRef.current.push({ normX: detail.normX, normY: detail.normY });
         if (sampleBufferRef.current.length > 100) sampleBufferRef.current.shift();
       }
@@ -290,6 +308,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     detectionCountRef.current = {};
     completedOrientationRef.current = null;
     centerSampleRef.current = null;
+    centerOrientationRef.current = null;
     // Freeze learner saves for the entire wizard run. The online learner
     // overwrites DEFAULT_CALIBRATION within seconds — freezing it keeps
     // the wizard-set cal stable throughout Steps 1–2.
@@ -307,6 +326,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     try { savePoseCalibration(DEFAULT_CALIBRATION); applyCalibrationToActiveTracker(DEFAULT_CALIBRATION); } catch { /* */ }
 
     if (handleRef.current) handleRef.current.stop();
+    resetMotionEvidence(); // A new tracker owns the camera: nothing it has not observed counts.
 
     const handle = startPoseTracker({
       dwellMs: 99999,
@@ -317,8 +337,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       requireHeadPresence: true,
       calibrationMode: 'setup',
       cursorSmoothing: 0.12,
-      onTrackingLoss(reason) { setLossReason(reason); motionPausedRef.current = false; selectionReadyRef.current = false; },
-      onMotionStateChange(motion) { cursorPausedRef.current = motion.selectionReady === true; },
+      onTrackingLoss(reason) { setLossReason(reason); resetMotionEvidence(); },
+      onMotionStateChange: observeCursorMotion,
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
       onStatusChange(status, activeTarget) {
@@ -387,6 +407,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // including aggregate modes that can switch to the more visible side.
   const restartTrackerForPart = useCallback((target: TrackingTarget) => {
     if (handleRef.current) handleRef.current.stop();
+    resetMotionEvidence();
     console.log(`[wizard] restartTrackerForPart target=${target}`);
     const handle = startPoseTracker({
       dwellMs: 99999,
@@ -397,8 +418,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       requireHeadPresence: true,
       calibrationMode: 'setup',
       cursorSmoothing: 0.12,
-      onTrackingLoss(reason) { setLossReason(reason); motionPausedRef.current = false; selectionReadyRef.current = false; },
-      onMotionStateChange(motion) { cursorPausedRef.current = motion.selectionReady === true; },
+      onTrackingLoss(reason) { setLossReason(reason); resetMotionEvidence(); },
+      onMotionStateChange: observeCursorMotion,
       onMove(x, y) {
         if (samplingAllowedRef.current) setCursorPos({ x, y });
       },
@@ -458,7 +479,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       if (buf.length < 20) return;
       // Auto-capture: stable-hold path (best case — low jitter users).
       if (buf.length >= 50) {
-        const isStable = samplingAllowedRef.current && selectionReadyRef.current;
+        const isStable = samplingAllowedRef.current && freshSelectionReady();
         if (isStable) {
           stableCount++;
           if (stableCount >= 2) {
@@ -472,7 +493,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       }
       // After twenty seconds, a measured pause can use the current samples
       // without requiring absolute stillness. Earlier travel is not neutral.
-      if (buf.length >= 20 && samplingAllowedRef.current && selectionReadyRef.current) {
+      if (buf.length >= 20 && samplingAllowedRef.current && freshSelectionReady()) {
         const w = typeof window !== 'undefined' ? (window as unknown as {__centerPhaseStart?:number}) : null;
         const elapsed = w ? (performance.now() - (w.__centerPhaseStart ?? performance.now())) : 0;
         if (elapsed >= 20_000) {
@@ -507,6 +528,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const sy = samples.reduce((s, v) => s + v.normY, 0) / n;
     console.log(`[wizard] center avg normX=${sx.toFixed(3)} normY=${sy.toFixed(3)}`);
     centerSampleRef.current = { normX: sx, normY: sy };
+    centerOrientationRef.current = getOrientation();
 
     // Apply preview calibration centered on captured neutral.
     // wizardCalibration.computeCenterPreviewCalibration anchors the cursor
@@ -542,6 +564,19 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const captureCenterCallbackRef = useRef<(() => void) | null>(null);
   useEffect(() => { captureCenterCallbackRef.current = captureCenter; }, [captureCenter]);
 
+  /** True (and back at Step 1) when the screen turned since the center was captured. */
+  const recaptureAfterRotation = useCallback(() => {
+    const captured = centerOrientationRef.current;
+    if (!captured || captured === getOrientation()) return false;
+    centerSampleRef.current = null; centerOrientationRef.current = null;
+    sampleBufferRef.current = [];
+    setCornerIdx(0); setCornerSamples([]); setProgress(0);
+    setPhase('calibrate-center');
+    setStatusText(t('camera_loss_orientation'));
+    speak(t('camera_loss_orientation'));
+    return true;
+  }, [speak, t]);
+
   const skipCalibration = useCallback(() => {
     if (!mountedRef.current || !calibrationDraftRef.current) return;
     tapFeedback();
@@ -565,6 +600,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // Capture handler for corners, called when the user taps Capture.
   // Refuses to advance if no pose samples (same guard as center).
   const captureCorner = useCallback(() => {
+    if (recaptureAfterRotation()) return;
     const n = sampleBufferRef.current.length;
     const cornerLabel = CORNER_TARGETS[cornerIdx]?.label;
     console.log(`[wizard] captureCorner ${cornerIdx + 1}/4 (${cornerLabel}) — bufferSize=${n}`);
@@ -629,7 +665,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       setPhase('accuracy-test');
       setStatusText('Look at each red circle until it goes green');
     }
-  }, [cornerIdx, cornerSamples, speak, t]);
+  }, [cornerIdx, cornerSamples, speak, t, recaptureAfterRotation]);
 
   // ── PHASE: Accuracy Test ──
   const handleTestHit = useCallback((idx: number, hit = true, cameraHit = false) => {
@@ -669,7 +705,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const interval = setInterval(() => {
       const target = testTargets[testIdx];
       if (!target || target.hit) return;
-      if (!samplingAllowedRef.current || !cursorPausedRef.current) { dwellHitRef.current = null; return; }
+      if (!samplingAllowedRef.current || !freshCursorPause()) { dwellHitRef.current = null; return; }
       const element = accuracyTargetRef.current;
       const bounds = element?.getBoundingClientRect();
       const { x, y } = cursorPosRef.current;
@@ -762,7 +798,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const CORNER_DWELL_MS = 1500;
     const CORNER_TIMEOUT_MS = 5000;
     const id = setInterval(() => {
-      if (!samplingAllowedRef.current || !selectionReadyRef.current || sampleBufferRef.current.length === 0) {
+      if (!samplingAllowedRef.current || !freshSelectionReady() || sampleBufferRef.current.length === 0) {
         cornerDwellRef.current = null; return;
       }
       const elapsed = Date.now() - cornerStartRef.current;
@@ -1154,7 +1190,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 <button
                   onClick={() => {
                     const center = centerSampleRef.current;
-                    if (!mountedRef.current || !center) return;
+                    if (!mountedRef.current || !center || recaptureAfterRotation()) return;
                     tapFeedback();
                     // Finalize the same captured neutral mapping as preview,
                     // including the live learner's completed-calibration lock.
