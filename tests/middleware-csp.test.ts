@@ -29,6 +29,16 @@ describe('Prism AAC Content Security Policy', () => {
   });
 });
 
+describe('CSP — generated prediction pictures', () => {
+  // The portal answers a picture request with a 302 to Supabase storage, and
+  // the browser checks the redirect target against connect-src.
+  it('lets a picture request follow the portal redirect to Supabase storage', () => {
+    const csp = middleware(new NextRequest('https://prism-aac.vercel.app/prism-aac'))
+      .headers.get('content-security-policy') || '';
+    expect(/connect-src ([^;]+)/.exec(csp)?.[1].split(/\s+/)).toContain('https://*.supabase.co');
+  });
+});
+
 describe('CSP — retired third-party pictograms', () => {
   // The app no longer shows third-party pictograms; the browser must refuse to
   // load them for any page served after this ships, even one running older
