@@ -224,6 +224,14 @@ html, body {
   }
 }
 
+/* A tile with no picture gives its words the whole card: no empty picture
+ * well and no divider. The label may use the card's full height, and
+ * FittedTileLabel grows the words to the largest size that still fits. */
+[data-tile-picture="none"] > .aac-tile-label {
+  max-height: 100%;
+  -webkit-line-clamp: 3;
+}
+
 .aac-tile-icon {
   display: flex;
   align-items: center;
@@ -916,8 +924,13 @@ html, body {
     padding: 0;
   }
 
+  /* A tile is about 118px tall inside the strip and a two-line name needs
+     about 71px, leaving about 45px. Emoji draw about 1.17em tall, so the
+     symbol is capped to 36px (about 42px drawn). The icon box clips as a
+     backstop, so a decoration never covers the words. */
   [data-testid="picture-board"] .aac-category-icon {
-    font-size: clamp(3.25rem, 9svh, 4.75rem);
+    font-size: clamp(1.5rem, 3.5svh, 2.25rem);
+    overflow: hidden;
   }
 }
 

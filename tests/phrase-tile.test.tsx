@@ -63,7 +63,9 @@ describe('PhraseTile — rendering', () => {
   });
 
   it('uses the shared readable AAC label contract', () => {
-    render(<PhraseTile phrase="Communication" onClick={vi.fn()} />);
+    // The picture well exists only when the tile has a picture; see
+    // "words fill a tile with no picture" below.
+    render(<PhraseTile phrase="Communication" customImageUrl="https://example.com/own.png" onClick={vi.fn()} />);
     expect(screen.getByTestId('phrase-tile-card')).toHaveClass('aac-phrase-tile');
     expect(screen.getByTestId('phrase-tile-label')).toHaveClass('aac-tile-label', 'aac-phrase-label');
     const icon = screen.getByTestId('phrase-tile-card').querySelector<HTMLElement>('.aac-tile-icon');
@@ -158,5 +160,37 @@ describe('PhraseTile — pictogram loading', () => {
   it('calls getPictogramUrl with phrase when englishPhrase is absent', async () => {
     render(<PhraseTile phrase="Help" onClick={vi.fn()} />);
     await waitFor(() => expect(getPictogramUrlMock).toHaveBeenCalledWith('Help', 'en', expect.anything()));
+  });
+});
+
+describe('PhraseTile — words fill a tile with no picture', () => {
+  it('a tile with no picture has no picture well or divider and lets its words grow', async () => {
+    getPictogramUrlMock.mockResolvedValue(null);
+    render(<PhraseTile phrase="Hello" onClick={vi.fn()} />);
+    await waitFor(() => expect(getPictogramUrlMock).toHaveBeenCalled());
+    const tile = screen.getByTestId('phrase-tile-card');
+    expect(tile).toHaveAttribute('data-tile-picture', 'none');
+    expect(tile.querySelector('.aac-tile-icon')).toBeNull();
+    expect(tile.style.justifyContent).toBe('center');
+    expect(screen.getByTestId('phrase-tile-label').style.borderTop).toBe('');
+  });
+
+  it('a tile with a picture keeps the picture above its words', async () => {
+    getPictogramUrlMock.mockResolvedValue('https://example.com/pic.png');
+    render(<PhraseTile phrase="Hello" onClick={vi.fn()} />);
+    const tile = screen.getByTestId('phrase-tile-card');
+    await waitFor(() => expect(tile).toHaveAttribute('data-tile-picture', 'shown'));
+    expect(tile.querySelector('.aac-tile-icon img')).toHaveAttribute('src', 'https://example.com/pic.png');
+    expect(screen.getByTestId('phrase-tile-label').style.borderTop).not.toBe('');
+  });
+
+  it('a picture that fails to load gives the words the whole tile', async () => {
+    getPictogramUrlMock.mockResolvedValue('https://example.com/broken.png');
+    render(<PhraseTile phrase="Hello" onClick={vi.fn()} />);
+    const tile = screen.getByTestId('phrase-tile-card');
+    await waitFor(() => expect(tile).toHaveAttribute('data-tile-picture', 'shown'));
+    fireEvent.error(tile.querySelector('img')!);
+    expect(tile).toHaveAttribute('data-tile-picture', 'none');
+    expect(tile.querySelector('.aac-tile-icon')).toBeNull();
   });
 });

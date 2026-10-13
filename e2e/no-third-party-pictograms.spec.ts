@@ -50,6 +50,8 @@ test('the board shows words, asks nothing of the retired pictogram service, and 
       request.onerror = () => reject(request.error);
     });
     localStorage.setItem('prism-arasaac-misses', '["en:fixture"]');
+    // A device updating from an earlier version has never recorded the cleanup.
+    localStorage.removeItem('prism-legacy-pictograms-cleared');
     const cache = await caches.open('earlier-version-fixture');
     await cache.put(retiredEntry, new Response('retired picture'));
     await cache.put(keptEntry, new Response('unrelated'));

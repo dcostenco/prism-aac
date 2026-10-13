@@ -190,6 +190,9 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
   const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null);
+  // No picture, or one that failed to load: the word gets the whole tile.
+  const wordsOnly = !iconUrl || failedIconUrl === iconUrl;
   type FrozenVisual = {
     word: string;
     color: string;
@@ -327,18 +330,20 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
       aria-label={`Predict: ${visibleWord}`}
       title={visibleWord}
       data-testid="prediction-tile"
-      className={`aac-btn aac-prediction-tile flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
+      data-tile-picture={wordsOnly ? 'none' : 'shown'}
+      className={`aac-btn aac-prediction-tile flex-1 min-w-0 rounded-xl flex flex-col items-center${wordsOnly ? ' justify-center' : ''} overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
       style={{ borderLeftColor: visibleColor, backgroundColor: visibleColor }}
     >
-      <span className="aac-tile-icon flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0 bg-white">
-        {iconUrl && (
-          <img src={iconUrl} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-        )}
-      </span>
+      {!wordsOnly && (
+        <span className="aac-tile-icon flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0 bg-white">
+          <img src={iconUrl!} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={() => setFailedIconUrl(iconUrl)} />
+        </span>
+      )}
       <FittedTileLabel
         text={visibleWord}
         testId="prediction-label"
         minFontSizePx={16}
+        growToFit={wordsOnly ? 1.3 : undefined}
         className="aac-tile-label aac-prediction-label"
       />
     </button>
