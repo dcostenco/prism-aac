@@ -1,36 +1,34 @@
 'use client';
 
 /**
- * Pictogram service — fetches an AAC-style picture for a phrase.
+ * Pictogram service — generated pictures for typed words, on paid plans.
  *
- * Two-stage lookup:
- *   1. ARASAAC pictogram search (free, ~12.9k symbols, CC BY-NC-SA). Pictograms
- *      are fetched at runtime, cached on-device, and shown to every user at no
- *      charge — they are never gated on payment. See NOTICE for attribution.
- *   2. Synalux portal AI generation fallback (paid tiers only) — produces a
- *      flat-vector pictogram via the model selected server-side.
+ * Board tiles, category icons and search results show their words: this build
+ * ships no picture library of its own and no longer downloads third-party
+ * pictograms. A prediction-bar word may get a picture from the Synalux portal's
+ * shared generated-picture cache when the account is on a paid plan; tiles never
+ * request generation, so a board render cannot start paid work.
  *
- * Results are cached in IndexedDB keyed by sha256(normalized_phrase + lang +
- * style_version). The cache is content-addressed (no user_id in the key) so
- * common phrases share blobs across users — a privacy + bandwidth win.
+ * Generated pictures are held in memory for the session. Pictures cached on the
+ * device by earlier versions are deleted once by clearLegacyPictogramCache().
  */
 
 import { PictureMode } from '@/store/settingsStore';
 import { SynaluxProfile } from '@/services/aiService';
 import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
-import { PICTOGRAM_CDN, PICTOGRAM_SEARCH_API } from '@/lib/pictogramSources';
+import { PROFANITY, SENSITIVE } from '@/engine/ageBlocklist';
+export { clearLegacyPictogramCache } from '@/services/legacyPictogramCache';
 
 /**
  * Picture mode is derived from the user's Synalux plan, not from a user
- * preference. Free signed-in users get the free ARASAAC symbol library;
- * paid subscribers (Standard / Advanced / Enterprise) additionally get
- * AI-generated pictograms for phrases ARASAAC doesn't cover.
+ * preference. Free and anonymous users see words; paid subscribers (Standard /
+ * Advanced / Enterprise) additionally get generated pictures for prediction-bar
+ * words.
  *
- * A null profile means anonymous or still loading, so it must stay on the
- * free ARASAAC path. Optimistically calling the paid route caused a burst of
- * 401s for every anonymous first visit. Paid profile hydration changes the
- * mode to `symbols-ai`; mode is part of the cache key, so an earlier ARASAAC
- * miss cannot suppress the later paid AI lookup.
+ * A null profile means anonymous or still loading, so it must stay on the free
+ * path. Optimistically calling the paid route caused a burst of 401s for every
+ * anonymous first visit. Paid profile hydration changes the mode to
+ * `symbols-ai`, which is part of the cache key.
  */
 export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMode {
   if (!profile || profile.plan === 'free') return 'symbols';
@@ -39,21 +37,13 @@ export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMo
 
 const STYLE_VERSION = 2;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB cap — prevents OOM from oversized blobs
-// Declared in lib/pictogramSources so the telemetry scrubber redacts exactly
-// the hosts this file calls. See that file before swapping the provider.
-const ARASAAC_API = PICTOGRAM_SEARCH_API;
-const ARASAAC_CDN = PICTOGRAM_CDN;
-// Large enough to hold a full vocabulary board without eviction.
-// We do NOT revoke on eviction — a PhraseTile component may still hold
-// the old blob URL in its iconUrl state and revoking causes
-// WebKitBlobResource error 1. Blob URLs are cleaned up by the browser
-// when the page unloads; the memory cost is negligible.
+// Large enough to hold a full prediction session without eviction.
+// We do NOT revoke on eviction — a component may still hold the old blob URL
+// in its state and revoking causes WebKitBlobResource error 1. Blob URLs are
+// cleaned up by the browser when the page unloads; the memory cost is small.
 const MAX_MEM_CACHE = 600;
-const MAX_ARASAAC_BLOB_CACHE = 32;
 const MEM_CACHE = new Map<string, string | null>();
 const IN_FLIGHT = new Map<string, Promise<string | null>>();
-const ARASAAC_BLOB_CACHE = new Map<number, Blob>();
-const ARASAAC_IMAGE_IN_FLIGHT = new Map<number, Promise<Blob | null>>();
 
 function memCacheSet(key: string, value: string | null) {
   if (MEM_CACHE.size >= MAX_MEM_CACHE) {
@@ -62,11 +52,6 @@ function memCacheSet(key: string, value: string | null) {
     // No URL.revokeObjectURL — component may still hold the old URL.
   }
   MEM_CACHE.set(key, value);
-}
-
-interface ArasaacHit {
-  _id: number;
-  keywords?: { keyword: string }[];
 }
 
 async function sha256(input: string): Promise<string> {
@@ -87,9 +72,9 @@ function normalize(phrase: string): string {
     .join(' ');
 }
 
-// Tokenize a phrase into the most "iconic" word for symbol lookup. Picks the
-// longest word that isn't a stopword — a heuristic, but good enough for AAC
-// vocab where most phrases have a clear head noun/verb ("I want food" → food).
+// Tokenize a phrase into the most "iconic" word. Picks the longest word that
+// isn't a stopword — a heuristic, but good enough for AAC vocab where most
+// phrases have a clear head noun/verb ("I want food" → food).
 const STOPWORDS = new Set([
   'i', 'me', 'my', 'mine', 'we', 'us', 'our', 'you', 'your',
   'a', 'an', 'the', 'is', 'am', 'are', 'be', 'do', 'does',
@@ -104,205 +89,7 @@ function pickHeadWord(phrase: string): string {
   return pool.reduce((a, b) => (b.length > a.length ? b : a));
 }
 
-// ── IndexedDB cache ─────────────────────────────────────────────────────────
-
-const DB_NAME = 'prism-aac-pictograms';
-const STORE = 'blobs';
-let dbPromise: Promise<IDBDatabase> | null = null;
-
-function openDb(): Promise<IDBDatabase> {
-  if (typeof window === 'undefined') return Promise.reject(new Error('no window'));
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
-}
-
-async function cacheGet(key: string): Promise<Blob | null> {
-  try {
-    const db = await openDb();
-    return await new Promise<Blob | null>((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly');
-      const req = tx.objectStore(STORE).get(key);
-      req.onsuccess = () => resolve((req.result as Blob | undefined) ?? null);
-      req.onerror = () => reject(req.error);
-    });
-  } catch {
-    return null;
-  }
-}
-
-async function cachePut(key: string, blob: Blob): Promise<void> {
-  try {
-    const db = await openDb();
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(blob, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  } catch { /* eviction / quota — best effort */ }
-}
-
-// ── ARASAAC lookup ──────────────────────────────────────────────────────────
-
-// LocalStorage-backed negative cache — words ARASAAC doesn't have pictograms for.
-// Prevents repeated 404 requests (and console errors) across sessions.
-let arasaacMisses = new Set<string>();
-if (typeof window !== 'undefined') {
-  try {
-    const stored = localStorage.getItem('prism-arasaac-misses');
-    if (stored) arasaacMisses = new Set(JSON.parse(stored));
-  } catch {}
-}
-
-function saveArasaacMisses() {
-  if (typeof window === 'undefined') return;
-  try {
-    const arr = Array.from(arasaacMisses);
-    if (arr.length > 5000) {
-      const trimmed = arr.slice(-5000);
-      arasaacMisses = new Set(trimmed);
-      localStorage.setItem('prism-arasaac-misses', JSON.stringify(trimmed));
-    } else {
-      localStorage.setItem('prism-arasaac-misses', JSON.stringify(arr));
-    }
-  } catch {}
-}
-
-/**
- * Locales ARASAAC's search endpoint rejects outright with HTTP 400.
- *
- * Learned at runtime rather than hardcoded, because the upstream list changes
- * as ARASAAC adds languages. Measured 2026-07-28: ja, hi, vi, tl, id, am, sw
- * and bn all 400 — five of those are long-shipped locales, so their users have
- * never had prediction-bar pictograms and every tile render fired a doomed
- * request.
- *
- * Without this, one 400 is issued PER TOKEN and each one is recorded as an
- * individual miss, so a single Amharic session produced hundreds of failing
- * requests. One 400 per locale is enough to know.
- */
-const arasaacUnsupportedLangs = new Set<string>();
-
-/**
- * In-flight search per locale.
- *
- * The Set above is only consulted AFTER a response lands, so with concurrent
- * callers — which is the normal case, the prediction bar and precache both
- * fire in parallel — several requests clear the check before the first 400
- * returns. Measured in the running app: the Set alone still let a handful
- * through. Holding subsequent callers on the first probe makes it exactly one
- * request per locale, which is what the test asserts.
- */
-const arasaacProbes = new Map<string, Promise<unknown>>();
-function cacheArasaacBlob(id: number, blob: Blob) {
-  if (ARASAAC_BLOB_CACHE.size >= MAX_ARASAAC_BLOB_CACHE) {
-    const oldest = ARASAAC_BLOB_CACHE.keys().next().value;
-    if (oldest !== undefined) ARASAAC_BLOB_CACHE.delete(oldest);
-  }
-  ARASAAC_BLOB_CACHE.set(id, blob);
-}
-
-async function fetchArasaacImage(id: number): Promise<Blob | null> {
-  const cached = ARASAAC_BLOB_CACHE.get(id);
-  if (cached) {
-    // Refresh insertion order so the bounded map behaves as an LRU.
-    ARASAAC_BLOB_CACHE.delete(id);
-    ARASAAC_BLOB_CACHE.set(id, cached);
-    return cached;
-  }
-
-  const existing = ARASAAC_IMAGE_IN_FLIGHT.get(id);
-  if (existing) return existing;
-
-  const request = (async () => {
-    const imgT = timeoutSignal(5000);
-    try {
-      const imgRes = await fetch(`${ARASAAC_CDN}/${id}/${id}_500.png`, {
-        signal: imgT.signal,
-      });
-      if (!imgRes.ok) return null;
-      const cl = imgRes.headers.get('content-length');
-      if (cl && parseInt(cl, 10) > MAX_IMAGE_BYTES) return null;
-      const blob = await imgRes.blob();
-      if (blob.size > MAX_IMAGE_BYTES) return null;
-      cacheArasaacBlob(id, blob);
-      return blob;
-    } catch {
-      return null;
-    } finally {
-      imgT.cancel();
-    }
-  })();
-  ARASAAC_IMAGE_IN_FLIGHT.set(id, request);
-  try {
-    return await request;
-  } finally {
-    if (ARASAAC_IMAGE_IN_FLIGHT.get(id) === request) {
-      ARASAAC_IMAGE_IN_FLIGHT.delete(id);
-    }
-  }
-}
-
-async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
-  const langCode = lang.split('-')[0] || 'en';
-  if (arasaacUnsupportedLangs.has(langCode)) return null;
-  // Wait for any probe already deciding this locale's fate.
-  const probe = arasaacProbes.get(langCode);
-  if (probe) {
-    await probe.catch(() => {});
-    if (arasaacUnsupportedLangs.has(langCode)) return null;
-  }
-  const missKey = `${langCode}:${token.toLowerCase()}`;
-  if (arasaacMisses.has(missKey)) return null;
-
-  const searchT = timeoutSignal(5000);
-  let id: number | null = null;
-  try {
-    const req = fetch(`${ARASAAC_API}/pictograms/${langCode}/search/${encodeURIComponent(token)}`, {
-      headers: { 'Accept': 'application/json' },
-      signal: searchT.signal,
-    });
-    // Register before awaiting so a concurrent caller sees it.
-    if (!arasaacProbes.has(langCode)) {
-      arasaacProbes.set(langCode, req);
-      req.catch(() => {}).finally(() => arasaacProbes.delete(langCode));
-    }
-    const res = await req;
-    if (!res.ok) {
-      // 400 means the LOCALE is unsupported, not that this word is missing —
-      // remember it so we stop asking for every other token in this language.
-      if (res.status === 400) arasaacUnsupportedLangs.add(langCode);
-      arasaacMisses.add(missKey);
-      saveArasaacMisses();
-      return null;
-    }
-    const data: ArasaacHit[] = await res.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      arasaacMisses.add(missKey);
-      saveArasaacMisses();
-      return null;
-    }
-    id = data[0]._id;
-  } catch {
-    return null;
-  } finally {
-    searchT.cancel();
-  }
-  return fetchArasaacImage(id);
-}
-
-// ── Synalux AI fallback ─────────────────────────────────────────────────────
+// ── Synalux generated pictures ──────────────────────────────────────────────
 
 async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null> {
   const t = timeoutSignal(5000);
@@ -352,188 +139,41 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
-import { PROFANITY, SENSITIVE } from '@/engine/ageBlocklist';
-
-const CURATED_PICTOGRAM_IDS: Record<string, number> = {
-  'come here': 32669,
-  'how are you': 4581,
-  'how are you?': 4581,
-  "i'm good": 4581,
-  "i don't know": 11697,
-  'my name is': 27357,
-  'all done': 10367,
-};
+export interface PictogramOptions {
+  /**
+   * Only the prediction bar sets this. Tiles, category icons and search
+   * results show words and must never start paid generation.
+   */
+  generated?: boolean;
+}
 
 export async function getPictogramUrl(
   phrase: string,
   lang: string,
   mode: PictureMode,
-  /**
-   * English source for `phrase`, when the caller has it.
-   *
-   * ARASAAC pictograms are language-neutral IMAGES — only the search term is
-   * localized — so the English word finds the same picture. Without this,
-   * users of the eight locales ARASAAC does not index get no pictogram at all,
-   * and the existing Latin-only fallback cannot help them: it re-searches the
-   * English endpoint using the FOREIGN word ("Kiganja"), which never matches.
-   */
-  englishSource?: string,
+  options: PictogramOptions = {},
 ): Promise<string | null> {
-  if (mode === 'off') return null;
+  if (mode !== 'symbols-ai' || !options.generated) return null;
   const token = pickHeadWord(phrase);
   if (!token) return null;
   const lowerToken = token.toLowerCase();
-  if (PROFANITY.has(lowerToken)) return null;
+  if (PROFANITY.has(lowerToken) || SENSITIVE.has(lowerToken)) return null;
 
   const key = await sha256(`v${STYLE_VERSION}|${lang}|${mode}|${token}`);
+  if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
   const existingRequest = IN_FLIGHT.get(key);
   if (existingRequest) return existingRequest;
 
-  const request = resolvePictogramUrl(phrase, lang, mode, token, lowerToken, key, englishSource);
+  const request = (async () => {
+    const blob = await fetchSynaluxAI(phrase, lang);
+    const url = blob ? URL.createObjectURL(blob) : null;
+    memCacheSet(key, url);
+    return url;
+  })();
   IN_FLIGHT.set(key, request);
   try {
     return await request;
   } finally {
     if (IN_FLIGHT.get(key) === request) IN_FLIGHT.delete(key);
-  }
-}
-
-async function resolvePictogramUrl(
-  phrase: string,
-  lang: string,
-  mode: PictureMode,
-  token: string,
-  lowerToken: string,
-  key: string,
-  /** See getPictogramUrl — the English word for `phrase`, when known. */
-  englishSource?: string,
-): Promise<string | null> {
-  if (SENSITIVE.has(lowerToken)) {
-    if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
-    const neutralId = 6009;
-    const blob = await fetchArasaacImage(neutralId);
-    if (blob) {
-      await cachePut(key, blob);
-      const url = URL.createObjectURL(blob);
-      memCacheSet(key, url);
-      return url;
-    }
-    return null;
-  }
-
-  if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
-
-  const cached = await cacheGet(key);
-  if (cached) {
-    const url = URL.createObjectURL(cached);
-    memCacheSet(key, url);
-    return url;
-  }
-
-  // Single-character tokens (pronouns like "I"/"я", articles like "a"/"и")
-  // are valid AAC words across all 20 supported languages. Let ARASAAC
-  // search determine the best pictogram — no length-based skip.
-
-  // Curated ARASAAC pictogram IDs for core phrases where the search API
-  // returns wrong/generic images (e.g. clock+calendar for "Come here").
-  const curatedId = CURATED_PICTOGRAM_IDS[normalize(phrase).toLowerCase()];
-  if (curatedId) {
-    const blob = await fetchArasaacImage(curatedId);
-    if (blob) {
-      await cachePut(key, blob);
-      const url = URL.createObjectURL(blob);
-      memCacheSet(key, url);
-      return url;
-    }
-  }
-
-  const fullPhrase = normalize(phrase);
-  let blob = fullPhrase !== token ? await fetchArasaac(fullPhrase, lang) : null;
-  if (!blob) blob = await fetchArasaac(token, lang);
-  // English fallback — but ONLY when the token is itself ASCII-Latin. For
-  // Cyrillic / Arabic / CJK tokens, the English ARASAAC endpoint can't
-  // make sense of them and often returns a generic "letter X" pictogram
-  // (e.g. Cyrillic "у" → English "letter U" image).
-  const isLatinToken = /^[\x20-\x7e]+$/.test(token);
-  if (!blob && lang !== 'en' && lang !== 'en-US' && isLatinToken) {
-    if (fullPhrase !== token) blob = await fetchArasaac(fullPhrase, 'en');
-    if (!blob) blob = await fetchArasaac(token, 'en');
-  }
-  // English-source fallback: the caller told us the English word for this
-  // phrase, so use it. Distinct from the isLatinToken path above, which
-  // gambles that the FOREIGN token might be English-ish; this is the actual
-  // English term and works for Ge'ez and Bengali too.
-  if (!blob && englishSource && lang !== 'en' && lang !== 'en-US') {
-    const enToken = pickHeadWord(englishSource);
-    if (enToken) {
-      const enPhrase = normalize(englishSource);
-      if (enPhrase !== enToken) blob = await fetchArasaac(enPhrase, 'en');
-      if (!blob) blob = await fetchArasaac(enToken, 'en');
-    }
-  }
-  if (!blob && mode === 'symbols-ai') {
-    blob = await fetchSynaluxAI(phrase, lang);
-  }
-  if (!blob) {
-    memCacheSet(key, null);
-    return null;
-  }
-  await cachePut(key, blob);
-  const url = URL.createObjectURL(blob);
-  memCacheSet(key, url);
-  return url;
-}
-
-// ── Pre-cache: download all icons in background for offline use ───────────
-
-let _precacheDone = false;
-
-/**
- * Pre-download pictograms for all DEFAULT_PHRASES in the user's language.
- * Runs once per session, non-blocking, low priority. After this completes,
- * every phrase tile renders instantly offline — no network needed.
- */
-export async function precacheAllPictograms(
-  lang: string,
-  mode: PictureMode,
-): Promise<void> {
-  if (_precacheDone || mode === 'off') return;
-  _precacheDone = true;
-
-  try {
-    const { DEFAULT_PHRASES } = await import('@/constants/phrases');
-    const { getPhraseText } = await import('@/constants/phraseTranslations');
-
-    let cached = 0;
-    let fetched = 0;
-
-    for (const p of DEFAULT_PHRASES) {
-      const text = getPhraseText(p.id, lang as any, p.text);
-      const token = pickHeadWord(text);
-      if (!token) continue;
-
-      const key = await sha256(`v${STYLE_VERSION}|${lang}|${mode}|${token}`);
-      if (MEM_CACHE.has(key)) { cached++; continue; }
-      const existing = await cacheGet(key);
-      if (existing) { cached++; continue; }
-
-      // Not cached — fetch and store
-      await getPictogramUrl(text, lang, mode, p.text);
-      fetched++;
-
-      // Yield to main thread every 10 fetches
-      if (fetched % 10 === 0) {
-        await new Promise(r => setTimeout(r, 50));
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      console.log(`[Pictogram] Pre-cached ${cached} existing + ${fetched} new icons for ${lang}`);
-    }
-  } catch (e) {
-    // Non-critical — app works without pre-cache, just slower on first tap
-    if (typeof window !== 'undefined') {
-      console.warn('[Pictogram] Pre-cache failed:', e);
-    }
   }
 }

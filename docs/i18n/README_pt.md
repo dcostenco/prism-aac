@@ -429,7 +429,7 @@ Cartões de imagem no estilo PECS. Toque em uma categoria, toque em um cartão, 
 - 22 categorias padrão: pessoas, comida, sentimentos, corpo, roupas, animais, lugares, etc.
 - O cuidador pode adicionar / remover / reordenar cartões para cada criança
 - Cada cartão possui uma chave `textKey` para internacionalização — alterar o idioma do aplicativo reetiqueta todos os cartões com um toque
-- Os pictogramas dos cartões vêm do ARASAAC + um conjunto selecionado; a clonagem de voz permite combinar a voz do cartão com a dos irmãos ou pais da criança (plano pago)
+- Os cartões mostram as suas palavras, e as palavras digitadas podem receber imagens geradas nos planos pagos; a clonagem de voz permite combinar a voz do cartão com a dos irmãos ou pais da criança (plano pago)
 - Aprendizado de n-gramas por usuário: se a criança tocar em "Eu quero comer" três vezes, a palavra "comer" subirá de posição após "quero" na sessão seguinte
 - Memória holográfica HRR: predições contextuais sem busca em ~0,2ms via Rust WASM — +27% de precisão Top-1 nas frases principais de CAA
 

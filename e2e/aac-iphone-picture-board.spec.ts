@@ -26,16 +26,6 @@ const PHONE_PROJECTS = new Set([
   'iphone-6.9-land',
 ]);
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function safeScreenshot(page: Page, fileName: string): Promise<void> {
   await expect(page.locator('nextjs-portal')).toHaveCount(0);
@@ -50,9 +40,8 @@ async function expectVisiblePictograms(page: Page, includePredictions: boolean):
     const firstLoaded = (selector: string, count: number) => [...document.querySelectorAll<HTMLElement>(selector)]
       .slice(0, count)
       .every((tile) => {
-        const image = tile.querySelector<HTMLImageElement>('img');
-        if (!image?.complete || image.naturalWidth <= 0 || image.naturalHeight <= 0) return false;
-        const rect = image.getBoundingClientRect();
+        if (!tile.textContent?.trim()) return false;
+        const rect = tile.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
       });
     return (!shouldCheckPredictions || firstLoaded('[data-testid="prediction-tile"]', 5))
@@ -62,7 +51,6 @@ async function expectVisiblePictograms(page: Page, includePredictions: boolean):
 
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(!PHONE_PROJECTS.has(testInfo.project.name), 'iPhone picture-mode matrix only');
-  await proxyArasaacForLocalWebKit(page);
   await page.addInitScript(() => {
     localStorage.clear();
     sessionStorage.clear();

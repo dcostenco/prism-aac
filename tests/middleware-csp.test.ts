@@ -29,6 +29,17 @@ describe('Prism AAC Content Security Policy', () => {
   });
 });
 
+describe('CSP — retired third-party pictograms', () => {
+  // The app no longer shows third-party pictograms; the browser must refuse to
+  // load them for any page served after this ships, even one running older
+  // cached scripts.
+  it('does not allow any arasaac.org host for images or requests', () => {
+    const csp = middleware(new NextRequest('https://prism-aac.vercel.app/prism-aac'))
+      .headers.get('content-security-policy') || '';
+    expect(csp).not.toMatch(/arasaac/i);
+  });
+});
+
 describe('Permissions-Policy — camera', () => {
   // Regression: this header shipped `camera=()`. An empty allowlist is not
   // "unset" — it switches the camera off for self, so getUserMedia rejects

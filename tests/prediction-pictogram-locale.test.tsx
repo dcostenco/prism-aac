@@ -1,15 +1,16 @@
 /**
- * Prediction tiles must get pictures in locales ARASAAC cannot search.
+ * Prediction tiles look their picture up by the English source word.
  *
  * Found by looking at production, not by a test: the English prediction bar
  * showed five pictograms and the Amharic one showed five blank white boxes.
  * The unit suite was fully green at the time, because nothing asserted which
  * locale the pictogram lookup is issued in.
  *
- * ARASAAC answers HTTP 400 for ja, hi, vi, tl, id, am, sw and bn — eight of
- * the shipped languages. Its images are language-neutral; only the search term
- * is localized. PhraseTile already exploits that by searching with the English
- * source. PredictionBar searched the localized word and got nothing back.
+ * Pictures are language-neutral; only the lookup word is localized. The
+ * picture service of the time answered HTTP 400 for ja, hi, vi, tl, id, am, sw
+ * and bn — eight of the shipped languages — so PredictionBar's localized
+ * lookup got nothing back. Looking up the English source gives every language
+ * the same picture for the same meaning.
  *
  * A blank prediction bar is not a cosmetic defect for an AAC user who reads
  * symbols rather than text — it removes the prediction feature for them.
@@ -26,11 +27,11 @@ import { englishSourceFor } from '@/constants/reverseTranslation';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 
-/** Locales ARASAAC's search endpoint rejects — verified against the live API. */
+/** Locales the earlier picture service's search rejected — verified against its live API. */
 const UNSEARCHABLE = ['ja', 'hi', 'vi', 'tl', 'id', 'am', 'sw', 'bn'] as const;
 
 describe('reverse lookup of a localized word to its English source', () => {
-  it('resolves core vocabulary in every locale ARASAAC cannot search', () => {
+  it('resolves core vocabulary in every locale that service could not search', () => {
     // 'I', 'You', 'More', 'Want', 'Help' are the five tiles that rendered
     // blank in the production screenshot.
     const core = ['cw-i', 'cw-you', 'cw-more', 'cw-want', 'cw-help']
@@ -79,7 +80,7 @@ vi.mock('@/services/pictogramService', () => ({
     pictogramCalls.push([phrase, lang]);
     return Promise.resolve(null);
   },
-  pictureModeForProfile: () => 'arasaac',
+  pictureModeForProfile: () => 'symbols-ai',
 }));
 
 describe('PredictionBar issues its pictogram lookup in a searchable locale', () => {
@@ -98,7 +99,7 @@ describe('PredictionBar issues its pictogram lookup in a searchable locale', () 
     useMessageStore.setState({ text: '' } as never);
   });
 
-  it('searches in English for a locale ARASAAC rejects', async () => {
+  it('looks up in English for a locale that service rejected', async () => {
     const i = amharicFor('cw-i');
     const want = amharicFor('cw-want');
     // Non-empty text matters: with an empty message PredictionBar ignores the
@@ -116,7 +117,7 @@ describe('PredictionBar issues its pictogram lookup in a searchable locale', () 
     expect(pictogramCalls.length, 'no pictogram lookup was issued').toBeGreaterThan(0);
     const forI = pictogramCalls.find(([phrase]) => phrase === i.english || phrase === i.localized);
     expect(forI, `no lookup for "${i.localized}"`).toBeTruthy();
-    // The regression: this was ['እኔ', 'am'] — a locale ARASAAC answers 400 for.
+    // The regression: this was ['እኔ', 'am'] — a locale that service answered 400 for.
     expect(forI![1], 'must not search an unsearchable locale').toBe('en');
     expect(forI![0]).toBe(i.english);
   });

@@ -210,14 +210,11 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
 
   useEffect(() => {
     let cancelled = false;
-    // ARASAAC has no search index for ja/hi/vi/tl/id/am/sw/bn and answers 400,
-    // so searching the localized word there returns nothing and the tile shows
-    // an empty box. The pictures are language-neutral — only the search term is
-    // localized — so recover the English source and search with that, the same
-    // way PhraseTile does. Falls back to the localized word when the prediction
-    // is not vocabulary we can map.
+    // Generated pictures are shared by meaning. Recover the English source so
+    // every language asks for the same picture; fall back to the localized word
+    // when the prediction is not vocabulary we can map.
     const english = englishSourceFor(visibleWord, language);
-    getPictogramUrl(english ?? visibleWord, english ? 'en' : language, pictureMode)
+    getPictogramUrl(english ?? visibleWord, english ? 'en' : language, pictureMode, { generated: true })
       .then((url) => { if (!cancelled) setIconUrl(url); })
       .catch(() => { if (!cancelled) setIconUrl(null); });
     return () => { cancelled = true; };
