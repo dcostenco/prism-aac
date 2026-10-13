@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { getPredictions, recordWord, recordBigram, recordTrigram } from '@/engine/predictionEngine';
 import { isAllowedInLang } from '@/lib/langAllowlist';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
@@ -57,8 +57,12 @@ it('accentless matching never merges different standard meanings', () => {
   expect(predictionWordKey(a,lang)).not.toBe(predictionWordKey(b,lang));
  }
 });
-it('actual Romanian accentless and accented copula input agree and retain illustrated context', async () => {
- await Promise.all([ensureLangCorpusLoaded('ro'), loadPictureWords('ro')]);
+describe('loaded Romanian corpus', () => {
+ beforeAll(async () => {
+  await Promise.all([ensureLangCorpusLoaded('ro'), loadPictureWords('ro')]);
+ }, 30_000);
+
+it('actual Romanian accentless and accented copula input agree and retain illustrated context', () => {
  usePredictionStore.getState().updatePredictions('tu esti','ro');
  const plain=[...usePredictionStore.getState().predictions];
  usePredictionStore.getState().updatePredictions('tu ești','ro');
@@ -66,6 +70,7 @@ it('actual Romanian accentless and accented copula input agree and retain illust
  expect(plain).toContain('bine');
  expect(plain.some(word=>/^estim|^estic/.test(word))).toBe(false);
  expect(plain.every(word=>!!resolveVocabularyPicture(word,'ro').url || reviewedVocabularyPictureChoices(word,'ro','tu esti').length>0)).toBe(true);
+});
 });
 it('Vietnamese base-vowel typing finds time without merging poetry or another explicit tone', () => {
  expect(matchesPredictionPrefix('thời','thơ','vi')).toBe(true);
@@ -98,11 +103,16 @@ it('reviewed same-word spellings combine context and prefix evidence before rank
  expect(predictionWordKey('weiss','de')).toBe('weiß');
 });
 
-it('actual German basic know completes from ordinary keys and keeps its context picture', async () => {
- await Promise.all([ensureLangCorpusLoaded('de'), loadPictureWords('de')]);
+describe('loaded German corpus', () => {
+ beforeAll(async () => {
+  await Promise.all([ensureLangCorpusLoaded('de'), loadPictureWords('de')]);
+ }, 30_000);
+
+it('actual German basic know completes from ordinary keys and keeps its context picture', () => {
  usePredictionStore.getState().updatePredictions('ich wei','de');
  expect(usePredictionStore.getState().predictions).toContain('weiß');
  expect(reviewedVocabularyPictureChoices('weiß','de','ich wei')).toEqual(['cw-know.png']);
+});
 });
 
 it('explicit Russian ё input does not broaden to a distinct е meaning', () => {
