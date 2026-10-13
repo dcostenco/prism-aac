@@ -10,8 +10,11 @@ final class AACPictureLibrary {
     private static let packLimit = 16 * 1024 * 1024
     private static let metadataLimit = 512 * 1024
     private static let thumbnailPixels = 104
-    private static let decodedBudget = 1024 * 1024
-    private static let cacheCountLimit = 20
+    // The home screen builds every card at once: Yes/No, six recents and up to
+    // 50 synced categories (58). A cache smaller than that re-decodes them all
+    // on each render. A 104px thumbnail is about 43 KB.
+    private static let decodedBudget = 3 * 1024 * 1024
+    private static let cacheCountLimit = 64
     private static let magic = Data("PAACPK01".utf8)
 
     private struct Manifest: Decodable {
