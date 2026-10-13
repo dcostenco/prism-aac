@@ -5,6 +5,7 @@ import {
   startPoseTracker,
   savePoseCalibration,
   loadPoseCalibration,
+  hasPoseCalibrationForTarget,
   getOrientation,
   DEFAULT_CALIBRATION,
   POSE_CALIBRATION_MIN_RANGE,
@@ -29,11 +30,25 @@ import {
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
+import { trackingLossKey } from '@/services/trackingFeedback';
+import type { TrackingLossReason } from '@/services/trackingDiagnostics';
+import { WRIST_PAUSE_SAMPLE_COUNT } from '@/services/wristMotion';
 
 const WIZARD_CURSOR_SIZE = 36;
 const ACCURACY_DWELL_MS = 400;
 const CORNER_RING_RADIUS = 45;
 const CORNER_TARGET_SIZE = 100;
+const ACCURACY_TARGET_COUNT = 5;
+const ACCURACY_TARGET_MIN = 15;
+const ACCURACY_TARGET_RANGE = 70;
+
+function createAccuracyTargets() {
+  return Array.from({ length: ACCURACY_TARGET_COUNT }, () => ({
+    x: ACCURACY_TARGET_MIN + Math.random() * ACCURACY_TARGET_RANGE,
+    y: ACCURACY_TARGET_MIN + Math.random() * ACCURACY_TARGET_RANGE,
+    hit: false,
+  }));
+}
 
 type Phase =
   | 'intro'
@@ -55,7 +70,7 @@ function detectedStatus(parts: DetectedPart[]): string {
 }
 
 const BODY_PARTS = CAMERA_TRACKING_TARGETS.map(part => ({
-  target: part.id, label: part.setupLabel, emoji: part.emoji,
+  target: part.id, label: part.label, emoji: part.emoji,
 }));
 
 const CORNER_TARGETS = [
@@ -95,9 +110,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [statusText, setStatusText] = useState('');
   const [setupError, setSetupError] = useState<string | null>(null);
+  const [lossReason, setLossReason] = useState<TrackingLossReason | null>(null);
+  const motionPausedRef = useRef(false);
+  const selectionReadyRef = useRef(false);
+  const cursorPausedRef = useRef(false);
 
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const calibrationDraftRef = useRef<PoseCalibrationDraft | null>(null);
+  const calibrationSkippedRef = useRef(false);
   const completedOrientationRef = useRef<'landscape' | 'portrait' | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
   const samplingAllowedRef = useRef(false);
@@ -186,6 +206,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   useEffect(() => {
     return subscribePoseSamples(detail => {
       if (samplingAllowedRef.current && detail?.normX != null) {
+        motionPausedRef.current = detail.motionPaused === true;
+        selectionReadyRef.current = detail.selectionReady === true;
         sampleBufferRef.current.push({ normX: detail.normX, normY: detail.normY });
         if (sampleBufferRef.current.length > 100) sampleBufferRef.current.shift();
       }
@@ -253,6 +275,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     }
     try {
       calibrationDraftRef.current = beginPoseCalibrationDraft();
+      calibrationSkippedRef.current = false;
       setSetupError(null);
     } catch (error) {
       setSetupError(error instanceof Error ? error.message : t('error'));
@@ -294,11 +317,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       requireHeadPresence: true,
       calibrationMode: 'setup',
       cursorSmoothing: 0.12,
+      onTrackingLoss(reason) { setLossReason(reason); motionPausedRef.current = false; selectionReadyRef.current = false; },
+      onMotionStateChange(motion) { cursorPausedRef.current = motion.selectionReady === true; },
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
       onStatusChange(status, activeTarget) {
         samplingAllowedRef.current = status === 'tracking';
         setTrackerStatus(status);
+        if (status === 'tracking' || status === 'starting') setLossReason(null);
         if (status === 'tracking' && activeTarget) {
           const counts = detectionCountRef.current;
           counts[activeTarget] = (counts[activeTarget] || 0) + 1;
@@ -371,6 +397,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       requireHeadPresence: true,
       calibrationMode: 'setup',
       cursorSmoothing: 0.12,
+      onTrackingLoss(reason) { setLossReason(reason); motionPausedRef.current = false; selectionReadyRef.current = false; },
+      onMotionStateChange(motion) { cursorPausedRef.current = motion.selectionReady === true; },
       onMove(x, y) {
         if (samplingAllowedRef.current) setCursorPos({ x, y });
       },
@@ -383,6 +411,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         // calibrate a different body part. Wait for the selected part again.
         const setupStatus = status === 'tracking' && !matches ? 'lost' : status;
         setTrackerStatus(setupStatus);
+        if (setupStatus === 'tracking' || setupStatus === 'starting') setLossReason(null);
         console.log(`[wizard] tracker status → ${setupStatus}`);
       },
     });
@@ -427,13 +456,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const id = setInterval(() => {
       const buf = sampleBufferRef.current;
       if (buf.length < 20) return;
-      const sx = buf.reduce((s, v) => s + v.normX, 0) / buf.length;
-      const sy = buf.reduce((s, v) => s + v.normY, 0) / buf.length;
       // Auto-capture: stable-hold path (best case — low jitter users).
       if (buf.length >= 50) {
-        const varX = buf.reduce((s, v) => s + (v.normX - sx) ** 2, 0) / buf.length;
-        const varY = buf.reduce((s, v) => s + (v.normY - sy) ** 2, 0) / buf.length;
-        const isStable = varX < 0.000016 && varY < 0.000016; // σ < 0.004
+        const isStable = samplingAllowedRef.current && selectionReadyRef.current;
         if (isStable) {
           stableCount++;
           if (stableCount >= 2) {
@@ -445,12 +470,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           stableCount = 0;
         }
       }
-      // Hard timeout path: after 20s at calibrate-center, capture the
-      // running average regardless of variance. Covers heavy-jitter users
-      // (spasticity, car/wheelchair vibration) who can never pass the
-      // stable-hold variance check, and users who are deliberately scanning
-      // (looking around to find center). The running mean IS their neutral.
-      if (buf.length >= 20) {
+      // After twenty seconds, a measured pause can use the current samples
+      // without requiring absolute stillness. Earlier travel is not neutral.
+      if (buf.length >= 20 && samplingAllowedRef.current && selectionReadyRef.current) {
         const w = typeof window !== 'undefined' ? (window as unknown as {__centerPhaseStart?:number}) : null;
         const elapsed = w ? (performance.now() - (w.__centerPhaseStart ?? performance.now())) : 0;
         if (elapsed >= 20_000) {
@@ -469,19 +491,20 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     }
   }, [phase]);
 
-  /** User taps the Capture button — average the current sample buffer
+  /** User taps Capture — average the latest raw sample window
    *  and advance. Refuses to advance if the buffer is empty (no pose
    *  data) so we don't bake (0.5, 0.5) into the calibration. */
   const captureCenter = useCallback(() => {
-    const n = sampleBufferRef.current.length;
+    const samples = sampleBufferRef.current.slice(-WRIST_PAUSE_SAMPLE_COUNT);
+    const n = samples.length;
     console.log(`[wizard] captureCenter — bufferSize=${n}`);
     if (n === 0) {
       setStatusText(t('tracking_setup_center_guide'));
       console.log('[wizard] captureCenter REFUSED — empty buffer');
       return;
     }
-    const sx = sampleBufferRef.current.reduce((s, v) => s + v.normX, 0) / n;
-    const sy = sampleBufferRef.current.reduce((s, v) => s + v.normY, 0) / n;
+    const sx = samples.reduce((s, v) => s + v.normX, 0) / n;
+    const sy = samples.reduce((s, v) => s + v.normY, 0) / n;
     console.log(`[wizard] center avg normX=${sx.toFixed(3)} normY=${sy.toFixed(3)}`);
     centerSampleRef.current = { normX: sx, normY: sy };
 
@@ -519,6 +542,25 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const captureCenterCallbackRef = useRef<(() => void) | null>(null);
   useEffect(() => { captureCenterCallbackRef.current = captureCenter; }, [captureCenter]);
 
+  const skipCalibration = useCallback(() => {
+    if (!mountedRef.current || !calibrationDraftRef.current) return;
+    tapFeedback();
+    // The explicit tracker setter also saves. Keep that preview write
+    // inside our draft before rolling it back, never after the rollback.
+    handleRef.current?.setCalibration(DEFAULT_CALIBRATION);
+    calibrationDraftRef.current?.rollback();
+    calibrationDraftRef.current = null;
+    calibrationSkippedRef.current = true;
+    // Defaults remain a preview only. Skip never replaces a saved profile,
+    // even after center capture or an external saved-profile change.
+    setCornerSamples([]);
+    setTestTargets(createAccuracyTargets());
+    setTestIdx(0);
+    completedOrientationRef.current = getOrientation();
+    setPhase('accuracy-test');
+    setStatusText(t('tracking_setup_skip_notice'));
+  }, [t]);
+
   // ── PHASE: Calibrate Corners — user-driven ──
   // Capture handler for corners, called when the user taps Capture.
   // Refuses to advance if no pose samples (same guard as center).
@@ -532,7 +574,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       return;
     }
     tapFeedback();
-    const samples = sampleBufferRef.current;
+    const samples = sampleBufferRef.current.slice(-WRIST_PAUSE_SAMPLE_COUNT);
     const avg = {
       x: samples.reduce((s, v) => s + v.normX, 0) / samples.length,
       y: samples.reduce((s, v) => s + v.normY, 0) / samples.length,
@@ -581,12 +623,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       });
       speak(t('tracking_accuracy_unverified'));
 
-      const targets = Array.from({ length: 5 }, () => ({
-        x: 15 + Math.random() * 70,
-        y: 15 + Math.random() * 70,
-        hit: false,
-      }));
-      setTestTargets(targets);
+      setTestTargets(createAccuracyTargets());
       setTestIdx(0);
       completedOrientationRef.current = getOrientation();
       setPhase('accuracy-test');
@@ -632,6 +669,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const interval = setInterval(() => {
       const target = testTargets[testIdx];
       if (!target || target.hit) return;
+      if (!samplingAllowedRef.current || !cursorPausedRef.current) { dwellHitRef.current = null; return; }
       const element = accuracyTargetRef.current;
       const bounds = element?.getBoundingClientRect();
       const { x, y } = cursorPosRef.current;
@@ -724,10 +762,13 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const CORNER_DWELL_MS = 1500;
     const CORNER_TIMEOUT_MS = 5000;
     const id = setInterval(() => {
-      if (sampleBufferRef.current.length === 0) return;
+      if (!samplingAllowedRef.current || !selectionReadyRef.current || sampleBufferRef.current.length === 0) {
+        cornerDwellRef.current = null; return;
+      }
       const elapsed = Date.now() - cornerStartRef.current;
       const curIdx = cornerIdxRef.current;
-      // Timeout path — always fires after 5s regardless of cursor position.
+      // Comfortable-range fallback: capture only a qualified pause after 5s,
+      // never an arbitrary moving frame or a stale/lost cursor position.
       if (elapsed >= CORNER_TIMEOUT_MS) {
         console.log(`[wizard] auto-capture corner ${curIdx + 1} — timeout ${CORNER_TIMEOUT_MS}ms`);
         cornerDwellRef.current = null;
@@ -783,6 +824,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       data-testid="tracking-setup-wizard"
       data-phase={phase}
       data-tracker-status={trackerStatus}
+      data-pose-sample-count={sampleBufferRef.current.length}
+      data-physical-pause={motionPausedRef.current ? 'true' : 'false'}
+      data-selection-ready={selectionReadyRef.current ? 'true' : 'false'}
     >
       {/* Header */}
       <div className="tracking-wizard-header shrink-0 flex items-center justify-between px-6 py-4">
@@ -839,11 +883,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             <ul className="text-white/80 text-sm mb-6 text-left bg-white/5 rounded-xl p-4 space-y-2">
               <li className="flex gap-2"><span>1️⃣</span><span>{t('tracking_setup_center_guide')}</span></li>
               <li className="flex gap-2"><span>2️⃣</span><span>{t('tracking_setup_corner_guide').replace('{corner}', CORNER_TARGETS[0].label)}</span></li>
-              <li className="flex gap-2"><span>3️⃣</span><span>Tap <strong>Capture</strong> when you&apos;re looking at each target.</span></li>
+              <li className="flex gap-2"><span>3️⃣</span><span>{t('tracking_setup_manual_capture')}</span></li>
               <li className="flex gap-2"><span>4️⃣</span><span>Watch the camera preview to confirm you&apos;re visible.</span></li>
             </ul>
             <p className="text-white/50 text-xs mb-6">
-              ~45 seconds. You can Skip any step if it&apos;s not working.
+              {t('tracking_setup_exit_help')}
             </p>
             <button
               onClick={() => { tapFeedback(); startDetection(); }}
@@ -1021,12 +1065,18 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               <br />
               {t('tracking_camera_hits').replace('{hits}', String(cameraHits)).replace('{total}', String(testTargets.length))}
             </p>
+            {calibrationSkippedRef.current && <p role="status" data-testid="tracking-skip-notice" className="text-white/70 text-sm mb-2">
+              {t('tracking_setup_skip_notice')}
+            </p>}
             <button
               data-testid="tracking-confirm"
               onClick={() => {
                 tapFeedback();
                 try {
-                  calibrationDraftRef.current?.commit(completedOrientationRef.current ?? undefined);
+                  if (!calibrationSkippedRef.current) {
+                    if (!selectedPart || !calibrationDraftRef.current) throw new Error(t('camera_wrist_calibration_needed'));
+                    calibrationDraftRef.current.commit(completedOrientationRef.current ?? undefined, selectedPart);
+                  }
                   calibrationDraftRef.current = null;
                   setSetupError(null);
                 } catch (error) {
@@ -1036,7 +1086,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 unfreezeLearnerCalSaves();
                 useSettingsStore.getState().update({
                   ...(selectedPart ? { cameraTrackingTarget: selectedPart } : {}),
-                  cameraInputEnabled: true,
+                  cameraInputEnabled: !!selectedPart && hasPoseCalibrationForTarget(selectedPart),
                   poseCalibrationGeneration: useSettingsStore.getState().poseCalibrationGeneration + 1,
                 });
                 handleRef.current?.stop();
@@ -1069,22 +1119,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 ✓ Capture center{sampleBufferRef.current.length > 0 ? ` (${sampleBufferRef.current.length})` : ''}
               </button>
               <button
-                onClick={() => {
-                  tapFeedback();
-                  setCornerSamples([{x:0.2,y:0.2},{x:0.8,y:0.2},{x:0.8,y:0.8},{x:0.2,y:0.8}]);
-                  const targets = Array.from({length: 5}, () => ({
-                    x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
-                  }));
-                  setTestTargets(targets);
-                  setTestIdx(0);
-                  completedOrientationRef.current = getOrientation();
-                  setPhase('accuracy-test');
-                  setStatusText('Look at each red circle until it goes green');
-                }}
+                onClick={skipCalibration}
                 data-testid="tracking-calibrate-skip"
                 className="mt-3 text-white/50 text-xs underline block mx-auto"
               >
-                Skip calibration → use defaults
+                {t('tracking_setup_skip_calibration')}
               </button>
             </div>
           )}
@@ -1097,7 +1136,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 {t('tracking_setup_corner_guide').replace('{corner}', CORNER_TARGETS[cornerIdx]?.label ?? '')}
               </p>
               <p className="text-white/50 text-xs mt-1 max-w-md mx-auto">
-                💡 Look toward the corner and hold still — auto-captures in 5 s.
+                💡 {t('tracking_setup_corner_pause')}
               </p>
               <button
                 onClick={captureCorner}
@@ -1131,10 +1170,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         // stop the wizard's tracker mid-accuracy-test. Generation bumped in
         // onComplete (after wizard unmounts) and in Cancel path.
                     });
-                    const targets = Array.from({length: 5}, () => ({
-                      x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
-                    }));
-                    setTestTargets(targets);
+                    setTestTargets(createAccuracyTargets());
                     setTestIdx(0);
                     completedOrientationRef.current = getOrientation();
                     setPhase('accuracy-test');
@@ -1148,26 +1184,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 </button>
               )}
               <button
-                onClick={() => {
-                  tapFeedback();
-                  const filled = [...cornerSamples];
-                  while (filled.length < 4) {
-                    filled.push({ x: 0.5, y: 0.5 });
-                  }
-                  setCornerSamples(filled);
-                  const targets = Array.from({length: 5}, () => ({
-                    x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
-                  }));
-                  setTestTargets(targets);
-                  setTestIdx(0);
-                  completedOrientationRef.current = getOrientation();
-                  setPhase('accuracy-test');
-                  setStatusText('Look at each red circle until it goes green');
-                }}
+                onClick={skipCalibration}
                 data-testid="tracking-corners-skip"
                 className="mt-2 text-white/40 text-xs underline block mx-auto"
               >
-                Skip → use factory defaults
+                {t('tracking_setup_skip_calibration')}
               </button>
             </div>
           )}
@@ -1370,9 +1391,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: cursorColor }} />
         <span className="text-white/60 text-xs font-semibold">
           {trackerStatus === 'tracking' && `Tracking ${selectedPart ? `your ${BODY_PARTS.find(b => b.target === selectedPart)?.label.toLowerCase() ?? 'finger'}` : 'you'}`}
-          {trackerStatus === 'lost' && (selectedPart ? `Camera can't see your ${BODY_PARTS.find(b => b.target === selectedPart)?.label.toLowerCase() ?? 'finger'} — move into frame` : 'Camera lost — move into frame')}
+          {trackerStatus === 'lost' && (lossReason ? t(trackingLossKey(lossReason)) : t('tracking_unavailable'))}
           {trackerStatus === 'starting' && 'Loading camera…'}
-          {trackerStatus === 'stopped' && 'Camera not running'}
+          {trackerStatus === 'stopped' && (lossReason ? t(trackingLossKey(lossReason)) : 'Camera not running')}
         </span>
       </div>
 

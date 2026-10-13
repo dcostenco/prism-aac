@@ -34,6 +34,8 @@ test('camera options require an explicit wrist and leave noncamera access availa
   await expect(group.getByRole('button', { name: 'Gesture recognition', exact: true })).toBeDisabled();
   await expect(group.locator('[data-testid^="tracking-target-"]')).toHaveCount(2);
   const warning = group.getByTestId('camera-wrist-scope');
+  await expect(warning).toContainText('Small, cropped or uncertain faces can pause movement and selection');
+  await expect(warning).toContainText('Physical-camera accuracy remains unverified');
   await warning.scrollIntoViewIfNeeded();
   const warningBounds = await warning.boundingBox();
   expect(warningBounds).not.toBeNull();
@@ -58,6 +60,16 @@ test('camera options require an explicit wrist and leave noncamera access availa
   await group.getByTestId('camera-cursor-setup').click();
   await expect(page.getByTestId('tracking-setup-wizard')).toBeVisible();
   await expect(page.getByTestId('tracking-setup-wizard')).toContainText('Experimental wrist/arm control');
+  await expect(page.getByTestId('tracking-setup-wizard')).toContainText('Move closer or improve lighting');
+  const framing = page.getByTestId('tracking-setup-wizard').locator('p').filter({ hasText: 'Small, cropped or uncertain faces' });
+  await framing.scrollIntoViewIfNeeded();
+  const framingBounds = await framing.boundingBox();
+  expect(framingBounds).not.toBeNull();
+  expect(framingBounds!.height).toBeLessThan(page.viewportSize()!.height / 2);
+  await safeScreenshot(page, info.outputPath('limited-framing-setup.png'), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-setup-wizard"]'],
+    criticalSelectors: ['[data-testid="tracking-setup-wizard"] .tracking-wizard-intro p:first-of-type'], occluderSelectors: [],
+  });
   await page.getByTestId('tracking-setup-wizard').getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.getByRole('button', { name: 'Close settings', exact: true }).click();
   await page.reload();

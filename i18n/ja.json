@@ -1,4 +1,5 @@
 {
+  "camera_wrist_scope": "実験的な手首・腕の操作：顔全体と選んだ手首を映してください。顔が小さい、切れている、または確認できない場合、移動と選択が一時停止することがあります。近づくか照明を改善してください。実機カメラでの精度は未検証です。",
   "tracking_accuracy_passed": "カメラの精度テストに合格しました。",
   "tracking_accuracy_unverified": "カメラの精度はまだ確認されていません。",
   "tracking_camera_hits": "カメラでの選択：{hits}/{total}。",

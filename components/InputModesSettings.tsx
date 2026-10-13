@@ -57,6 +57,7 @@ export default function InputModesSettings({ cameraOptions, touchOptions }: { ca
       <div data-testid="camera-accessibility-settings" className="space-y-4">
         <h3 className="text-primary font-bold">{t('camera_accessibility')}</h3>
         <p role="status" data-testid="camera-wrist-scope" className="text-muted text-sm">{t('camera_wrist_scope')}</p>
+        <p data-testid="camera-pause-help" className="text-muted text-sm">{t('camera_pause_help')}</p>
         <p className="text-muted text-sm">{t('camera_controls_disabled')}</p>
         {!isCameraCursorTarget(cameraTrackingTarget) && <p role="alert" className="text-muted text-sm">{t('camera_choose_wrist')}</p>}
         {isCameraCursorTarget(cameraTrackingTarget) && !calibrationReady && <p role="status" className="text-muted text-sm">{t('camera_wrist_calibration_needed')}</p>}

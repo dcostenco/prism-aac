@@ -1,4 +1,5 @@
 {
+  "camera_wrist_scope": "Eksperimental na kontrol ng pulsuhan/braso: panatilihing nakikita ang buong mukha at piniling pulsuhan. Ang maliit, naputol, o hindi tiyak na mukha ay maaaring magpahinto sa galaw at pagpili. Lumapit o pagandahin ang ilaw. Hindi pa nasusuri ang katumpakan sa tunay na kamera.",
   "tracking_accuracy_passed": "Pumasa ang pagsubok sa katumpakan ng kamera.",
   "tracking_accuracy_unverified": "Hindi pa napatutunayan ang katumpakan ng kamera.",
   "tracking_camera_hits": "Mga pagpili gamit ang kamera: {hits}/{total}.",

@@ -1,4 +1,5 @@
 {
+  "camera_wrist_scope": "Control experimental de muñeca/brazo: mantén visibles toda la cara y la muñeca elegida. Una cara pequeña, recortada o incierta puede pausar el movimiento y la selección. Acércate o mejora la iluminación. La precisión con una cámara física aún no está verificada.",
   "tracking_accuracy_passed": "Prueba de precisión de la cámara superada.",
   "tracking_accuracy_unverified": "La precisión de la cámara aún no se ha verificado.",
   "tracking_camera_hits": "Selecciones con la cámara: {hits}/{total}.",

@@ -1,4 +1,5 @@
 {
+  "camera_wrist_scope": "Eksperymentalne sterowanie nadgarstkiem/ramieniem: cała twarz i wybrany nadgarstek muszą być widoczne. Mała, ucięta lub niepewnie rozpoznana twarz może wstrzymać ruch i wybór. Podejdź bliżej lub popraw oświetlenie. Dokładność z rzeczywistą kamerą nie została jeszcze zweryfikowana.",
   "tracking_accuracy_passed": "Test dokładności kamery zakończony pomyślnie.",
   "tracking_accuracy_unverified": "Dokładność kamery nie została jeszcze zweryfikowana.",
   "tracking_camera_hits": "Wybory za pomocą kamery: {hits}/{total}.",

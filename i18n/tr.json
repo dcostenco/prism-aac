@@ -1,4 +1,5 @@
 {
+  "camera_wrist_scope": "Deneysel bilek/kol kontrolü: yüzünüzün tamamını ve seçilen bileği görünür tutun. Küçük, kesilmiş veya belirsiz yüzler hareketi ve seçimi duraklatabilir. Yaklaşın veya aydınlatmayı iyileştirin. Gerçek kamera doğruluğu henüz doğrulanmadı.",
   "tracking_accuracy_passed": "Kamera doğruluk testi başarılı.",
   "tracking_accuracy_unverified": "Kamera doğruluğu henüz doğrulanmadı.",
   "tracking_camera_hits": "Kamera ile seçimler: {hits}/{total}.",

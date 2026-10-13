@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   hasCalibration,
   beginPoseCalibrationDraft,
+  hasPoseCalibrationForTarget,
   markPoseWizardCompleted,
   savePoseCalibration,
   savePoseMapping,
@@ -130,6 +131,49 @@ describe('pose calibration draft', () => {
     draft.commit();
     expect(JSON.parse(localStorage.getItem(PORTRAIT_KEY)!)).toEqual(PROFILE);
     expect(localStorage.getItem(COMPLETION_KEY)).toBe('true');
+  });
+
+  it.each([
+    { name: 'factory preview', profile: PROFILE },
+    { name: 'unfinished profile', profile: { ...PROFILE, wizardCompleted: false, trackingTarget: 'right_wrist', orientation: 'portrait' } },
+    { name: 'other wrist', profile: { ...PROFILE, wizardCompleted: true, trackingTarget: 'left_wrist', orientation: 'portrait' } },
+    { name: 'other orientation', profile: { ...PROFILE, wizardCompleted: true, trackingTarget: 'right_wrist', orientation: 'landscape' } },
+  ])('completed binding guard rejects $name before writing any saved profile', item => {
+    const original = JSON.stringify({ ...PROFILE, wizardCompleted: true, trackingTarget: 'right_wrist', orientation: 'portrait' });
+    localStorage.setItem(PORTRAIT_KEY, original);
+    const draft = beginPoseCalibrationDraft();
+    savePoseCalibration(item.profile);
+    markPoseWizardCompleted();
+    try {
+      expect(() => draft.commit('portrait', 'right_wrist')).toThrow();
+      expect(localStorage.getItem(PORTRAIT_KEY)).toBe(original);
+      expect(localStorage.getItem(COMPLETION_KEY)).toBeNull();
+    } finally { draft.rollback(); }
+  });
+
+  it('commits a completed matching binding and keeps the other orientation unchanged', () => {
+    const other = JSON.stringify(PROFILE);
+    localStorage.setItem(LANDSCAPE_KEY, other);
+    const finished = { ...PROFILE, wizardCompleted: true, trackingTarget: 'right_wrist' as const, orientation: 'portrait' as const };
+    const draft = beginPoseCalibrationDraft();
+    savePoseCalibration(finished);
+    draft.commit('portrait', 'right_wrist');
+    expect(localStorage.getItem(PORTRAIT_KEY)).toBe(JSON.stringify(finished));
+    expect(localStorage.getItem(LANDSCAPE_KEY)).toBe(other);
+    expect(hasPoseCalibrationForTarget('right_wrist')).toBe(true);
+  });
+
+  it('rejects an invalid pending record even when a legacy fallback appears ready', () => {
+    const previous = JSON.stringify({ ...PROFILE, wizardCompleted: true, trackingTarget: 'right_wrist', orientation: 'portrait' });
+    localStorage.setItem(LEGACY_KEY, previous);
+    const draft = beginPoseCalibrationDraft();
+    savePoseCalibration({ ...PROFILE, leftX: 0.201 });
+    expect(hasPoseCalibrationForTarget('right_wrist')).toBe(true); // load() falls back, not the record being committed.
+    try {
+      expect(() => draft.commit('portrait', 'right_wrist')).toThrow(/Complete calibration/);
+      expect(localStorage.getItem(PORTRAIT_KEY)).toBeNull();
+      expect(localStorage.getItem(LEGACY_KEY)).toBe(previous);
+    } finally { draft.rollback(); }
   });
 
   it('blocks commit after a conflicting other-tab write', () => {

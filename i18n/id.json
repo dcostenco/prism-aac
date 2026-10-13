@@ -1,4 +1,5 @@
 {
+  "camera_wrist_scope": "Kontrol pergelangan/lengan eksperimental: pastikan seluruh wajah dan pergelangan yang dipilih terlihat. Wajah kecil, terpotong, atau tidak pasti dapat menjeda gerakan dan pilihan. Mendekatlah atau perbaiki pencahayaan. Akurasi kamera fisik belum diverifikasi.",
   "tracking_accuracy_passed": "Uji akurasi kamera berhasil.",
   "tracking_accuracy_unverified": "Akurasi kamera belum diverifikasi.",
   "tracking_camera_hits": "Pilihan melalui kamera: {hits}/{total}.",

@@ -7,6 +7,8 @@ const STATUS_LIMIT = 256;
 const STATUS_VALUES = ['starting', 'tracking', 'held', 'lost', 'error', 'stopped'] as const;
 type DiagnosticStatus = typeof STATUS_VALUES[number];
 const STATUS_NAMES = new Set<DiagnosticStatus>(STATUS_VALUES);
+const LOSS_REASONS = new Set(['head-missing', 'head-unverified', 'camera-frame-stale', 'wrist-unstable', 'camera-unavailable', 'head-association', 'head-detector-error', 'pose-missing', 'wrist-missing', 'orientation-mismatch', 'detector-error']);
+export type TrackingLossReason = 'head-missing' | 'head-unverified' | 'camera-frame-stale' | 'wrist-unstable' | 'camera-unavailable' | 'head-association' | 'head-detector-error' | 'pose-missing' | 'wrist-missing' | 'orientation-mismatch' | 'detector-error';
 type Point = readonly [number | null, number | null];
 export interface DiagnosticFrame {
   pipeline: 'pose' | 'head';
@@ -28,14 +30,19 @@ export interface DiagnosticFrame {
   processingMs?: number | null;
   cursorHeld?: boolean;
   calibrationFallback?: boolean;
+  headConfidence?: number | null;
+  motionPaused?: boolean;
+  /** Measurement/settling readiness; ownership and the target dwell lock still apply. */
+  selectionReady?: boolean;
+  measurementRejected?: boolean;
 }
 let active = false;
 let started = 0;
 let startedAt = '';
 let limitReached = false;
 let frames: Array<DiagnosticFrame & { elapsedMs: number }> = [];
-const states: Array<{ elapsedMs: number; pipeline: 'pose' | 'head'; status: DiagnosticStatus }> = [];
-const lastState = new Map<string, DiagnosticStatus>();
+const states: Array<{ elapsedMs: number; pipeline: 'pose' | 'head'; status: DiagnosticStatus; reason?: TrackingLossReason; headConfidence?: number | null }> = [];
+const lastState = new Map<string, string>();
 let statusEventsDropped = 0;
 const finite = (value: number | null | undefined) => Number.isFinite(value) ? value as number : null;
 const point = (value: Point): Point => [finite(value[0]), finite(value[1])];
@@ -75,14 +82,20 @@ export function recordTrackingDiagnosticFrame(frame: DiagnosticFrame) {
     detectionAgeMs: finite(frame.detectionAgeMs), processingMs: finite(frame.processingMs),
     cursorHeld: frame.cursorHeld === true,
     calibrationFallback: frame.calibrationFallback === true,
+    headConfidence: finite(frame.headConfidence),
+    motionPaused: frame.motionPaused === true, selectionReady: frame.selectionReady === true, measurementRejected: frame.measurementRejected === true,
   });
   if (frames.length >= DIAGNOSTIC_FRAME_LIMIT) { active = false; limitReached = true; }
 }
-export function recordTrackingDiagnosticState(pipeline: 'pose' | 'head', status: DiagnosticStatus) {
+export function recordTrackingDiagnosticState(pipeline: 'pose' | 'head', status: DiagnosticStatus,
+  detail?: { reason?: TrackingLossReason; headConfidence?: number | null }) {
   if ((pipeline !== 'pose' && pipeline !== 'head') || !STATUS_NAMES.has(status)) return;
-  if (!isTrackingDiagnosticsActive() || lastState.get(pipeline) === status) return;
-  lastState.set(pipeline, status);
-  if (states.length < STATUS_LIMIT) states.push({ elapsedMs: performance.now() - started, pipeline, status });
+  const reason = detail?.reason && LOSS_REASONS.has(detail.reason) ? detail.reason : undefined;
+  const identity = `${status}:${reason ?? ''}`;
+  if (!isTrackingDiagnosticsActive() || lastState.get(pipeline) === identity) return;
+  lastState.set(pipeline, identity);
+  if (states.length < STATUS_LIMIT) states.push({ elapsedMs: performance.now() - started, pipeline, status,
+    ...(reason ? { reason } : {}), ...(detail ? { headConfidence: finite(detail.headConfidence) } : {}) });
   else statusEventsDropped++;
 }
 export function trackingDiagnosticStatus() {

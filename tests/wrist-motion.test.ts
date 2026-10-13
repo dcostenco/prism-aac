@@ -1,0 +1,151 @@
+import { describe, expect, it } from 'vitest';
+import { WristMotion, limitWristCursorStep, wristCursorSettled, wristSelectionDwellMs } from '@/services/wristMotion';
+import { wristNoise } from './helpers/wrist-noise';
+
+const DRIFTS = [0, 0.003, 0.015];
+const FRAME_MS = 1000 / 15;
+const CAMERA_WIDTH = 320;
+const TREMOR = 0.015;
+const DRIFT_DURATION = 30_000;
+const SEEDS = [19423, 729, 59331];
+const NOISE_CASES = SEEDS.flatMap(seed => [4.5, 6, 15].flatMap(fps => [0.003, 0.01].flatMap(sigma =>
+  [0, 0.6].map(correlation => ({ seed, fps, sigma, correlation })))));
+const DEFAULT_DWELL_MS = 1200;
+const OBSERVATION_MS = 20_000;
+function point(i: number, drift: number, jitter = 0) {
+  return { x: 0.5 + drift * i * FRAME_MS / DRIFT_DURATION + (i % 2 ? jitter : -jitter),
+    y: 0.5 + (i % 2 ? jitter : -jitter) };
+}
+describe.each(DRIFTS)('wrist motion at drift=%s', drift => {
+  it.each(NOISE_CASES)('withholds automatic selection during departure from an established rested cursor: %j', ({ seed, fps, sigma, correlation }) => {
+    const gate = new WristMotion(), next = wristNoise(seed, fps, sigma, correlation, drift);
+    let latchAt: number | null = null, released = false;
+    for (let sample = next(); sample.time < OBSERVATION_MS; sample = next()) {
+      const travel = latchAt !== null ? Math.max(0, sample.time - latchAt - 100) * 0.02 / 1000 : 0;
+      const result = gate.update({ x: sample.point.x + travel, y: sample.point.y }, sample.time, CAMERA_WIDTH);
+      if (latchAt === null && sample.time >= 5000 && (result.selectionReady || sigma === 0.01 && result.paused)) { latchAt = sample.time; continue; }
+      if (!result.selectionReady && latchAt !== null && sample.time > latchAt + 100) { released = true; break; }
+      if (latchAt !== null && sample.time - latchAt >= DEFAULT_DWELL_MS) break;
+    }
+    expect(latchAt).not.toBeNull(); expect(released).toBe(true);
+  });
+  it.each(NOISE_CASES)('keeps noisy automatic selection off without losing stabilized cursor feedback: %j', ({ seed, fps, sigma, correlation }) => {
+    const gate = new WristMotion(), next = wristNoise(seed, fps, sigma, correlation, drift);
+    let readyStart: number | null = null, longest = 0, updates = 0;
+    for (let sample = next(); sample.time < OBSERVATION_MS; sample = next()) {
+      const result = gate.update(sample.point, sample.time, CAMERA_WIDTH);
+      if (!result.rejected) updates++;
+      if (sigma === 0.01) expect(result.selectionReady).toBe(false); // Approved fail-closed envelope, not tremor/intent accuracy.
+      if (result.selectionReady) {
+        if (readyStart === null) readyStart = sample.time;
+        longest = Math.max(longest, sample.time - readyStart);
+      } else readyStart = null;
+    }
+    expect(updates).toBeGreaterThan(20);
+    if (sigma === 0.003) expect(longest).toBeGreaterThanOrEqual(DEFAULT_DWELL_MS);
+  });
+  it('cannot bypass the camera target-hold minimum with a short legacy setting', () => {
+    expect(wristSelectionDwellMs(200)).toBe(DEFAULT_DWELL_MS);
+    expect(wristSelectionDwellMs(1800)).toBe(1800);
+  });
+  it('releases an intermediate noisy-motion anchor when fresh low-noise readings settle elsewhere', () => {
+    const gate = new WristMotion(); let time = 0, result;
+    const update = (x: number) => { time += 100; result = gate.update({ x: x + drift, y: 0.5 }, time, CAMERA_WIDTH); };
+    for (let i = 0; i < 80; i++) update(0.5);
+    for (let i = 1; i <= 8; i++) update(0.5 + i * 0.01);
+    for (let i = 7; i >= 0; i--) update(0.5 + i * 0.01);
+    for (let i = 0; i < 60; i++) update(0.5);
+    expect(result!.point.x).toBeCloseTo(0.5 + drift, 3);
+    expect(result!.selectionReady).toBe(true);
+  });
+  it('keeps a very slow feed available for cursor movement but not automatic selection', () => {
+    const gate = new WristMotion(); let last;
+    for (let i = 0; i < 30; i++) last = gate.update(point(i, drift), i * 1000 / 3, CAMERA_WIDTH);
+    expect(last!.rejected).toBe(false); expect(last!.paused).toBe(true); expect(last!.selectionReady).toBe(false);
+  });
+  it.each(NOISE_CASES)('stabilizes the cursor for a dwell-length pause with random/correlated noise: %j', ({ seed, fps, sigma, correlation }) => {
+    const gate = new WristMotion(), next = wristNoise(seed, fps, sigma, correlation, drift);
+    let pauseStart: number | null = null, longest = 0, held: { x: number; y: number } | null = null;
+    for (let sample = next(); sample.time < OBSERVATION_MS; sample = next()) {
+      const result = gate.update(sample.point, sample.time, CAMERA_WIDTH);
+      if (!result.paused) { pauseStart = null; held = null; continue; }
+      if (pauseStart === null) { pauseStart = sample.time; held = result.point; }
+      expect(result.point).toEqual(held); // No chasing noise during the continuous hold.
+      longest = Math.max(longest, sample.time - pauseStart);
+    }
+    expect(longest).toBeGreaterThanOrEqual(DEFAULT_DWELL_MS);
+  });
+  it('breaks the pause after an unobserved gap without erasing measured noise', () => {
+    const gate = new WristMotion(); let result;
+    for (let i = 0; i < 45; i++) result = gate.update(point(i, drift, TREMOR), i * FRAME_MS, CAMERA_WIDTH);
+    expect(result!.paused).toBe(true);
+    const after = gate.update(point(45, drift, TREMOR), 45 * FRAME_MS + 600, CAMERA_WIDTH);
+    expect(after.paused).toBe(false); expect(after.noise).toBeGreaterThan(0);
+  });
+  it.each([6, 10, 15])('qualifies a stationary camera stream at %s fps without requiring impossible sample density', fps => {
+    const gate = new WristMotion(); let last;
+    for (let i = 0; i < 30; i++) last = gate.update({ x: 0.5 + drift * i * (1000 / fps) / DRIFT_DURATION, y: 0.5 }, i * 1000 / fps, CAMERA_WIDTH);
+    expect(last!.paused).toBe(true);
+  });
+  it('latches a pause with tremor instead of chasing positional drift', () => {
+    const gate = new WristMotion(); let held: number[] = [];
+    for (let i = 0; i < 150; i++) {
+      const value = gate.update(point(i, drift, TREMOR), i * FRAME_MS, CAMERA_WIDTH);
+      if (i > 45) { expect(value.paused).toBe(true); held.push(value.point.x); }
+    }
+    expect(Math.max(...held) - Math.min(...held)).toBeLessThan(0.00001);
+  });
+  it('does not learn a steady deliberate trajectory as tremor or count it as a pause', () => {
+    const gate = new WristMotion(); let last;
+    for (let i = 0; i < 90; i++) last = gate.update({ x: 0.3 + i * 0.002 + drift * i / 90, y: 0.5 }, i * FRAME_MS, CAMERA_WIDTH);
+    expect(last!.noise).toBeLessThan(0.00001); expect(last!.paused).toBe(false);
+    expect(last!.point.x).toBeGreaterThan(0.46);
+  });
+  it.each([6, 10, 15])('recognizes directed travel beneath tremor at %s fps', fps => {
+    const gate = new WristMotion(); let last;
+    for (let i = 0; i < 60; i++) {
+      const time = i * 1000 / fps;
+      const p = { x: 0.5 + drift * time / DRIFT_DURATION + (i % 2 ? TREMOR : -TREMOR) + 0.02 * time / 1000,
+        y: 0.5 + (i % 2 ? TREMOR : -TREMOR) };
+      last = gate.update(p, time, CAMERA_WIDTH);
+      if (i > 20) expect(last.paused).toBe(false);
+    }
+    expect(last!.point.x).toBeGreaterThan(0.55);
+  });
+  it('rejects an isolated jump even without a low-confidence excuse', () => {
+    const gate = new WristMotion(); let last;
+    for (let i = 0; i < 20; i++) last = gate.update(point(i, drift), i * FRAME_MS, CAMERA_WIDTH);
+    const jump = gate.update({ x: 0.8, y: 0.85 }, 20 * FRAME_MS, CAMERA_WIDTH);
+    expect(jump.rejected).toBe(true); expect(jump.paused).toBe(false);
+    expect(Math.hypot(jump.point.x - last!.point.x, jump.point.y - last!.point.y)).toBeLessThan(0.001);
+    const next = gate.update(point(21, drift), 21 * FRAME_MS, CAMERA_WIDTH);
+    expect(next.rejected).toBe(false); expect(next.noise).toBeLessThan(0.001);
+  });
+  it('lets a confirmed large deliberate step through within two frames', () => {
+    const gate = new WristMotion();
+    for (let i = 0; i < 20; i++) gate.update(point(i, drift), i * FRAME_MS, CAMERA_WIDTH);
+    expect(gate.update({ x: 0.7, y: 0.5 }, 20 * FRAME_MS, CAMERA_WIDTH).rejected).toBe(true);
+    const confirmed = gate.update({ x: 0.702, y: 0.5 }, 21 * FRAME_MS, CAMERA_WIDTH);
+    expect(confirmed.rejected).toBe(false); expect(confirmed.paused).toBe(false);
+    expect(confirmed.point.x).toBeGreaterThan(0.69);
+  });
+  it('retains noise but breaks pause continuity after tracking loss', () => {
+    const gate = new WristMotion(); let last;
+    for (let i = 0; i < 45; i++) last = gate.update(point(i, drift, TREMOR), i * FRAME_MS, CAMERA_WIDTH);
+    expect(last!.paused).toBe(true); const noise = last!.noise;
+    gate.interrupt();
+    const first = gate.update(point(46, drift, TREMOR), 46 * FRAME_MS, CAMERA_WIDTH);
+    expect(first.paused).toBe(false); expect(first.noise).toBeGreaterThan(noise * 0.8);
+  });
+  it('bounds even a confirmed cursor discontinuity and does not call that in-flight cursor settled', () => {
+    const target = { x: 700, y: 400 }, start = { x: 300, y: 400 };
+    let current = start;
+    for (let i = 0; i < 8; i++) {
+      const next = limitWristCursorStep(current, target, FRAME_MS, 975, 611);
+      expect(Math.hypot(next.x - current.x, next.y - current.y)).toBeLessThan(54);
+      if (next.limited) expect(wristCursorSettled(next, target, 975, 611)).toBe(false);
+      current = next;
+    }
+    expect(current.x).toBeCloseTo(target.x);
+  });
+});

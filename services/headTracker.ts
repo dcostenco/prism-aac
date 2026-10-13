@@ -38,9 +38,9 @@ import { emitTrackingEvent } from './trackingTelemetry';
 import { isTrackingDiagnosticsActive, recordTrackingDiagnosticFrame, recordTrackingDiagnosticState } from './trackingDiagnostics';
 import { readCameraSelectionState, canActivateCameraSelection } from './cameraSelection';
 import { resolveDwellTarget } from './dwellTarget';
+import { acquireFaceDetector } from './sharedFaceDetector';
 import {
   MEDIAPIPE_WASM_URL,
-  FACE_DETECTOR_URL,
   FACE_LANDMARKER_URL,
 } from './mediapipeRuntime';
 
@@ -144,17 +144,7 @@ async function initMediaPipeFace(): Promise<boolean> {
   mpDisposed = false;
   mpLoadPromise = (async () => {
     try {
-      const vision = await import('@mediapipe/tasks-vision');
-      const { FaceDetector: MPFace, FilesetResolver } = vision;
-      const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
-      const detector = await MPFace.createFromOptions(fileset, {
-        baseOptions: {
-          modelAssetPath: FACE_DETECTOR_URL,
-          delegate: 'GPU',
-        },
-        runningMode: 'VIDEO',
-        minDetectionConfidence: 0.5,
-      });
+      const detector = await acquireFaceDetector();
       // T-10 race guard: if stop() ran while we were loading, dispose
       // immediately instead of leaking an unclosed model.
       if (mpDisposed) {

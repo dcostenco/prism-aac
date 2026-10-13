@@ -9,6 +9,22 @@ const FRAME: DiagnosticFrame = {
 };
 beforeEach(async () => { vi.restoreAllMocks(); vi.resetModules(); recorder = await import('@/services/trackingDiagnostics'); });
 describe('opt-in local tracking evidence', () => {
+  it('records a held cursor without misreporting automatic selection as ready', () => {
+    recorder.startTrackingDiagnostics();
+    recorder.recordTrackingDiagnosticFrame({ ...FRAME, cursorHeld: true, motionPaused: true, selectionReady: false });
+    const frame = JSON.parse(recorder.trackingDiagnosticReport()).frames[0];
+    expect(frame).toMatchObject({ cursorHeld: true, motionPaused: true, selectionReady: false });
+  });
+  it('distinguishes head from wrist loss without admitting arbitrary error text', () => {
+    recorder.startTrackingDiagnostics();
+    recorder.recordTrackingDiagnosticState('pose', 'lost', { reason: 'head-missing', headConfidence: 0 });
+    recorder.recordTrackingDiagnosticState('pose', 'lost', { reason: 'wrist-missing', headConfidence: 0.9 });
+    recorder.recordTrackingDiagnosticState('pose', 'lost', { reason: 'private text' as 'head-missing', headConfidence: NaN });
+    const report = JSON.parse(recorder.trackingDiagnosticReport());
+    expect(report.states.map((s: { reason?: string }) => s.reason)).toEqual(['head-missing', 'wrist-missing', undefined]);
+    expect(report.states[1].headConfidence).toBe(0.9);
+    expect(JSON.stringify(report)).not.toContain('private text');
+  });
   it('collects nothing before consent and retains raw, mapped and filtered values after stop', () => {
     recorder.recordTrackingDiagnosticFrame(FRAME);
     expect(recorder.trackingDiagnosticStatus().frames).toBe(0);

@@ -32,7 +32,6 @@ import { ConfidenceAwareOneEuro } from './oneEuroFilter';
 import {
   MEDIAPIPE_WASM_URL,
   POSE_LANDMARKER_LITE_URL,
-  FACE_DETECTOR_URL,
   FACE_LANDMARKER_URL,
   FpsWatchdog,
 } from './mediapipeRuntime';
@@ -46,7 +45,10 @@ import {
 } from './egoMotion';
 import { BaselineTracker } from './recalibration';
 import { emitTrackingEvent } from './trackingTelemetry';
-import { isTrackingDiagnosticsActive, recordTrackingDiagnosticFrame, recordTrackingDiagnosticState } from './trackingDiagnostics';
+import { isTrackingDiagnosticsActive, recordTrackingDiagnosticFrame, recordTrackingDiagnosticState, type TrackingLossReason } from './trackingDiagnostics';
+import { startHeadPresence, poseBelongsToHead, type HeadPresenceHandle, type HeadPresence } from './headPresence';
+import { acquireFaceDetector } from './sharedFaceDetector';
+import { WristMotion, limitWristCursorStep, wristCursorSettled, wristSelectionDwellMs, type WristMotionResult } from './wristMotion';
 import { readCameraSelectionState, canActivateCameraSelection } from './cameraSelection';
 import { resolveDwellTarget } from './dwellTarget';
 
@@ -161,7 +163,11 @@ export interface PoseTrackerOptions {
   cursorSmoothing: number; // EMA alpha 0.05–0.3
   onMove: (x: number, y: number) => void;
   onDwell: (element: Element) => void;
+  /** Authoritative target lock, including loss/recenter/ownership transitions. */
+  onDwellLockChange?: (element: Element | null) => void;
   onStatusChange: (status: 'starting' | 'tracking' | 'lost' | 'stopped', activeTarget?: TrackingTarget) => void;
+  onTrackingLoss?: (reason: TrackingLossReason) => void;
+  onMotionStateChange?: (motion: WristMotionResult) => void;
   /** Blend iris/gaze from FaceLandmarker into cursor position (0=nose only, 1=iris only). */
   useEyeGaze?: boolean;
   /** Weight 0–1, default 0.8. Only used when useEyeGaze is true. */
@@ -197,9 +203,17 @@ let poseLandmarker: unknown = null;
 let poseLoadPromise: Promise<void> | null = null;
 let useFaceDetectorFallback = false;
 
-async function initPoseLandmarker(): Promise<boolean> {
-  if (poseLandmarker) return true;
-  if (poseLoadPromise) { await poseLoadPromise; return !!poseLandmarker; }
+async function initPoseLandmarker(requirePose = false): Promise<boolean> {
+  if (poseLoadPromise) {
+    await poseLoadPromise;
+    // A concurrent legacy caller may have installed a face-only fallback.
+    return requirePose && useFaceDetectorFallback ? initPoseLandmarker(true) : !!poseLandmarker;
+  }
+  if (poseLandmarker && (!requirePose || !useFaceDetectorFallback)) return true;
+  if (requirePose && useFaceDetectorFallback) {
+    (poseLandmarker as { close(): void } | null)?.close();
+    poseLandmarker = null; useFaceDetectorFallback = false;
+  }
   poseLoadPromise = (async () => {
     try {
       const vision = await import('@mediapipe/tasks-vision');
@@ -221,6 +235,7 @@ async function initPoseLandmarker(): Promise<boolean> {
             numPoses: 2,
           });
           console.log(`[PoseTracker] PoseLandmarker initialized with ${delegate} delegate`);
+          useFaceDetectorFallback = false;
           break;
         } catch (err) {
           console.warn(`[PoseTracker] ${delegate} delegate failed:`, err instanceof Error ? err.message : err);
@@ -229,17 +244,10 @@ async function initPoseLandmarker(): Promise<boolean> {
       }
 
       // Fallback: use FaceDetector (lighter model, proven on Safari)
-      if (!poseLandmarker) {
+      if (!poseLandmarker && !requirePose) {
         console.log('[PoseTracker] PoseLandmarker unavailable, falling back to FaceDetector for nose tracking');
         try {
-          const { FaceDetector: MPFace } = vision;
-          poseLandmarker = await MPFace.createFromOptions(fileset, {
-            baseOptions: {
-              modelAssetPath: FACE_DETECTOR_URL,
-              delegate: 'GPU',
-            },
-            runningMode: 'VIDEO',
-          }) as unknown as typeof poseLandmarker;
+          poseLandmarker = await acquireFaceDetector();
           useFaceDetectorFallback = true;
           console.log('[PoseTracker] FaceDetector fallback initialized');
         } catch (faceErr) {
@@ -477,10 +485,11 @@ const POSE_CALIBRATION_DRAFT_KEYS = [calibrationKey('portrait'), calibrationKey(
 const CALIBRATION_DRAFT_BUSY = 'Calibration is already in progress.';
 const CALIBRATION_DRAFT_CONFLICT = 'Saved calibration changed during setup. Cancel and reopen setup.';
 const CALIBRATION_ORIENTATION_CONFLICT = 'Screen orientation changed. Rotate back or cancel and reopen setup.';
+const CALIBRATION_DRAFT_INCOMPLETE = 'Complete calibration for the chosen wrist and orientation before saving.';
 let calibrationDraft: { original: Map<string, string | null>; pending: Map<string, string> } | null = null;
 
 export interface PoseCalibrationDraft {
-  commit(expectedOrientation?: 'landscape' | 'portrait'): void;
+  commit(expectedOrientation?: 'landscape' | 'portrait', expectedTarget?: TrackingTarget): void;
   rollback(): void;
 }
 
@@ -493,7 +502,7 @@ export function beginPoseCalibrationDraft(): PoseCalibrationDraft {
   calibrationDraft = draft;
   return {
     rollback() { if (calibrationDraft === draft) calibrationDraft = null; },
-    commit(expectedOrientation) {
+    commit(expectedOrientation, expectedTarget) {
       if (calibrationDraft !== draft) return;
       if (expectedOrientation && expectedOrientation !== getOrientation()) {
         throw new Error(CALIBRATION_ORIENTATION_CONFLICT);
@@ -505,6 +514,14 @@ export function beginPoseCalibrationDraft(): PoseCalibrationDraft {
         key === calibrationKey() || key === POSE_WIZARD_COMPLETION_KEY);
       for (const [key] of pending) {
         if (localStorage.getItem(key) !== draft.original.get(key)) throw new Error(CALIBRATION_DRAFT_CONFLICT);
+      }
+      if (expectedTarget) {
+        // Check the exact pending record, not load() falling back to an
+        // older valid profile which could mask an unfinished preview write.
+        const value = draft.pending.get(calibrationKey());
+        let complete = false;
+        try { complete = !!value && isPoseCalibrationForTarget(JSON.parse(value), expectedTarget); } catch { /* invalid draft */ }
+        if (!complete) throw new Error(CALIBRATION_DRAFT_INCOMPLETE);
       }
       const written: string[] = [];
       try {
@@ -666,7 +683,7 @@ async function isEnvironmentCamera(deviceId: string): Promise<boolean> {
 }
 
 // Internal pub/sub for pose samples — does NOT use window events (biometric data privacy)
-type PoseSampleListener = (detail: { normX: number; normY: number; noiseFloor: number; visibility: number; egoSuppressed: boolean }) => void;
+type PoseSampleListener = (detail: { normX: number; normY: number; noiseFloor: number; visibility: number; egoSuppressed: boolean; motionPaused?: boolean; selectionReady?: boolean }) => void;
 const _poseSampleListeners = new Set<PoseSampleListener>();
 export function subscribePoseSamples(fn: PoseSampleListener): () => void {
     _poseSampleListeners.add(fn);
@@ -733,6 +750,10 @@ export function startPoseTracker(
   let rafId = 0;
   let video: HTMLVideoElement | null = null;
   let cameraLease: CameraLease | null = null; // Set if we acquired via cameraStream
+  let headPresence: HeadPresenceHandle | null = null;
+  const wristMotion = opts.selectedTargetOnly && (opts.trackingTarget === 'left_wrist' || opts.trackingTarget === 'right_wrist') ? new WristMotion() : null;
+  let lastCursorTime: number | null = null;
+  let explicitCalibrationPending = false;
   const abortController = new AbortController();
 
   // Aggregate ('any_*') and concrete targets are both resolved per-frame in
@@ -761,6 +782,11 @@ export function startPoseTracker(
   let dwellElement: Element | null = null;
   let dwellStart = 0;
   let dwellTriggered = false;
+  const setDwellTriggered = (triggered: boolean) => {
+    if (dwellTriggered === triggered) return;
+    dwellTriggered = triggered;
+    opts.onDwellLockChange?.(triggered ? dwellElement : null);
+  };
   let selectionEpoch = readCameraSelectionState().epoch;
   const pauseDwell = () => {
     if (!dwellTriggered) { dwellElement = null; dwellStart = 0; }
@@ -907,6 +933,7 @@ export function startPoseTracker(
         }
 
         if (!lease) {
+          opts.onTrackingLoss?.('camera-unavailable');
           console.error('[PoseTracker] Camera acquire failed (permission denied or no device).');
           recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
           return;
@@ -927,6 +954,7 @@ export function startPoseTracker(
         cameraLease = lease;
         video = lease.video;
       } catch (camErr) {
+        opts.onTrackingLoss?.('camera-unavailable');
         console.error('[PoseTracker] Camera access failed:', camErr instanceof Error ? camErr.message : camErr);
         recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
         return;
@@ -944,9 +972,21 @@ export function startPoseTracker(
         });
       }
       if (!video || video.readyState < 2) {
+        opts.onTrackingLoss?.('camera-unavailable');
         recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
         return;
       }
+    }
+
+    if (opts.requireHeadPresence) {
+      try { headPresence = await startHeadPresence(); }
+      catch {
+        opts.onTrackingLoss?.('head-detector-error');
+        recordTrackingDiagnosticState('pose', 'stopped', { reason: 'head-detector-error' }); opts.onStatusChange('stopped');
+        cameraLease?.release(); cameraLease = null;
+        return;
+      }
+      if (stopped) { headPresence.close(); headPresence = null; return; }
     }
 
     // Step 2: Initialize MediaPipe Pose Landmarker (and optionally FaceLandmarker for iris/gaze)
@@ -955,10 +995,13 @@ export function startPoseTracker(
       // cursor still works from pose-only in the meantime.
       void initFaceLandmarkerForGaze();
     }
-    const modelReady = await initPoseLandmarker();
-    if (!modelReady) {
+    const modelReady = await initPoseLandmarker(opts.selectedTargetOnly);
+    if (!modelReady || (useFaceDetectorFallback && opts.selectedTargetOnly)) {
+      opts.onTrackingLoss?.('detector-error');
       console.error('[PoseTracker] Model failed to load — cursor will use pointer fallback');
       recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
+      headPresence?.close(); headPresence = null;
+      cameraLease?.release(); cameraLease = null;
       return;
     }
     if (stopped) {
@@ -969,7 +1012,6 @@ export function startPoseTracker(
 
     // Step 3: Start detection loop
     let detecting = false;
-    let consecutiveErrors = 0;
 
     function tick(ts: number) {
       if (stopped) return;
@@ -979,14 +1021,39 @@ export function startPoseTracker(
       if (ts - lastFrameTime < FRAME_INTERVAL_MS) return;
       lastFrameTime = ts;
 
-      if (detecting || !video || video.readyState < 2) return;
+      if (detecting) return;
+      if (!video || video.readyState < 2) {
+        wristMotion?.interrupt();
+        pauseDwell();
+        opts.onTrackingLoss?.('camera-frame-stale');
+        recordTrackingDiagnosticState('pose', 'lost', { reason: 'camera-frame-stale' });
+        opts.onStatusChange('lost');
+        return;
+      }
 
       detecting = true;
-
+      let failure: TrackingLossReason = 'head-detector-error';
+      let observedHead: HeadPresence | null = null;
       try {
         const diagnosticFrameStart = isTrackingDiagnosticsActive() ? performance.now() : null;
+        if (opts.requireHeadPresence) {
+          observedHead = headPresence!.detect(video, performance.now());
+          if (observedHead.pending) return; // No inference or selection from duplicate polls.
+          if (!observedHead.present) {
+            wristMotion?.interrupt();
+            dwellElement = null; dwellStart = 0; setDwellTriggered(false);
+            recordTrackingDiagnosticState('pose', 'lost', { reason: observedHead.reason ?? 'head-missing', headConfidence: observedHead.confidence });
+            opts.onTrackingLoss?.(observedHead.reason ?? 'head-missing');
+            opts.onStatusChange('lost');
+            return; // A fresh head must qualify BEFORE wrist inference.
+          }
+          if (observedHead.discontinuity) { wristMotion?.interrupt(); pauseDwell(); }
+        }
+        failure = 'detector-error';
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const results = (poseLandmarker as any).detectForVideo(video, performance.now());
+        // Head and wrist must describe the SAME captured pixels. A slow head
+        // verification must not authorize a later live-video pose frame.
+        const results = (poseLandmarker as any).detectForVideo(opts.requireHeadPresence ? headPresence!.capturedFrame : video, performance.now());
 
         let normX: number | null = null;
         let normY: number | null = null;
@@ -1010,6 +1077,7 @@ export function startPoseTracker(
         // visibility and full landmark array.
         let frameLandmarks: Array<{ x: number; y: number; visibility?: number }> | null = null;
         let frameChosenVis = 0.5;
+        let lossReason: TrackingLossReason = results?.landmarks?.length ? 'wrist-missing' : 'pose-missing';
 
         if (useFaceDetectorFallback && !opts.selectedTargetOnly) {
           const det = results?.detections?.[0];
@@ -1131,12 +1199,16 @@ export function startPoseTracker(
 
         if (opts.requireHeadPresence) {
           const head = frameLandmarks?.[LANDMARK_INDEX.nose];
-          if (!isInCameraFrame(head) || (head?.visibility ?? 0) < 0.3) {
+          // Pose nose confidence is not face presence. Use its geometry
+          // only to associate the selected wrist's pose with this fresh face.
+          if (normX !== null && !poseBelongsToHead(head, observedHead?.box ?? null)) {
+            lossReason = 'head-association';
             normX = null;
             normY = null;
           }
         }
         if (opts.calibrationMode === 'control' && calibration.orientation !== getOrientation()) {
+          lossReason = 'orientation-mismatch';
           normX = null;
           normY = null;
         }
@@ -1193,7 +1265,25 @@ export function startPoseTracker(
         }
 
         if (normX !== null && normY !== null) {
-          consecutiveErrors = 0;
+
+          const motion = wristMotion?.update({ x: normX, y: normY },
+            opts.requireHeadPresence ? headPresence!.frameTimeMs : Date.now(), Math.max(video.videoWidth, video.videoHeight)) ?? null;
+          if (motion?.rejected) {
+            pauseDwell();
+            opts.onMotionStateChange?.(motion);
+            opts.onTrackingLoss?.('wrist-unstable');
+            recordTrackingDiagnosticState('pose', 'lost', { reason: 'wrist-unstable', headConfidence: observedHead?.confidence });
+            opts.onStatusChange('lost');
+            const rejected = mapPoseToScreen(normX, normY, calibration, sensitivityScale, window.innerWidth, window.innerHeight);
+            recordTrackingDiagnosticFrame({ pipeline: 'pose', target: activeTarget, requestedTarget: opts.trackingTarget,
+              rawNorm: [headNormX, headNormY], inputNorm: [normX, normY], mapped: [rejected.x, rejected.y], filtered: [sx, sy],
+              confidence: frameChosenVis, filterConfidence: frameChosenVis, noise: motion.noise,
+              calibration: [calibration.leftX, calibration.rightX, calibration.topY, calibration.bottomY], sensitivity: sensitivityScale,
+              cameraIndex: 0, videoSize: [video.videoWidth, video.videoHeight], screenSize: [window.innerWidth, window.innerHeight],
+              cursorHeld: true, measurementRejected: true, motionPaused: false, selectionReady: false, headConfidence: observedHead?.confidence,
+            });
+            return; // Do not calibrate or select from an unconfirmed discontinuity.
+          }
 
           recordTrackingDiagnosticState('pose', 'tracking'); opts.onStatusChange('tracking', activeTarget);
 
@@ -1307,7 +1397,7 @@ export function startPoseTracker(
           // Preserve the existing input clamp/mirroring; the shared mapper
           // applies sensitivity and safe-range fallback before filtering.
           const mapped = mapPoseToScreen(
-            1 - mirroredX, normY, calibration, sensitivityScale,
+            motion?.point.x ?? 1 - mirroredX, motion?.point.y ?? normY, calibration, sensitivityScale,
             window.innerWidth, window.innerHeight,
           );
           const rawX = mapped.x;
@@ -1387,6 +1477,7 @@ export function startPoseTracker(
           // The confidence-aware wrapper modulates `mincutoff` with
           // visibility, so low-confidence frames smooth harder.
           const measurementConfidence = Math.max(0.05, Math.min(1, frameChosenVis));
+          const previousCursor = { x: sx, y: sy };
           if (!oneEuroInitialized) {
             oneEuroX.snapTo(rawX);
             oneEuroY.snapTo(rawY);
@@ -1415,7 +1506,7 @@ export function startPoseTracker(
             // The noise floor is RMS of running variance over a 30s
             // half-life, so it's slow-moving and won't flap with single
             // bad frames.
-            const noise = baselineTracker.getNoiseFloor();
+            const noise = motion?.noise ?? baselineTracker.getNoiseFloor();
             oneEuroX.setNoiseFloor(noise);
             oneEuroY.setNoiseFloor(noise);
 
@@ -1439,16 +1530,32 @@ export function startPoseTracker(
             }
           }
 
+          let selectionReady = motion ? motion.selectionReady === true : true;
+          let cursorPaused = motion?.paused ?? true;
+          if (motion) {
+            const now = Date.now();
+            const limited = explicitCalibrationPending ? { x: sx, y: sy, limited: false } :
+              limitWristCursorStep(previousCursor, { x: sx, y: sy }, lastCursorTime === null ? FRAME_INTERVAL_MS : now - lastCursorTime,
+                window.innerWidth, window.innerHeight);
+            explicitCalibrationPending = false;
+            sx = limited.x; sy = limited.y; lastCursorTime = now;
+            cursorPaused = motion.paused && !limited.limited && wristCursorSettled({ x: sx, y: sy }, mapped, window.innerWidth, window.innerHeight);
+            selectionReady = selectionReady && cursorPaused;
+            opts.onMotionStateChange?.({ ...motion, paused: cursorPaused, selectionReady, held: motion.held || limited.limited });
+          }
+
           if (!suppressForEgoMotion) {
             if (diagnosticCalibration && isTrackingDiagnosticsActive()) recordTrackingDiagnosticFrame({
               pipeline: 'pose', target: activeTarget, requestedTarget: opts.trackingTarget,
               rawNorm: [headNormX, headNormY], inputNorm: [normX, normY],
               mapped: [rawX, rawY], filtered: [sx, sy], confidence: frameChosenVis,
-              filterConfidence: measurementConfidence, noise: baselineTracker.getNoiseFloor(),
+              filterConfidence: measurementConfidence, noise: motion?.noise ?? baselineTracker.getNoiseFloor(),
               calibration: diagnosticCalibration, sensitivity: sensitivityScale, cameraIndex: 0,
               videoSize: [video.videoWidth, video.videoHeight], screenSize: [window.innerWidth, window.innerHeight],
               processingMs: diagnosticFrameStart === null ? null : performance.now() - diagnosticFrameStart,
               calibrationFallback: !mapped.rangeOK,
+              headConfidence: observedHead?.confidence ?? null,
+              cursorHeld: motion?.held ?? false, motionPaused: cursorPaused, selectionReady, measurementRejected: false,
             });
             opts.onMove(sx, sy);
           }
@@ -1459,7 +1566,9 @@ export function startPoseTracker(
           // the sample buffer with iris jitter and break stable-hold detection.
           emitPoseSample({
             normX: headNormX ?? 0, normY: headNormY ?? 0,
-            noiseFloor: baselineTracker.getNoiseFloor(),
+            noiseFloor: motion?.noise ?? baselineTracker.getNoiseFloor(),
+            motionPaused: motion?.paused,
+            selectionReady: motion?.selectionReady === true,
             visibility: frameChosenVis,
             egoSuppressed: suppressForEgoMotion,
           });
@@ -1469,15 +1578,20 @@ export function startPoseTracker(
           const interactiveEl = resolveDwellTarget(elementUnder);
           const selection = readCameraSelectionState();
           if (selection.epoch !== selectionEpoch) { pauseDwell(); selectionEpoch = selection.epoch; }
+          // Departure can occur during movement, before a new pause qualifies.
+          // Ownership/epoch transitions must not masquerade as that departure.
+          if (dwellTriggered && !selection.blocked && canActivateCameraSelection(frameEpoch) && interactiveEl !== dwellElement) {
+            dwellElement = null; dwellStart = 0; setDwellTriggered(false);
+          }
 
-          if (suppressForEgoMotion || selection.blocked || !canActivateCameraSelection(frameEpoch)) {
+          if (!selectionReady || suppressForEgoMotion || selection.blocked || !canActivateCameraSelection(frameEpoch)) {
             pauseDwell();
           } else if (interactiveEl && interactiveEl === dwellElement) {
-            if (!dwellTriggered && Date.now() - dwellStart >= opts.dwellMs) {
-              dwellTriggered = true;
-              if (stopped || !canActivateCameraSelection(frameEpoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { dwellTriggered = false; pauseDwell(); return; }
+            if (!dwellTriggered && Date.now() - dwellStart >= (wristMotion ? wristSelectionDwellMs(opts.dwellMs) : opts.dwellMs)) {
+              setDwellTriggered(true);
+              if (stopped || !canActivateCameraSelection(frameEpoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { setDwellTriggered(false); pauseDwell(); return; }
               opts.onDwell(interactiveEl);
-              if (stopped || !canActivateCameraSelection(frameEpoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { dwellTriggered = false; pauseDwell(); return; }
+              if (stopped || !canActivateCameraSelection(frameEpoch) || resolveDwellTarget(interactiveEl) !== interactiveEl) { setDwellTriggered(false); pauseDwell(); return; }
               const elapsedMs = Date.now() - dwellStart;
               if (interactiveEl instanceof HTMLElement) interactiveEl.click();
               // Feed the adaptive engine: actual dwell-to-trigger latency teaches
@@ -1490,20 +1604,24 @@ export function startPoseTracker(
           } else {
             dwellElement = interactiveEl ?? null;
             dwellStart = Date.now();
-            dwellTriggered = false;
+            setDwellTriggered(false);
           }
         } else {
+          wristMotion?.interrupt();
+          opts.onTrackingLoss?.(lossReason);
           // No pose detected
-          recordTrackingDiagnosticState('pose', 'lost'); opts.onStatusChange('lost');
+          recordTrackingDiagnosticState('pose', 'lost', { reason: lossReason, headConfidence: observedHead?.confidence ?? null }); opts.onStatusChange('lost');
           dwellElement = null;
           dwellStart = 0;
-          dwellTriggered = false;
+          setDwellTriggered(false);
         }
       } catch {
-        consecutiveErrors++;
-        if (consecutiveErrors > 10) {
-          recordTrackingDiagnosticState('pose', 'lost'); opts.onStatusChange('lost');
-        }
+        wristMotion?.interrupt();
+        opts.onTrackingLoss?.(failure);
+        // An unobserved frame cannot count as a hold, even on the first error.
+        dwellElement = null; dwellStart = 0; setDwellTriggered(false);
+        recordTrackingDiagnosticState('pose', 'lost', { reason: failure, headConfidence: observedHead?.confidence ?? null });
+        opts.onStatusChange('lost');
       } finally {
         detecting = false;
       }
@@ -1519,6 +1637,7 @@ export function startPoseTracker(
       stopped = true;
       abortController.abort();
       cancelAnimationFrame(rafId);
+      headPresence?.close(); headPresence = null;
 
       // Refcounted release — only stops the stream if we were the last
       // consumer. If head-tracker is still using the same camera, the
@@ -1556,10 +1675,12 @@ export function startPoseTracker(
       const mappingChanged = data.leftX !== calibration.leftX || data.rightX !== calibration.rightX ||
         data.topY !== calibration.topY || data.bottomY !== calibration.bottomY;
       if (mappingChanged) {
+        wristMotion?.interrupt(); // Release the rest latch, preserve measured noise.
+        explicitCalibrationPending = true; // A requested map change is not sensor drift.
         // A deliberate recenter must not inherit selection time from the old map.
         dwellElement = null;
         dwellStart = 0;
-        dwellTriggered = false;
+        setDwellTriggered(false);
         // Filter history is in screen pixels under the previous mapping.
         // Reinitialize from the next genuine usable pose, not a made-up center.
         oneEuroX.reset();

@@ -7,6 +7,12 @@ import { fileURLToPath } from 'node:url';
 import { createElement } from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import type { HeadTrackerHandle, FaceLandmarkData } from '@/services/headTracker';
+// Exercise the retained head-controller library, not product availability.
+// narrow-camera-availability tests the disabled product mode with real flags.
+vi.mock('@/services/cameraTrackingTargets', async () => ({
+  ...await vi.importActual<typeof import('@/services/cameraTrackingTargets')>('@/services/cameraTrackingTargets'),
+  HEAD_CURSOR_AVAILABLE: true,
+}));
 import { DEFAULT_GESTURE_CONFIG, GestureDetector, type GestureEvent } from '@/services/gestureService';
 
 const camera = vi.hoisted(() => ({

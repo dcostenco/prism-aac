@@ -1,4 +1,5 @@
 {
+  "camera_wrist_scope": "Commande expérimentale par poignet/bras : gardez tout le visage et le poignet choisi visibles. Un visage petit, coupé ou incertain peut suspendre le mouvement et la sélection. Rapprochez-vous ou améliorez l’éclairage. La précision avec une caméra réelle reste non vérifiée.",
   "tracking_accuracy_passed": "Test de précision de la caméra réussi.",
   "tracking_accuracy_unverified": "La précision de la caméra n’est pas encore vérifiée.",
   "tracking_camera_hits": "Sélections par caméra : {hits}/{total}.",

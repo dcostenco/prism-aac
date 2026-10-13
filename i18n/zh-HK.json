@@ -1,4 +1,5 @@
 {
+  "camera_wrist_scope": "實驗性手腕／手臂控制：請讓整個臉部及所選手腕保持可見。臉部過小、被裁切或無法確認時，移動及選擇可能暫停。請靠近鏡頭或改善照明。實際鏡頭的準確性仍未驗證。",
   "tracking_accuracy_passed": "鏡頭準確度測試已通過。",
   "tracking_accuracy_unverified": "鏡頭準確度尚未驗證。",
   "tracking_camera_hits": "鏡頭選擇：{hits}/{total}。",
