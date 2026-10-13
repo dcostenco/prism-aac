@@ -106,16 +106,6 @@ const QWERTY_REFERENCE_ROWS = [
 
 type MatrixProject = keyof typeof IPHONE_MATRIX;
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function safeScreenshot(page: Page, fileName: string): Promise<void> {
   await expect(page.locator('nextjs-portal')).toHaveCount(0);
@@ -129,8 +119,7 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => (
     [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')]
       .filter((tile) => {
-        const image = tile.querySelector<HTMLImageElement>('img');
-        return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
+        return Boolean(tile.textContent?.trim());
       }).length
   )), { timeout: 20_000 }).toBe(5);
 }
@@ -138,7 +127,6 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
 test.beforeEach(async ({ page }, testInfo) => {
   const projectName = testInfo.project.name as MatrixProject;
   test.skip(!(projectName in IPHONE_MATRIX), 'iPhone matrix only');
-  await proxyArasaacForLocalWebKit(page);
   await page.addInitScript(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -193,7 +181,11 @@ test('keeps prediction and keyboard targets readable and inside the viewport', a
     const messageContent = document.querySelector<HTMLElement>('[data-testid="message-content"]')!;
     const predictionTiles = [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')];
     const predictionLabels = [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-label"]')];
-    const predictionIcons = predictionTiles.map((tile) => tile.querySelector<HTMLElement>('.aac-tile-icon')!);
+    // Picture checks apply to tiles that show a picture; a tile without one
+    // gives its word the whole card.
+    const pictureTiles = predictionTiles.filter((tile) => tile.dataset.tilePicture === 'shown');
+    const wordsOnlyTiles = predictionTiles.filter((tile) => tile.dataset.tilePicture === 'none');
+    const predictionIcons = pictureTiles.map((tile) => tile.querySelector<HTMLElement>('.aac-tile-icon')!);
     const predictionImages = predictionIcons.map((icon) => icon.querySelector<HTMLImageElement>('img')!);
     const keyboardButtons = [...document.querySelectorAll<HTMLElement>('[data-scan-group="keyboard"] button')];
     const characterKeys = [...document.querySelectorAll<HTMLElement>('[data-scan-group="keyboard"] button[data-key]')]
@@ -219,6 +211,13 @@ test('keeps prediction and keyboard targets readable and inside the viewport', a
       maximumPredictionImageHeightRatio: Math.max(...predictionImages.map((image, index) => (
         image.getBoundingClientRect().height / predictionIcons[index].getBoundingClientRect().height
       ))),
+      wordsOnlyTileCount: wordsOnlyTiles.length,
+      wordsOnlyWells: wordsOnlyTiles.filter((tile) => tile.querySelector('.aac-tile-icon')).length,
+      maximumWordsOnlyCenterOffset: Math.max(0, ...wordsOnlyTiles.map((tile) => {
+        const card = tile.getBoundingClientRect();
+        const word = tile.querySelector<HTMLElement>('[data-testid="prediction-label"]')!.getBoundingClientRect();
+        return Math.abs((card.top + card.bottom) / 2 - (word.top + word.bottom) / 2);
+      })),
       minimumKeyWidth: Math.min(...keyRects.map((rect) => rect.width)),
       minimumKeyHeight: Math.min(...keyRects.map((rect) => rect.height)),
       maximumKeyAspectRatio: Math.max(...keyRects.map((rect) => Math.max(rect.width / rect.height, rect.height / rect.width))),
@@ -283,6 +282,11 @@ test('keeps prediction and keyboard targets readable and inside the viewport', a
     .toBeLessThanOrEqual(0.72);
   expect(metrics.maximumPredictionImageHeightRatio, `${expected.label}: bounded pictogram height`)
     .toBeLessThanOrEqual(0.72);
+  // Anonymous visitors get no generated pictures: every prediction is words only.
+  expect(metrics.wordsOnlyTileCount, `${expected.label}: predictions without pictures`).toBe(5);
+  expect(metrics.wordsOnlyWells, `${expected.label}: no empty picture well`).toBe(0);
+  expect(metrics.maximumWordsOnlyCenterOffset, `${expected.label}: words centered in the tile`)
+    .toBeLessThanOrEqual(3);
   expect(metrics.minimumKeyWidth, `${expected.label}: minimum key width`)
     .toBeGreaterThanOrEqual(expected.minimumKeyWidth);
   expect(metrics.minimumKeyHeight, `${expected.label}: minimum key height`)

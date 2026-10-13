@@ -97,7 +97,7 @@ def translate_readme(source: str, lang_code: str, lang_name: str) -> str:
 
 RULES:
 1. Translate ALL text — headings, descriptions, table cells, alt text, button labels. No English left except:
-   - Brand names: "Prism AAC", "Synalux", "ARASAAC", "Inworld", "Apple", "Google", "MediaPipe"
+   - Brand names: "Prism AAC", "Synalux", "Inworld", "Apple", "Google", "MediaPipe"
    - Technical terms: API, TTS, WASM, SSE, CORS, JWT, PWA, HIPAA, SDK, CLI
    - Code blocks, URLs, file paths, command-line examples — keep exactly as-is
    - Badge URLs, image markdown, `<img>` tags, `<p>` tags — keep exactly as-is

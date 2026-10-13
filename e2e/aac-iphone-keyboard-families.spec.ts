@@ -52,16 +52,6 @@ const KEYBOARD_FAMILIES: Array<CustomFamily | NativeFamily> = [
   { slug: 'chinese-native-zh-hans', label: 'Chinese native IME', language: 'zh-Hans', kind: 'native-ime' },
 ];
 
-async function proxyArasaacForLocalWebKit(page: Page): Promise<void> {
-  if (process.env.AAC_E2E_PROXY_ARASAAC !== '1') return;
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'access-control-allow-origin': '*' },
-    });
-  });
-}
 
 async function safeScreenshot(page: Page, fileName: string): Promise<void> {
   await expect(page.locator('nextjs-portal')).toHaveCount(0);
@@ -75,15 +65,13 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => (
     [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')]
       .filter((tile) => {
-        const image = tile.querySelector<HTMLImageElement>('img');
-        return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
+        return Boolean(tile.textContent?.trim());
       }).length
   )), { timeout: 20_000 }).toBe(5);
 }
 
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'iphone-6.1', 'fixed 390x844 family review viewport');
-  await proxyArasaacForLocalWebKit(page);
 });
 
 test.afterEach(async ({ page, context }) => {

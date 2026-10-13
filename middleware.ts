@@ -34,10 +34,13 @@ export function middleware(request: NextRequest) {
     // (Settings → Local AI Models). The portal proxy's production CSP already
     // lists them; without them here the direct Vercel host and the dev server
     // refused every Ollama request and the panel read "not running".
-    "connect-src 'self' https://synalux.ai https://*.synalux.ai https://api.arasaac.org https://static.arasaac.org https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com http://localhost:11434 http://127.0.0.1:11434",
+    // https://*.supabase.co: the portal answers a generated-picture request with
+    // a redirect to Supabase storage, and the browser checks every redirect hop
+    // against connect-src. The portal's own CSP already allows it; without it
+    // here the direct Vercel host refused every prediction picture.
+    "connect-src 'self' https://synalux.ai https://*.synalux.ai https://*.supabase.co https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com http://localhost:11434 http://127.0.0.1:11434",
     "media-src 'self' blob: https://synalux.ai https://*.synalux.ai",
     "img-src 'self' blob: data: " +
-    "https://static.arasaac.org https://api.arasaac.org " +
     "https://lh3.googleusercontent.com " +
     "https://*.telegram.org https://t.me " +
     "https://*.whatsapp.net " +

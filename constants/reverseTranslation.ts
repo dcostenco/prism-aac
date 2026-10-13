@@ -8,19 +8,10 @@ import type { SupportedLanguage } from '@/engine/i18n';
  *
  * Why this exists
  * ---------------
- * ARASAAC's pictogram search is only offered in some locales. It answers HTTP
- * 400 for `ja hi vi tl id am sw bn` — eight of the languages this app ships.
- * The pictogram images themselves are language-neutral; only the SEARCH TERM
- * is localized. So the way to get a picture in an unsupported locale is to
- * search in English and show the image.
- *
- * PhraseTile already does this: it is handed `englishPhrase` alongside the
- * localized text and searches with the English one. PredictionBar had no
- * equivalent, because a predicted word arrives as bare localized text with no
- * English source attached — so it searched the localized word in a locale the
- * API rejects, and every prediction tile rendered a blank white box. For a
- * symbol-reliant AAC user that is not cosmetic: it makes the prediction bar
- * unreadable in those eight languages.
+ * Pictures are language-neutral: the generated-picture cache is keyed by the
+ * English meaning, so a prediction in any language should ask for the picture
+ * of its English source. A predicted word arrives as bare localized text with
+ * no English source attached, so it has to be recovered here.
  *
  * Recovering the English by reverse lookup is possible because predictions are
  * drawn from the same vocabulary the tiles use, so the localized surface form

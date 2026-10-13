@@ -1,47 +1,44 @@
 /**
- * pictogramService unit tests — military grade.
+ * pictogramService unit tests.
  *
- * Tests ARASAAC two-stage lookup (search + CDN), Synalux AI fallback,
- * mode='off' guard, 2MB blob cap, non-image content-type rejection,
- * memory cache deduplication, and pictureModeForProfile plan mapping.
+ * Third-party pictograms are retired: no lookup may reach their hosts, tiles
+ * show words, and only prediction-bar words on paid plans ask the Synalux
+ * portal for a generated picture. Also covers mode guards, the 2MB blob cap,
+ * non-image content-type rejection, in-memory deduplication and the plan
+ * mapping.
  *
- * vi.resetModules() in beforeEach gives each test a fresh MEM_CACHE,
- * dbPromise, and arasaacMisses set — no cross-test cache pollution.
+ * vi.resetModules() in beforeEach gives each test a fresh in-memory cache.
  */
-import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const MOCK_BLOB_URL = 'blob:mock-pictogram-url';
-const ARASAAC_API_HOST = 'api.arasaac.org';
-const ARASAAC_STATIC_HOST = 'static.arasaac.org';
+const RETIRED_HOSTS = ['api.arasaac.org', 'static.arasaac.org'];
 
 function requestHostname(input: unknown): string {
   if (input instanceof URL) return input.hostname;
-  if (typeof Request !== 'undefined' && input instanceof Request) {
-    return new URL(input.url).hostname;
-  }
+  if (typeof Request !== 'undefined' && input instanceof Request) return new URL(input.url).hostname;
   if (typeof input !== 'string') return '';
-
   return new URL(input, 'https://prism-aac.test').hostname;
 }
 
-function isArasaacRequest(input: unknown): boolean {
+const isRetiredRequest = (input: unknown) => {
   const hostname = requestHostname(input);
-  return hostname === ARASAAC_API_HOST || hostname === ARASAAC_STATIC_HOST;
-}
+  return RETIRED_HOSTS.some(host => hostname === host || hostname.endsWith(`.${host.split('.').slice(-2).join('.')}`));
+};
 
 function mockCreateObjectURL(): void {
   // jsdom does not implement URL.createObjectURL — provide a stable mock
-  Object.defineProperty(URL, 'createObjectURL', {
-    configurable: true,
-    writable: true,
-    value: vi.fn(() => MOCK_BLOB_URL),
-  });
-  Object.defineProperty(URL, 'revokeObjectURL', {
-    configurable: true,
-    writable: true,
-    value: vi.fn(),
-  });
+  Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: vi.fn(() => MOCK_BLOB_URL) });
+  Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: vi.fn() });
+}
+
+/** Every request is recorded; the portal answers with `handler`, anything else 404s. */
+function stubNetwork(handler: (url: string, init?: RequestInit) => Promise<Response> = async () =>
+  new Response(new ArrayBuffer(100), { status: 200, headers: { 'Content-Type': 'image/png' } })) {
+  const fetchSpy = vi.fn(async (url: string, init?: RequestInit) =>
+    url.includes('/prism-aac/pictogram') ? handler(url, init) : new Response('', { status: 404 }));
+  vi.stubGlobal('fetch', fetchSpy);
+  return fetchSpy;
 }
 
 beforeEach(() => {
@@ -54,22 +51,49 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('ARASAAC request matching', () => {
-  it('accepts exact provider hostnames and rejects hostname lookalikes', () => {
-    expect(isArasaacRequest(`https://${ARASAAC_API_HOST}/v1/pictograms/en/food`)).toBe(true);
-    expect(isArasaacRequest(`https://${ARASAAC_STATIC_HOST}/pictograms/42.png`)).toBe(true);
-    expect(isArasaacRequest(`https://${ARASAAC_API_HOST}.attacker.test/pictograms`)).toBe(false);
-    expect(isArasaacRequest(`https://attacker.test/${ARASAAC_STATIC_HOST}/42.png`)).toBe(false);
+describe('retired third-party pictograms', () => {
+  it('matches the retired hosts and their subdomains, not lookalikes', () => {
+    expect(isRetiredRequest('https://api.arasaac.org/v1/pictograms/en/search/food')).toBe(true);
+    expect(isRetiredRequest('https://static.arasaac.org/pictograms/42/42_500.png')).toBe(true);
+    expect(isRetiredRequest('https://api.arasaac.org.attacker.test/pictograms')).toBe(false);
+    expect(isRetiredRequest('https://attacker.test/static.arasaac.org/42.png')).toBe(false);
+  });
+
+  it.each([
+    ['tile, free plan', 'symbols', {}],
+    ['tile, paid plan', 'symbols-ai', {}],
+    ['prediction, free plan', 'symbols', { generated: true }],
+    ['prediction, paid plan', 'symbols-ai', { generated: true }],
+  ] as const)('never contacts a retired host (%s)', async (_case, mode, options) => {
+    const fetchSpy = stubNetwork();
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    for (const phrase of ['food', 'come here', 'how are you?', 'water', 'help']) {
+      await getPictogramUrl(phrase, 'en', mode, options);
+      await getPictogramUrl(phrase, 'es', mode, options);
+    }
+    expect(fetchSpy.mock.calls.filter(([url]) => isRetiredRequest(url))).toEqual([]);
+  });
+
+  it('shows words on tiles: no request at all, even on a paid plan', async () => {
+    const fetchSpy = stubNetwork();
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('food', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('water', 'en', 'symbols')).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('free and anonymous predictions make no request', async () => {
+    const fetchSpy = stubNetwork();
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('food', 'en', 'symbols', { generated: true })).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
 
-// ── pictureModeForProfile ──────────────────────────────────────────────────
-
 describe('pictureModeForProfile — plan → mode mapping', () => {
-  it('free plan returns "symbols" (no AI fallback for free tier)', async () => {
+  it('free plan returns "symbols" (no generated pictures for free tier)', async () => {
     const { pictureModeForProfile } = await import('@/services/pictogramService');
-    expect(pictureModeForProfile({ email: 'a@b.com', name: 'A', plan: 'free', isPlatformAdmin: false }))
-      .toBe('symbols');
+    expect(pictureModeForProfile({ email: 'a@b.com', name: 'A', plan: 'free', isPlatformAdmin: false })).toBe('symbols');
   });
 
   it('null profile returns "symbols" so anonymous visits never call the paid route', async () => {
@@ -77,405 +101,123 @@ describe('pictureModeForProfile — plan → mode mapping', () => {
     expect(pictureModeForProfile(null)).toBe('symbols');
   });
 
-  it.each(['standard', 'advanced', 'enterprise'] as const)(
-    '%s plan returns "symbols-ai"',
-    async (plan) => {
-      const { pictureModeForProfile } = await import('@/services/pictogramService');
-      expect(pictureModeForProfile({ email: 'a@b.com', name: 'A', plan, isPlatformAdmin: false }))
-        .toBe('symbols-ai');
-    },
-  );
+  it.each(['standard', 'advanced', 'enterprise'] as const)('%s plan returns "symbols-ai"', async (plan) => {
+    const { pictureModeForProfile } = await import('@/services/pictogramService');
+    expect(pictureModeForProfile({ email: 'a@b.com', name: 'A', plan, isPlatformAdmin: false })).toBe('symbols-ai');
+  });
 });
-
-// ── Mode 'off' and empty phrase early exits ────────────────────────────────
 
 describe('getPictogramUrl — early exits', () => {
   it('returns null immediately when mode is "off" — no network call', async () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal('fetch', fetchSpy);
+    const fetchSpy = stubNetwork();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('food', 'en', 'off')).toBeNull();
+    expect(await getPictogramUrl('food', 'en', 'off', { generated: true })).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('returns null when phrase contains only punctuation (normalize strips all chars, pickHeadWord → empty)', async () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal('fetch', fetchSpy);
+  it.each(['!!! --- ???', ''])('returns null without a request for an empty head word (%j)', async (phrase) => {
+    const fetchSpy = stubNetwork();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    // normalize() strips non-alpha/numeric; only punctuation → words=[] → token=''
-    expect(await getPictogramUrl('!!! --- ???', 'en', 'symbols')).toBeNull();
+    expect(await getPictogramUrl(phrase, 'en', 'symbols-ai', { generated: true })).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('returns null for empty string phrase', async () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal('fetch', fetchSpy);
+  it('never requests a picture for a blocked or sensitive word', async () => {
+    const fetchSpy = stubNetwork();
+    const { PROFANITY, SENSITIVE } = await import('@/engine/ageBlocklist');
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('', 'en', 'symbols')).toBeNull();
+    const blocked = [...PROFANITY][0], sensitive = [...SENSITIVE][0];
+    expect(await getPictogramUrl(blocked, 'en', 'symbols-ai', { generated: true })).toBeNull();
+    expect(await getPictogramUrl(sensitive, 'en', 'symbols-ai', { generated: true })).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
 
-// ── ARASAAC happy path ─────────────────────────────────────────────────────
-
-describe('getPictogramUrl — ARASAAC hit', () => {
-  it('returns a blob object URL when ARASAAC search + CDN both succeed', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([{ _id: 42, keywords: [{ keyword: 'food' }] }]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
-        return new Response(new ArrayBuffer(512), {
-          status: 200, headers: { 'Content-Type': 'image/png' },
-        });
-      }
-      return new Response('', { status: 404 });
-    }));
+describe('getPictogramUrl — generated prediction pictures', () => {
+  it('asks the Synalux portal once and returns a blob URL on a paid plan', async () => {
+    const fetchSpy = stubNetwork();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    const url = await getPictogramUrl('food', 'en', 'symbols');
-    expect(url).toBe(MOCK_BLOB_URL);
+    expect(await getPictogramUrl('cupboard', 'en', 'symbols-ai', { generated: true })).toBe(MOCK_BLOB_URL);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchSpy.mock.calls[0];
+    expect(url).toMatch(/\/prism-aac\/pictogram$/);
+    expect(JSON.parse(String(init?.body))).toMatchObject({ phrase: 'cupboard', lang: 'en', styleVersion: 2 });
   });
 
-  it('fetches CDN URL with the pictogram ID returned by the search', async () => {
-    const fetchSpy = vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([{ _id: 7777 }]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
-        return new Response(new ArrayBuffer(512), {
-          status: 200, headers: { 'Content-Type': 'image/png' },
-        });
-      }
-      return new Response('', { status: 404 });
-    });
-    vi.stubGlobal('fetch', fetchSpy);
+  it('returns null when the portal fails', async () => {
+    stubNetwork(async () => new Response('', { status: 500 }));
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('water', 'en', 'symbols');
-    const cdnCalls = (fetchSpy.mock.calls as [string][])
-      .filter(([u]) => requestHostname(u) === ARASAAC_STATIC_HOST);
-    expect(cdnCalls.length).toBeGreaterThan(0);
-    expect(cdnCalls[0][0]).toContain('7777');
-  });
-
-  it('passes the correct lang code to the ARASAAC search URL', async () => {
-    const fetchSpy = vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([{ _id: 1 }]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
-        return new Response(new ArrayBuffer(100), {
-          status: 200, headers: { 'Content-Type': 'image/png' },
-        });
-      }
-      return new Response('', { status: 404 });
-    });
-    vi.stubGlobal('fetch', fetchSpy);
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('apă', 'ro-RO', 'symbols');
-    const arasaacCalls = (fetchSpy.mock.calls as [string][])
-      .filter(([u]) => requestHostname(u) === ARASAAC_API_HOST);
-    // Lang code is base code only: 'ro-RO' → 'ro'
-    expect(arasaacCalls[0][0]).toContain('/ro/');
+    expect(await getPictogramUrl('cupboard', 'en', 'symbols-ai', { generated: true })).toBeNull();
   });
 });
-
-// ── ARASAAC miss → Synalux AI fallback ────────────────────────────────────
-
-describe('getPictogramUrl — ARASAAC miss', () => {
-  function arasaacEmpty() {
-    return vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      return new Response('', { status: 404 });
-    });
-  }
-
-  it('returns null for mode=symbols when ARASAAC misses — no AI fallback', async () => {
-    vi.stubGlobal('fetch', arasaacEmpty());
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('xyzzy-unique-1', 'en', 'symbols')).toBeNull();
-  });
-
-  it('an anonymous profile miss never makes a Synalux AI request', async () => {
-    const fetchSpy = arasaacEmpty();
-    vi.stubGlobal('fetch', fetchSpy);
-    const { getPictogramUrl, pictureModeForProfile } = await import('@/services/pictogramService');
-
-    expect(await getPictogramUrl(
-      'anonymous-arasaac-miss',
-      'en',
-      pictureModeForProfile(null),
-    )).toBeNull();
-    expect(fetchSpy.mock.calls.some(([url]) => String(url).includes('/prism-aac/pictogram')))
-      .toBe(false);
-  });
-
-  it('calls Synalux AI when ARASAAC misses and mode=symbols-ai', async () => {
-    let aiCalled = false;
-    const base = arasaacEmpty();
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('/prism-aac/pictogram')) {
-        aiCalled = true;
-        return new Response(new ArrayBuffer(200), {
-          status: 200, headers: { 'Content-Type': 'image/png' },
-        });
-      }
-      return base(url);
-    }));
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    const result = await getPictogramUrl('xyzzy-unique-2', 'en', 'symbols-ai');
-    expect(aiCalled).toBe(true);
-    expect(result).toBe(MOCK_BLOB_URL);
-  });
-
-  it('returns null when both ARASAAC and Synalux AI fail for symbols-ai', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (url.includes('/prism-aac/pictogram')) {
-        return new Response('', { status: 500 });
-      }
-      return new Response('', { status: 404 });
-    }));
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('xyzzy-unique-3', 'en', 'symbols-ai')).toBeNull();
-  });
-});
-
-// ── Synalux AI safety guards ───────────────────────────────────────────────
 
 describe('getPictogramUrl — Synalux AI content safety', () => {
-  function setupWithAI(handler: (url: string, init?: RequestInit) => Promise<Response>) {
-    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (url.includes('/prism-aac/pictogram')) {
-        return handler(url, init);
-      }
-      return new Response('', { status: 404 });
-    }));
-  }
-
   it('returns null when Synalux AI sends non-image content-type', async () => {
-    setupWithAI(async () => new Response(JSON.stringify({ error: 'rate limited' }), {
+    stubNetwork(async () => new Response(JSON.stringify({ error: 'rate limited' }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     }));
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('safety-ct-1', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('safety-ct-1', 'en', 'symbols-ai', { generated: true })).toBeNull();
   });
 
   it('returns null when Content-Length exceeds 2MB cap', async () => {
-    setupWithAI(async () => new Response(new ArrayBuffer(100), {
-      status: 200,
-      headers: {
-        'Content-Type': 'image/png',
-        'Content-Length': String(2 * 1024 * 1024 + 1),
-      },
+    stubNetwork(async () => new Response(new ArrayBuffer(100), {
+      status: 200, headers: { 'Content-Type': 'image/png', 'Content-Length': String(2 * 1024 * 1024 + 1) },
     }));
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('safety-cl-2', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('safety-cl-2', 'en', 'symbols-ai', { generated: true })).toBeNull();
   });
 
   it('returns null when actual blob exceeds 2MB (no Content-Length header)', async () => {
-    // Build a 2MB+1KB buffer to exceed the cap even without a CL header
     const oversized = new Uint8Array(2 * 1024 * 1024 + 1024);
-    setupWithAI(async () => new Response(oversized.buffer, {
-      status: 200, headers: { 'Content-Type': 'image/png' },
-    }));
+    stubNetwork(async () => new Response(oversized.buffer, { status: 200, headers: { 'Content-Type': 'image/png' } }));
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('safety-blob-3', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('safety-blob-3', 'en', 'symbols-ai', { generated: true })).toBeNull();
   });
 
   it('sends credentials: same-origin to avoid CORS block on Supabase redirects', async () => {
-    let capturedCredentials: RequestCredentials | undefined;
-    setupWithAI(async (_url, init) => {
-      capturedCredentials = init?.credentials;
-      return new Response(new ArrayBuffer(100), {
-        status: 200, headers: { 'Content-Type': 'image/png' },
-      });
-    });
+    const fetchSpy = stubNetwork();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('safety-creds-4', 'en', 'symbols-ai');
-    expect(capturedCredentials).toBe('same-origin');
+    await getPictogramUrl('safety-creds-4', 'en', 'symbols-ai', { generated: true });
+    expect(fetchSpy.mock.calls[0][1]?.credentials).toBe('same-origin');
   });
 
   it('sends phrase truncated to 100 chars in request body', async () => {
-    let capturedBody: { phrase?: string } = {};
-    setupWithAI(async (_url, init) => {
-      if (init?.body) capturedBody = JSON.parse(String(init.body)) as { phrase?: string };
-      return new Response(new ArrayBuffer(100), {
-        status: 200, headers: { 'Content-Type': 'image/png' },
-      });
-    });
-    const longPhrase = 'a'.repeat(200);
+    const fetchSpy = stubNetwork();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl(longPhrase, 'en', 'symbols-ai');
-    expect(capturedBody.phrase?.length).toBeLessThanOrEqual(100);
+    await getPictogramUrl('a'.repeat(200), 'en', 'symbols-ai', { generated: true });
+    expect(JSON.parse(String(fetchSpy.mock.calls[0][1]?.body)).phrase.length).toBeLessThanOrEqual(100);
   });
 });
 
-// ── Memory cache deduplication ─────────────────────────────────────────────
-
-describe('getPictogramUrl — MEM_CACHE deduplication', () => {
+describe('getPictogramUrl — in-memory deduplication', () => {
   it('coalesces concurrent callers for the same phrase + lang + mode', async () => {
-    let releaseSearch!: () => void;
-    const searchGate = new Promise<void>((resolve) => {
-      releaseSearch = resolve;
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const fetchSpy = stubNetwork(async () => {
+      await gate;
+      return new Response(new ArrayBuffer(100), { status: 200, headers: { 'Content-Type': 'image/png' } });
     });
-    const fetchSpy = vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        await searchGate;
-        return new Response(JSON.stringify([{ _id: 6 }]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
-        return new Response(new ArrayBuffer(100), {
-          status: 200, headers: { 'Content-Type': 'image/png' },
-        });
-      }
-      return new Response('', { status: 404 });
-    });
-    vi.stubGlobal('fetch', fetchSpy);
     const { getPictogramUrl } = await import('@/services/pictogramService');
-
-    const first = getPictogramUrl('concurrent-cache-test', 'en', 'symbols');
-    const second = getPictogramUrl('concurrent-cache-test', 'en', 'symbols');
-
-    await vi.waitFor(() => {
-      const searches = fetchSpy.mock.calls.filter(([url]) =>
-        requestHostname(url) === ARASAAC_API_HOST);
-      expect(searches).toHaveLength(1);
-    });
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(fetchSpy.mock.calls.filter(([url]) =>
-      requestHostname(url) === ARASAAC_API_HOST)).toHaveLength(1);
-
-    releaseSearch();
-    const [url1, url2] = await Promise.all([first, second]);
-    expect(url1).toBe(MOCK_BLOB_URL);
-    expect(url2).toBe(url1);
-    expect(fetchSpy.mock.calls.filter(([url]) =>
-      requestHostname(url) === ARASAAC_STATIC_HOST)).toHaveLength(1);
+    const calls = [1, 2, 3].map(() => getPictogramUrl('dedup', 'en', 'symbols-ai', { generated: true }));
+    release();
+    expect(await Promise.all(calls)).toEqual([MOCK_BLOB_URL, MOCK_BLOB_URL, MOCK_BLOB_URL]);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('second call for same phrase + lang + mode returns cached URL without re-fetching', async () => {
-    const fetchSpy = vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([{ _id: 5 }]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
-        return new Response(new ArrayBuffer(100), {
-          status: 200, headers: { 'Content-Type': 'image/png' },
-        });
-      }
-      return new Response('', { status: 404 });
-    });
-    vi.stubGlobal('fetch', fetchSpy);
+  it('a repeat for the same phrase + lang + mode is served from memory', async () => {
+    const fetchSpy = stubNetwork();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    const url1 = await getPictogramUrl('cache-test-phrase', 'en', 'symbols');
-    const url2 = await getPictogramUrl('cache-test-phrase', 'en', 'symbols');
-    expect(url1).toBe(MOCK_BLOB_URL);
-    expect(url2).toBe(url1);
-    // Only the first call hits the network (ARASAAC search + CDN = 2 calls max)
-    const networkCalls = (fetchSpy.mock.calls as [string][]).filter(([u]) => isArasaacRequest(u));
-    expect(networkCalls.length).toBeLessThanOrEqual(2);
+    await getPictogramUrl('repeat', 'en', 'symbols-ai', { generated: true });
+    await getPictogramUrl('repeat', 'en', 'symbols-ai', { generated: true });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('different phrases produce separate cache entries', async () => {
-    let callCount = 0;
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        callCount++;
-        return new Response(JSON.stringify([{ _id: callCount }]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
-        return new Response(new ArrayBuffer(100), {
-          status: 200, headers: { 'Content-Type': 'image/png' },
-        });
-      }
-      return new Response('', { status: 404 });
-    }));
+  it('different phrases are separate requests', async () => {
+    const fetchSpy = stubNetwork();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('apple', 'en', 'symbols');
-    await getPictogramUrl('banana', 'en', 'symbols');
-    // Both phrases triggered separate ARASAAC lookups
-    expect(callCount).toBeGreaterThanOrEqual(2);
-  });
-
-  it('downloads a provider image once when different tokens resolve to the same pictogram ID', async () => {
-    const fetchSpy = vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([{ _id: 4242 }]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
-        return new Response(new ArrayBuffer(100), {
-          status: 200, headers: { 'Content-Type': 'image/png' },
-        });
-      }
-      return new Response('', { status: 404 });
-    });
-    vi.stubGlobal('fetch', fetchSpy);
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-
-    await getPictogramUrl('shared-image-alpha', 'en', 'symbols');
-    await getPictogramUrl('shared-image-beta', 'en', 'symbols');
-
-    expect(fetchSpy.mock.calls.filter(([url]) =>
-      requestHostname(url) === ARASAAC_API_HOST)).toHaveLength(2);
-    expect(fetchSpy.mock.calls.filter(([url]) =>
-      requestHostname(url) === ARASAAC_STATIC_HOST)).toHaveLength(1);
-  });
-});
-
-// ── ARASAAC negative-cache misses ─────────────────────────────────────────
-
-describe('getPictogramUrl — ARASAAC 404 handling', () => {
-  it('returns null and does not throw when ARASAAC search returns 404', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response('Not found', { status: 404 });
-      }
-      return new Response('', { status: 404 });
-    }));
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    await expect(getPictogramUrl('xyzzy-404-a', 'en', 'symbols')).resolves.toBeNull();
-  });
-
-  it('returns null when CDN image fetch returns 404 (pictogram ID valid but image missing)', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (requestHostname(url) === ARASAAC_API_HOST) {
-        return new Response(JSON.stringify([{ _id: 99 }]), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
-        return new Response('', { status: 404 });
-      }
-      return new Response('', { status: 404 });
-    }));
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    await expect(getPictogramUrl('xyzzy-404-b', 'en', 'symbols')).resolves.toBeNull();
+    await getPictogramUrl('first', 'en', 'symbols-ai', { generated: true });
+    await getPictogramUrl('second', 'en', 'symbols-ai', { generated: true });
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 });

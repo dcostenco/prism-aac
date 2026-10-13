@@ -433,7 +433,7 @@ Casete cu imagini în stil PECS. Atinge o categorie, atinge o casetă, ascultă 
 - 22 de categorii implicite: oameni, mâncare, sentimente, corp, haine, animale, locuri etc.
 - Îngrijitorul poate adăuga / elimina / reordona casetele pentru fiecare copil
 - Fiecare casetă conține un `textKey` pentru internaționalizare — schimbarea limbii aplicației reetichetează fiecare casetă dintr-o singură atingere
-- Pictagramele casetelor provin din ARASAAC + un set selectat; clonarea vocii îți permite să potrivești vocea casetei cu cea a fraților sau părinților copilului (nivel plătit)
+- Casetele își afișează cuvintele, iar cuvintele tastate pot primi imagini generate în planurile cu plată; clonarea vocii îți permite să potrivești vocea casetei cu cea a fraților sau părinților copilului (nivel plătit)
 - Învățare n-gram per utilizator: un copil care atinge "Eu vreau mănânc" de trei ori va vedea "mănânc" urcând după "vreau" în sesiunea următoare
 - Memorie holografică HRR: predicții contextuale fără căutare în ~0,2ms prin Rust WASM — precizie Top-1 cu +27% mai mare pe expresiile AAC de bază
 
