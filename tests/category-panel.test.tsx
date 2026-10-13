@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import CategoryPanel from '@/components/CategoryPanel';
+import { useAuthStore } from '@/store/authStore';
 
 // ── vi.hoisted ────────────────────────────────────────────────────────────────
 
@@ -600,6 +601,31 @@ describe('CategoryPanel — search', () => {
       // Multiple categories may each return a 'yes' phrase → use getAllByText
       expect(screen.getAllByText('yes').length).toBeGreaterThan(0);
     });
+  });
+
+  it('search results on a paid plan never ask for a new picture while generation is off', async () => {
+    // The portal answers a cache probe with "no new pictures"; the client may
+    // read the cache, but must never follow with a generation request.
+    const fetchSpy = vi.fn(async () => new Response(JSON.stringify({ styleVersion: 3, generation: false }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3', 'X-AAC-Picture-Generation': 'off' },
+    }));
+    vi.stubGlobal('fetch', fetchSpy);
+    useAuthStore.setState({ profile: { email: 'paid@example.test', name: 'Paid', plan: 'standard', isPlatformAdmin: false } });
+    try {
+      render(<CategoryPanel />);
+      fireEvent.click(screen.getByRole('button', { name: /search/i }));
+      fireEvent.change(screen.getByRole('textbox', { name: /search all vocabulary/i }), { target: { value: 'yes' } });
+      await waitFor(() => expect(screen.getAllByText('yes').length).toBeGreaterThan(0));
+      // Long enough for each result icon's picture lookup (hash + probe) to run.
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const generation = fetchSpy.mock.calls.map(([url]) => String(url))
+        .filter(url => url.includes('/prism-aac/pictogram') && !url.includes('cacheOnly=1'));
+      expect(generation).toEqual([]);
+    } finally {
+      useAuthStore.setState({ profile: null });
+      vi.unstubAllGlobals();
+    }
   });
 
   it('clicking ✕ closes search', () => {

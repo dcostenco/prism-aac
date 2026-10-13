@@ -61,3 +61,30 @@ it('does not mark a blocked database deletion complete until its old connection 
   await removal;
   expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('2');
 });
+
+it('runs once: after a completed cleanup, later loads touch neither the database nor Cache Storage', async () => {
+  localStorage.setItem('prism-legacy-pictograms-cleared', '2');
+  const deleteDatabase = vi.spyOn(indexedDB, 'deleteDatabase');
+  const cacheKeys = vi.fn(async () => [] as string[]);
+  vi.stubGlobal('caches', { keys: cacheKeys, open: vi.fn() });
+  const { clearLegacyPictogramCache } = await import('@/services/legacyPictogramCache');
+  await clearLegacyPictogramCache();
+  await clearLegacyPictogramCache();
+  expect(deleteDatabase).not.toHaveBeenCalled();
+  expect(cacheKeys).not.toHaveBeenCalled();
+});
+
+it('an earlier cleanup version runs again, and a failed cleanup is retried on the next load', async () => {
+  localStorage.setItem('prism-legacy-pictograms-cleared', '1');
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const cacheKeys = vi.fn()
+    .mockRejectedValueOnce(new Error('storage error'))
+    .mockResolvedValue([] as string[]);
+  vi.stubGlobal('caches', { keys: cacheKeys, open: vi.fn() });
+  const { clearLegacyPictogramCache } = await import('@/services/legacyPictogramCache');
+  await expect(clearLegacyPictogramCache()).rejects.toThrow('storage error');
+  expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('1');
+  await clearLegacyPictogramCache();
+  expect(cacheKeys).toHaveBeenCalledTimes(2);
+  expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('2');
+});

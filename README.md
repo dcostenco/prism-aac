@@ -432,7 +432,7 @@ PECS-style picture tiles. Tap a category, tap a tile, hear the word, watch it la
 - 22 default categories: people, food, feelings, body, clothes, animals, places, etc.
 - Caregiver can add / remove / reorder tiles per child
 - Each tile carries a `textKey` for i18n — switching the app language re-labels every tile in one tap
-- Tile pictures: built-in phrases and categories share the Prism AAC picture pack, saved on the device for offline use after an online installation on every plan. The native iPhone/iPad wrapper retains the full app through its first-party service worker; the watch includes its picture pack in the app bundle. Tiles show the word in large text where no picture carries the meaning; paid plans add generated pictures for your own phrases. Voice cloning lets you match the tile's voice to the child's siblings or parents (paid tier)
+- Tile pictures: built-in phrases and categories share the Prism AAC picture pack, saved on the device for offline use after an online installation on every plan. The native iPhone/iPad wrapper retains the full app through its first-party service worker; the watch includes its picture pack in the app bundle. Tiles show the word in large text where no picture carries the meaning. Voice cloning lets you match the tile's voice to the child's siblings or parents (paid tier)
 - Per-user n-gram learning: a child who taps "I want eat" three times sees "eat" rise after "want" the next session
 - HRR holographic memory: zero-search contextual predictions in ~0.2ms via Rust WASM — +27% Top-1 accuracy on core AAC phrases
 

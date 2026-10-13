@@ -1,9 +1,9 @@
 /**
  * symbol-library handler.
  *
- * Today this is a marker for "open Settings → Pictogram source". Phase 3
- * will fetch alternative symbol bundles. Until then, installing flips
- * installedApps (so the toolbar shows the launcher) and deep-links to Settings.
+ * Today this is a marker for "open Settings → Pictogram source". Installing
+ * flips installedApps (so the toolbar shows the launcher) and deep-links to
+ * Settings.
  */
 import type { ModuleHandler } from '../types';
 

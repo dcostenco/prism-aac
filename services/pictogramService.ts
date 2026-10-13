@@ -54,6 +54,9 @@ const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB cap — prevents OOM from oversi
 // when the page unloads; the memory cost is negligible.
 const MAX_MEM_CACHE = 600;
 const MISS_CACHE_TTL_MS = 30_000;
+// The portal answers "no new pictures" while generation is switched off; a
+// word that misses then stays a word for this long before it is asked again.
+const GENERATION_OFF_MISS_TTL_MS = 30 * 60_000;
 const MEM_CACHE = new Map<string, { url: string | null; expiresAt: number }>();
 type Flight = { promise: Promise<string | null>; consumers: Set<symbol>; cancelQueued?: () => boolean; discarded?: boolean };
 const IN_FLIGHT = new Map<string, Flight>();
@@ -61,15 +64,15 @@ const GENERATION_QUEUE = new PictogramQueue();
 const POLL_INTERVAL_MS = 500;
 const POLL_TIMEOUT_MS = 35_000;
 type CloudPicture = { kind: 'image'; blob: Blob } | { kind: 'pending'; pollToken?: string }
-  | { kind: 'miss' } | { kind: 'unavailable'; transient?: boolean; retryAfterMs?: number };
+  | { kind: 'miss'; generationOff?: boolean } | { kind: 'unavailable'; transient?: boolean; retryAfterMs?: number };
 
-function memCacheSet(key: string, value: string | null) {
+function memCacheSet(key: string, value: string | null, missTtlMs = MISS_CACHE_TTL_MS) {
   if (MEM_CACHE.size >= MAX_MEM_CACHE) {
     const oldest = MEM_CACHE.keys().next().value;
     if (oldest !== undefined) MEM_CACHE.delete(oldest);
     // No URL.revokeObjectURL — component may still hold the old URL.
   }
-  MEM_CACHE.set(key, { url: value, expiresAt: value ? Infinity : Date.now() + MISS_CACHE_TTL_MS });
+  MEM_CACHE.set(key, { url: value, expiresAt: value ? Infinity : Date.now() + missTtlMs });
 }
 
 async function sha256(input: string): Promise<string> {
@@ -166,7 +169,12 @@ async function fetchSynaluxAI(phrase: string, lang: string, cacheOnly: boolean, 
       return { kind: 'pending', pollToken: typeof data.pollToken === 'string' ? data.pollToken : undefined };
     }
     const protocol = (res.status === 404 || res.status === 429) && res.headers.get('content-type')?.includes('application/json')
-      ? await res.json() as { styleVersion?: number; retryAfter?: number } : null;
+      ? await res.json() as { styleVersion?: number; retryAfter?: number; generation?: boolean } : null;
+    // Generation is switched off on the portal: a final miss, never retried and
+    // never followed by a request for a new picture.
+    if (res.status === 404 && (res.headers.get('X-AAC-Picture-Generation') === 'off' || protocol?.generation === false)) {
+      return { kind: 'miss', generationOff: true };
+    }
     if (res.status === 404 && cacheOnly && (res.headers.get('X-AAC-Picture-Version') === String(STYLE_VERSION)
       || protocol?.styleVersion === STYLE_VERSION)) return { kind: 'miss' };
     if (!res.ok) {
@@ -281,6 +289,10 @@ async function resolvePictogramUrl(phrase: string, lang: string, key: string, fl
   if (!flight.consumers.size) return null;
   const probe = await fetchSynaluxAI(phrase, lang, true);
   if (probe.kind === 'unavailable' && probe.transient) throw new PicturePendingError(probe.retryAfterMs);
+  if (probe.kind === 'miss' && probe.generationOff) {
+    if (!flight.discarded && flight.consumers.size) memCacheSet(key, null, GENERATION_OFF_MISS_TTL_MS);
+    return null;
+  }
   let blob: Blob | null = null;
   if (probe.kind === 'image') blob = probe.blob;
   else if (probe.kind === 'pending') blob = await awaitSharedPicture(phrase, lang, probe.pollToken);

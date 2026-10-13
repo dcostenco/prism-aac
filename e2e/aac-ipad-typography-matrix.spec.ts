@@ -135,6 +135,13 @@ test('maximizes prediction and keyboard text without clipping', async ({ page },
       maximumPredictionImageHeightRatio: Math.max(...predictionImages.map((image, index) => (
         image.getBoundingClientRect().height / predictionIcons[index].getBoundingClientRect().height
       ))),
+      // A prediction with no picture is a text tile: no picture well, word centred.
+      textTileWells: predictionTiles.filter((tile) => tile.dataset.picture === 'text' && tile.querySelector('.aac-tile-icon')).length,
+      maximumTextTileCenterOffset: Math.max(0, ...predictionTiles.filter((tile) => tile.dataset.picture === 'text').map((tile) => {
+        const card = tile.getBoundingClientRect();
+        const word = tile.querySelector<HTMLElement>('[data-testid="prediction-label"]')!.getBoundingClientRect();
+        return Math.abs((card.top + card.bottom) / 2 - (word.top + word.bottom) / 2);
+      })),
       minimumKeyWidth: Math.min(...keyRects.map((rect) => rect.width)),
       minimumKeyHeight: Math.min(...keyRects.map((rect) => rect.height)),
       keyboardHeight: keyboardRect.height,
@@ -161,6 +168,9 @@ test('maximizes prediction and keyboard text without clipping', async ({ page },
     .toBeLessThanOrEqual(0.72);
   expect(metrics.maximumPredictionImageHeightRatio, `${expected.label}: bounded pictogram height`)
     .toBeLessThanOrEqual(0.72);
+  expect(metrics.textTileWells, `${expected.label}: no empty picture well on a text tile`).toBe(0);
+  expect(metrics.maximumTextTileCenterOffset, `${expected.label}: text-tile words centered`)
+    .toBeLessThanOrEqual(3);
   expect(metrics.minimumKeyWidth, `${expected.label}: minimum key width`).toBeGreaterThanOrEqual(48);
   expect(metrics.minimumKeyHeight, `${expected.label}: minimum key height`).toBeGreaterThanOrEqual(48);
   expect(metrics.keyboardHeight, `${expected.label}: keyboard is the dominant typing surface`)

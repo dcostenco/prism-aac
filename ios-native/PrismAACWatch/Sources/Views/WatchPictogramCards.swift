@@ -27,11 +27,14 @@ struct AACPhrase: Identifiable {
         // collisions. Fall back to a hash-based prefix to guarantee uniqueness.
         let prefix = label.lowercased().filter { $0.isLetter || $0.isNumber }
         // FIX #5: hashValue is non-deterministic across process launches (Swift 4.2+).
-        // Use a stable polynomial hash over Unicode scalar values instead.
-        let uniquePrefix = prefix.isEmpty
-            ? "emoji\(abs(label.unicodeScalars.reduce(0) { $0 &* 31 &+ Int($1.value) }) & Int.max)"
-            : prefix
-        self.id = "\(uniquePrefix)-\(sfSymbol)\(pictureID.map { "-\($0)" } ?? "")"
+        // Use a stable polynomial hash over Unicode scalar values instead. Masking the
+        // sign bit keeps it non-negative without abs(), which traps on Int.min.
+        let labelHash = label.unicodeScalars.reduce(0) { $0 &* 31 &+ Int($1.value) } & Int.max
+        let uniquePrefix = prefix.isEmpty ? "emoji\(labelHash)" : prefix
+        // The label hash keeps labels that differ only in punctuation or spacing apart
+        // ("Tiptoe" / "Tip-toe"): phrases in one category can share their symbol and
+        // picture, and recents can show both cards at once.
+        self.id = "\(uniquePrefix)-\(sfSymbol)\(pictureID.map { "-\($0)" } ?? "")-\(labelHash)"
         self.label = label
         self.sfSymbol = sfSymbol
         self.color = color

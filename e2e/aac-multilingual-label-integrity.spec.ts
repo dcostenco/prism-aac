@@ -427,6 +427,10 @@ for (const language of VISUAL_LANGUAGES) {
     await expectUnobscuredLabels(page, '[data-testid="phrase-tile-label"]', 4);
     await safeArtifact(page, `${language}-picture-${testInfo.project.name}`);
 
+    // Detach the test's request guards before Playwright closes the context so
+    // a late, irrelevant request cannot turn a complete case into a teardown
+    // failure.
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
     expect(pageErrors, `uncaught page errors: ${pageErrors.join(' | ')}`).toEqual([]);
   });
 }

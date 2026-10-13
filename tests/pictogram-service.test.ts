@@ -222,6 +222,41 @@ describe('getPictogramUrl — paid plans', () => {
 
 // ── caching ────────────────────────────────────────────────────────────────
 
+describe('getPictogramUrl — portal generation switched off', () => {
+  const generationOff = (marker: 'header' | 'body') => new Response(
+    JSON.stringify({ error: 'Picture not found', styleVersion: 3, ...(marker === 'body' ? { generation: false } : {}) }),
+    { status: 404, headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3',
+      ...(marker === 'header' ? { 'X-AAC-Picture-Generation': 'off' } : {}) } },
+  );
+
+  it.each(['header', 'body'] as const)('a miss marked off (%s) shows the word after one cache probe, with no generation request', async marker => {
+    const fetchSpy = stubAI(() => generationOff(marker));
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('wales', 'en', 'symbols-ai')).toBeNull();
+    expect(urls(fetchSpy)).toHaveLength(1);
+    expect(urls(fetchSpy)[0]).toContain('cacheOnly=1');
+  });
+
+  it('the word is not asked again in the same session', async () => {
+    const fetchSpy = stubAI(() => generationOff('header'));
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    await getPictogramUrl('wales', 'en', 'symbols-ai');
+    await getPictogramUrl('wales', 'en', 'symbols-ai');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('an unmarked miss still asks for a new picture (generation on)', async () => {
+    let call = 0;
+    const fetchSpy = stubAI(() => (call++ === 0
+      ? new Response(JSON.stringify({ styleVersion: 3 }), { status: 404, headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3' } })
+      : pngResponse()));
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('wales', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(urls(fetchSpy)).toHaveLength(2);
+    expect(urls(fetchSpy)[1]).not.toContain('cacheOnly=1');
+  });
+});
+
 describe('getPictogramUrl — caching', () => {
   it('coalesces concurrent callers for the same word into one request', async () => {
     let release!: () => void;
