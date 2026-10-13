@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { PRISM_AAC_TERMS_PATH, PRISM_AAC_TERMS_ROUTE } from '@/lib/appPaths';
+const PICTURE_STORAGE_SOURCE = 'https://*.supabase.co';
 
 export function middleware(request: NextRequest) {
   const termsDocument = request.nextUrl.pathname === PRISM_AAC_TERMS_PATH
@@ -37,9 +38,9 @@ export function middleware(request: NextRequest) {
     // (Settings → Local AI Models). The portal proxy's production CSP already
     // lists them; without them here the direct Vercel host and the dev server
     // refused every Ollama request and the panel read "not running".
-    "connect-src 'self' https://synalux.ai https://*.synalux.ai https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com http://localhost:11434 http://127.0.0.1:11434",
+    `connect-src 'self' blob: ${PICTURE_STORAGE_SOURCE} https://synalux.ai https://*.synalux.ai https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com http://localhost:11434 http://127.0.0.1:11434`,
     "media-src 'self' blob: https://synalux.ai https://*.synalux.ai",
-    "img-src 'self' blob: data: " +
+    `img-src 'self' blob: data: ${PICTURE_STORAGE_SOURCE} ` +
     "https://lh3.googleusercontent.com " +
     "https://*.telegram.org https://t.me " +
     "https://*.whatsapp.net " +

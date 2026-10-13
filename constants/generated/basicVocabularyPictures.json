@@ -269,6 +269,171 @@
       "ተናድጃለሁ": {
         "file": "fe-angry.png",
         "means": "Primary everyday Angry meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "ማምለጥ": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "አስፈላጊ": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "ግምት": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "ንብረት": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "አቆመ": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "ንብ": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "መጽሐፍ": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ውሻ": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ድመት": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ወፍ": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ፖም": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ጫማ": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ኩባያ": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "መኪና": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ወንበር": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ካልሲ": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "እጅ": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "የእግር መዳፍ": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ሕፃን": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "አውቶቡስ": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ማንኪያ": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ሹካ": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ሳህን": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ሙዝ": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ብርቱካን": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ድንች": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ቲማቲም": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ኳስ": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ሸሚዝ": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ኮት": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ቆብ": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ጣት": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ዓይን": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ጆሮ": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "ar": {
@@ -591,6 +756,183 @@
       "مع السلامة": {
         "file": "qt-goodbye.png",
         "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "هرب": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "ضروري": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "ضرورية": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "تقدير": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "تقدير تقريبي": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "عَقَار": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "عَقَّار": {
+        "file": "hb-medicine.png",
+        "means": "Vowelled Arabic medicine/drug, distinct from real property."
+      },
+      "تأسيس": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "نحلة": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "كتاب": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "كلب": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "قطة": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "عصفور": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "تفاحة": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "تفاح": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "حذاء": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "كوب": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "سيارة": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "كرسي": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "جوارب": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "يد": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "قدم": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "حافلة": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ملعقة": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "شوكة": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "طبق": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "موز": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "برتقال": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "بطاطس": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "طماطم": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "كرة": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "قميص": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "معطف": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "قبعة": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "إصبع": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "عين": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "أذن": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "bg": {
@@ -893,6 +1235,183 @@
       "бъда": {
         "file": "cw-is.png",
         "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "отървавам се": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "необходим": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "необходима": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "необходимо": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "оценявам": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "пресмятам": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "имение": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "основавам": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "пчела": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "книга": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "куче": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "котка": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "птица": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ябълка": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "обувки": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "чаша": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "кола": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "стол": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "чорапи": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "длан": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "стъпало": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "бебе": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "автобус": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "лъжица": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "вилица": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "чиния": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "банан": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "портокал": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "картоф": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "домат": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "топка": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "риза": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "палто": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "шапка": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "пръст": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "око": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ухо": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "bn": {
@@ -1159,6 +1678,170 @@
       "যখন": {
         "file": "qu-when.png",
         "means": "Primary everyday When meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "পালানো": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "প্রয়োজন": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "প্রয়োজনীয়": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "অনুমান": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "সম্পত্তি": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "প্রতিষ্ঠা": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "মৌমাছি": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "বই": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "কুকুর": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "বিড়াল": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "পাখি": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "আপেল": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "জুতো": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "কাপ": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "গাড়ি": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "চেয়ার": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "মোজা": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "হাত": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "পায়ের পাতা": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "বাস": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "চামচ": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "কাঁটাচামচ": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "প্লেট": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "কলা": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "কমলা": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "আলু": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "টমেটো": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "বল": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "শার্ট": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "কোট": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "টুপি": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "আঙুল": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "চোখ": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "কান": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "de": {
@@ -1477,6 +2160,186 @@
       "groß": {
         "file": "dw-big.png",
         "means": "Primary everyday Big meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "entkommen": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "entgehen": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "notwendig": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "notwendige": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "essenziell": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "abschätzen": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "abschätzung": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "landgut": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "gründen": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "gegründet": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "biene": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "buch": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hund": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "katze": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "vogel": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "apfel": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "schuhe": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tasse": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "auto": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "stuhl": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "socken": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hand": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "fuß": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "baby": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "löffel": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "gabel": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "teller": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banane": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kartoffel": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tomate": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ball": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hemd": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mantel": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hut": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "finger": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "auge": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ohr": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "en": {
@@ -1819,6 +2682,388 @@
       "being": {
         "file": "cw-is.png",
         "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "estimate": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimated": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimates": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimating": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimation": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimations": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estate": {
+        "file": "w-estate.png",
+        "means": "An estate or real property comprising a house and its land, not the legal inheritance process."
+      },
+      "estates": {
+        "file": "w-estate.png",
+        "means": "An estate or real property comprising a house and its land, not the legal inheritance process."
+      },
+      "establish": {
+        "file": "w-establish.png",
+        "means": "Set up or found a stable structure or activity, not prove a fact by investigation."
+      },
+      "established": {
+        "file": "w-establish.png",
+        "means": "Set up or found a stable structure or activity, not prove a fact by investigation."
+      },
+      "establishes": {
+        "file": "w-establish.png",
+        "means": "Set up or found a stable structure or activity, not prove a fact by investigation."
+      },
+      "establishing": {
+        "file": "w-establish.png",
+        "means": "Set up or found a stable structure or activity, not prove a fact by investigation."
+      },
+      "escape": {
+        "file": "w-exit.png",
+        "means": "Get out or escape from a place or situation; the running-exit cue represents the action."
+      },
+      "escapes": {
+        "file": "w-exit.png",
+        "means": "Get out or escape from a place or situation; the running-exit cue represents the action."
+      },
+      "escaped": {
+        "file": "w-exit.png",
+        "means": "Get out or escape from a place or situation; the running-exit cue represents the action."
+      },
+      "escaping": {
+        "file": "w-exit.png",
+        "means": "Get out or escape from a place or situation; the running-exit cue represents the action."
+      },
+      "essential": {
+        "file": "cw-need.png",
+        "means": "Essential or necessary in the requirement sense; not the adverb essentially."
+      },
+      "essentials": {
+        "file": "cw-need.png",
+        "means": "Essential or necessary in the requirement sense; not the adverb essentially."
+      },
+      "bees": {
+        "file": "an-bee.png",
+        "means": "Reviewed bee noun form; preserve other spellings and meanings."
+      },
+      "babies": {
+        "file": "pp-baby.png",
+        "means": "Reviewed baby noun form; preserve other spellings and meanings."
+      },
+      "hats": {
+        "file": "cl-hat.png",
+        "means": "Reviewed hat noun form; preserve other spellings and meanings."
+      },
+      "apples": {
+        "file": "fd-apple.png",
+        "means": "Reviewed apple noun form; preserve other spellings and meanings."
+      },
+      "shoe": {
+        "file": "cl-shoes.png",
+        "means": "Reviewed shoe noun form; preserve other spellings and meanings."
+      },
+      "cups": {
+        "file": "fd-cup.png",
+        "means": "Reviewed cup noun form; preserve other spellings and meanings."
+      },
+      "chairs": {
+        "file": "sw-chair.png",
+        "means": "Reviewed chair noun form; preserve other spellings and meanings."
+      },
+      "sock": {
+        "file": "cl-socks.png",
+        "means": "Reviewed sock noun form; preserve other spellings and meanings."
+      },
+      "buses": {
+        "file": "tr-bus.png",
+        "means": "Reviewed bus noun form; preserve other spellings and meanings."
+      },
+      "spoons": {
+        "file": "fd-spoon.png",
+        "means": "Reviewed spoon noun form; preserve other spellings and meanings."
+      },
+      "forks": {
+        "file": "fd-fork.png",
+        "means": "Reviewed fork noun form; preserve other spellings and meanings."
+      },
+      "plates": {
+        "file": "fd-plate.png",
+        "means": "Reviewed plate noun form; preserve other spellings and meanings."
+      },
+      "bananas": {
+        "file": "fd-banana.png",
+        "means": "Reviewed banana noun form; preserve other spellings and meanings."
+      },
+      "oranges": {
+        "file": "fd-orange.png",
+        "means": "Reviewed orange noun form; preserve other spellings and meanings."
+      },
+      "potatoes": {
+        "file": "fd-potato.png",
+        "means": "Reviewed potato noun form; preserve other spellings and meanings."
+      },
+      "tomatoes": {
+        "file": "fd-tomato.png",
+        "means": "Reviewed tomato noun form; preserve other spellings and meanings."
+      },
+      "shirts": {
+        "file": "cl-shirt.png",
+        "means": "Reviewed shirt noun form; preserve other spellings and meanings."
+      },
+      "coats": {
+        "file": "cl-coat.png",
+        "means": "Reviewed coat noun form; preserve other spellings and meanings."
+      },
+      "bee": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "book": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "dog": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cat": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bird": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "apple": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "shoes": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cup": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "car": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chair": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "socks": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hand": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "foot": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "baby": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "spoon": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "fork": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "plate": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banana": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "potato": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tomato": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ball": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "shirt": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "coat": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hat": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "finger": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "eye": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ear": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "eggs": {
+        "file": "fd-eggs.png",
+        "means": "egg; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "teeth": {
+        "file": "hb-teeth.png",
+        "means": "tooth; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "eyes": {
+        "file": "hbp-eyes.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ears": {
+        "file": "hbp-ears.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "beer": {
+        "file": "w-beer.png",
+        "means": "Beer beverage; explicitly reviewed exact noun form"
+      },
+      "beers": {
+        "file": "w-beer.png",
+        "means": "Beer beverage; explicitly reviewed exact noun form"
+      },
+      "cupcakes": {
+        "file": "fd-cupcake.png",
+        "means": "Plural of the existing cupcake food meaning; reuse the same picture without generating another image.",
+        "predictionSeed": false
+      },
+      "bears": {
+        "file": "an-bear.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/bears#en",
+        "predictionSeed": false
+      },
+      "bones": {
+        "file": "hb-bone.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/bones#en",
+        "predictionSeed": false
+      },
+      "bugs": {
+        "file": "an-bug.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/bugs#en",
+        "predictionSeed": false
+      },
+      "belts": {
+        "file": "cl-belt.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/belts#en",
+        "predictionSeed": false
+      },
+      "bowls": {
+        "file": "fd-bowl.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/bowls#en",
+        "predictionSeed": false
+      },
+      "ants": {
+        "file": "an-ant.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/ants#en",
+        "predictionSeed": false
+      },
+      "mouths": {
+        "file": "hb-mouth.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/mouths#en",
+        "predictionSeed": false
+      },
+      "allergies": {
+        "file": "hb-allergic-reaction.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/allergies#en",
+        "predictionSeed": false
+      },
+      "ankles": {
+        "file": "hb-ankle.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/ankles#en",
+        "predictionSeed": false
+      },
+      "diapers": {
+        "file": "cl-diaper.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/diapers#en",
+        "predictionSeed": false
+      },
+      "elbows": {
+        "file": "hb-elbow.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/elbows#en",
+        "predictionSeed": false
+      },
+      "brownies": {
+        "file": "fd-brownie.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/brownies#en",
+        "predictionSeed": false
+      },
+      "whales": {
+        "file": "an-whale.png",
+        "means": "Reviewed whale animal noun plural; retain other meanings and never substitute wales. Source: https://en.wiktionary.org/wiki/whales#English",
+        "predictionSeed": false
       }
     },
     "es": {
@@ -2173,6 +3418,240 @@
       "tarde": {
         "file": "w-time.png",
         "means": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings."
+      },
+      "escapar": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "escapa": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "escapó": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "esencial": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "esenciales": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "necesario": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "necesaria": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "estimar": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimado": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimada": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimación": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "finca": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "fincas": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "establecer": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "establecido": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "establecida": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "abeja": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "libro": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "perro": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "gato": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pájaro": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "manzana": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "zapatos": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "taza": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "carro": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "silla": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "calcetines": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mano": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pie": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bebé": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "autobús": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cuchara": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tenedor": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "plato": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "plátano": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banana": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "naranja": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "papa": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "papas": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tomate": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pelota": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "camisa": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "abrigo": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sombrero": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "dedo": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ojo": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "oreja": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "flores": {
+        "file": "w-flowers.png",
+        "means": "Reviewed plural noun form reusing the existing primary flower picture. Dictionary source: https://en.wiktionary.org/wiki/flores#Spanish",
+        "predictionSeed": false
+      },
+      "naranjas": {
+        "file": "fd-orange.png",
+        "means": "Reviewed plural noun form reusing the existing primary orange fruit picture. Dictionary source: https://en.wiktionary.org/wiki/naranjas#Spanish",
+        "predictionSeed": false
+      },
+      "brownies": {
+        "file": "fd-brownie.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/brownies#es",
+        "predictionSeed": false
       }
     },
     "fr": {
@@ -2523,6 +4002,208 @@
       "au revoir": {
         "file": "qt-goodbye.png",
         "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "s'échapper": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "échapper": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "nécessaire": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "nécessaires": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "indispensable": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "estimer": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimé": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimée": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimation": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "propriété": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "établir": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "établi": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "établie": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "abeille": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "livre": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chien": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chat": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "oiseau": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pomme": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chaussures": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tasse": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "voiture": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chaise": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chaussettes": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "main": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pied": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bébé": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cuillère": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "fourchette": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "assiette": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banane": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "orange": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pomme de terre": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tomate": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ballon": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chemise": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "manteau": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chapeau": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "doigt": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "œil": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "oreille": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "oranges": {
+        "file": "fd-orange.png",
+        "means": "Reviewed plural noun form reusing the existing primary orange fruit picture. Dictionary source: https://en.wiktionary.org/wiki/orange#French",
+        "predictionSeed": false
       }
     },
     "he": {
@@ -2817,6 +4498,166 @@
       "להיות": {
         "file": "cw-is.png",
         "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "נמלט": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "חיוני": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "אומדן": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "אחוזה": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "ייסד": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "דבורה": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ספר": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "כלב": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "חתול": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ציפור": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "תפוח": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "נעליים": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "כוס": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "מכונית": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "כיסא": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "גרביים": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "יד": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "כף רגל": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "תינוק": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "אוטובוס": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "כף": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "מזלג": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "צלחת": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "בננה": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "תפוז": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "תפוח אדמה": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "עגבנייה": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "חולצה": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "מעיל": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "כובע": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "אצבע": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "עין": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "אוזן": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "hi": {
@@ -3087,6 +4928,183 @@
       "अलविदा": {
         "file": "qt-goodbye.png",
         "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "भागना": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "आवश्यक": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "अनिवार्य": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "अनुमान": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "आकलन": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "संपत्ति": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "सम्पत्ति": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "स्थापना": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "मधुमक्खी": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "किताब": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "कुत्ता": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "बिल्ली": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "पक्षी": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "चिड़िया": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "सेब": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "जूते": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "कप": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "गाड़ी": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "कार": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "कुर्सी": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "मोज़े": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "हाथ": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "पैर": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "चम्मच": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "काँटा": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "थाली": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "केला": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "संतरा": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "आलू": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "टमाटर": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "गेंद": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "कमीज़": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "कोट": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "टोपी": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "उंगली": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "आँख": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "कान": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "id": {
@@ -3337,6 +5355,166 @@
       "telinga": {
         "file": "hb-ear.png",
         "means": "Primary everyday Ear meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "kabur": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "esensial": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "perkiraan": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estate": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "mendirikan": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "lebah": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "buku": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "anjing": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kucing": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "burung": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "apel": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sepatu": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cangkir": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mobil": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kursi": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kaus kaki": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tangan": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "telapak kaki": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bayi": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sendok": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "garpu": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "piring": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pisang": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "jeruk": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kentang": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tomat": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bola": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "baju": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mantel": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "topi": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "jari": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mata": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "it": {
@@ -3663,6 +5841,195 @@
       "cattivo": {
         "file": "dw-bad.png",
         "means": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "scappare": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "fuggire": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "necessario": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "necessaria": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "indispensabile": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "stimare": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "stimato": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "stimata": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "stima": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "tenuta": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "instaurare": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "ape": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "libro": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cane": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "gatto": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "uccello": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mela": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "scarpe": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tazza": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "macchina": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sedia": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "calzini": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mano": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "piede": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bebè": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "autobus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cucchiaio": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "forchetta": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "piatto": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banana": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "arancia": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "patata": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pomodoro": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "palla": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "camicia": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cappotto": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cappello": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "dito": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "occhio": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "orecchio": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "ja": {
@@ -3961,6 +6328,176 @@
       "遅い": {
         "file": "dw-slow.png",
         "means": "Primary everyday Slow meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "逃げる": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "不可欠な": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "見積もり": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "不動産": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "設立": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "ハチ": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "本": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "犬": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "いぬ": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "猫": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ねこ": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "鳥": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "とり": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "りんご": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "靴": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "コップ": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "車": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "椅子": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "靴下": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "赤ちゃん": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "バス": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "スプーン": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "フォーク": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "お皿": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "バナナ": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "オレンジ": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "じゃがいも": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "トマト": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ボール": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "シャツ": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "コート": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "帽子": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ゆび": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "目": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "耳": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "ko": {
@@ -4247,6 +6784,159 @@
       "나빠요": {
         "file": "dw-bad.png",
         "means": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "탈출": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "필수적인": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "필수": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "추정": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "부동산": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "설립": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "책": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "고양이": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "사과": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "신발": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "컵": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "자동차": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "의자": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "양말": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "손": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "발": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "아기": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "버스": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "숟가락": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "포크": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "접시": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "바나나": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "오렌지": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "감자": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "토마토": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "공": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "셔츠": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "코트": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "모자": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "손가락": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "귀": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "꿀벌": {
+        "file": "an-bee.png",
+        "means": "Dictionary-reviewed exact basic noun"
       }
     },
     "nl": {
@@ -4525,6 +7215,177 @@
       "tot ziens": {
         "file": "qt-goodbye.png",
         "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "ontsnappen": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "ontsnapt": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "noodzakelijk": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "essentieel": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "schatten": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "schatting": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "landgoed": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "oprichten": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "opgericht": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "boek": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hond": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kat": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "vogel": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "appel": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "schoenen": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "beker": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "auto": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "stoel": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sokken": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hand": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "voet": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "baby": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "lepel": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "vork": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banaan": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sinaasappel": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "aardappel": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tomaat": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bal": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "shirt": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "jas": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "hoed": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "vinger": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "oog": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "oor": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "pl": {
@@ -4859,6 +7720,188 @@
       "być": {
         "file": "cw-is.png",
         "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "wydostać się": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "wydostawać się": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "niezbędny": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "niezbędna": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "szacować": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "oszacować": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "posiadłość": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "założyć": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "pszczoła": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "książka": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pies": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kot": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ptak": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "jabłko": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "buty": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kubek": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "samochód": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "krzesło": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "skarpetki": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "dłoń": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "stopa": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "niemowlę": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "dzidziuś": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "autobus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "łyżka": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "widelec": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "talerz": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banan": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pomarańcza": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ziemniak": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pomidor": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "piłka": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "koszula": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "płaszcz": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "czapka": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "palec": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "oko": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ucho": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "pt": {
@@ -5193,6 +8236,227 @@
       "estar": {
         "file": "cw-is.png",
         "means": "Present being or the be copula; not past being, a person pronoun, or an unrelated word."
+      },
+      "escapar": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "fugir": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "essencial": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "essenciais": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "necessário": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "necessária": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "estimar": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimado": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimada": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "estimativa": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "propriedade": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "estabelecer": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "estabelecido": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "estabelecida": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "abelha": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "livro": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cachorro": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "gato": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pássaro": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "passarinho": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "maçã": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sapatos": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "xícara": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "carro": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cadeira": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "meias": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mão": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pé": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bebê": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ônibus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "colher": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "garfo": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "prato": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banana": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "laranja": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "batata": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tomate": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bola": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "camisa": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "casaco": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chapéu": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "dedo": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "olho": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "orelha": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "laranjas": {
+        "file": "fd-orange.png",
+        "means": "Reviewed plural noun form reusing the existing primary orange fruit picture. Dictionary source: https://en.wiktionary.org/wiki/laranja#Portuguese",
+        "predictionSeed": false
+      },
+      "bocas": {
+        "file": "hb-mouth.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/bocas#pt",
+        "predictionSeed": false
+      },
+      "brownies": {
+        "file": "fd-brownie.png",
+        "means": "Dictionary-reviewed plural sharing the existing primary concrete noun meaning. Source: https://en.wiktionary.org/wiki/brownies#pt",
+        "predictionSeed": false
       }
     },
     "ro": {
@@ -5527,6 +8791,355 @@
       "atât": {
         "file": "cw-very.png",
         "means": "General degree/intensity cue for so or that much; the caption retains the degree word."
+      },
+      "estima": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimez": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimezi": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimează": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimăm": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimați": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimat": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimată": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimate": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimare": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimarea": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimări": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "estimările": {
+        "file": "w-estimate.png",
+        "means": "Approximate assessment of a quantity, with uncertainty rather than an exact count."
+      },
+      "esențial": {
+        "file": "cw-need.png",
+        "means": "Necessary or essential in the requirement sense"
+      },
+      "esențială": {
+        "file": "cw-need.png",
+        "means": "Necessary or essential in the requirement sense"
+      },
+      "esențiali": {
+        "file": "cw-need.png",
+        "means": "Necessary or essential in the requirement sense"
+      },
+      "esențiale": {
+        "file": "cw-need.png",
+        "means": "Necessary or essential in the requirement sense"
+      },
+      "necesar": {
+        "file": "cw-need.png",
+        "means": "Necessary or essential in the requirement sense"
+      },
+      "necesară": {
+        "file": "cw-need.png",
+        "means": "Necessary or essential in the requirement sense"
+      },
+      "necesari": {
+        "file": "cw-need.png",
+        "means": "Necessary or essential in the requirement sense"
+      },
+      "necesare": {
+        "file": "cw-need.png",
+        "means": "Necessary or essential in the requirement sense"
+      },
+      "ai": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "au": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "avut": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "avută": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "aveam": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "aveai": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "avea": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "aveau": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "avem": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "aveți": {
+        "file": "cw-have.png",
+        "means": "Have or possess; reviewed Romanian verb forms"
+      },
+      "plac": {
+        "file": "cw-like.png",
+        "means": "Like or enjoy in the liking sense, not similarity"
+      },
+      "placi": {
+        "file": "cw-like.png",
+        "means": "Like or enjoy in the liking sense, not similarity"
+      },
+      "place": {
+        "file": "cw-like.png",
+        "means": "Like or enjoy in the liking sense, not similarity"
+      },
+      "plăcea": {
+        "file": "cw-like.png",
+        "means": "Like or enjoy in the liking sense, not similarity"
+      },
+      "plăcut": {
+        "file": "cw-like.png",
+        "means": "Like or enjoy in the liking sense, not similarity"
+      },
+      "plăceau": {
+        "file": "cw-like.png",
+        "means": "Like or enjoy in the liking sense, not similarity"
+      },
+      "prea": {
+        "file": "cw-too.png",
+        "means": "Too or excessive degree, not merely very"
+      },
+      "evada": {
+        "file": "w-exit.png",
+        "means": "Escape or get out from confinement"
+      },
+      "evadează": {
+        "file": "w-exit.png",
+        "means": "Escape or get out from confinement"
+      },
+      "evadat": {
+        "file": "w-exit.png",
+        "means": "Escape or get out from confinement"
+      },
+      "evadare": {
+        "file": "w-exit.png",
+        "means": "Escape or get out from confinement"
+      },
+      "evadarea": {
+        "file": "w-exit.png",
+        "means": "Escape or get out from confinement"
+      },
+      "moșie": {
+        "file": "w-estate.png",
+        "means": "An estate or real property comprising a house and its land, not the legal inheritance process."
+      },
+      "moșia": {
+        "file": "w-estate.png",
+        "means": "An estate or real property comprising a house and its land, not the legal inheritance process."
+      },
+      "moșii": {
+        "file": "w-estate.png",
+        "means": "An estate or real property comprising a house and its land, not the legal inheritance process."
+      },
+      "moșiile": {
+        "file": "w-estate.png",
+        "means": "An estate or real property comprising a house and its land, not the legal inheritance process."
+      },
+      "înființa": {
+        "file": "w-establish.png",
+        "means": "Set up or found a stable structure or activity, not prove a fact by investigation."
+      },
+      "înființează": {
+        "file": "w-establish.png",
+        "means": "Set up or found a stable structure or activity, not prove a fact by investigation."
+      },
+      "înființat": {
+        "file": "w-establish.png",
+        "means": "Set up or found a stable structure or activity, not prove a fact by investigation."
+      },
+      "înființare": {
+        "file": "w-establish.png",
+        "means": "Set up or found a stable structure or activity, not prove a fact by investigation."
+      },
+      "albină": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "carte": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "câine": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pisică": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pasăre": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "măr": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pantofi": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ceașcă": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mașină": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "scaun": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "șosete": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mână": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "laba piciorului": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bebeluș": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bebeluş": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "autobuz": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "lingură": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "furculiță": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "farfurie": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "banană": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "portocală": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cartof": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "minge": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cămașă": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "haină": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pălărie": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "deget": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ochi": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ureche": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "ru": {
@@ -6041,6 +9654,200 @@
       "пока": {
         "file": "qt-goodbye.png",
         "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "спастись": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "спасаться": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "побег": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "необходимый": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "необходимая": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "необходимые": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "оценивать": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "оценить": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "усадьба": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "учредить": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "учреждать": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "пчела": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "книга": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "собака": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "кошка": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "кот": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "птица": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "яблоко": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "обувь": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "стакан": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "машина": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "стул": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "носки": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "кисть": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ступня": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "малыш": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "автобус": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ложка": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "вилка": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "тарелка": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "банан": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "апельсин": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "картошка": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "помидор": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "мяч": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "рубашка": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "пальто": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "шляпа": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "палец": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "глаз": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ухо": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "sw": {
@@ -6311,6 +10118,161 @@
       "jua": {
         "file": "cw-know.png",
         "means": "Primary everyday Know meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "kuponyoka": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "lazima": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "kukadiria": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "mali isiyohamishika": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "kuanzisha": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "nyuki": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kitabu": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mbwa": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "paka": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tufaha": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tofaa": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "viatu": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kikombe": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "gari": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kiti": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "soksi": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kiganja": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "wayo": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mtoto mchanga": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kijiko": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sahani": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ndizi": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chungwa": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "viazi": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "nyanya": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mpira": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "shati": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "koti": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kofia": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kidole cha mkono": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "jicho": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sikio": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "tl": {
@@ -6577,6 +10539,178 @@
       "sa labas": {
         "file": "pl-outside.png",
         "means": "Primary everyday Outside meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "takas": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "pagtakas": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "tantiyahin": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "ari-arian": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "itatag": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "bubuyog": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "libro": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "aso": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "pusa": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ibon": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mansanas": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sapatos": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tasa": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kotse": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "upuan": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "medyas": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kamay": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "paa": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sanggol": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bus": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kutsara": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tinidor": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "plato": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "saging": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "dalandan": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "patatas": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kamatis": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bola": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "amerikana": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sombrero": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "daliri": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mata": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tenga": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kamisa": {
+        "file": "cl-shirt.png",
+        "means": "Dictionary-reviewed exact basic noun"
+      },
+      "bestida": {
+        "file": "cl-dress.png",
+        "means": "Dictionary-reviewed exact basic noun"
+      },
+      "damit": {
+        "file": "cat-clothes.png",
+        "means": "Dictionary-reviewed generic clothing"
       }
     },
     "tr": {
@@ -6839,6 +10973,170 @@
       "özür dilerim": {
         "file": "qt-sorry.png",
         "means": "Primary everyday Sorry meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "kaçmak": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "kaçış": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "gerekli": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "emlak": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "emlâk": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "kurmak": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "arı": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kitap": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "köpek": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kedi": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kuş": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "elma": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ayakkabı": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "fincan": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "araba": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sandalye": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "çoraplar": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "el": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ayak": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "otobüs": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kaşık": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "çatal": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tabak": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "muz": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "portakal": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "patates": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "domates": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "top": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "gömlek": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "palto": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "şapka": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "parmak": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "göz": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "kulak": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "uk": {
@@ -7229,6 +11527,197 @@
       "бувай": {
         "file": "qt-goodbye.png",
         "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "втекти": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "втеча": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "необхідний": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "необхідна": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "необхідні": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "оцінювати": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "маєток": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "заснувати": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "засновувати": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "бджола": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "книга": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "собака": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "кішка": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "кіт": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "птах": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "пташка": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "яблуко": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "взуття": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "чашка": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "машина": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "стілець": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "шкарпетки": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "долоня": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ступня": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "малюк": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "автобус": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ложка": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "виделка": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "тарілка": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "банан": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "апельсин": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "картопля": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "помідор": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "м'яч": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "сорочка": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "пальто": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "капелюх": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "палець": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "око": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "вухо": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "vi": {
@@ -7487,6 +11976,170 @@
       "thời": {
         "file": "w-time.png",
         "means": "Time or a temporal period/era; a complete standalone temporal word, not a split of an unrelated phrase."
+      },
+      "thoát": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "trốn thoát": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "thiết yếu": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "ước lượng": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "bất động sản": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "thành lập": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "con ong": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "sách": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chó": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mèo": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chim": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "táo": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "giày": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cốc": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "xe hơi": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ghế": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bàn tay": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bàn chân": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "em bé": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "xe buýt": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "thìa": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "nĩa": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "đĩa": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "chuối": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cam": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "khoai tây": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "cà chua": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "bóng": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "áo": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "áo khoác dài": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mũ": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "ngón tay": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "mắt": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "tai": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "zh-HK": {
@@ -7757,6 +12410,187 @@
       "再見": {
         "file": "qt-goodbye.png",
         "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "逃跑": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "逃生": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "必要": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "必備": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "估計": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "估算": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "地產": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "建立": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "創辦": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "蜜蜂": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "書": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "狗": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "貓": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "鳥": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "蘋果": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "鞋": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "杯子": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "車": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "椅子": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "襪子": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "手": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "腳": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "寶寶": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "巴士": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "匙羹": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "叉子": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "盤子": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "香蕉": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "橙": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "薯仔": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "番茄": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "球": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "襯衫": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "大衣": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "帽子": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "手指": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "眼睛": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "耳朵": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "zh-Hans": {
@@ -8007,6 +12841,192 @@
       "时间": {
         "file": "w-time.png",
         "means": "Time or duration; weather remains a separate category/qualified meaning."
+      },
+      "逃跑": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "逃生": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "必要": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "必备": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "估计": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "估算": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "地产": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "建立": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "创办": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "蜜蜂": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "书": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "狗": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "猫": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "鸟": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "苹果": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "鞋": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "杯子": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "车": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "椅子": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "袜子": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "手": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "脚": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "宝宝": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "公交车": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "勺子": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "叉子": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "盘子": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "香蕉": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "橙子": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "土豆": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "番茄": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "西红柿": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "球": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "衬衫": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "大衣": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "帽子": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "手指": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "眼睛": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "耳朵": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     },
     "zh-Hant": {
@@ -8265,6 +13285,187 @@
       "再見": {
         "file": "qt-goodbye.png",
         "means": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs."
+      },
+      "逃跑": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "逃生": {
+        "file": "w-exit.png",
+        "means": "Reviewed escape AAC sense; explicitly listed word or inflection."
+      },
+      "必要": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "必備": {
+        "file": "cw-need.png",
+        "means": "Reviewed essential AAC sense; explicitly listed word or inflection."
+      },
+      "估計": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "估算": {
+        "file": "w-estimate.png",
+        "means": "Reviewed estimate AAC sense; explicitly listed word or inflection."
+      },
+      "地產": {
+        "file": "w-estate.png",
+        "means": "Reviewed estate AAC sense; explicitly listed word or inflection."
+      },
+      "建立": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "創辦": {
+        "file": "w-establish.png",
+        "means": "Reviewed establish AAC sense; explicitly listed word or inflection."
+      },
+      "蜜蜂": {
+        "file": "an-bee.png",
+        "means": "bee; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "書": {
+        "file": "sw-book.png",
+        "means": "book; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "狗": {
+        "file": "an-dog.png",
+        "means": "dog; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "貓": {
+        "file": "an-cat.png",
+        "means": "cat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "鳥": {
+        "file": "an-bird.png",
+        "means": "bird; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "蘋果": {
+        "file": "fd-apple.png",
+        "means": "apple; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "鞋": {
+        "file": "cl-shoes.png",
+        "means": "shoe; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "杯子": {
+        "file": "fd-cup.png",
+        "means": "cup; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "車": {
+        "file": "pl-car.png",
+        "means": "car; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "椅子": {
+        "file": "sw-chair.png",
+        "means": "chair; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "襪子": {
+        "file": "cl-socks.png",
+        "means": "sock; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "手": {
+        "file": "hb-hand.png",
+        "means": "hand; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "腳": {
+        "file": "hb-foot.png",
+        "means": "foot; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "寶寶": {
+        "file": "pp-baby.png",
+        "means": "baby; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "公車": {
+        "file": "tr-bus.png",
+        "means": "bus; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "湯匙": {
+        "file": "fd-spoon.png",
+        "means": "spoon; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "叉子": {
+        "file": "fd-fork.png",
+        "means": "fork; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "盤子": {
+        "file": "fd-plate.png",
+        "means": "plate; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "香蕉": {
+        "file": "fd-banana.png",
+        "means": "banana; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "柳橙": {
+        "file": "fd-orange.png",
+        "means": "orange; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "馬鈴薯": {
+        "file": "fd-potato.png",
+        "means": "potato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "番茄": {
+        "file": "fd-tomato.png",
+        "means": "tomato; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "球": {
+        "file": "tf-ball.png",
+        "means": "ball; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "襯衫": {
+        "file": "cl-shirt.png",
+        "means": "shirt; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "大衣": {
+        "file": "cl-coat.png",
+        "means": "coat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "帽子": {
+        "file": "cl-hat.png",
+        "means": "hat; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "手指": {
+        "file": "hb-finger.png",
+        "means": "finger; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "眼睛": {
+        "file": "hb-eye.png",
+        "means": "eye; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
+      },
+      "耳朵": {
+        "file": "hb-ear.png",
+        "means": "ear; exact existing basic noun label or reviewed form",
+        "predictionSeed": false
       }
     }
   },
@@ -8331,6 +13532,13 @@
             "file": "w-past-being.png"
           }
         ]
+      },
+      "orange": {
+        "files": [
+          "fd-orange.png",
+          "co-orange.png"
+        ],
+        "means": "orange fruit; orange color"
       }
     },
     "ko": {
@@ -8347,6 +13555,13 @@
           "pl-inside.png"
         ],
         "means": "Negation or inside; never substitute a spatial picture for unknown negation."
+      },
+      "새": {
+        "files": [
+          "an-bird.png",
+          "dw-new.png"
+        ],
+        "means": "bird; new"
       }
     },
     "ro": {
@@ -8368,6 +13583,233 @@
             "file": "cw-more.png"
           }
         ]
+      },
+      "aproape": {
+        "files": [
+          "cw-near.png",
+          "cw-almost.png"
+        ],
+        "means": "Near in space or almost in degree; Hurt is a separate corrected phrase."
+      },
+      "voi": {
+        "files": [
+          "cw-you.png",
+          "w-will.png"
+        ],
+        "means": "Plural you or the first-person future auxiliary will.",
+        "contexts": [
+          {
+            "before": [
+              "eu"
+            ],
+            "file": "w-will.png"
+          }
+        ]
+      },
+      "roșie": {
+        "files": [
+          "fd-tomato.png",
+          "co-red.png"
+        ],
+        "means": "tomato; red feminine form"
+      },
+      "au": {
+        "files": [
+          "cw-have.png",
+          "help-hurts.png"
+        ],
+        "means": "Have or possess; ouch or physical pain interjection. Preserve both common Romanian meanings without choosing Have for the bare word."
+      }
+    },
+    "en": {
+      "fall": {
+        "files": [
+          "cw-fall.png",
+          "ts-fall.png"
+        ],
+        "means": "Built-in meanings: Fall"
+      },
+      "cut": {
+        "files": [
+          "cw-cut.png",
+          "hb-cut.png"
+        ],
+        "means": "Built-in meanings: Cut"
+      },
+      "full": {
+        "files": [
+          "cw-full.png",
+          "fe-full.png"
+        ],
+        "means": "Built-in meanings: Full"
+      },
+      "empty": {
+        "files": [
+          "cw-empty.png",
+          "fe-empty.png"
+        ],
+        "means": "Built-in meanings: Empty"
+      },
+      "back": {
+        "files": [
+          "cw-back.png",
+          "hb-back.png"
+        ],
+        "means": "Built-in meanings: Back"
+      },
+      "march": {
+        "files": [
+          "ac-march.png",
+          "tm-mar.png"
+        ],
+        "means": "Built-in meanings: March"
+      },
+      "hot": {
+        "files": [
+          "dw-hot.png",
+          "ts-hot.png"
+        ],
+        "means": "Built-in meanings: Hot"
+      },
+      "cold": {
+        "files": [
+          "dw-cold.png",
+          "ts-cold.png"
+        ],
+        "means": "Built-in meanings: Cold"
+      },
+      "chicken": {
+        "files": [
+          "fd-chicken.png",
+          "an-chicken.png"
+        ],
+        "means": "Built-in meanings: Chicken"
+      },
+      "orange": {
+        "files": [
+          "fd-orange.png",
+          "co-orange.png"
+        ],
+        "means": "Built-in meanings: Orange"
+      },
+      "mouse": {
+        "files": [
+          "w-mouse-animal.png",
+          "w-mouse-computer.png"
+        ],
+        "means": "Mouse animal and computer input device; reviewed exact noun form"
+      },
+      "mice": {
+        "files": [
+          "w-mouse-animal.png",
+          "w-mouse-computer.png"
+        ],
+        "means": "Mouse animal and computer input device; reviewed exact noun form"
+      }
+    },
+    "tr": {
+      "tahmin": {
+        "files": [
+          "w-guess.png",
+          "w-estimate.png"
+        ],
+        "means": "Preserve the reviewed guess and approximate-assessment senses."
+      },
+      "bebek": {
+        "files": [
+          "pp-baby.png",
+          "pp-kid.png",
+          "tf-doll.png"
+        ],
+        "means": "baby; kid; doll"
+      }
+    },
+    "ar": {
+      "عقار": {
+        "files": [
+          "w-estate.png",
+          "hb-medicine.png"
+        ],
+        "means": "Unvowelled Arabic property and medicine senses remain distinct."
+      }
+    },
+    "nl": {
+      "bij": {
+        "files": [
+          "an-bee.png",
+          "cw-at.png",
+          "cw-by.png"
+        ],
+        "means": "bee; at; by"
+      },
+      "bord": {
+        "files": [
+          "fd-plate.png",
+          "sw-whiteboard.png"
+        ],
+        "means": "plate; board (classroom whiteboard); sign remains unpictured"
+      }
+    },
+    "sw": {
+      "ndege": {
+        "files": [
+          "an-bird.png",
+          "tr-airplane.png"
+        ],
+        "means": "bird; airplane"
+      },
+      "basi": {
+        "files": [
+          "tr-bus.png",
+          "cw-then.png",
+          "w-enough.png"
+        ],
+        "means": "bus; then; enough"
+      },
+      "uma": {
+        "files": [
+          "fd-fork.png",
+          "cw-bite.png",
+          "hb-pain.png"
+        ],
+        "means": "fork; bite; ache or hurt"
+      }
+    },
+    "vi": {
+      "tất": {
+        "files": [
+          "cl-socks.png",
+          "cw-all.png"
+        ],
+        "means": "sock; all or complete"
+      }
+    },
+    "ja": {
+      "あし": {
+        "files": [
+          "hb-foot.png",
+          "hbp-leg.png"
+        ],
+        "means": "foot; leg"
+      }
+    },
+    "hi": {
+      "बस": {
+        "files": [
+          "tr-bus.png",
+          "cw-stop.png",
+          "w-enough.png"
+        ],
+        "means": "bus; stop or enough"
+      }
+    },
+    "he": {
+      "כדור": {
+        "files": [
+          "tf-ball.png",
+          "hb-pill.png"
+        ],
+        "means": "ball; pill; other dictionary senses remain unpictured"
       }
     }
   }

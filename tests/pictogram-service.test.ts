@@ -167,16 +167,16 @@ describe('getPictogramUrl — paid plans', () => {
 
   it('never contacts a third-party symbol service', async () => {
     const fetchSpy = stubAI(() => new Response('', { status: 500 }));
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('dinosaur', 'en', 'symbols-ai');
-    await getPictogramUrl('Kiganja', 'sw', 'symbols-ai');
+    const { getPictogramUrl, PicturePendingError } = await import('@/services/pictogramService');
+    await expect(getPictogramUrl('dinosaur', 'en', 'symbols-ai')).rejects.toBeInstanceOf(PicturePendingError);
+    await expect(getPictogramUrl('Kiganja', 'sw', 'symbols-ai')).rejects.toBeInstanceOf(PicturePendingError);
     expect(urls(fetchSpy).length).toBeGreaterThan(0);
     expect(urls(fetchSpy).every((u) => u.includes(AI_PATH))).toBe(true);
     expect(urls(fetchSpy).some((u) => /arasaac/i.test(u))).toBe(false);
   });
 
-  it('returns null when the portal fails', async () => {
-    stubAI(() => new Response('', { status: 500 }));
+  it('returns null for a permanent portal rejection', async () => {
+    stubAI(() => new Response('', { status: 403 }));
     const { getPictogramUrl } = await import('@/services/pictogramService');
     expect(await getPictogramUrl('xyzzy-unique-3', 'en', 'symbols-ai')).toBeNull();
   });
@@ -289,25 +289,27 @@ describe('clearLegacyPictogramCache', () => {
 
   const databaseNames = async () => (await indexedDB.databases()).map((d) => d.name);
 
-  it('deletes the old pictogram database and miss list once', async () => {
+  it('deletes the retired pictogram database and miss list', async () => {
     localStorage.clear();
     await seedLegacyDatabase();
     localStorage.setItem('prism-arasaac-misses', JSON.stringify(['en:xyz']));
     expect(await databaseNames()).toContain('prism-aac-pictograms');
 
     const { clearLegacyPictogramCache } = await import('@/services/pictogramService');
-    clearLegacyPictogramCache();
+    await clearLegacyPictogramCache();
 
     await vi.waitFor(async () => expect(await databaseNames()).not.toContain('prism-aac-pictograms'));
     expect(localStorage.getItem('prism-arasaac-misses')).toBeNull();
-    await vi.waitFor(() => expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('1'));
+    expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('2');
   });
 
-  it('does nothing once it has run', async () => {
+  it('cleans stale legacy data again even after a previous completion marker', async () => {
     localStorage.setItem('prism-legacy-pictograms-cleared', '1');
+    await seedLegacyDatabase();
     const deleteSpy = vi.spyOn(indexedDB, 'deleteDatabase');
     const { clearLegacyPictogramCache } = await import('@/services/pictogramService');
-    clearLegacyPictogramCache();
-    expect(deleteSpy).not.toHaveBeenCalled();
+    await clearLegacyPictogramCache();
+    expect(deleteSpy).toHaveBeenCalledWith('prism-aac-pictograms');
+    expect(await databaseNames()).not.toContain('prism-aac-pictograms');
   });
 });

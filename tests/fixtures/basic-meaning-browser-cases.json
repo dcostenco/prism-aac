@@ -1,0 +1,171 @@
+{
+  "cases": [
+    {
+      "lang": "nl",
+      "text": "bi",
+      "word": "bij",
+      "files": [
+        "an-bee.png",
+        "cw-at.png",
+        "cw-by.png"
+      ]
+    },
+    {
+      "lang": "sw",
+      "text": "ndeg",
+      "word": "ndege",
+      "files": [
+        "an-bird.png",
+        "tr-airplane.png"
+      ]
+    },
+    {
+      "lang": "ja",
+      "text": "あ",
+      "word": "あし",
+      "files": [
+        "hb-foot.png",
+        "hbp-leg.png"
+      ]
+    },
+    {
+      "lang": "tr",
+      "text": "bebe",
+      "word": "bebek",
+      "files": [
+        "pp-baby.png",
+        "pp-kid.png",
+        "tf-doll.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "text": "ब",
+      "word": "बस",
+      "files": [
+        "tr-bus.png",
+        "cw-stop.png",
+        "w-enough.png"
+      ]
+    },
+    {
+      "lang": "sw",
+      "text": "bas",
+      "word": "basi",
+      "files": [
+        "tr-bus.png",
+        "cw-then.png",
+        "w-enough.png"
+      ]
+    },
+    {
+      "lang": "sw",
+      "text": "um",
+      "word": "uma",
+      "files": [
+        "fd-fork.png",
+        "cw-bite.png",
+        "hb-pain.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "text": "bor",
+      "word": "bord",
+      "files": [
+        "fd-plate.png",
+        "sw-whiteboard.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "text": "orang",
+      "word": "orange",
+      "files": [
+        "fd-orange.png",
+        "co-orange.png"
+      ]
+    },
+    {
+      "lang": "en",
+      "text": "orang",
+      "word": "orange",
+      "files": [
+        "fd-orange.png",
+        "co-orange.png"
+      ]
+    },
+    {
+      "lang": "ro",
+      "text": "roși",
+      "word": "roșie",
+      "files": [
+        "fd-tomato.png",
+        "co-red.png"
+      ]
+    },
+    {
+      "lang": "he",
+      "text": "כדו",
+      "word": "כדור",
+      "files": [
+        "tf-ball.png",
+        "hb-pill.png"
+      ]
+    },
+    {
+      "lang": "tl",
+      "text": "Kamis",
+      "word": "kamisa",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "tl",
+      "text": "Bestid",
+      "word": "bestida",
+      "file": "cl-dress.png"
+    },
+    {
+      "lang": "ko",
+      "text": "ㅅㅐ",
+      "word": "새",
+      "files": [
+        "an-bird.png",
+        "dw-new.png"
+      ]
+    },
+    {
+      "lang": "ko",
+      "text": "ㄴㅜ",
+      "word": "눈",
+      "files": [
+        "hb-eye.png",
+        "w-snow.png"
+      ]
+    }
+  ],
+  "unofferedByTestedPrefixes": [],
+  "unavailableOnScreenKeyboard": [
+    {
+      "case": {
+        "lang": "vi",
+        "text": "tấ",
+        "word": "tất",
+        "files": [
+          "cl-socks.png",
+          "cw-all.png"
+        ]
+      },
+      "reason": "Composed-accent or doubled-consonant key unavailable on tested on-screen layout"
+    },
+    {
+      "case": {
+        "lang": "ko",
+        "text": "꿀",
+        "word": "꿀벌",
+        "file": "an-bee.png"
+      },
+      "reason": "Composed-accent or doubled-consonant key unavailable on tested on-screen layout"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "cases": [
+    {
+      "locale": "en",
+      "word": "beer",
+      "files": [
+        "w-beer.png"
+      ],
+      "source": "https://en.wiktionary.org/wiki/beer"
+    },
+    {
+      "locale": "en",
+      "word": "beers",
+      "files": [
+        "w-beer.png"
+      ],
+      "source": "https://en.wiktionary.org/wiki/beer"
+    },
+    {
+      "locale": "en",
+      "word": "mouse",
+      "files": [
+        "w-mouse-animal.png",
+        "w-mouse-computer.png"
+      ],
+      "source": "https://en.wiktionary.org/wiki/mouse"
+    },
+    {
+      "locale": "en",
+      "word": "mice",
+      "files": [
+        "w-mouse-animal.png",
+        "w-mouse-computer.png"
+      ],
+      "source": "https://en.wiktionary.org/wiki/mouse"
+    }
+  ],
+  "qualifiedEnglishKeys": {
+    "mouse animal": "w-mouse-animal.png",
+    "computer mouse": "w-mouse-computer.png"
+  }
+}

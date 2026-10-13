@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { usePredictionPicture } from '@/hooks/usePredictionPicture';
+import { resolveVocabularyPicture } from '@/lib/builtInSymbols';
 
 type Pending = { phrase: string; resolve: (url: string | null) => void };
 const pending: Pending[] = [];
@@ -31,6 +32,22 @@ const answer = async (phrase: string, url: string | null) => {
 };
 
 describe('usePredictionPicture', () => {
+  it.each(['cupcake', 'cupcakes'])('reuses the food symbol for %s without requesting a paid picture', async (word) => {
+    const { result } = renderHook(() => usePredictionPicture(word, 'en', 'symbols-ai'));
+    await waitFor(() => expect(result.current).toMatchObject({
+      picture: 'symbol', pictureUrl: '/prism-aac/symbols/fd-cupcake.png',
+    }));
+    expect(getPictogramUrlMock).not.toHaveBeenCalled();
+  });
+
+  it('reuses whale artwork for whales without borrowing it for the different spelling wales', async () => {
+    const { result } = renderHook(() => usePredictionPicture('whales', 'en', 'symbols-ai'));
+    await waitFor(() => expect(result.current).toMatchObject({ picture: 'symbol', pictureUrl: '/prism-aac/symbols/an-whale.png' }));
+    expect(getPictogramUrlMock).not.toHaveBeenCalled();
+    expect(resolveVocabularyPicture('wales', 'en')).toEqual({ kind: 'unmapped', url: null });
+    expect(resolveVocabularyPicture('Wales', 'en')).toEqual({ kind: 'unmapped', url: null });
+  });
+
   it('shows the board symbol for built-in vocabulary and asks for nothing', () => {
     const { result } = renderHook(() => usePredictionPicture('More', 'en', 'symbols-ai'));
     expect(result.current).toMatchObject({ picture: 'symbol', pictureUrl: '/prism-aac/symbols/cw-more.png' });
@@ -53,7 +70,7 @@ describe('usePredictionPicture', () => {
     const { result } = renderHook(() => usePredictionPicture('zorbly', 'en', 'symbols-ai'));
     expect(result.current.picture).toBe('pending');
     // the word as the bar shows it and the board language go along, so a word listed there blocks the picture
-    expect(getPictogramUrlMock).toHaveBeenCalledWith('zorbly', 'en', 'symbols-ai', { text: 'zorbly', lang: 'en' });
+    expect(getPictogramUrlMock).toHaveBeenCalledWith('zorbly', 'en', 'symbols-ai', { text: 'zorbly', lang: 'en' }, { signal: expect.any(AbortSignal) });
     await answer('zorbly', 'blob:zorbly');
     expect(result.current).toMatchObject({ picture: 'generated', pictureUrl: 'blob:zorbly' });
   });

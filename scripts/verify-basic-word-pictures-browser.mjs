@@ -41,9 +41,33 @@ const BLOCKER_LANGUAGE_CASES = {};
 for (const { lang, ...fixture } of BLOCKER_FIXTURES.cases) {
   (BLOCKER_LANGUAGE_CASES[lang] ??= []).push(fixture);
 }
+const REPORTED_FIXTURES = JSON.parse(readFileSync(new URL('../tests/fixtures/reported-prefix-pictures.json', import.meta.url), 'utf8'));
+const REPORTED_LANGUAGE_CASES = {};
+for (const { lang, ...fixture } of REPORTED_FIXTURES.cases) {
+  (REPORTED_LANGUAGE_CASES[lang] ??= []).push(fixture);
+}
+const NOUN_FIXTURES = JSON.parse(readFileSync(new URL('../tests/fixtures/basic-noun-browser-cases.json', import.meta.url), 'utf8'));
+const NOUN_LANGUAGE_CASES = {};
+for (const { lang, ...fixture } of NOUN_FIXTURES.cases) {
+  (NOUN_LANGUAGE_CASES[lang] ??= []).push(fixture);
+}
+const MEANING_FIXTURES = JSON.parse(readFileSync(new URL('../tests/fixtures/basic-meaning-browser-cases.json', import.meta.url), 'utf8'));
+const MEANING_LANGUAGE_CASES = {};
+for (const { lang, ...fixture } of MEANING_FIXTURES.cases) {
+  (MEANING_LANGUAGE_CASES[lang] ??= []).push(fixture);
+}
+const ARTWORK_FIXTURES = JSON.parse(readFileSync(new URL('../tests/fixtures/new-basic-picture-browser-cases.json', import.meta.url), 'utf8'));
+const ARTWORK_LANGUAGE_CASES = {};
+for (const { lang, ...fixture } of ARTWORK_FIXTURES.cases) {
+  (ARTWORK_LANGUAGE_CASES[lang] ??= []).push(fixture);
+}
 const LANGUAGE_CASES = process.env.PICTURE_TEST_SUITE === 'blocker' ? BLOCKER_LANGUAGE_CASES
+  : process.env.PICTURE_TEST_SUITE === 'artwork' ? ARTWORK_LANGUAGE_CASES
+  : process.env.PICTURE_TEST_SUITE === 'meanings' ? MEANING_LANGUAGE_CASES
+  : process.env.PICTURE_TEST_SUITE === 'nouns' ? NOUN_LANGUAGE_CASES
+  : process.env.PICTURE_TEST_SUITE === 'reported' ? REPORTED_LANGUAGE_CASES
   : process.env.PICTURE_TEST_SUITE === 'forms' ? FORM_LANGUAGE_CASES : BASIC_LANGUAGE_CASES;
-if (process.env.PICTURE_TEST_SUITE && !['basic', 'forms', 'blocker'].includes(process.env.PICTURE_TEST_SUITE)) {
+if (process.env.PICTURE_TEST_SUITE && !['basic', 'forms', 'blocker', 'reported', 'nouns', 'meanings', 'artwork'].includes(process.env.PICTURE_TEST_SUITE)) {
   throw new Error('The requested picture suite does not exist.');
 }
 const VIEWPORTS = ['1140x1180', '390x844'];

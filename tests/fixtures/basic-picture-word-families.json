@@ -1,0 +1,795 @@
+{
+  "format": 1,
+  "meaningPolicy": "Exact reviewed everyday noun forms; no automatic suffix removal or cross-locale spelling fallback.",
+  "families": [
+    {
+      "concept": "bee",
+      "file": "an-bee.png",
+      "words": [
+        "bee",
+        "bees"
+      ],
+      "source": "https://en.wiktionary.org/wiki/bee",
+      "forms": [
+        {
+          "word": "bee",
+          "file": "an-bee.png"
+        },
+        {
+          "word": "bees",
+          "file": "an-bee.png"
+        }
+      ]
+    },
+    {
+      "concept": "book",
+      "file": "sw-book.png",
+      "words": [
+        "book",
+        "books"
+      ],
+      "source": "https://en.wiktionary.org/wiki/book",
+      "forms": [
+        {
+          "word": "book",
+          "file": "sw-book.png"
+        },
+        {
+          "word": "books",
+          "file": "sw-book.png"
+        }
+      ]
+    },
+    {
+      "concept": "dog",
+      "file": "an-dog.png",
+      "words": [
+        "dog",
+        "dogs"
+      ],
+      "source": "https://en.wiktionary.org/wiki/dog",
+      "forms": [
+        {
+          "word": "dog",
+          "file": "an-dog.png"
+        },
+        {
+          "word": "dogs",
+          "file": "an-dog.png"
+        }
+      ]
+    },
+    {
+      "concept": "cat",
+      "file": "an-cat.png",
+      "words": [
+        "cat",
+        "cats"
+      ],
+      "source": "https://en.wiktionary.org/wiki/cat",
+      "forms": [
+        {
+          "word": "cat",
+          "file": "an-cat.png"
+        },
+        {
+          "word": "cats",
+          "file": "an-cat.png"
+        }
+      ]
+    },
+    {
+      "concept": "bird",
+      "file": "an-bird.png",
+      "words": [
+        "bird",
+        "birds"
+      ],
+      "source": "https://en.wiktionary.org/wiki/bird",
+      "forms": [
+        {
+          "word": "bird",
+          "file": "an-bird.png"
+        },
+        {
+          "word": "birds",
+          "file": "an-bird.png"
+        }
+      ]
+    },
+    {
+      "concept": "apple",
+      "file": "fd-apple.png",
+      "words": [
+        "apple",
+        "apples"
+      ],
+      "source": "https://en.wiktionary.org/wiki/apple",
+      "forms": [
+        {
+          "word": "apple",
+          "file": "fd-apple.png"
+        },
+        {
+          "word": "apples",
+          "file": "fd-apple.png"
+        }
+      ]
+    },
+    {
+      "concept": "egg",
+      "file": "w-egg.png",
+      "words": [
+        "egg",
+        "eggs"
+      ],
+      "source": "https://en.wiktionary.org/wiki/egg",
+      "forms": [
+        {
+          "word": "egg",
+          "file": "w-egg.png"
+        },
+        {
+          "word": "eggs",
+          "file": "fd-eggs.png"
+        }
+      ]
+    },
+    {
+      "concept": "shoe",
+      "file": "cl-shoes.png",
+      "words": [
+        "shoe",
+        "shoes"
+      ],
+      "source": "https://en.wiktionary.org/wiki/shoe",
+      "forms": [
+        {
+          "word": "shoe",
+          "file": "cl-shoes.png"
+        },
+        {
+          "word": "shoes",
+          "file": "cl-shoes.png"
+        }
+      ]
+    },
+    {
+      "concept": "cup",
+      "file": "fd-cup.png",
+      "words": [
+        "cup",
+        "cups"
+      ],
+      "source": "https://en.wiktionary.org/wiki/cup",
+      "forms": [
+        {
+          "word": "cup",
+          "file": "fd-cup.png"
+        },
+        {
+          "word": "cups",
+          "file": "fd-cup.png"
+        }
+      ]
+    },
+    {
+      "concept": "flower",
+      "file": "w-flowers.png",
+      "words": [
+        "flower",
+        "flowers"
+      ],
+      "source": "https://en.wiktionary.org/wiki/flower",
+      "forms": [
+        {
+          "word": "flower",
+          "file": "w-flowers.png"
+        },
+        {
+          "word": "flowers",
+          "file": "w-flowers.png"
+        }
+      ]
+    },
+    {
+      "concept": "car",
+      "file": "pl-car.png",
+      "words": [
+        "car",
+        "cars"
+      ],
+      "source": "https://en.wiktionary.org/wiki/car",
+      "forms": [
+        {
+          "word": "car",
+          "file": "pl-car.png"
+        },
+        {
+          "word": "cars",
+          "file": "pl-car.png"
+        }
+      ]
+    },
+    {
+      "concept": "tree",
+      "file": "w-tree.png",
+      "words": [
+        "tree",
+        "trees"
+      ],
+      "source": "https://en.wiktionary.org/wiki/tree",
+      "forms": [
+        {
+          "word": "tree",
+          "file": "w-tree.png"
+        },
+        {
+          "word": "trees",
+          "file": "w-tree.png"
+        }
+      ]
+    },
+    {
+      "concept": "bottle",
+      "file": "w-bottle.png",
+      "words": [
+        "bottle",
+        "bottles"
+      ],
+      "source": "https://en.wiktionary.org/wiki/bottle",
+      "forms": [
+        {
+          "word": "bottle",
+          "file": "w-bottle.png"
+        },
+        {
+          "word": "bottles",
+          "file": "w-bottle.png"
+        }
+      ]
+    },
+    {
+      "concept": "chair",
+      "file": "sw-chair.png",
+      "words": [
+        "chair",
+        "chairs"
+      ],
+      "source": "https://en.wiktionary.org/wiki/chair",
+      "forms": [
+        {
+          "word": "chair",
+          "file": "sw-chair.png"
+        },
+        {
+          "word": "chairs",
+          "file": "sw-chair.png"
+        }
+      ]
+    },
+    {
+      "concept": "bed",
+      "file": "w-bed.png",
+      "words": [
+        "bed",
+        "beds"
+      ],
+      "source": "https://en.wiktionary.org/wiki/bed",
+      "forms": [
+        {
+          "word": "bed",
+          "file": "w-bed.png"
+        },
+        {
+          "word": "beds",
+          "file": "w-bed.png"
+        }
+      ]
+    },
+    {
+      "concept": "sock",
+      "file": "cl-socks.png",
+      "words": [
+        "sock",
+        "socks"
+      ],
+      "source": "https://en.wiktionary.org/wiki/sock",
+      "forms": [
+        {
+          "word": "sock",
+          "file": "cl-socks.png"
+        },
+        {
+          "word": "socks",
+          "file": "cl-socks.png"
+        }
+      ]
+    },
+    {
+      "concept": "hand",
+      "file": "hb-hand.png",
+      "words": [
+        "hand",
+        "hands"
+      ],
+      "source": "https://en.wiktionary.org/wiki/hand",
+      "forms": [
+        {
+          "word": "hand",
+          "file": "hb-hand.png"
+        },
+        {
+          "word": "hands",
+          "file": "hb-hand.png"
+        }
+      ]
+    },
+    {
+      "concept": "foot",
+      "file": "hb-foot.png",
+      "words": [
+        "foot",
+        "feet"
+      ],
+      "source": "https://en.wiktionary.org/wiki/foot",
+      "forms": [
+        {
+          "word": "foot",
+          "file": "hb-foot.png"
+        },
+        {
+          "word": "feet",
+          "file": "hb-foot.png"
+        }
+      ]
+    },
+    {
+      "concept": "tooth",
+      "file": "w-tooth.png",
+      "words": [
+        "tooth",
+        "teeth"
+      ],
+      "source": "https://en.wiktionary.org/wiki/tooth",
+      "forms": [
+        {
+          "word": "tooth",
+          "file": "w-tooth.png"
+        },
+        {
+          "word": "teeth",
+          "file": "hb-teeth.png"
+        }
+      ]
+    },
+    {
+      "concept": "baby",
+      "file": "pp-baby.png",
+      "words": [
+        "baby",
+        "babies"
+      ],
+      "source": "https://en.wiktionary.org/wiki/baby",
+      "forms": [
+        {
+          "word": "baby",
+          "file": "pp-baby.png"
+        },
+        {
+          "word": "babies",
+          "file": "pp-baby.png"
+        }
+      ]
+    },
+    {
+      "concept": "bus",
+      "file": "tr-bus.png",
+      "words": [
+        "bus",
+        "buses"
+      ],
+      "source": "https://en.wiktionary.org/wiki/bus",
+      "forms": [
+        {
+          "word": "bus",
+          "file": "tr-bus.png"
+        },
+        {
+          "word": "buses",
+          "file": "tr-bus.png"
+        }
+      ]
+    },
+    {
+      "concept": "spoon",
+      "file": "fd-spoon.png",
+      "words": [
+        "spoon",
+        "spoons"
+      ],
+      "source": "https://en.wiktionary.org/wiki/spoon",
+      "forms": [
+        {
+          "word": "spoon",
+          "file": "fd-spoon.png"
+        },
+        {
+          "word": "spoons",
+          "file": "fd-spoon.png"
+        }
+      ]
+    },
+    {
+      "concept": "fork",
+      "file": "fd-fork.png",
+      "words": [
+        "fork",
+        "forks"
+      ],
+      "source": "https://en.wiktionary.org/wiki/fork",
+      "forms": [
+        {
+          "word": "fork",
+          "file": "fd-fork.png"
+        },
+        {
+          "word": "forks",
+          "file": "fd-fork.png"
+        }
+      ]
+    },
+    {
+      "concept": "plate",
+      "file": "fd-plate.png",
+      "words": [
+        "plate",
+        "plates"
+      ],
+      "source": "https://en.wiktionary.org/wiki/plate",
+      "forms": [
+        {
+          "word": "plate",
+          "file": "fd-plate.png"
+        },
+        {
+          "word": "plates",
+          "file": "fd-plate.png"
+        }
+      ]
+    },
+    {
+      "concept": "banana",
+      "file": "fd-banana.png",
+      "words": [
+        "banana",
+        "bananas"
+      ],
+      "source": "https://en.wiktionary.org/wiki/banana",
+      "forms": [
+        {
+          "word": "banana",
+          "file": "fd-banana.png"
+        },
+        {
+          "word": "bananas",
+          "file": "fd-banana.png"
+        }
+      ]
+    },
+    {
+      "concept": "orange",
+      "file": "fd-orange.png",
+      "words": [
+        "orange",
+        "oranges"
+      ],
+      "source": "https://en.wiktionary.org/wiki/orange",
+      "preserveAmbiguous": [
+        "orange"
+      ],
+      "forms": [
+        {
+          "word": "orange",
+          "file": "fd-orange.png"
+        },
+        {
+          "word": "oranges",
+          "file": "fd-orange.png"
+        }
+      ]
+    },
+    {
+      "concept": "potato",
+      "file": "fd-potato.png",
+      "words": [
+        "potato",
+        "potatoes"
+      ],
+      "source": "https://en.wiktionary.org/wiki/potato",
+      "forms": [
+        {
+          "word": "potato",
+          "file": "fd-potato.png"
+        },
+        {
+          "word": "potatoes",
+          "file": "fd-potato.png"
+        }
+      ]
+    },
+    {
+      "concept": "tomato",
+      "file": "fd-tomato.png",
+      "words": [
+        "tomato",
+        "tomatoes"
+      ],
+      "source": "https://en.wiktionary.org/wiki/tomato",
+      "forms": [
+        {
+          "word": "tomato",
+          "file": "fd-tomato.png"
+        },
+        {
+          "word": "tomatoes",
+          "file": "fd-tomato.png"
+        }
+      ]
+    },
+    {
+      "concept": "ball",
+      "file": "tf-ball.png",
+      "words": [
+        "ball",
+        "balls"
+      ],
+      "source": "https://en.wiktionary.org/wiki/ball",
+      "forms": [
+        {
+          "word": "ball",
+          "file": "tf-ball.png"
+        },
+        {
+          "word": "balls",
+          "file": "tf-ball.png"
+        }
+      ]
+    },
+    {
+      "concept": "toy",
+      "file": "w-toy.png",
+      "words": [
+        "toy",
+        "toys"
+      ],
+      "source": "https://en.wiktionary.org/wiki/toy",
+      "forms": [
+        {
+          "word": "toy",
+          "file": "w-toy.png"
+        },
+        {
+          "word": "toys",
+          "file": "w-toy.png"
+        }
+      ]
+    },
+    {
+      "concept": "door",
+      "file": "w-door.png",
+      "words": [
+        "door",
+        "doors"
+      ],
+      "source": "https://en.wiktionary.org/wiki/door",
+      "forms": [
+        {
+          "word": "door",
+          "file": "w-door.png"
+        },
+        {
+          "word": "doors",
+          "file": "w-door.png"
+        }
+      ]
+    },
+    {
+      "concept": "window",
+      "file": "w-window.png",
+      "words": [
+        "window",
+        "windows"
+      ],
+      "source": "https://en.wiktionary.org/wiki/window",
+      "forms": [
+        {
+          "word": "window",
+          "file": "w-window.png"
+        },
+        {
+          "word": "windows",
+          "file": "w-window.png"
+        }
+      ]
+    },
+    {
+      "concept": "shirt",
+      "file": "cl-shirt.png",
+      "words": [
+        "shirt",
+        "shirts"
+      ],
+      "source": "https://en.wiktionary.org/wiki/shirt",
+      "forms": [
+        {
+          "word": "shirt",
+          "file": "cl-shirt.png"
+        },
+        {
+          "word": "shirts",
+          "file": "cl-shirt.png"
+        }
+      ]
+    },
+    {
+      "concept": "coat",
+      "file": "cl-coat.png",
+      "words": [
+        "coat",
+        "coats"
+      ],
+      "source": "https://en.wiktionary.org/wiki/coat",
+      "forms": [
+        {
+          "word": "coat",
+          "file": "cl-coat.png"
+        },
+        {
+          "word": "coats",
+          "file": "cl-coat.png"
+        }
+      ]
+    },
+    {
+      "concept": "hat",
+      "file": "cl-hat.png",
+      "words": [
+        "hat",
+        "hats"
+      ],
+      "source": "https://en.wiktionary.org/wiki/hat",
+      "forms": [
+        {
+          "word": "hat",
+          "file": "cl-hat.png"
+        },
+        {
+          "word": "hats",
+          "file": "cl-hat.png"
+        }
+      ]
+    },
+    {
+      "concept": "finger",
+      "file": "hb-finger.png",
+      "words": [
+        "finger",
+        "fingers"
+      ],
+      "source": "https://en.wiktionary.org/wiki/finger",
+      "forms": [
+        {
+          "word": "finger",
+          "file": "hb-finger.png"
+        },
+        {
+          "word": "fingers",
+          "file": "hb-finger.png"
+        }
+      ]
+    },
+    {
+      "concept": "eye",
+      "file": "hb-eye.png",
+      "words": [
+        "eye",
+        "eyes"
+      ],
+      "source": "https://en.wiktionary.org/wiki/eye",
+      "forms": [
+        {
+          "word": "eye",
+          "file": "hb-eye.png"
+        },
+        {
+          "word": "eyes",
+          "file": "hbp-eyes.png"
+        }
+      ]
+    },
+    {
+      "concept": "ear",
+      "file": "hb-ear.png",
+      "words": [
+        "ear",
+        "ears"
+      ],
+      "source": "https://en.wiktionary.org/wiki/ear",
+      "forms": [
+        {
+          "word": "ear",
+          "file": "hb-ear.png"
+        },
+        {
+          "word": "ears",
+          "file": "hbp-ears.png"
+        }
+      ]
+    },
+    {
+      "concept": "beer",
+      "file": "w-beer.png",
+      "words": [
+        "beer",
+        "beers"
+      ],
+      "source": "https://en.wiktionary.org/wiki/beer",
+      "forms": [
+        {
+          "word": "beer",
+          "file": "w-beer.png"
+        },
+        {
+          "word": "beers",
+          "file": "w-beer.png"
+        }
+      ]
+    },
+    {
+      "concept": "cupcake",
+      "file": "fd-cupcake.png",
+      "words": [
+        "cupcake",
+        "cupcakes"
+      ],
+      "source": "https://en.wiktionary.org/wiki/cupcake",
+      "forms": [
+        {
+          "word": "cupcake",
+          "file": "fd-cupcake.png"
+        },
+        {
+          "word": "cupcakes",
+          "file": "fd-cupcake.png"
+        }
+      ]
+    }
+  ],
+  "pendingArtwork": [],
+  "reviewedArtwork": [
+    {
+      "concept": "beer",
+      "words": [
+        "beer",
+        "beers"
+      ],
+      "status": "reviewed-artwork-linked",
+      "files": [
+        "w-beer.png"
+      ]
+    },
+    {
+      "concept": "mouse",
+      "words": [
+        "mouse",
+        "mice"
+      ],
+      "status": "reviewed-artwork-linked",
+      "files": [
+        "w-mouse-animal.png",
+        "w-mouse-computer.png"
+      ]
+    }
+  ]
+}

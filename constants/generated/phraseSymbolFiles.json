@@ -5425,6 +5425,24 @@
     },
     "w-happen.png": {
       "sha256": "ff1025cebc80b9c3d4e44737e0c8747565218f6e0102058c8f7aaf6ab4649688"
+    },
+    "w-estimate.png": {
+      "sha256": "29548ed50f457ab6b09de29fa6c841ec62c59922228eb6ef167018cf065341d9"
+    },
+    "w-estate.png": {
+      "sha256": "3cd0df96e44df91547ea7c456bf9349d271ab7cec0a3f8121c94b38290dc0679"
+    },
+    "w-establish.png": {
+      "sha256": "ce91841d7dd66fc2678b6f369bc15a5afc78a37c8b2f5916699ecdfe4ede26a8"
+    },
+    "w-beer.png": {
+      "sha256": "4372d7a7404019aa1dc9bd7c587c22f2c62f0cf703973f42109790be92d51eb4"
+    },
+    "w-mouse-animal.png": {
+      "sha256": "435038a5e3d472e2538af0456bbd6ec6f82c016c76d2351feb9627b618a96fd5"
+    },
+    "w-mouse-computer.png": {
+      "sha256": "beff62152fcc0513d1692ce5328da9b46f63cd6d3308fad4e97b2398ae345347"
     }
   },
   "retainedFiles": [

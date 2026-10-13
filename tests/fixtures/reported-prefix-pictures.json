@@ -1,0 +1,76 @@
+{
+  "cases": [
+    {
+      "lang": "en",
+      "text": "es",
+      "word": "escape",
+      "file": "w-exit.png"
+    },
+    {
+      "lang": "en",
+      "text": "es",
+      "word": "estate",
+      "file": "w-estate.png"
+    },
+    {
+      "lang": "en",
+      "text": "es",
+      "word": "essential",
+      "file": "cw-need.png"
+    },
+    {
+      "lang": "en",
+      "text": "es",
+      "word": "established",
+      "file": "w-establish.png"
+    },
+    {
+      "lang": "en",
+      "text": "est",
+      "word": "estimated",
+      "file": "w-estimate.png"
+    },
+    {
+      "lang": "en",
+      "text": "est",
+      "word": "estimate",
+      "file": "w-estimate.png"
+    },
+    {
+      "lang": "ro",
+      "text": "est",
+      "word": "estimat",
+      "file": "w-estimate.png"
+    },
+    {
+      "lang": "ro",
+      "text": "est",
+      "word": "estimată",
+      "file": "w-estimate.png"
+    },
+    {
+      "lang": "ro",
+      "text": "es",
+      "word": "esențiale",
+      "file": "cw-need.png"
+    },
+    {
+      "lang": "tr",
+      "text": "tah",
+      "word": "tahmin",
+      "files": [
+        "w-guess.png",
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "text": "عقا",
+      "word": "عقار",
+      "files": [
+        "w-estate.png",
+        "hb-medicine.png"
+      ]
+    }
+  ]
+}

@@ -160,6 +160,7 @@ export function builtInVocabularySymbol(
   if (!key) return null;
   const spatial = spatialGrammarSymbol(key, lang);
   if (spatial) return { url: spatial };
+  if (reviewedVocabularyPictureChoices(word, lang).length > 1) return { url: null };
   const primary = basicVocabularySymbol(key, lang, word);
   if (primary) return { url: primary };
   // Keep decisions apply even when a corrected label no longer names a phrase.
@@ -231,6 +232,7 @@ export function resolveVocabularyPicture(word: string, lang: SupportedLanguage):
   const key = normalizeWord(word, lang);
   const spatial = spatialGrammarSymbol(key, lang);
   if (spatial) return { kind: 'symbol', url: spatial };
+  if (reviewedVocabularyPictureChoices(word, lang).length > 1) return { kind: 'ambiguous', url: null };
   const primary = basicVocabularySymbol(key, lang, word);
   if (primary) return { kind: 'symbol', url: primary };
   if (pictureKept(key, lang)) return { kind: 'ambiguous', url: null };

@@ -92,6 +92,7 @@ final class AACPictureLibrary {
     }
     func filename(word: String, language: String, allowEnglishWordFallback: Bool = true) -> String? {
         guard let storage else { return nil }
+        guard alternativeFilenames(word: word, language: language).isEmpty else { return nil }
         let exactKey = Self.normalizedWord(word, language: language, stripEdgePunctuation: false)
         guard !exactKey.isEmpty else { return nil }
         if let table = Self.basicVocabularyTable(language, in: storage.symbols.basicVocabulary?.languages) {

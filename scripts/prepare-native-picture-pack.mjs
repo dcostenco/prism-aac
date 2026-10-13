@@ -171,7 +171,8 @@ function validateBasicVocabulary(basicVocabulary, approvedNames) {
     }
     for (const [word, entry] of Object.entries(words)) {
       if (!word.trim() || word.length > 128 || !isRecord(entry)
-        || Object.keys(entry).sort().join(',') !== 'file,means'
+        || !['file,means', 'file,means,predictionSeed'].includes(Object.keys(entry).sort().join(','))
+        || (Object.hasOwn(entry, 'predictionSeed') && typeof entry.predictionSeed !== 'boolean')
         || typeof entry.file !== 'string' || !PNG_NAME_RE.test(entry.file) || !approved.has(entry.file)
         || typeof entry.means !== 'string' || !entry.means.trim() || entry.means.length > 2_048) {
         throw new Error(`Basic vocabulary picture entry is invalid: ${language}:${word}`);

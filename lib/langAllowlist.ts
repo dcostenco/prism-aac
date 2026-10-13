@@ -46,7 +46,7 @@ const authoredCache = new Map<string, Set<string>>();
 function authoredVocabulary(lang: string): Set<string> {
   let words = authoredCache.get(lang);
   if (words) return words;
-  words = new Set(getReviewedBasicWords(lang));
+  words = new Set(getReviewedBasicWords(lang, true));
   for (const phrase of DEFAULT_PHRASES) {
     if (!hasPhraseTranslation(phrase.id, lang as SupportedLanguage)) continue;
     for (const raw of normalizePredictionSpelling(getPhraseText(phrase.id, lang as SupportedLanguage, phrase.text), lang).split(/\s+/u)) {

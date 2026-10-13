@@ -159,6 +159,29 @@ test('rejects corrupt chunks before creating output', async (t) => {
   await assertOutputAbsent(fixture.outputDir);
 });
 
+test('preserves picture-only alias metadata when installing the native library', async (t) => {
+  const root = await temporaryRoot(t);
+  const fixture = await makeFixture(root);
+  const basic = JSON.parse(fixture.basicVocabularyBytes);
+  basic.languages.en.sample.predictionSeed = false;
+  fixture.basicVocabularyBytes = Buffer.from(JSON.stringify(basic));
+  await installNativePicturePack(fixture);
+  const installed = JSON.parse(await readFile(path.join(fixture.outputDir, 'aacPictureSymbols.json'), 'utf8'));
+  assert.deepEqual(installed.basicVocabulary, basic);
+});
+
+test('rejects malformed prediction flags and unrelated fields before native installation', async (t) => {
+  for (const extra of [{ predictionSeed: 'false' }, { predictionSeed: 0 }, { predictionSeed: null }, { unknownField: false }]) {
+    const root = await temporaryRoot(t);
+    const fixture = await makeFixture(root);
+    const basic = JSON.parse(fixture.basicVocabularyBytes);
+    Object.assign(basic.languages.en.sample, extra);
+    fixture.basicVocabularyBytes = Buffer.from(JSON.stringify(basic));
+    await assert.rejects(installNativePicturePack(fixture), /Basic vocabulary picture entry is invalid/);
+    await assertOutputAbsent(fixture.outputDir);
+  }
+});
+
 test('rejects a mismatched reviewed hash for a referenced basic vocabulary image', async (t) => {
   const root = await temporaryRoot(t);
   const fixture = await makeFixture(root);

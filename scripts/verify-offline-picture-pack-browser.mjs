@@ -16,6 +16,13 @@ if (/[\s"'\\]/.test(artifacts)) throw new Error('Use a whitespace-free artifact 
 mkdirSync(artifacts, { recursive: true });
 const pack = JSON.parse(readFileSync(new URL('../constants/generated/picturePack.json', import.meta.url), 'utf8'));
 const moreHash = JSON.parse(readFileSync(new URL('../constants/generated/phraseSymbolFiles.json', import.meta.url), 'utf8')).files['cw-more.png'].sha256;
+const reportedCases = process.env.PICTURE_TEST_SUITE === 'reported'
+  ? JSON.parse(readFileSync(new URL('../tests/fixtures/reported-prefix-pictures.json', import.meta.url), 'utf8')).cases.filter(row => row.lang === 'en')
+  : process.env.PICTURE_TEST_SUITE === 'artwork'
+    ? JSON.parse(readFileSync(new URL('../tests/fixtures/new-basic-picture-browser-cases.json', import.meta.url), 'utf8')).cases.filter(row => row.lang === 'en')
+  : process.env.PICTURE_TEST_SUITE === 'nouns'
+    ? JSON.parse(readFileSync(new URL('../tests/fixtures/basic-noun-browser-cases.json', import.meta.url), 'utf8')).cases.filter(row => row.lang === 'en') : [];
+const reviewedFiles = JSON.parse(readFileSync(new URL('../constants/generated/phraseSymbolFiles.json', import.meta.url), 'utf8')).files;
 const CSP = "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob:; media-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'";
 const settings = { state: { language: 'en', outputLanguage: 'en', theme: 'light', gridSize: 12,
   cloudPredictionEnabled: false, aiAutocorrectEnabled: false }, version: 22 };
@@ -86,6 +93,21 @@ const commands = [
   'click [data-testid="prediction-tile"][title="More"]', 'assert-text [data-testid="message-text"] More',
   `screenshot ${path.join(artifacts, 'offline.png')}`, 'assert-no-page-errors',
 ];
+if (reportedCases.length) {
+  commands.push('click button.aac-delete', 'click [data-testid="kb-cycle-btn"]', 'wait-for [data-key]');
+  for (const fixture of reportedCases) {
+    const selector = `[data-testid="prediction-tile"][title="${fixture.word}"]`;
+    const expectedHashes = (fixture.files ?? [fixture.file]).map(file => reviewedFiles[file].sha256);
+    commands.push(...[...fixture.text].map(letter => letter === ' ' ? 'click [data-action="space"]' : `click [data-key=${JSON.stringify(letter.toUpperCase())}]`),
+      `assert-eval new Promise(resolve=>{const end=Date.now()+15000;const check=async()=>{const node=document.querySelector(${JSON.stringify(selector)});const imgs=[...node?.querySelectorAll('img')??[]];if(imgs.length===${expectedHashes.length}&&imgs.every(img=>img.complete&&img.naturalWidth>0)){const hashes=await Promise.all(imgs.map(async img=>{const bytes=await(await fetch(img.currentSrc)).arrayBuffer();return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');}));if(hashes.join('|')===${JSON.stringify(expectedHashes.join('|'))})return resolve(true);}if(Date.now()>end)resolve(false);else setTimeout(check,100);};check();})`,
+      `assert-eval (()=>{const node=document.querySelector(${JSON.stringify(selector)});const r=node.getBoundingClientRect();return r.width>0&&r.height>0&&r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight&&[[.5,.5],[.25,.25],[.75,.25],[.25,.75],[.75,.75]].every(([x,y])=>node.contains(document.elementFromPoint(r.left+r.width*x,r.top+r.height*y)));})()`,
+      `screenshot ${path.join(artifacts, 'offline-' + fixture.word + '.png')}`, `click ${selector}`,
+      `assert-eval document.querySelector('[data-testid="message-text"]').textContent.trim().toLowerCase()===${JSON.stringify(fixture.expectedText ?? fixture.word)}`,
+      ...Array.from({ length: (fixture.expectedText ?? fixture.word).trim().split(/\s+/).length }, () => 'click button.aac-delete'),
+      'assert-visible [data-testid="message-empty-prompt"]');
+  }
+  commands.push('assert-no-page-errors');
+}
 if (upgrade) {
   const position = commands.findIndex(command => command.includes('/__picture_test_offline'));
   commands.splice(position, 0,

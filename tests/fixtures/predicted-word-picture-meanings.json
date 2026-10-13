@@ -1,0 +1,1696 @@
+{
+  "sources": {
+    "escape": "https://en.wiktionary.org/wiki/escape",
+    "essential": "https://en.wiktionary.org/wiki/essential",
+    "estimate": "https://en.wiktionary.org/wiki/estimate",
+    "estate": "https://en.wiktionary.org/wiki/estate",
+    "establish": "https://en.wiktionary.org/wiki/establish",
+    "ar": "https://en.wiktionary.org/wiki/عقار",
+    "tr": "https://en.wiktionary.org/wiki/tahmin",
+    "am": "https://dictionary.abyssinica.com/establish"
+  },
+  "cases": [
+    {
+      "lang": "es",
+      "word": "escapar",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "escapa",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "escapó",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "esencial",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "esenciales",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "necesario",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "necesaria",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "estimar",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "estimado",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "estimada",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "estimación",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "finca",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "fincas",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "establecer",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "establecido",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "es",
+      "word": "establecida",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "s'échapper",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "échapper",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "nécessaire",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "nécessaires",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "indispensable",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "estimer",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "estimé",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "estimée",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "estimation",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "propriété",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "établir",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "établi",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "fr",
+      "word": "établie",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "entkommen",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "entgehen",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "notwendig",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "notwendige",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "essenziell",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "abschätzen",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "abschätzung",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "landgut",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "gründen",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "de",
+      "word": "gegründet",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "scappare",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "fuggire",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "necessario",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "necessaria",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "indispensabile",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "stimare",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "stimato",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "stimata",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "stima",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "tenuta",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "it",
+      "word": "instaurare",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "escapar",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "fugir",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "essencial",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "essenciais",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "necessário",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "necessária",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "estimar",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "estimado",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "estimada",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "estimativa",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "propriedade",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "estabelecer",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "estabelecido",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "pt",
+      "word": "estabelecida",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "ontsnappen",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "ontsnapt",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "noodzakelijk",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "essentieel",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "schatten",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "schatting",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "landgoed",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "oprichten",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "nl",
+      "word": "opgericht",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "pl",
+      "word": "wydostać się",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "pl",
+      "word": "wydostawać się",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "pl",
+      "word": "niezbędny",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "pl",
+      "word": "niezbędna",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "pl",
+      "word": "szacować",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "pl",
+      "word": "oszacować",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "pl",
+      "word": "posiadłość",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "pl",
+      "word": "założyć",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "спастись",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "спасаться",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "побег",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "необходимый",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "необходимая",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "необходимые",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "оценивать",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "оценить",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "усадьба",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "учредить",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "ru",
+      "word": "учреждать",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "втекти",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "втеча",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "необхідний",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "необхідна",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "необхідні",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "оцінювати",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "маєток",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "заснувати",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "uk",
+      "word": "засновувати",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "bg",
+      "word": "отървавам се",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "bg",
+      "word": "необходим",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "bg",
+      "word": "необходима",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "bg",
+      "word": "необходимо",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "bg",
+      "word": "оценявам",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "bg",
+      "word": "пресмятам",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "bg",
+      "word": "имение",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "bg",
+      "word": "основавам",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "word": "भागना",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "word": "आवश्यक",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "word": "अनिवार्य",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "word": "अनुमान",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "word": "आकलन",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "word": "संपत्ति",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "word": "सम्पत्ति",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "hi",
+      "word": "स्थापना",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "id",
+      "word": "kabur",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "id",
+      "word": "esensial",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "id",
+      "word": "perkiraan",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "id",
+      "word": "estate",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "id",
+      "word": "mendirikan",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "ja",
+      "word": "逃げる",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "ja",
+      "word": "不可欠な",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ja",
+      "word": "必要",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ja",
+      "word": "見積もり",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "ja",
+      "word": "不動産",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "ja",
+      "word": "設立",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "ko",
+      "word": "탈출",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "ko",
+      "word": "필수적인",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ko",
+      "word": "필수",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ko",
+      "word": "추정",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "ko",
+      "word": "부동산",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "ko",
+      "word": "설립",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "he",
+      "word": "נמלט",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "he",
+      "word": "חיוני",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "he",
+      "word": "אומדן",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "he",
+      "word": "אחוזה",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "he",
+      "word": "ייסד",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "vi",
+      "word": "thoát",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "vi",
+      "word": "trốn thoát",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "vi",
+      "word": "thiết yếu",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "vi",
+      "word": "ước lượng",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "vi",
+      "word": "bất động sản",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "vi",
+      "word": "thành lập",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "tl",
+      "word": "takas",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "tl",
+      "word": "pagtakas",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "tl",
+      "word": "kailangan",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "tl",
+      "word": "tantiyahin",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "tl",
+      "word": "ari-arian",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "tl",
+      "word": "itatag",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "tr",
+      "word": "kaçmak",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "tr",
+      "word": "kaçış",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "tr",
+      "word": "gerekli",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "tr",
+      "word": "tahmin",
+      "meaning": "estimate",
+      "files": [
+        "w-guess.png",
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "tr",
+      "word": "emlak",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "tr",
+      "word": "emlâk",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "tr",
+      "word": "kurmak",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "am",
+      "word": "ማምለጥ",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "am",
+      "word": "አስፈላጊ",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "am",
+      "word": "ግምት",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "am",
+      "word": "ንብረት",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "am",
+      "word": "አቆመ",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "bn",
+      "word": "পালানো",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "bn",
+      "word": "প্রয়োজন",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "bn",
+      "word": "প্রয়োজনীয়",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "bn",
+      "word": "অনুমান",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "bn",
+      "word": "সম্পত্তি",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "bn",
+      "word": "প্রতিষ্ঠা",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "sw",
+      "word": "kuponyoka",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "sw",
+      "word": "lazima",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "sw",
+      "word": "kukadiria",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "sw",
+      "word": "mali isiyohamishika",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "sw",
+      "word": "kuanzisha",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "逃跑",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "逃生",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "必要",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "必备",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "估计",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "估算",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "地产",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "建立",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "创办",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "逃跑",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "逃生",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "必要",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "必備",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "估計",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "估算",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "地產",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "建立",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "創辦",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "逃跑",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "逃生",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "必要",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "必備",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "估計",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "估算",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "地產",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "建立",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "zh-HK",
+      "word": "創辦",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "هرب",
+      "meaning": "escape",
+      "files": [
+        "w-exit.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "ضروري",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "ضرورية",
+      "meaning": "essential",
+      "files": [
+        "cw-need.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "تقدير",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "تقدير تقريبي",
+      "meaning": "estimate",
+      "files": [
+        "w-estimate.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "عقار",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png",
+        "hb-medicine.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "عَقَار",
+      "meaning": "estate",
+      "files": [
+        "w-estate.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "عَقَّار",
+      "meaning": "medicine",
+      "files": [
+        "hb-medicine.png"
+      ]
+    },
+    {
+      "lang": "ar",
+      "word": "تأسيس",
+      "meaning": "establish",
+      "files": [
+        "w-establish.png"
+      ]
+    }
+  ]
+}

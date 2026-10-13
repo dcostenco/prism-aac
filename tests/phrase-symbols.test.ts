@@ -12,6 +12,7 @@ import phraseSymbols from '@/constants/generated/phraseSymbols.json';
 import symbolFiles from '@/constants/generated/phraseSymbolFiles.json';
 import picturePack from '@/constants/generated/picturePack.json';
 import grammarConcepts from '@/constants/generated/grammarConcepts.json';
+import basicNounMeanings from './fixtures/new-basic-picture-meanings.json';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { PROFANITY, SENSITIVE } from '@/engine/ageBlocklist';
@@ -140,9 +141,12 @@ describe('frequent prediction words', () => {
   const norm = (t: string) => t.trim().toLowerCase().replace(/^[\p{P}\s]+|[\p{P}\s]+$/gu, '').replace(/\s+/g, ' ');
   const builtInWords = new Set(DEFAULT_PHRASES.map((p) => norm(p.text)));
 
-  it('lists lowercase English words only, contractions with a straight apostrophe', () => {
-    // The only other keys are the hidden ids of the grammar symbols (tests/grammar-concepts.test.ts).
-    expect(Object.keys(words).filter((w) => !/^[a-z]+(?:'[a-z]+)?$/.test(w)).sort()).toEqual(Object.keys(grammarConcepts).sort());
+  it('keeps single-word aliases separate from explicitly qualified English sense keys', () => {
+    // Qualified sense keys let ambiguous mouse labels reuse two distinct
+    // pictures without choosing one meaning for the bare word.
+    expect(Object.keys(words).filter((w) => !/^[a-z]+(?:'[a-z]+)?$/.test(w)).sort())
+      .toEqual([...Object.keys(grammarConcepts), ...Object.keys(basicNounMeanings.qualifiedEnglishKeys)].sort());
+    for (const [key, file] of Object.entries(basicNounMeanings.qualifiedEnglishKeys)) expect(words[key]).toBe(file);
     expect(Object.keys(words).length).toBeGreaterThan(500);
   });
 

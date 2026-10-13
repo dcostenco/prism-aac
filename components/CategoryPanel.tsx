@@ -188,10 +188,11 @@ function SearchResultIcon({ phrase, builtInPhraseId, language }: { phrase: strin
   useEffect(() => {
     if (!wantsGenerated || !isNearViewport) return;
     let cancelled = false;
-    getPictogramUrl(phrase, 'en', pictureMode, { text: phrase, lang: language })
+    const controller = new AbortController();
+    getPictogramUrl(phrase, 'en', pictureMode, { text: phrase, lang: language }, { signal: controller.signal })
       .then(url => { if (!cancelled) setGenerated({ key: requestKey, url }); })
       .catch(() => { if (!cancelled) setGenerated({ key: requestKey, url: null }); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [phrase, wantsGenerated, pictureMode, language, isNearViewport, requestKey]);
   const requestedUrl = builtIn ? builtInPhraseSymbolUrl(builtInPhraseId)
     : wantsGenerated && generated?.key === requestKey ? generated.url : null;

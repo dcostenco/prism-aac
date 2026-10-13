@@ -113,4 +113,12 @@ describe('CSP — picture symbols', () => {
     expect(directive('connect-src')).not.toMatch(/arasaac/i);
     expect(directive('img-src')).not.toMatch(/arasaac/i);
   });
+
+  it('lets cached cloud PNG redirects load and their local blob bytes be reused', () => {
+    expect(directive('connect-src')).toContain('https://*.supabase.co');
+    expect(directive('connect-src').split(/\s+/)).toContain('blob:');
+    expect(directive('img-src')).toContain('https://*.supabase.co');
+    expect(directive('connect-src').split(/\s+/)).not.toContain('https:');
+    expect(directive('img-src').split(/\s+/)).not.toContain('https:');
+  });
 });

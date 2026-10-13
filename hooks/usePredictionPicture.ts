@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { getPictogramUrl, typedWordPicturesEnabled } from '@/services/pictogramService';
+import { PicturePendingError } from '@/services/pictogramQueue';
 import { resolveVocabularyPicture, reviewedVocabularyPictureChoices } from '@/lib/builtInSymbols';
 import { englishSourceFor } from '@/constants/reverseTranslation';
 import { watchPictureWords, pictureWordsVersion, subscribePictureWords } from '@/constants/pictureWords';
@@ -26,6 +27,7 @@ export function usePredictionPicture(
   context?: string,
 ) {
   const [generatedIcon, setGeneratedIcon] = useState<{ key: string; url: string | null } | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   // A predicted word that is built-in vocabulary follows its board tile: the
   // bundled symbol when its meaning has one, otherwise just the word — never a
@@ -51,12 +53,18 @@ export function usePredictionPicture(
     // on English, so recover the English source when the word is vocabulary we
     // can map, and fall back to the localized word when it is not.
     let cancelled = false;
+    const controller = new AbortController();
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const english = englishSourceFor(word, language);
-    getPictogramUrl(english ?? word, english ? 'en' : language, pictureMode, { text: word, lang: language })
+    getPictogramUrl(english ?? word, english ? 'en' : language, pictureMode, { text: word, lang: language }, { signal: controller.signal })
       .then((url) => { if (!cancelled) setGeneratedIcon({ key, url }); })
-      .catch(() => { if (!cancelled) setGeneratedIcon({ key, url: null }); });
-    return () => { cancelled = true; };
-  }, [mayGenerate, key, word, language, pictureMode]);
+      .catch(error => {
+        if (cancelled) return;
+        if (error instanceof PicturePendingError) retryTimer = setTimeout(() => setRetryAttempt(value => value + 1), error.retryAfterMs);
+        else setGeneratedIcon({ key, url: null });
+      });
+    return () => { cancelled = true; clearTimeout(retryTimer); controller.abort(); };
+  }, [mayGenerate, key, word, language, pictureMode, retryAttempt]);
 
   // Keyed on the word (and language and plan) so the picture answered for the
   // previous prediction can never sit above the next one while it loads.

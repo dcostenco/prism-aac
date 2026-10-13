@@ -105,12 +105,21 @@ describe.each(LANGS)('%s picture word table', (lang) => {
   });
 
   it('shows each chosen picture once the table is loaded', async () => {
-    const { builtInVocabularySymbol, loadPictureWords } = await fresh();
+    const { builtInVocabularySymbol, loadPictureWords, reviewedVocabularyPictureChoices } = await fresh();
     await loadPictureWords(lang);
     const files = (await import('@/constants/generated/phraseSymbols.json')).default.phrases as Record<string, string>;
     expect(Object.keys(choose).length).toBeGreaterThan(10);
     for (const [word, id] of Object.entries(choose)) {
-      expect(builtInVocabularySymbol(word, lang)?.url, word).toBe(`/prism-aac/symbols/${files[id]}`);
+      const alternatives = (basicVocabularyPictures.alternatives as Record<string, Record<string, { files: string[] }>>)[lang]?.[word];
+      if (alternatives) {
+        // An explicitly reviewed homograph retains the older choice as one
+        // candidate, rather than forcing it over the newly reviewed senses.
+        expect(alternatives.files, word).toContain(files[id]);
+        expect(builtInVocabularySymbol(word, lang)?.url, word).toBeNull();
+        expect(reviewedVocabularyPictureChoices(word, lang), word).toEqual(alternatives.files);
+      } else {
+        expect(builtInVocabularySymbol(word, lang)?.url, word).toBe(`/prism-aac/symbols/${files[id]}`);
+      }
     }
   });
 });

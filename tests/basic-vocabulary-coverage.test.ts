@@ -3,7 +3,7 @@ import { AAC_CORE_CONCEPTS } from '@/constants/aacCore';
 import { SUPPORTED_SEED_LANGS } from '@/constants/predictionSeeds';
 import { getPhraseText, hasPhraseTranslation } from '@/constants/phraseTranslations';
 import { loadPictureWords } from '@/constants/pictureWords';
-import { resolveVocabularyPicture } from '@/lib/builtInSymbols';
+import { resolveVocabularyPicture, reviewedVocabularyPictureChoices } from '@/lib/builtInSymbols';
 import reviewed from '@/constants/generated/phraseSymbolFiles.json';
 import basicWords from './fixtures/basic-vocabulary-words.json';
 import additionalBasicConcepts from './fixtures/basic-vocabulary-concepts.json';
@@ -14,14 +14,14 @@ function gaps(lang: typeof SUPPORTED_SEED_LANGS[number]) {
   return BASIC_CONCEPTS.flatMap(({ phraseId, english }) => {
     const label = getPhraseText(phraseId, lang, english);
     const result = resolveVocabularyPicture(label, lang);
-    const filename = result.url?.split('/').pop();
-    return hasPhraseTranslation(phraseId, lang) && filename &&
-      Object.prototype.hasOwnProperty.call(reviewed.files, filename)
+    const choices = result.url ? [result.url.split('/').pop()] : reviewedVocabularyPictureChoices(label, lang);
+    return hasPhraseTranslation(phraseId, lang) && choices.length > 0 &&
+      choices.every(filename => filename && Object.prototype.hasOwnProperty.call(reviewed.files, filename))
       ? [] : [{ concept: english, label, resolution: result.kind }];
   });
 }
 
-describe('basic vocabulary is a release gate independent of weighted coverage', () => {
+describe('basic vocabulary picture availability is independent of weighted coverage', () => {
   it('covers fifty distinct basic concepts across all twenty-seven supported locales', () => {
     expect(new Set(BASIC_CONCEPTS.map(concept => concept.phraseId)).size).toBe(50);
     expect(SUPPORTED_SEED_LANGS).toHaveLength(27);
