@@ -5,7 +5,7 @@
   "camera_loss_motion": "Polsbeweging te plotseling. Cursor en selecteren gepauzeerd tot de metingen stabiel zijn.",
   "camera_loss_models": "Cameratracking mislukt. Probeer opnieuw of gebruik touch, toetsenbord of knop.",
   "camera_loss_unavailable": "Geen cameratoegang. Controleer rechten of gebruik touch, toetsenbord of knop.",
-  "camera_loss_orientation": "Schermstand gewijzigd. Stel de pols opnieuw in voor deze stand.",
+  "camera_loss_orientation": "Schermstand gewijzigd. Stel de gekozen pols opnieuw in voor deze stand voordat u selecteert.",
   "camera_motion_paused": "Pauze herkend — houd {seconds} seconden stil om te selecteren.",
   "camera_selection_uncertain": "Camerabeeld onduidelijk — automatisch selecteren gepauzeerd. Touch, toetsenbord en knop werken nog.",
   "camera_selection_locked": "Geselecteerd. Beweeg weg van dit doel om opnieuw te kiezen.",

@@ -2,7 +2,7 @@
   "camera_loss_head": "Rostro no verificado. Mantén toda la cara a la vista y mejora la luz. Selección pausada.",
   "camera_loss_wrist": "La muñeca elegida no se ve. Mantenla a la vista; otra parte del cuerpo no la sustituirá.",
   "camera_loss_frame": "Cámara detenida. Reintenta el acceso; selección pausada.",
-  "camera_loss_motion": "Lecturas de muñeca inestables. Cursor y selección pausados.",
+  "camera_loss_motion": "Lecturas de muñeca inestables. Cursor y selección pausados hasta que las lecturas se estabilicen.",
   "camera_loss_models": "Error al procesar la cámara. Reintenta o usa toque, teclado o conmutador.",
   "camera_loss_unavailable": "Cámara no disponible. Revisa los permisos o usa toque, teclado o conmutador.",
   "camera_loss_orientation": "Orientación cambiada. Configura la muñeca en esta posición antes de seleccionar.",

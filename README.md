@@ -1042,7 +1042,7 @@ Optional camera input for users who can't reliably tap. Choose your left or righ
 - **Face in view**: your whole face must stay visible. When it cannot be verified, movement and selection pause.
 - **Fresh, steady readings only**: selection needs a held, low-noise wrist reading from current camera frames. Stopped frames, abrupt jumps or noisy readings pause selection instead of guessing.
 - **One selection per visit**: after a key is selected, move off it before it can be selected again. The camera hold is never shorter than 1.2 s.
-- **Setup per wrist and orientation**: calibration is saved for the chosen wrist and the current screen orientation. Turning the screen during setup asks for a fresh center capture.
+- **Setup per wrist and orientation**: calibration is saved for the chosen wrist and the current screen orientation. If the screen turns after the center capture, setup asks for a fresh center before saving.
 - **Not in this release**: head cursor, eye-gaze weighting, finger tracking and face or hand gestures. Settings lists them as disabled.
 - Camera-stream singleton (`services/cameraStream.ts`) so camera features share one stream.
 

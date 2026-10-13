@@ -1,11 +1,11 @@
 {
-  "camera_loss_head": "Gesicht nicht erkannt. Ganz im Bild bleiben und Licht verbessern. Auswahl pausiert.",
+  "camera_loss_head": "Gesicht nicht erkannt. Ganzes Gesicht im Bild halten und Licht verbessern. Auswahl pausiert.",
   "camera_loss_wrist": "Gewähltes Handgelenk nicht sichtbar. Im Bild halten; andere Körperteile übernehmen nicht.",
   "camera_loss_frame": "Kamerabild gestoppt. Zugriff erneut versuchen; Auswahl pausiert.",
   "camera_loss_motion": "Plötzliche Abweichung. Zeiger und Auswahl pausiert, bis Werte stabil sind.",
   "camera_loss_models": "Bildverarbeitung fehlgeschlagen. Erneut versuchen oder Touch, Tastatur oder Schalter nutzen.",
   "camera_loss_unavailable": "Kamera nicht verfügbar. Berechtigung prüfen oder Touch, Tastatur oder Schalter nutzen.",
-  "camera_loss_orientation": "Ausrichtung geändert. Das Handgelenk vor der Auswahl in dieser Ausrichtung einrichten.",
+  "camera_loss_orientation": "Ausrichtung geändert. Das gewählte Handgelenk vor der Auswahl in dieser Ausrichtung einrichten.",
   "camera_motion_paused": "Pause erkannt — {seconds} Sekunden halten zum Auswählen.",
   "camera_selection_uncertain": "Kamerawerte unsicher — automatische Auswahl pausiert. Touch, Tastatur und Schalter funktionieren weiterhin.",
   "camera_selection_locked": "Ausgewählt. Erst wegsteuern, um erneut auszuwählen.",
