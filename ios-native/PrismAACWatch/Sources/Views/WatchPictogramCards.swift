@@ -209,8 +209,6 @@ struct WatchPictogramCards: View {
         }
     }
 
-    private let columns = [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)]
-
     // Supported languages — BCP-47 code + display flag + 2-letter code
     private let supportedLanguages: [(code: String, flag: String, name: String)] = [
         ("en-US", "🇺🇸", "EN"), ("es-ES", "🇪🇸", "ES"), ("fr-FR", "🇫🇷", "FR"),
@@ -347,45 +345,39 @@ struct WatchPictogramCards: View {
                     // Scroll order: Yes/No → Predictions → Categories.
 
                     // ── Yes/No row ──
-                    LazyVGrid(columns: columns, spacing: 6) {
-                        ForEach(yesNoPhrases) { phrase in
-                            PairCard(
-                                phrase: localized(phrase),
-                                onTap: { tapPhrase(phrase, recordRecent: false) },
-                                emergencyIsActive: emergency.isActive
-                            )
-                        }
+                    TwoColumnRows(items: yesNoPhrases) { phrase in
+                        PairCard(
+                            phrase: localized(phrase),
+                            onTap: { tapPhrase(phrase, recordRecent: false) },
+                            emergencyIsActive: emergency.isActive
+                        )
                     }
 
                     // ── Predictions (recents) ──
                     if !recentPhraseCards.isEmpty {
-                        LazyVGrid(columns: columns, spacing: 6) {
-                            ForEach(recentPhraseCards) { phrase in
-                                PairCard(
-                                    phrase: localized(phrase),
-                                    onTap: { tapPhrase(phrase, recordRecent: true) },
-                                    emergencyIsActive: emergency.isActive
-                                )
-                                .overlay(alignment: .topTrailing) {
-                                    Image(systemName: "star.fill")
-                                        .font(.system(size: 8))
-                                        .foregroundColor(.yellow)
-                                        .padding(4)
-                                }
+                        TwoColumnRows(items: recentPhraseCards) { phrase in
+                            PairCard(
+                                phrase: localized(phrase),
+                                onTap: { tapPhrase(phrase, recordRecent: true) },
+                                emergencyIsActive: emergency.isActive
+                            )
+                            .overlay(alignment: .topTrailing) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 8))
+                                    .foregroundColor(.yellow)
+                                    .padding(4)
                             }
                         }
                     }
 
                     // ── Categories ──
-                    LazyVGrid(columns: columns, spacing: 6) {
-                        ForEach(displayCategories) { cat in
-                            CategoryCardView(
-                                category: localized(category: cat),
-                                color: phraseColor(cat.id)
-                            ) {
-                                WKInterfaceDevice.current().play(.click)
-                                presentedCategory = cat
-                            }
+                    TwoColumnRows(items: displayCategories) { cat in
+                        CategoryCardView(
+                            category: localized(category: cat),
+                            color: phraseColor(cat.id)
+                        ) {
+                            WKInterfaceDevice.current().play(.click)
+                            presentedCategory = cat
                         }
                     }
                 }
@@ -759,6 +751,30 @@ struct CategoryCardView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(category.name) category")
+    }
+}
+
+/// Two equal columns, built eagerly. The home screen stacks three grids in one
+/// scroll view. As lazy grids they re-estimated row heights near the end of the
+/// category list and never settled: the Watch froze after a phrase was picked
+/// from a late category while three or more recents were showing.
+private struct TwoColumnRows<Item: Identifiable, Cell: View>: View {
+    let items: [Item]
+    @ViewBuilder let cell: (Item) -> Cell
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ForEach(Array(stride(from: 0, to: items.count, by: 2)), id: \.self) { start in
+                HStack(spacing: 6) {
+                    cell(items[start])
+                    if start + 1 < items.count {
+                        cell(items[start + 1])
+                    } else {
+                        Color.clear.frame(maxWidth: .infinity, maxHeight: 0)
+                    }
+                }
+            }
+        }
     }
 }
 

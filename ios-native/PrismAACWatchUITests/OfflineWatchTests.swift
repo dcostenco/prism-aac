@@ -126,6 +126,12 @@ final class OfflineWatchTests: XCTestCase {
         return matches.element(boundBy: max(0, matches.count - 1))
     }
 
+    /// A phrase card in the open category sheet. It follows any home recent with the same label.
+    private func sheetPhrase(_ label: String) -> XCUIElement {
+        let matches = app.buttons.matching(NSPredicate(format: "label == %@", "Say: \(label)"))
+        return matches.element(boundBy: max(0, matches.count - 1))
+    }
+
     func testZLegacyLabelsDoNotGuessOrangeMeaning() {
         // This scenario asserts English legacy labels even after a preceding
         // language-switch workflow has persisted another display language.
@@ -275,6 +281,29 @@ final class OfflineWatchTests: XCTestCase {
         revealFully(german)
         XCTAssertEqual(german.identifier, "aac-picture-fd-bread.png")
         capture("french-bread-german-display")
+    }
+
+    func testPickingFromALateCategoryWithSeveralRecentsKeepsTheWatchResponsive() {
+        openLanguagePicker()
+        selectLanguage("🇺🇸 EN")
+        app.buttons["Done"].tap()
+        // Three recents take a second row and push the late categories toward the
+        // end of the scroll view, where lazy home grids never settled after a pick.
+        for word in ["He", "She", "It"] {
+            openCategory("I / You / We category")
+            let phrase = sheetPhrase(word)
+            for _ in 0..<16 where !phrase.isHittable { scrollUpSlightly() }
+            phrase.tap()
+            returnToTop()
+        }
+        openCategory("Colors category")
+        let purple = sheetPhrase("Purple")
+        for _ in 0..<24 where !purple.isHittable { scrollUpSlightly() }
+        XCTAssertTrue(purple.isHittable)
+        purple.tap()
+        returnToTop()
+        XCTAssertTrue(app.buttons["Say: Purple"].isHittable, "The Watch must stay responsive and show the pick in recents")
+        capture("late-category-pick-responsive")
     }
 
     private func launchRecentWords(_ words: [String], sourceLanguage: String, pictureID: String? = nil) throws {
