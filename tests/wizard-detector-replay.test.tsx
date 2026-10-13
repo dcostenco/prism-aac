@@ -195,6 +195,10 @@ function rotateTo(orientation: 'portrait' | 'landscape') {
 }
 
 const heading = () => screen.getByRole('heading', { level: 1 });
+/** Every stored Settings value. The real tracker reports only the wrist the
+ *  wizard requested, so its draft target always equals the saved one; check
+ *  that nothing else in Settings moved either. */
+const settingsValues = () => Object.fromEntries(Object.entries(useSettingsStore.getState()).filter(([, value]) => typeof value !== 'function'));
 const wizardPhase = () => screen.getByTestId('tracking-setup-wizard').getAttribute('data-phase');
 
 describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s frame units', level => {
@@ -202,6 +206,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
   it('Cancel restores both orientation profiles and the original target after a manual wrist choice', async () => {
     seedPreviousProfiles();
     useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist' });
+    const before = settingsValues();
     const cancel = vi.fn();
     render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={cancel} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
@@ -220,7 +225,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
     expect(cancel).toHaveBeenCalledOnce();
     for (const [key, raw] of Object.entries(ORIGINAL_PROFILE_VALUES)) expect(localStorage.getItem(key)).toBe(raw);
-    expect(useSettingsStore.getState()).toMatchObject({ cameraInputEnabled: false, cameraTrackingTarget: 'right_wrist' });
+    expect(settingsValues()).toEqual({ ...before, cameraInputEnabled: false }); // Cancel turns the camera off and changes nothing else.
   });
 
   it('unmount rolls back an unfinished calibration and its legacy completion flag', async () => {
@@ -318,6 +323,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
   });
   it('retains wizard tracker ownership when a manual mode change rerenders the live overlay', async () => {
     useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist' });
+    const before = settingsValues();
     const view = render(<><CameraInputOverlay /><TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} /></>);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
     await act(async () => { await Promise.resolve(); });
@@ -331,7 +337,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     await step(20);
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-tracker-status', 'tracking');
     expect(screen.getByTestId('tracking-capture-center')).toBeEnabled();
-    expect(useSettingsStore.getState().cameraTrackingTarget).toBe('right_wrist');
+    expect(settingsValues()).toEqual({ ...before, headTrackingSensitivity: 6 }); // Target and the rest stay drafts until confirmation.
     expect(readCameraSelectionState().blocked).toBe(true);
     view.unmount();
     expect(readCameraSelectionState().blocked).toBe(false);
