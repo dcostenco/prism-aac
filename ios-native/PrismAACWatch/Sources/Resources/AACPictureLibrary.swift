@@ -74,7 +74,14 @@ final class AACPictureLibrary {
         approved(storage?.symbols.categories[categoryID])
     }
     func filename(legacyWord: String) -> String? {
-        guard let languages = storage?.symbols.basicVocabulary?.languages else { return nil }
+        guard let basicVocabulary = storage?.symbols.basicVocabulary else { return nil }
+        let languages = basicVocabulary.languages
+        // A legacy label has no language. If any language reads it two ways
+        // ("Orange": fruit or color), no single picture is its meaning.
+        if let alternatives = basicVocabulary.alternatives,
+           alternatives.keys.contains(where: { !alternativeFilenames(word: legacyWord, language: $0).isEmpty }) {
+            return nil
+        }
         let candidates = Set(languages.keys.compactMap {
             filename(word: legacyWord, language: $0, allowEnglishWordFallback: false)
         })
