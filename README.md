@@ -61,7 +61,7 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 | **Schedule** | Visual daily routines — morning, school, lunch, bedtime | <img src="docs/screenshots/appstore/ipad_schedule.png" width="200"> |
 | **Games** | Bubble Pop, Color Hunt, Match It, Yes/No, Finish It | <img src="docs/screenshots/appstore/ipad_games.png" width="200"> |
 | **Math & School** | Adaptive math with Hint, Check, Solve + number pad | <img src="docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **Head & Eye Tracking** | Camera-based dwell cursor, gaze control, calibration | <img src="docs/screenshots/appstore/video/frame_07.png" width="200"> |
+| **Camera Wrist Cursor** | Experimental: your chosen wrist moves a dwell cursor, with guided calibration | <img src="docs/screenshots/panel-settings-input-modes.png" width="200"> |
 | **12 Languages** | English, Spanish, French, Russian, Japanese, Korean, Chinese, Arabic & more | <img src="docs/screenshots/appstore/video/frame_08.png" width="200"> |
 
 ---
@@ -81,7 +81,7 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 | 🎧 **Comfort Player** | Bedside media player for hospital patients | <img src="docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Bedside Mode** | Full-screen AI chat for phone-in-stand / lying-down use | <img src="e2e/_screenshots/bedside-overlay-open.png" width="120"> |
 | 👁 **Vision Context** | Camera detects objects → suggests relevant phrases | <img src="docs/screenshots/vision-mealtime.png" width="120"> |
-| 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
+| 👋 **Hands-free** | Experimental camera wrist cursor + switch scanning | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
 | ⚙️ **Settings** | 25 languages, motor accommodations, voice picker + speech cache | <img src="docs/screenshots/panel-settings.png" width="120"> |
 | ☁️ **Cloud speech and AI** | Optional US$4.99/month allowance for natural voices + cloud AI | <img src="docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
@@ -96,10 +96,8 @@ Prism AAC underwent a [70-item adversarial accessibility audit](ACCESSIBILITY.md
 | Method | How it works | Setup |
 |--------|-------------|-------|
 | **Touch** | Standard tap + pictogram tiles | Works out of the box |
-| **Head tracking** | Camera follows head movement → dwell click | Settings → Input Modes |
-| **Eye gaze** | Eye position weighting on head tracker | Settings → Input Modes |
+| **Camera wrist cursor** (experimental) | Camera follows your chosen left or right wrist → hold still to select; your face must stay in view | Settings → Input Modes → Set Up Tracking |
 | **Switch scanning** | Auto/manual scan with Bluetooth switch, keyboard, or gamepad | Settings → Input Modes → Switch Scanning |
-| **Gesture recognition** | Blink, nod, smile, mouth open → mapped actions | Settings → Input Modes → Gestures |
 | **Voice input** | Dictation with AI autocorrect, hands-free, wake word | Mic button on toolbar |
 | **Simplified keyboard** | 15 most-frequent letters in 3×5 grid (auto for gridSize 4) | Settings → Grid Size → 4 |
 
@@ -199,7 +197,7 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 | **AI tutor** (math + 10 other subjects) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | **Cell-grid math canvas** | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | **Region-aware history** (280+ regions) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
-| **Hands-free** head + hand + gesture + switch scanning | 🟢 | 🟡 | 🟡 | 🔴 | 🟢 | 🟡 | 🟡 | 🟢 | 🟢 |
+| **Hands-free** camera wrist cursor + switch scanning | 🟢 | 🟡 | 🟡 | 🔴 | 🟢 | 🟡 | 🟡 | 🟢 | 🟢 |
 | **Hands-free AI chat** (voice loop + wake word + bedside) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | Therapeutic **AAC games** (12 built-in) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟡 | 🟡 | 🔴 | 🔴 |
 | **Open source** (AGPL-3.0) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 | 🔴 | 🔴 | 🔴 |
@@ -1034,20 +1032,21 @@ Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, 
 
 ---
 
-### 👋 Hands-free gestures
-Optional camera-based input for users who can't reliably tap. Head-pose dwell-click + hand-pose gesture profiles. Runs locally — no video leaves the device.
+### 👋 Hands-free camera cursor (experimental)
+Optional camera input for users who can't reliably tap. Choose your left or right wrist in Settings → Input Modes, run the guided setup, and a cursor follows that wrist; holding still on a key selects it. Runs locally — no video leaves the device. Accuracy with physical cameras is not yet verified.
 
 <details>
 <summary><strong>Features + technical details</strong></summary>
 
-- **Basic mode**: head-pose tracking (FaceLandmarker, Mediapipe). User looks at a key, holds gaze for `headTrackingDwellMs` (default 1200 ms) → click. Visual progress ring fills during the dwell.
-- **Advanced mode**: hand-pose tracking. Custom per-user gesture profiles (open palm = enter, fist = backspace, pinch = space, etc.) configured via `components/HandCalibration.tsx`.
-- Drift safety stack: if the user's head drifts more than `headTrackingDriftThresholdPx` over `headTrackingDriftWindowMs` consecutive frames, tracking auto-disables and shows a recalibration prompt (user-reported May 2026: tracking would silently follow drift over an hour and miss the actual key targets).
-- **Esc escape hatch** — pressing Esc on any keyboard immediately disables tracking and re-shows the qwerty without losing the message bar.
-- Camera-stream singleton (`services/cameraStream.ts`) so head + hand tracker share one stream; switching modes is free.
-- Per-user calibration persists; the body tracker auto-recovers on session resume.
+- **One explicit wrist**: the cursor follows only the wrist you chose. If it leaves the view, the cursor pauses; another body part never takes over.
+- **Face in view**: your whole face must stay visible. When it cannot be verified, movement and selection pause.
+- **Fresh, steady readings only**: selection needs a held, low-noise wrist reading from current camera frames. Stopped frames, abrupt jumps or noisy readings pause selection instead of guessing.
+- **One selection per visit**: after a key is selected, move off it before it can be selected again. The camera hold is never shorter than 1.2 s.
+- **Setup per wrist and orientation**: calibration is saved for the chosen wrist and the current screen orientation. Turning the screen during setup asks for a fresh center capture.
+- **Not in this release**: head cursor, eye-gaze weighting, finger tracking and face or hand gestures. Settings lists them as disabled.
+- Camera-stream singleton (`services/cameraStream.ts`) so camera features share one stream.
 
-**Detailed docs:** [`docs/TRACKING_MATH.md`](docs/TRACKING_MATH.md) (calibration math, percentile learner, ego-motion, One Euro filter, ~30 tunables), [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md), [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md).
+**Detailed docs:** [`docs/TRACKING_MATH.md`](docs/TRACKING_MATH.md) (calibration math, percentile learner, ego-motion, One Euro filter, ~30 tunables), [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md), and the design record for gesture input, which is not in this release: [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md).
 </details>
 
 ---
@@ -1125,7 +1124,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ---
 
 ### ⚙️ Settings
-25 languages / 28 locales, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (free for everyone), speech-cache usage and retention, AI autocorrect on/off, notifications, toolbar customization, history region picker, Synalux Account with the Cloud plan.
+25 languages / 28 locales, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, camera dwell time and sensitivity), voice picker (free for everyone), speech-cache usage and retention, AI autocorrect on/off, notifications, toolbar customization, history region picker, Synalux Account with the Cloud plan.
 
 ![Settings — language picker + theme toggle](docs/screenshots/panel-settings.png)
 
@@ -1136,10 +1135,9 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 
 - **Math hold-time dwell** — 0–1500 ms slider; 0 = instant click, 200–1500 ms helps users with motor imprecision (a green progress ring fills during the dwell so they can see it).
 - **Two-hit magnify** — first tap on any math key arms it (1.4× scale + green halo, no commit), second tap commits. 2 s auto-disarms. Composes with hold-time dwell.
-- **Head-tracking dwell** — 200–5000 ms.
+- **Camera dwell time** — 800–3000 ms slider; camera selection never holds for less than 1.2 s.
 - **Sensitivity** — 1–10.
-- **Drift auto-disable** — toggle + threshold (px) + window (ms).
-- **Show hand calibration** — opens the hand-pose profile editor.
+- **Show touch accuracy options** — touchscreen tap precision and finger-button mappings (hand profiles). This does not calibrate the camera cursor.
 
 </details>
 
@@ -1151,8 +1149,8 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 - **Voice input** — Web Speech API, language-aware (UK English vs US English etc.); free tier
 - **AI Autocorrect & Completion** — every keystroke pause routes through the cloud autocorrect (Gemini 2.5 Flash-Lite). Off by default in low-bandwidth scenarios.
 - **Notifications** — alarm + cross-tab notification on incoming AAC chat messages.
-- **Camera input** — head + hand tracking master switch.
-- **Camera tracking target** — head, hand, or auto-detect.
+- **Camera input** — wrist cursor switch; it turns on only after setup for the chosen wrist in the current orientation.
+- **Camera tracking target** — Left Wrist or Right Wrist.
 
 </details>
 
