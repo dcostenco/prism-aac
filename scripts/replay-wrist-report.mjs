@@ -3,12 +3,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 import ts from 'typescript';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAP_DECLARATIONS = new Set(['DEFAULT_CALIBRATION', 'POSE_CALIBRATION_MIN_RANGE', 'mapPoseToScreen']);
 const MAX_PAIR_MS = 150;
+const nodeRequire = createRequire(import.meta.url);
+const loaded = new Map();
+// Production modules import each other; resolve those through this same
+// transpiling loader (once each) and leave packages to Node.
 function loadSource(relative, selectMapper = false) {
+  const key = selectMapper ? `${relative}#mapper` : relative;
+  if (loaded.has(key)) return loaded.get(key).exports;
   let source = fs.readFileSync(path.join(ROOT, relative), 'utf8');
   if (selectMapper) {
     const parsed = ts.createSourceFile(relative, source, ts.ScriptTarget.Latest, true);
@@ -17,7 +24,10 @@ function loadSource(relative, selectMapper = false) {
     source = ts.createPrinter().printFile(ts.factory.updateSourceFile(parsed, declarations));
   }
   const module = { exports: {} };
-  new Function('module', 'exports', ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(module, module.exports);
+  loaded.set(key, module);
+  const requireDependency = specifier => specifier.startsWith('.') ? loadSource(path.join(path.dirname(relative), `${specifier}.ts`))
+    : specifier.startsWith('@/') ? loadSource(`${specifier.slice(2)}.ts`) : nodeRequire(specifier);
+  new Function('module', 'exports', 'require', ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(module, module.exports, requireDependency);
   return module.exports;
 }
 const input = process.argv[2];
