@@ -44,6 +44,12 @@ const ASSETS = [
   { path: '/models/mediapipe/blaze_face_full_range.tflite',      expectMime: null,                name: 'HeadPresence',     critical: true },
 ];
 
+// Every other recorded file is served and digest-checked too, as non-critical.
+for (const file of MANIFEST.keys()) {
+  const path = `/models/mediapipe/${file}`;
+  if (!ASSETS.some(asset => asset.path === path)) ASSETS.push({ path, expectMime: file.endsWith('.wasm') ? 'application/wasm' : null, name: file, critical: false });
+}
+
 const results = [];
 let totalFirstLoadMs = 0;
 
