@@ -20,6 +20,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { emitTtsHealthEvent, TtsTier } from './ttsHealthBus';
 import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 import { fetchVoiceCatalog, defaultVoiceForLanguage } from './voiceCatalogService';
+import { isBuiltInPhraseText } from '@/lib/builtInPhraseText';
 import { stopWasmSpeech } from './wasmTTS';
 
 export function isSpeechSupported(): boolean {
@@ -237,6 +238,9 @@ export interface SpeakOptions {
   /** Longest wait for the cloud voice before the device voice speaks instead
    *  (default 8 s). It bounds the time to first audio, not the speech itself. */
   cloudTimeoutMs?: number;
+  /** For speech telemetry: a tap/composition echo ('feedback') or a spoken
+   *  message ('message', the default). Does not change what is spoken. */
+  surface?: 'feedback' | 'message';
 }
 
 export async function speak(
@@ -319,7 +323,9 @@ export async function speak(
     emitTtsHealthEvent({
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
-    const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt, !isOnline(), options.cloudTimeoutMs);
+    const appLanguage = (useSettingsStore.getState().language || 'en') as SupportedLanguage;
+    const telemetry = { surface: options.surface ?? 'message', builtIn: isBuiltInPhraseText(text, appLanguage) } as const;
+    const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt, !isOnline(), options.cloudTimeoutMs, telemetry);
     if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
     if (result?.cancelled) {
       // A newer utterance or an explicit Stop owns the audio channel now.
@@ -415,7 +421,7 @@ export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string)
   });
 
   const escalate = () => {
-    void speak(toSpeak, rate, volume, actualLang, 'auto', true);
+    void speak(toSpeak, rate, volume, actualLang, 'auto', true, { surface: 'feedback' });
   };
 
   // Checked before speaking rather than after failing: a wrong-language voice
