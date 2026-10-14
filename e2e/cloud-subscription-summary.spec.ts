@@ -69,7 +69,9 @@ test('cloud access included with the account plan offers no purchase', async ({ 
   await page.route('**/api/v1/prism-aac/billing', route => route.fulfill({ json: {
     userId: 'included-test', enabled: true, hasCloudAccess: true, includedWithSynalux: true, betaExempt: false,
     transitionEndsAt: null, channels: [], manageChannel: null, purchaseBlocked: true,
-    offer: { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly' },
+    // A complete offer, so purchaseBlocked is what keeps Subscribe away.
+    offer: { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly', version: 'test-offer-v1',
+      monthlySpeechCharacters: 50000, monthlyAiRequests: 100, allowanceReset: 'utc_calendar_month' },
   } }));
   await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
