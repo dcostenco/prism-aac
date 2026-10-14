@@ -677,8 +677,10 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
                   onClick={async () => {
                     setSigningOut(true);
                     try {
-                      const signedOut = await signOutOfPrismAac();
+                      // Cleared first, so the periodic re-check cannot start
+                      // (and sign the device back in) while the request runs.
                       clearProfile();
+                      const signedOut = await signOutOfPrismAac();
                       if (!signedOut) window.location.assign(synaluxSignOutUrl());
                     } finally {
                       setSigningOut(false);

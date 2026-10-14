@@ -633,16 +633,20 @@ describe('SettingsModal — Sign out', () => {
     expect(screen.queryByRole('link', { name: 'sign_out' })).toBeNull();
   });
 
-  it('ignores a second click while signing out', async () => {
+  // The profile is cleared before the request, so the periodic re-check cannot
+  // sign the device back in while it runs; a second click is ignored.
+  it('clears the profile before the request and ignores a second click', async () => {
     let finish: (value: boolean) => void = () => {};
     mocks.signOutOfPrismAac.mockImplementation(() => new Promise<boolean>(resolve => { finish = resolve; }));
     const button = openAccount();
     fireEvent.click(button);
     await waitFor(() => expect(button).toBeDisabled());
+    expect(mocks.authState.clear).toHaveBeenCalledTimes(1);
     fireEvent.click(button);
     expect(mocks.signOutOfPrismAac).toHaveBeenCalledTimes(1);
     finish(true);
-    await waitFor(() => expect(mocks.authState.clear).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(button).not.toBeDisabled());
+    expect(mocks.authState.clear).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to the Synalux sign-out page when the request fails', async () => {
