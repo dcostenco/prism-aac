@@ -167,6 +167,7 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
   const [newPhraseCat, setNewPhraseCat] = useState('');
   const [newPhraseImage, setNewPhraseImage] = useState('');
   const [wordVisCat, setWordVisCat] = useState('');
+  const [signingOut, setSigningOut] = useState(false);
 
   const handlePhraseImageUpload = (file: File, setter: (url: string) => void) => {
     if (!file.type.startsWith('image/')) return;
@@ -672,13 +673,18 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
                 {/* One click ends both sign-ins: the server clears the Synalux
                     session with Prism AAC's own. Only if that request fails does
                     the Synalux sign-out page (which asks to confirm) take over. */}
-                <button type="button"
+                <button type="button" disabled={signingOut}
                   onClick={async () => {
-                    const signedOut = await signOutOfPrismAac();
-                    clearProfile();
-                    if (!signedOut) window.location.assign(synaluxSignOutUrl());
+                    setSigningOut(true);
+                    try {
+                      const signedOut = await signOutOfPrismAac();
+                      clearProfile();
+                      if (!signedOut) window.location.assign(synaluxSignOutUrl());
+                    } finally {
+                      setSigningOut(false);
+                    }
                   }}
-                  className="block w-full text-center text-[#F44336] text-sm hover:underline pt-1">
+                  className="block w-full text-center text-[#F44336] text-sm hover:underline pt-1 disabled:opacity-50">
                   {t('sign_out')}
                 </button>
               </div>
