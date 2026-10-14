@@ -41,6 +41,16 @@ const planEvents = () => state.ddAction.mock.calls
   .filter(([name]) => name === 'aac_cloud_plan')
   .map(([, ctx]) => `${(ctx as { event: string }).event}:${(ctx as { platform: string }).platform}`);
 
+// A person sees the offer before they can press it. The impression is recorded
+// in an effect after the render that shows the button, so a click fired the
+// instant the button appears could run first on a loaded CI runner and file
+// purchase_started before offer_shown. Still fails if the offer is never recorded.
+async function subscribeWithAppleOnceShown() {
+  const button = await screen.findByRole('button', { name: /Subscribe with Apple/ });
+  await waitFor(() => expect(planEvents()).toContain('offer_shown:ios'));
+  fireEvent.click(button);
+}
+
 describe('AAC account purchase settings', () => {
   it('offers AAC terms and separate Apple terms even while billing is unavailable', async () => {
     state.fetch.mockRejectedValue(new Error('Offline'));
@@ -354,7 +364,7 @@ describe('cloud plan funnel telemetry', () => {
     state.native = true; state.nativePurchases = true;
     state.apple.mockResolvedValue({ status: 'pending' });
     render(<CloudSubscriptionSettings />);
-    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await subscribeWithAppleOnceShown();
     await waitFor(() => expect(planEvents()).toContain('purchase_pending:ios'));
     expect(planEvents()).toEqual(['offer_shown:ios', 'purchase_started:ios', 'purchase_pending:ios']);
     expect(planEvents()).not.toContain('purchase_failed:ios');
@@ -397,7 +407,7 @@ describe('cloud plan funnel telemetry', () => {
     state.native = true; state.nativePurchases = true;
     state.apple.mockResolvedValue({ status: 'cancelled' });
     render(<CloudSubscriptionSettings />);
-    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await subscribeWithAppleOnceShown();
     await waitFor(() => expect(planEvents()).toContain('purchase_cancelled:ios'));
     expect(planEvents()).toEqual(['offer_shown:ios', 'purchase_started:ios', 'purchase_cancelled:ios']);
   });

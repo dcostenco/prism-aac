@@ -238,12 +238,16 @@ function intentionalCancellation(controller: AbortController): TtsPlaybackResult
 const TTS_CACHE_MAX = 30;
 const _ttsCache = new Map<string, ArrayBuffer>();
 
-function _ttsCacheKey(text: string, lang: string, tone: ToneStyle, rate: number, volume: number, voiceId?: string): string {
+function _ttsCacheKey(text: string, lang: string, tone: ToneStyle, rate: number, voiceId?: string): string {
   // Key on the NORMALIZED rate (what the portal SSML actually uses) — not the raw
   // slider value. toFixed(1) on raw rate means 0.25 and 0.34 share key "0.3" but
   // normalize to 0.50 and 0.68 respectively — cache would serve 0.50-speed audio
   // when 0.68-speed was expected (wrong-speed regression, May 2026).
-  return `${text}|${lang}|${tone}|${computeNormalizedRate(rate).toFixed(2)}|${(volume ?? 1.0).toFixed(2)}|${voiceId ?? ''}`;
+  // Volume is not part of the audio: the portal always synthesizes at full
+  // volume and playback applies the user's volume as gain, so one clip serves
+  // every volume. The fixed "1.00" keeps keys identical to clips saved at the
+  // default volume before, so those stay valid.
+  return `${text}|${lang}|${tone}|${computeNormalizedRate(rate).toFixed(2)}|1.00|${voiceId ?? ''}`;
 }
 
 function _ttsCacheGet(key: string): ArrayBuffer | undefined {
@@ -589,6 +593,14 @@ export function computeNormalizedRate(stored: number): number {
   return Math.max(0.5, Math.min(1.4, Number.isFinite(stored) && stored > 0 ? stored * 2 : 1.0));
 }
 
+/** What the speech was for, attached to cache telemetry. Never the text itself. */
+export interface CloudSpeechTelemetry {
+  /** 'feedback' = a tap or composition echo; 'message' = speaking a message. */
+  surface: 'feedback' | 'message';
+  /** The text is exactly a built-in phrase in the app language. */
+  builtIn: boolean;
+}
+
 export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   text: string,
   lang: string,
@@ -602,7 +614,9 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   // How long to wait for the portal before giving up and falling through to
   // the device voice. Callers that must answer quickly pass a shorter budget.
   timeoutMs = 8000,
+  telemetry?: CloudSpeechTelemetry,
 ): Promise<TtsPlaybackResult> {
+  const cacheTelemetry = telemetry ? { surface: telemetry.surface, built_in: telemetry.builtIn } : {};
   // Rapid-duplicate suppression — drop a new speak with the same text
   // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
   // races the prior playback and stopAzurePlayback() kills the still-
@@ -634,7 +648,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   lastSpokenAt = nowMs;
 
   const scope = getSpeechCacheScope();
-  const requestKey = JSON.stringify([1, SYNALUX_API, _ttsCacheKey(text, lang, tone, rate, volume, voiceId)]);
+  const requestKey = JSON.stringify([1, SYNALUX_API, _ttsCacheKey(text, lang, tone, rate, voiceId)]);
   const cacheKey = JSON.stringify([scope, requestKey]);
   const cacheEpoch = speechAudioCache.generation();
   const controller = new AbortController();
@@ -651,7 +665,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       const result = await decodeAndPlay(cached, volume, 'AzureTTS-cache', interrupt, 1.0, controller);
       if (result.success || result.cancelled) {
         if (!result.cancelled) {
-          ddAction('aac_speech_cache', { outcome: memory ? 'memory_hit' : 'disk_hit', latency_ms: Date.now() - nowMs });
+          ddAction('aac_speech_cache', { outcome: memory ? 'memory_hit' : 'disk_hit', latency_ms: Date.now() - nowMs, ...cacheTelemetry });
           // Memory replays should also protect frequently used disk entries.
           if (memory && useSettingsStore.getState().speechCacheEnabled !== false) void speechAudioCache.get(scope, requestKey);
         }
@@ -666,12 +680,12 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     if (cacheOnly || controller.signal.aborted) activeControllers.delete(controller);
   }
   if (cacheOnly) {
-    ddAction('aac_speech_cache', { outcome: 'offline_miss' });
+    ddAction('aac_speech_cache', { outcome: 'offline_miss', ...cacheTelemetry });
     activeControllers.delete(controller); return { success: false };
   }
   const cancelledBeforeFetch = intentionalCancellation(controller);
   if (cancelledBeforeFetch) { activeControllers.delete(controller); return cancelledBeforeFetch; }
-  ddAction('aac_speech_cache', { outcome: 'miss' });
+  ddAction('aac_speech_cache', { outcome: 'miss', ...cacheTelemetry });
 
   // Normalize stored slider → portal SSML rate scale. See computeNormalizedRate.
   // DO NOT pass-through — stored 0.5 direct → SSML 0.5 = 2× slow (RO/RU bug, May 2026).
@@ -685,11 +699,14 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
     // Portal builds SSML server-side (single source of truth for voice maps + SSML format).
     // We send {text, lang, rate, volume} — portal's buildAzureSSML() handles the rest.
+    // Volume is always full: playback applies the user's volume as gain, so the
+    // saved clip is right at any volume (and the Azure voice no longer gets the
+    // volume twice, once in SSML and again as gain).
     const reqBody: Record<string, unknown> = {
       text: text.slice(0, 500),
       lang,
       rate: normalizedRate,
-      volume,
+      volume: 1,
       format: 'audio-24khz-96kbitrate-mono-mp3',
       surface: 'aac',
     };

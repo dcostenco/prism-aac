@@ -31,6 +31,8 @@ class MockBufferSource {
 
 class MockGain {
   gain = { value: 1 };
+  static lastInstance: MockGain | null = null;
+  constructor() { MockGain.lastInstance = this; }
   connect(target: unknown) { return target; }
   disconnect() { /* noop */ }
 }
@@ -118,6 +120,55 @@ describe('saved speech playback', () => {
     resolve(null);
     expect((await speaking).cancelled).toBe(true);
     expect(MockBufferSource.startCalls).toBe(0);
+  });
+
+  it('asks for full-volume audio and applies the user volume on playback', async () => {
+    mockFetch({ '/tts/public': () => identifiedAudio() });
+    const { speakAzure } = await import('@/services/azureTTS');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    expect((await speakAzure(phrase, 'en-US', 'friendly', 0.5, 0.3, '', 'Alex', true)).success).toBe(true);
+    const body = JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string);
+    expect(body.volume).toBe(1);
+    expect(MockGain.lastInstance?.gain.value).toBe(0.3);
+    // Let the background save finish so it cannot land in the next test's store.
+    await vi.waitFor(async () => expect((await speechAudioCache.stats('guest')).clips).toBe(1));
+  });
+
+  it('serves one saved clip at every volume without asking the cloud again', async () => {
+    mockFetch({ '/tts/public': () => identifiedAudio() });
+    const { speakAzure, clearTtsCache } = await import('@/services/azureTTS');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    expect((await speakAzure(phrase, 'en-US', 'friendly', 0.5, 0.8, '', 'Alex', true)).success).toBe(true);
+    await vi.waitFor(async () => expect((await speechAudioCache.stats('guest')).clips).toBe(1));
+    clearTtsCache();
+    expect((await speakAzure(phrase, 'en-US', 'friendly', 0.5, 0.25, '', 'Alex', true, true)).success).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(MockGain.lastInstance?.gain.value).toBe(0.25);
+  });
+
+  it('still plays clips saved at the default volume before volume left the key', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const { SYNALUX_API } = await import('@/lib/portalConfig');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    const { speakAzure } = await import('@/services/azureTTS');
+    const savedKey = JSON.stringify([1, SYNALUX_API, `${phrase}|en-US|friendly|1.00|1.00|Alex`]);
+    expect(await speechAudioCache.put('guest', savedKey, new ArrayBuffer(1024),
+      { backend: 'inworld', voice: 'Alex', model: 'inworld-tts-2', format: 'audio/mpeg' })).toBe(true);
+    expect((await speakAzure(phrase, 'en-US', 'friendly', 0.5, 0.6, '', 'Alex', true, true)).success).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('tags cache telemetry with the surface and built-in flag, never the text', async () => {
+    mockFetch({ '/tts/public': () => identifiedAudio() });
+    const { ddAction } = await import('@/lib/datadog');
+    const { speakAzure } = await import('@/services/azureTTS');
+    await speakAzure(phrase, 'en-US', 'friendly', 0.5, 1, '', 'Alex', true, false, 8000, { surface: 'feedback', builtIn: true });
+    expect(ddAction).toHaveBeenCalledWith('aac_speech_cache', { outcome: 'miss', surface: 'feedback', built_in: true });
+    await speakAzure(phrase, 'en-US', 'friendly', 0.5, 1, '', 'Alex', true, false, 8000, { surface: 'message', builtIn: false });
+    expect(ddAction).toHaveBeenLastCalledWith('aac_speech_cache',
+      { outcome: 'memory_hit', latency_ms: expect.any(Number), surface: 'message', built_in: false });
+    await speakAzure('Somewhere else', 'en-US', 'friendly', 0.5, 1, '', 'Alex', true, true);
+    expect(ddAction).toHaveBeenLastCalledWith('aac_speech_cache', { outcome: 'offline_miss' });
   });
 
   it('falls through a corrupt saved clip to a fresh synthesis', async () => {

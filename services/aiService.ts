@@ -391,7 +391,7 @@ function composeSignals(s1: AbortSignal, s2: AbortSignal): AbortSignal {
 
 async function callSynalux(
   messages: Array<{ role: string; content: string }>,
-  options?: { webSearch?: boolean; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate'; signal?: AbortSignal },
+  options?: { webSearch?: boolean; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate' | 'structured'; signal?: AbortSignal },
 ): Promise<string> {
   if (options?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
   const token = getAuthToken();
@@ -838,7 +838,7 @@ function callNativeBridge(
 
 async function route(
   prompt: string,
-  options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate'; signal?: AbortSignal },
+  options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate' | 'structured'; signal?: AbortSignal },
 ): Promise<string> {
   // Bail early before touching any network path — avoids 30 s Ollama wait on abort.
   if (options?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -1084,7 +1084,10 @@ export async function parseCaregiverNote(rawNoteText: string, signal?: AbortSign
     'Return JSON array like: [{"type":"add_phrase","description":"...","payload":{...}}]',
   ].join('\n');
 
-  const raw = await route(prompt, { signal });
+  // 'structured' asks the portal for a reply long enough for the whole action
+  // list: a chat-length reply can stop mid-JSON, and the note would then be
+  // saved as plain text with its instructions dropped.
+  const raw = await route(prompt, { signal, intent: 'structured' });
 
   try {
     const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
