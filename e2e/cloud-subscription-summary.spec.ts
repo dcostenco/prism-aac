@@ -47,3 +47,41 @@ for (const channel of ['apple', 'stripe']) {
     });
   });
 }
+
+// Cloud access that comes with the account's plan: shown as included, with no
+// purchase and nothing to manage.
+test('cloud access included with the account plan offers no purchase', async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on('pageerror', error => runtimeErrors.push(error.message));
+  await page.addInitScript(() => {
+    sessionStorage.setItem('prism-greeting-dismissed', '1');
+    localStorage.setItem('prism-aac-settings', JSON.stringify({ state: {
+      language: 'en', outputLanguage: 'en', aiAutocorrectEnabled: false, speakOnSentenceEnd: false,
+    }, version: 19 }));
+  });
+  await page.route('**/api/**', route => route.abort());
+  await page.route('http://localhost:11434/**', route => route.abort());
+  await page.route('**/api/auth/session', route => route.fulfill({ json: {
+    user: { email: 'included-test@example.invalid', name: 'Included test' },
+  } }));
+  await page.route('**/api/v1/roles/me', route => route.fulfill({ json: { plan: 'enterprise', aac_plan: 'enterprise' } }));
+  await page.route('**/api/v1/prism-aac/access', route => route.fulfill({ json: { state: 'signed_in', remainingMs: 0 } }));
+  await page.route('**/api/v1/prism-aac/billing', route => route.fulfill({ json: {
+    userId: 'included-test', enabled: true, hasCloudAccess: true, includedWithSynalux: true, betaExempt: false,
+    transitionEndsAt: null, channels: [], manageChannel: null, purchaseBlocked: true,
+    offer: { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly' },
+  } }));
+  await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: /Synalux Account/ }).click();
+  const summary = page.getByTestId('subscription-summary');
+  await expect(summary).toContainText('Cloud access · Included');
+  await expect(page.getByRole('button', { name: /Subscribe/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Manage subscription', exact: true })).toHaveCount(0);
+  await summary.scrollIntoViewIfNeeded();
+  expect(runtimeErrors).toEqual([]);
+  await safeScreenshot(page, test.info().outputPath('cloud-access-included.png'), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-testid=subscription-summary]'],
+    criticalSelectors: ['[data-testid=subscription-summary] p'],
+  });
+});

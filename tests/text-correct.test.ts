@@ -68,6 +68,16 @@ describe('correctText (unit)', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('marks the portal request as Prism AAC, so it follows the AAC cloud plan', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ corrected: 'how', changed: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const { correctText } = await loadService(false);
+    expect(await correctText('hw', 'en', 'complete', { allowPortal: true })).toBe('how');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain('/text/correct');
+    expect(JSON.parse((init as RequestInit).body as string)).toMatchObject({ text: 'hw', lang: 'en', mode: 'complete', surface: 'aac' });
+  });
+
   it('CALLS backend on 2-char input ("hw" → "how" — required for AAC short partials)', async () => {
     // 2-char floor was lowered from 3 to 2 so partials like "hw"/"ok"/"ty"
     // get autocomplete. AAC users can't afford to wait for 3+ chars.
