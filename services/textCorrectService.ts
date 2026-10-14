@@ -158,7 +158,9 @@ async function correctViaPortal(text: string, lang: string, mode: CorrectMode): 
   const result = await portalFetch<{ corrected?: string }>({
     path: '/text/correct',
     method: 'POST',
-    body: { text, lang, mode },
+    // The portal shares this route with its own pages; 'aac' marks a Prism AAC
+    // request so it follows the Prism AAC cloud plan, not the Synalux plan.
+    body: { text, lang, mode, surface: 'aac' },
     timeoutMs: BACKEND_TIMEOUT_MS,
   });
   if (!result.ok) return null;
