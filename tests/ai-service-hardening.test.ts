@@ -308,6 +308,14 @@ describe('parseCaregiverNote — valid AI response', () => {
     expect((result.actions[0].payload as { text: string }).text).toBe('more');
   });
 
+  it('asks the portal for a structured reply, so a long action list is not cut short', async () => {
+    mockRouteToCloud('[{"type":"note_only","description":"obs","payload":{}}]');
+    await parseCaregiverNote('Add more, all done and help to the snack board');
+    const chatCall = fetchMock.mock.calls.find(([url]) => String(url).includes('/prism-aac/chat'));
+    expect(chatCall, 'the cloud chat request').toBeDefined();
+    expect(JSON.parse((chatCall![1] as RequestInit).body as string).intent).toBe('structured');
+  });
+
   it('strips code fences (```json ... ```) before parsing', async () => {
     const payload = '```json\n[{"type":"note_only","description":"obs","payload":{}}]\n```';
     mockRouteToCloud(payload);
