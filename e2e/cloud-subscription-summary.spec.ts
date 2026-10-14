@@ -23,7 +23,9 @@ for (const channel of ['apple', 'stripe']) {
     await page.route('**/api/v1/prism-aac/billing', route => route.fulfill({ json: {
       userId: 'subscription-test', enabled: true, hasCloudAccess: true, betaExempt: false,
       transitionEndsAt: null, channels: [channel], manageChannel: channel, purchaseBlocked: true,
-      offer: { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly' },
+      // A complete offer, so the existing subscription is what keeps Subscribe away.
+      offer: { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly', version: 'test-offer-v1',
+        monthlySpeechCharacters: 50000, monthlyAiRequests: 100, allowanceReset: 'utc_calendar_month' },
     } }));
     await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
