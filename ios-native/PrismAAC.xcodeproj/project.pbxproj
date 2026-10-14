@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5C0B04DB59BB47C4959EC6FD /* AACPictureLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E67BEC3DC14054BF5DDEC3 /* AACPictureLibrary.swift */; };
+		AC1121207B4465D06CA7CC27 /* OfflineWatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC2B537FBFE9AFBA34D4E7A /* OfflineWatchTests.swift */; };
 		0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE9F6102290192A69EA33F /* WatchTTS.swift */; };
 		12D45E7B40FD87921C2E498C /* AppIcon46x46@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */; };
 		13FA82972CFC073092E77BB7 /* PhraseSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA891B441091DCDA4FC123A /* PhraseSpeaker.swift */; };
@@ -79,6 +81,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		B0997EFA9512A0016C5B2425 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 94B38DF5C167816F45B98216 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C059824D983FDADEE5E3C89D;
+			remoteInfo = PrismAACWatch;
+		};
 		79F1897122443ED3CA3471A6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 94B38DF5C167816F45B98216 /* Project object */;
@@ -117,6 +126,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A7E67BEC3DC14054BF5DDEC3 /* AACPictureLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACWatch/Sources/Resources/AACPictureLibrary.swift; sourceTree = SOURCE_ROOT; };
+		018E5C5A5E850B4E8F5302C0 /* PrismAACWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrismAACWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFC2B537FBFE9AFBA34D4E7A /* OfflineWatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineWatchTests.swift; sourceTree = "<group>"; };
 		009D02A4704E643484C64147 /* AACStoreKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACStoreKitTests.swift; sourceTree = "<group>"; };
 		014C80C26C6E4BD11C430E8E /* MonetizationSimulatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonetizationSimulatorTests.swift; sourceTree = "<group>"; };
 		0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@3x.png"; sourceTree = "<group>"; };
@@ -240,6 +252,14 @@
 			path = PrismAACUITests;
 			sourceTree = "<group>";
 		};
+		43A69F0077A17C6E1E89988B /* PrismAACWatchUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CFC2B537FBFE9AFBA34D4E7A /* OfflineWatchTests.swift */,
+			);
+			path = PrismAACWatchUITests;
+			sourceTree = "<group>";
+		};
 		27E260A2E20EED5FD7D47A08 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -267,6 +287,7 @@
 				2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */,
 				81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */,
 				8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */,
+				018E5C5A5E850B4E8F5302C0 /* PrismAACWatchUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -301,6 +322,7 @@
 		604F964895256A45797E94C1 /* PrismAACWatch */ = {
 			isa = PBXGroup;
 			children = (
+				A7E67BEC3DC14054BF5DDEC3 /* AACPictureLibrary.swift */,
 				7795A92B4E6D956D4CC34A5A /* Sources */,
 			);
 			path = PrismAACWatch;
@@ -454,6 +476,7 @@
 				C9E23B3E9714B3C5BA2C8627 /* Packages */,
 				50079412AC90BAE269F6364D /* PrismAAC */,
 				25B2932001EBE7028330646D /* PrismAACUITests */,
+				43A69F0077A17C6E1E89988B /* PrismAACWatchUITests */,
 				604F964895256A45797E94C1 /* PrismAACWatch */,
 				C61715FB16A043BE009B6616 /* TestResources */,
 				3810A000D727421B7A8621B9 /* Products */,
@@ -480,6 +503,25 @@
 			);
 			productName = PrismAACUITests;
 			productReference = 81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		46BCF9A8F1FAA3E29669F610 /* PrismAACWatchUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 118080D6B6DD9E1FA6CB0CC3 /* Build configuration list for PBXNativeTarget "PrismAACWatchUITests" */;
+			buildPhases = (
+				695D4E5BF198BF355D2E54A2 /* Sources */,
+				D323AD199158266B9523677E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5B4C1427552D6818C6A2DF11 /* PBXTargetDependency */,
+			);
+			name = PrismAACWatchUITests;
+			packageProductDependencies = (
+			);
+			productName = PrismAACWatchUITests;
+			productReference = 018E5C5A5E850B4E8F5302C0 /* PrismAACWatchUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		37F3B4323FACF28FDB1C7BA2 /* PrismAAC */ = {
@@ -532,6 +574,7 @@
 			buildPhases = (
 				B349B71D3D5FD9432870AA63 /* Sources */,
 				604D2E3D24C8DC7EED136626 /* Resources */,
+				A5D29E2DC6A24674B954FB8C /* Install generated pictures */,
 			);
 			buildRules = (
 			);
@@ -555,6 +598,9 @@
 				TargetAttributes = {
 					081C499743C163B60754C060 = {
 						TestTargetID = 37F3B4323FACF28FDB1C7BA2;
+					};
+					46BCF9A8F1FAA3E29669F610 = {
+						TestTargetID = C059824D983FDADEE5E3C89D;
 					};
 				};
 			};
@@ -580,11 +626,19 @@
 				46A764FCF03891511096393D /* PrismAACTests */,
 				081C499743C163B60754C060 /* PrismAACUITests */,
 				C059824D983FDADEE5E3C89D /* PrismAACWatch */,
+				46BCF9A8F1FAA3E29669F610 /* PrismAACWatchUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		D323AD199158266B9523677E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2BAE74DA7698863003E9C490 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -636,7 +690,50 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		A5D29E2DC6A24674B954FB8C /* Install generated pictures */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = (
+				"$(SRCROOT)/../scripts/install-native-picture-pack.sh",
+				"$(SRCROOT)/../scripts/prepare-native-picture-pack.mjs",
+				"$(SRCROOT)/../package.json",
+				"$(SRCROOT)/../constants/generated/picturePack.json",
+				"$(SRCROOT)/../constants/generated/phraseSymbols.json",
+				"$(SRCROOT)/../constants/generated/basicVocabularyPictures.json",
+				"$(SRCROOT)/../constants/generated/phraseSymbolFiles.json",
+				"$(SRCROOT)/../public/symbols/ATTRIBUTION.txt",
+				"$(AAC_PICTURE_PACK_DIR)",
+				"$(AAC_PICTURE_PACK_DIR)/pictures-0000.aacpack",
+				"$(AAC_PICTURE_PACK_DIR)/pictures-0001.aacpack",
+				"$(AAC_PICTURE_PACK_DIR)/pictures-0002.aacpack",
+				"$(AAC_PICTURE_PACK_DIR)/pictures-0003.aacpack",
+				"$(AAC_PICTURE_PACK_DIR)/pictures-0004.aacpack",
+			);
+			name = "Install generated pictures";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AACPictures.aacpack",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/aacPictureManifest.json",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/aacPictureSymbols.json",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AACPictureAttribution.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$SRCROOT/../scripts/install-native-picture-pack.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		695D4E5BF198BF355D2E54A2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AC1121207B4465D06CA7CC27 /* OfflineWatchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		100CF211900441E7098D2862 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -655,6 +752,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5C0B04DB59BB47C4959EC6FD /* AACPictureLibrary.swift in Sources */,
 				D77E71A3AFF973A5D7A80182 /* KeychainHelper.swift in Sources */,
 				1B7A5CF4B9FB846133F1E17B /* WCSessionRouter.swift in Sources */,
 				A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */,
@@ -711,6 +809,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		5B4C1427552D6818C6A2DF11 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C059824D983FDADEE5E3C89D /* PrismAACWatch */;
+			targetProxy = B0997EFA9512A0016C5B2425 /* PBXContainerItemProxy */;
+		};
 		7E765695EA85381AD75FE2AD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 37F3B4323FACF28FDB1C7BA2 /* PrismAAC */;
@@ -729,6 +832,44 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		E6506729C5D90E1760DA79A9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchuitests";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = PrismAACWatch;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		5615F7413517C41A067A2A9D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchuitests";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = PrismAACWatch;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
 		0D2FB979974D64CDFF7A9B89 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1005,6 +1146,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		118080D6B6DD9E1FA6CB0CC3 /* Build configuration list for PBXNativeTarget "PrismAACWatchUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6506729C5D90E1760DA79A9 /* Debug */,
+				5615F7413517C41A067A2A9D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		287B58E9C7C10FCE9347EF19 /* Build configuration list for PBXProject "PrismAAC" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

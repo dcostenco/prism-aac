@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 /// PrismAAC iOS — smoke tests for the WKWebView-hosted AAC UI.
 ///
@@ -280,4 +281,189 @@ final class PrismAACUITests: XCTestCase {
             "Speak button must be accessible after exiting Bedside Mode"
         )
     }
+}
+
+
+/// Complete installation must survive a cold relaunch without app-resource requests.
+@MainActor
+final class OfflinePicturePackSimulatorTests: XCTestCase {
+    private let fixture = URL(string: "http://localhost:6948/__native/")!
+    private var app: XCUIApplication!
+    private var activeRun: String?
+
+    private func control(_ action: String) async throws -> [String: Any] {
+        var url = URLComponents(url: fixture.appendingPathComponent(action), resolvingAgainstBaseURL: false)!
+        if action == "online" {
+            url.queryItems = [URLQueryItem(name: "viewportWidth", value: String(Int(app.frame.width)))]
+        }
+        var request = URLRequest(url: try XCTUnwrap(url.url))
+        if action != "state" { request.httpMethod = "POST" }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        let result = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        if action == "online" { activeRun = result["runId"] as? String }
+        return result
+    }
+
+    private func waitForPictures(_ phase: String) async throws -> [String: Any] {
+        for _ in 0..<60 {
+            let state = try await control("state")
+            if state["runId"] as? String == activeRun, state["phase"] as? String == phase, state["pictureHashMatches"] as? Bool == true { return state }
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        let state = try await control("state")
+        XCTFail("Original picture must render in \(phase): \(state)")
+        return state
+    }
+
+    func testFullPicturesAndWordEntryAfterOfflineColdRelaunch() async throws {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchEnvironment["PRISM_AAC_DEV_PORT"] = "6948"
+        app.launchArguments = ["-UITEST_MODE", "-onboarding_complete", "YES", "-ai_consent_accepted", "YES", "-ai_declined", "YES"]
+        app.launch()
+        _ = try await control("online")
+        let online = try await waitForPictures("online")
+        XCTAssertEqual(online["durablePack"] as? Bool, true)
+        XCTAssertEqual(online["targetsVisible"] as? Bool, true, "Prediction and message targets must be visible and unobstructed")
+        let onlineImage = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        onlineImage.name = "installed-online-pictures"
+        onlineImage.lifetime = .keepAlways
+        add(onlineImage)
+        var launchReady = false
+        for _ in 0..<60 {
+            let state = try await control("state")
+            if state["controller"] as? Bool == true, state["documentSaved"] as? Bool == true { launchReady = true; break }
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        XCTAssertTrue(launchReady, "Worker must durably save the app document before offline relaunch")
+        app.terminate()
+        _ = try await control("offline")
+        app.launch()
+        let offline = try await waitForPictures("offline")
+        XCTAssertEqual(offline["targetsVisible"] as? Bool, true)
+        let more = app.webViews.firstMatch.buttons["Predict: More"].firstMatch
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        XCTAssertTrue(more.isHittable)
+        print("Chosen prediction:", more.identifier, more.label, more.frame)
+        more.tap()
+        var inserted = false
+        for _ in 0..<20 {
+            let state = try await control("state")
+            print("After tap:", state)
+            if (state["message"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) == "More" { inserted = true; break }
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        XCTAssertTrue(inserted, "Tapping the offline picture must insert More")
+        let finalState = try await control("state")
+        XCTAssertEqual(finalState["targetsVisible"] as? Bool, true)
+        let offlineImage = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        offlineImage.name = "offline-picture-word-entry"
+        offlineImage.lifetime = .keepAlways
+        add(offlineImage)
+
+        let web = app.webViews.firstMatch
+        web.buttons["Delete"].firstMatch.tap()
+        let keyboard = web.buttons.matching(NSPredicate(format: "label CONTAINS %@", "⌨️")).firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        XCTAssertTrue(keyboard.isHittable)
+        keyboard.tap()
+        for key in ["G", "I"] {
+            let letter = web.buttons[key].firstMatch
+            XCTAssertTrue(letter.waitForExistence(timeout: 5))
+            XCTAssertTrue(letter.isHittable)
+            letter.tap()
+        }
+        var childPictureReady = false
+        for _ in 0..<30 {
+            let state = try await control("state")
+            if (state["wordPictures"] as? [String: Bool])?["girls"] == true,
+               state["targetsVisible"] as? Bool == true { childPictureReady = true; break }
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        XCTAssertTrue(childPictureReady, "Girls must show the approved child PNG after offline cold relaunch")
+        let girls = web.buttons["Predict: girls"].firstMatch
+        XCTAssertTrue(girls.waitForExistence(timeout: 5))
+        XCTAssertTrue(girls.isHittable)
+        let childImage = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        childImage.name = "offline-generated-girls-prediction"
+        childImage.lifetime = .keepAlways
+        add(childImage)
+        girls.tap()
+        var childInserted = false
+        for _ in 0..<20 {
+            let state = try await control("state")
+            if (state["message"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) == "girls" {
+                childInserted = true; break
+            }
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        XCTAssertTrue(childInserted, "Selecting the offline child picture must insert girls")
+        for word in ["quarter", "quality"] {
+            web.buttons["Delete"].firstMatch.tap()
+            let q = web.buttons["Q"].firstMatch
+            XCTAssertTrue(q.waitForExistence(timeout: 5))
+            XCTAssertTrue(q.isHittable)
+            q.tap()
+            var pictureReady = false
+            for _ in 0..<30 {
+                let state = try await control("state")
+                if (state["wordPictures"] as? [String: Bool])?[word] == true,
+                   state["targetsVisible"] as? Bool == true { pictureReady = true; break }
+                try await Task.sleep(for: .milliseconds(250))
+            }
+            XCTAssertTrue(pictureReady, "\(word) must show its approved PNG offline")
+            let tile = web.buttons["Predict: \(word)"].firstMatch
+            XCTAssertTrue(tile.waitForExistence(timeout: 5))
+            XCTAssertTrue(tile.isHittable)
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = "offline-generated-\(word)-prediction"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            tile.tap()
+            var insertedWord = false
+            for _ in 0..<20 {
+                let state = try await control("state")
+                if (state["message"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) == word {
+                    insertedWord = true; break
+                }
+                try await Task.sleep(for: .milliseconds(250))
+            }
+            XCTAssertTrue(insertedWord, "Selecting the offline \(word) picture must insert the word")
+        }
+    }
+
+    func testExternalAccountLinkStillOpensBrowser() async throws {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchEnvironment["PRISM_AAC_DEV_PORT"] = "6948"
+        app.launchArguments = ["-UITEST_MODE", "-onboarding_complete", "YES", "-ai_consent_accepted", "YES", "-ai_declined", "YES"]
+        app.launch()
+        _ = try await control("online")
+        app.terminate()
+        app.launch()
+        let web = app.webViews.firstMatch
+        _ = try await waitForPictures("online")
+        XCTAssertTrue(web.buttons["Settings"].waitForExistence(timeout: 15))
+        web.buttons["Settings"].tap()
+        XCTAssertTrue(web.buttons["Close settings"].waitForExistence(timeout: 10), "Settings must open before searching for its account row")
+        let account = web.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Synalux account")).firstMatch
+        for _ in 0..<12 where !account.isHittable { web.swipeUp() }
+        XCTAssertTrue(account.isHittable)
+        account.tap()
+        let signIn = web.links.matching(NSPredicate(format: "label CONTAINS[c] %@", "Sign in with Synalux")).firstMatch
+        for _ in 0..<6 where !signIn.isHittable { web.swipeUp() }
+        XCTAssertTrue(signIn.isHittable)
+        try await Task.sleep(for: .seconds(1))
+        signIn.tap()
+        let browser = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+        XCTAssertTrue(browser.wait(for: .runningForeground, timeout: 10),
+                      "The existing external-browser handler must remain available")
+        app.activate()
+        let closeSettings = web.buttons["Close settings"]
+        XCTAssertTrue(closeSettings.waitForExistence(timeout: 5), "The AAC settings page must remain after external navigation")
+        closeSettings.tap()
+        XCTAssertTrue(web.buttons["Settings"].waitForExistence(timeout: 5))
+    }
+
 }

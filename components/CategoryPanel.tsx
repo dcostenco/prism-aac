@@ -1,4 +1,5 @@
 'use client';
+import { foldPictureWordCase } from '@/lib/wordCase';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
@@ -19,9 +20,11 @@ import { getTTSCode } from '@/engine/i18n';
 import { usesNativeImeKeyboard } from '@/constants/keyboardLayouts';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
-import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
+import { getPictogramUrl, pictureModeForProfile, typedWordPicturesEnabled } from '@/services/pictogramService';
+import { builtInCategorySymbolUrl, builtInPhraseSymbolUrl, isBuiltInPhraseId } from '@/lib/builtInSymbols';
 import { useAuthStore } from '@/store/authStore';
 import { useNearViewport } from '@/hooks/useNearViewport';
+import { useRecoverablePicture } from '@/hooks/useRecoverablePicture';
 import FittedTileLabel from './FittedTileLabel';
 import { useDesktopPaging } from '@/hooks/useDesktopPaging';
 
@@ -172,26 +175,52 @@ function PageLabel({ label, previous, next, status }: { label: string; previous?
 }
 
 // ── Lightweight pictogram for search results ──────────────────────────────────
-function SearchResultIcon({ phrase, language }: { phrase: string; language: string }) {
+// Same rules as PhraseTile: a built-in phrase shows its bundled symbol or
+// nothing; a custom phrase can get a generated picture on paid plans.
+function SearchResultIcon({ phrase, builtInPhraseId, language }: { phrase: string; builtInPhraseId?: string; language: string }) {
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
-  const [url, setUrl] = useState<string | null>(null);
-  const { elementRef, isNearViewport } = useNearViewport<HTMLSpanElement>();
+  const builtIn = isBuiltInPhraseId(builtInPhraseId);
+  const wantsGenerated = !builtIn && typedWordPicturesEnabled(pictureMode);
+  const requestKey = JSON.stringify([phrase, language, pictureMode, builtInPhraseId]);
+  const [generated, setGenerated] = useState<{ key: string; url: string | null } | null>(null);
+  const { elementRef, isNearViewport } = useNearViewport<HTMLSpanElement>(wantsGenerated);
   useEffect(() => {
-    if (!isNearViewport) return;
+    if (!wantsGenerated || !isNearViewport) return;
     let cancelled = false;
-    getPictogramUrl(phrase, 'en', pictureMode)
-      .then(u => { if (!cancelled) setUrl(u); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [phrase, pictureMode, language, isNearViewport]);
+    const controller = new AbortController();
+    getPictogramUrl(phrase, 'en', pictureMode, { text: phrase, lang: language }, { signal: controller.signal })
+      .then(url => { if (!cancelled) setGenerated({ key: requestKey, url }); })
+      .catch(() => { if (!cancelled) setGenerated({ key: requestKey, url: null }); });
+    return () => { cancelled = true; controller.abort(); };
+  }, [phrase, wantsGenerated, pictureMode, language, isNearViewport, requestKey]);
+  const requestedUrl = builtIn ? builtInPhraseSymbolUrl(builtInPhraseId)
+    : wantsGenerated && generated?.key === requestKey ? generated.url : null;
+  const image = useRecoverablePicture(requestedUrl, requestKey);
   return (
     <span ref={elementRef} className="w-8 h-8 shrink-0 rounded">
-      {url && (
-        <img src={url} alt="" aria-hidden className="w-full h-full object-contain rounded" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+      {image.url && (
+        <img key={image.imageKey} src={image.url} alt="" aria-hidden className="w-full h-full object-contain rounded" onError={image.onError} />
       )}
     </span>
   );
+}
+
+// A built-in category shows its bundled symbol; a category the user made keeps
+// its emoji, and so does any tile whose picture fails to load.
+function CategoryIcon({ category, className }: { category: { id: string; icon: string; isCustom?: boolean }; className: string }) {
+  const language = useSettingsStore(s => s.language);
+  const image = useRecoverablePicture(builtInCategorySymbolUrl(category), JSON.stringify([category.id, category.isCustom, language]));
+  if (image.url) {
+    return (
+      <span className={className} data-category-picture="symbol">
+        {/* Sized in em so the picture follows the same per-device font-size
+            rules that sized the emoji, instead of growing the category strip. */}
+        <img key={image.imageKey} src={image.url} alt="" aria-hidden style={{ height: '3.2em', width: 'auto', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} onError={image.onError} />
+      </span>
+    );
+  }
+  return <span className={className} data-category-picture="emoji">{category.icon}</span>;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -399,12 +428,12 @@ export default function CategoryPanel() {
     if ([...trimmed].length < 1 || trimmed.length > 200) return [];
     const q = searchQuery.toLowerCase();
     const cats = allCategories();
-    const out: { phrase: string; category: string; phraseId?: string }[] = [];
+    const out: { phrase: string; category: string; phraseId?: string; builtInPhraseId?: string }[] = [];
     for (const cat of cats) {
       for (const { phrase: p } of getRankedPhrasesForCategory(cat.id)) {
         const local = getPhraseText(p.id, language, p.text);
         if (local.toLowerCase().includes(q) || p.text.toLowerCase().includes(q)) {
-          out.push({ phrase: local, category: cat.nameKey ? t(cat.nameKey) : cat.name, phraseId: p.id });
+          out.push({ phrase: local, category: cat.nameKey ? t(cat.nameKey) : cat.name, phraseId: p.id, builtInPhraseId: p.isCustom ? undefined : p.id });
           if (out.length >= 50) return out;
         }
       }
@@ -438,14 +467,14 @@ export default function CategoryPanel() {
     // not capitalise mid-sentence words. Keep single "I" uppercase (English pronoun).
     const toAppend = phraseText
       .split(/\s+/)
-      .map((w) => (w === 'I' ? 'I' : w.toLowerCase()))
+      .map((w) => (language === 'en' && w === 'I' ? 'I' : foldPictureWordCase(w, language)))
       .join(' ');
     const words = text.trim().split(/\s+/).filter(Boolean);
     let pw = words.at(-1);
     let ppw = words.at(-2);
     appendText(toAppend);
     for (const w of toAppend.trim().split(/\s+/)) {
-      learnWord(w.toLowerCase(), pw?.toLowerCase(), ppw?.toLowerCase());
+      learnWord(w, pw, ppw);
       ppw = pw; pw = w;
     }
     if (phraseId) recordPhraseUse(phraseId);
@@ -559,7 +588,7 @@ export default function CategoryPanel() {
         {searchResults.map((r) => (
           <button key={r.phraseId ?? `${r.category ?? ''}:${r.phrase ?? ''}`} onClick={() => handlePhrase(r.phrase, r.phraseId)}
             className="aac-btn w-full flex items-center justify-between px-4 py-3 rounded-xl surface-key border border-theme text-left">
-            <SearchResultIcon phrase={r.phrase} language={language} />
+            <SearchResultIcon phrase={r.phrase} builtInPhraseId={r.builtInPhraseId} language={language} />
             <span className="text-primary font-bold text-lg flex-1 min-w-0 truncate">{r.phrase}</span>
             <span className="text-muted text-xs ml-2 shrink-0">{r.category}</span>
           </button>
@@ -684,7 +713,7 @@ export default function CategoryPanel() {
                               data-locked={subLocked || undefined}
                               className={`aac-picture-card ${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]} ${subLocked ? LOCKED_CLS : ''}`}>
                               {subLocked && <span aria-hidden className={LOCK_BADGE_CLS}>🔒</span>}
-                              <span className="aac-tile-icon text-3xl leading-none">{sub.icon}</span>
+                              <CategoryIcon category={sub} className="aac-tile-icon text-3xl leading-none" />
                               <FittedTileLabel
                                 text={sub.nameKey ? t(sub.nameKey) : sub.name}
                                 className="aac-tile-label aac-folder-label"
@@ -695,7 +724,7 @@ export default function CategoryPanel() {
                         const p = item.data;
                         const local = getPhraseText(p.id, language, p.text);
                         return (
-                          <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen}
+                          <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} builtInPhraseId={p.isCustom ? undefined : p.id} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen}
                             onClick={() => handlePhrase(local, p.id)}
                             className={`aac-btn rounded-xl font-bold select-none text-center ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]} ${catBg ?? wordBg(p.text)}`}
                           />
@@ -757,7 +786,7 @@ export default function CategoryPanel() {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = compactMode && categoryKeyboardOpen ? HOME_TILE_H_COMPACT : categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
-                  <PhraseTile key={`${catId}:${p.id}`} phrase={local} englishPhrase={p.text} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen || compactMode}
+                  <PhraseTile key={`${catId}:${p.id}`} phrase={local} englishPhrase={p.text} builtInPhraseId={p.isCustom ? undefined : p.id} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen || compactMode}
                     onClick={() => handlePhrase(local, p.id)}
                     className={`aac-btn rounded-xl font-bold select-none text-center ${tH} ${CAT_BG[catId] ?? 'bg-slate-500 text-white border-slate-600'}`}
                   />
@@ -772,7 +801,7 @@ export default function CategoryPanel() {
                   data-locked={locked(cat.id) || undefined}
                   className={`aac-picture-card ${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH} ${locked(cat.id) ? LOCKED_CLS : ''}`}>
                   {locked(cat.id) && <span aria-hidden className={LOCK_BADGE_CLS}>🔒</span>}
-                  <span className="aac-tile-icon text-2xl sm:text-3xl leading-none">{cat.icon}</span>
+                  <CategoryIcon category={cat} className="aac-tile-icon text-2xl sm:text-3xl leading-none" />
                   <FittedTileLabel
                     text={cat.nameKey ? t(cat.nameKey) : cat.name}
                     className="aac-tile-label aac-folder-label"
@@ -815,7 +844,7 @@ export default function CategoryPanel() {
                     className={`aac-btn aac-category-tile min-w-0 w-full flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-lg
                       border border-white/20 select-none text-center ${tabBg} ${locked(cat.id) ? LOCKED_CLS : ''}`}>
                     {locked(cat.id) && <span aria-hidden className={LOCK_BADGE_CLS}>🔒</span>}
-                    <span className="aac-tile-icon aac-category-icon text-base leading-none">{cat.icon}</span>
+                    <CategoryIcon category={cat} className="aac-tile-icon aac-category-icon text-base leading-none" />
                     <FittedTileLabel
                       text={cat.nameKey ? t(cat.nameKey) : cat.name}
                       className="aac-tile-label aac-category-label"

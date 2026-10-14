@@ -42,6 +42,16 @@ const planEvents = () => state.ddAction.mock.calls
   .map(([, ctx]) => `${(ctx as { event: string }).event}:${(ctx as { platform: string }).platform}`);
 
 describe('AAC account purchase settings', () => {
+  it('offers AAC terms and separate Apple terms even while billing is unavailable', async () => {
+    state.fetch.mockRejectedValue(new Error('Offline'));
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByText('Subscription status unavailable')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Terms of use', exact: true })).toHaveAttribute('href', '/prism-aac/terms');
+    expect(screen.getByRole('link', { name: 'Terms of use (Apple)' })).toHaveAttribute('href', 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
+    expect(state.apple).not.toHaveBeenCalled();
+    expect(state.stripe).not.toHaveBeenCalled();
+  });
+
   it.each(['apple', 'stripe'])('shows verified %s access instead of the legacy Free plan', async channel => {
     state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: [channel], manageChannel: channel });
     render(<CloudSubscriptionSettings />);

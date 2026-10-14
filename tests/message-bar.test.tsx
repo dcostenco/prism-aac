@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => {
   const safeCorrectionMock   = vi.fn(() => false);
   const rememberPhraseMock   = vi.fn().mockResolvedValue(true);
   const recordHrrPhraseMock  = vi.fn();
+  const hrrInitMock = vi.fn().mockResolvedValue(true);
   const setAiCompletionMock  = vi.fn();
   const learnWordMock        = vi.fn();
   // updateSettingsMock declared with settingsState below
@@ -72,7 +73,7 @@ const mocks = vi.hoisted(() => {
   };
 
   const uiState = { sidePanel: 'none' };
-  const authState = { profile: null as null | { email: string } };
+  const authState = { profile: null as null | { email: string }, identityGeneration: 0 };
 
   const useMessageStore = Object.assign(
     (sel?: (s: typeof messageState) => unknown) => sel ? sel(messageState) : messageState,
@@ -94,7 +95,7 @@ const mocks = vi.hoisted(() => {
     toggleAutoSpeakMock, toggleSoundMock, deleteLastWordMock, clearAllMock, undoMock,
     addToHistoryMock, setTextMock, setToneMock, setToneModeMock, aacSpeakMock,
     speakWordMock,
-    correctTextMock, safeCorrectionMock, rememberPhraseMock, recordHrrPhraseMock,
+    correctTextMock, safeCorrectionMock, rememberPhraseMock, recordHrrPhraseMock, hrrInitMock,
     setAiCompletionMock, learnWordMock,
     ttsHighlightListeners,
     messageState, settingsState, uiState, authState,
@@ -114,8 +115,8 @@ vi.mock('@/store/settingsStore', async (importOriginal) => ({
 vi.mock('@/store/uiStore',       () => ({ useUIStore:       mocks.useUIStore       }));
 
 vi.mock('@/store/authStore', () => ({
-  useAuthStore: (sel?: (s: typeof mocks.authState) => unknown) =>
-    sel ? sel(mocks.authState) : mocks.authState,
+  useAuthStore: Object.assign((sel?: (s: typeof mocks.authState) => unknown) =>
+    sel ? sel(mocks.authState) : mocks.authState, { getState: () => mocks.authState }),
 }));
 
 vi.mock('@/store/predictionStore', () => ({
@@ -186,7 +187,7 @@ vi.mock('@/services/predictionMemoryService', () => ({
 }));
 
 vi.mock('@/services/hrrContext', () => ({
-  initAacHrr: vi.fn(async () => true),
+  initAacHrr: (...args: unknown[]) => mocks.hrrInitMock(...args),
   isAacHrrReady: () => true,
   recordPhrase: (...args: unknown[]) => mocks.recordHrrPhraseMock(...args),
 }));
@@ -236,6 +237,8 @@ beforeEach(() => {
   mocks.rememberPhraseMock.mockReset();
   mocks.rememberPhraseMock.mockResolvedValue(true);
   mocks.recordHrrPhraseMock.mockReset();
+  mocks.hrrInitMock.mockReset().mockResolvedValue(true);
+  mocks.authState.identityGeneration = 0;
   mocks.ttsHighlightListeners.clear();
   mocks.toggleSoundMock.mockImplementation(() => {
     mocks.messageState.soundEnabled = !mocks.messageState.soundEnabled;
@@ -629,6 +632,41 @@ describe('MessageBar — speak', () => {
         }),
       );
     });
+  });
+
+  it('does not initialize former-account memory after sign-out before the import completes', async () => {
+    mocks.messageState.text = 'I need help';
+    mocks.authState.profile = { email: 'aac@example.com' };
+    render(<MessageBar />);
+    fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
+    mocks.authState.profile = null;
+    mocks.authState.identityGeneration++;
+    await act(async () => { await Promise.resolve(); });
+    expect(mocks.hrrInitMock).not.toHaveBeenCalled();
+    expect(mocks.recordHrrPhraseMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an old confirmed phrase even if the same account returns during initialization', async () => {
+    let finish!: (ready: boolean) => void;
+    mocks.hrrInitMock.mockReturnValue(new Promise<boolean>((resolve) => { finish = resolve; }));
+    mocks.messageState.text = 'I need help';
+    mocks.authState.profile = { email: 'aac@example.com' };
+    render(<MessageBar />);
+    fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
+    await waitFor(() => expect(mocks.hrrInitMock).toHaveBeenCalledOnce());
+    // The final email may be identical after sign-out and a new sign-in.
+    mocks.authState.identityGeneration += 2;
+    await act(async () => { finish(true); });
+    expect(mocks.recordHrrPhraseMock).not.toHaveBeenCalled();
+  });
+
+  it('does not initialize memory after the composer unmounts', async () => {
+    mocks.messageState.text = 'I need help';
+    const view = render(<MessageBar />);
+    fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
+    view.unmount();
+    await act(async () => { await Promise.resolve(); });
+    expect(mocks.hrrInitMock).not.toHaveBeenCalled();
   });
 
   it('explicitly accepting a correction learns the accepted phrase exactly once', async () => {

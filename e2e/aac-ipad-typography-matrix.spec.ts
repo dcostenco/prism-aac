@@ -57,7 +57,9 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => (
     [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')]
       .filter((tile) => {
-        return Boolean(tile.textContent?.trim());
+        if (tile.dataset.picture === 'text') return true;
+        const image = tile.querySelector<HTMLImageElement>('img');
+        return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
       }).length
   )), { timeout: 20_000 }).toBe(5);
 }
@@ -112,11 +114,8 @@ test('maximizes prediction and keyboard text without clipping', async ({ page },
   const metrics = await page.evaluate(() => {
     const predictionTiles = [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')];
     const predictionLabels = [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-label"]')];
-    // Picture checks apply to tiles that show a picture; a tile without one
-    // gives its word the whole card.
-    const pictureTiles = predictionTiles.filter((tile) => tile.dataset.tilePicture === 'shown');
-    const wordsOnlyTiles = predictionTiles.filter((tile) => tile.dataset.tilePicture === 'none');
-    const predictionIcons = pictureTiles.map((tile) => tile.querySelector<HTMLElement>('.aac-tile-icon')!);
+    const predictionIcons = predictionTiles.map((tile) => tile.querySelector<HTMLElement>('.aac-tile-icon'))
+      .filter((icon): icon is HTMLElement => icon !== null);
     const predictionImages = predictionIcons.map((icon) => icon.querySelector<HTMLImageElement>('img')!);
     const characterKeys = [...document.querySelectorAll<HTMLElement>('[data-scan-group="keyboard"] button[data-key]')]
       .filter((key) => /^\p{L}$/u.test(key.dataset.key ?? ''));
@@ -136,9 +135,9 @@ test('maximizes prediction and keyboard text without clipping', async ({ page },
       maximumPredictionImageHeightRatio: Math.max(...predictionImages.map((image, index) => (
         image.getBoundingClientRect().height / predictionIcons[index].getBoundingClientRect().height
       ))),
-      wordsOnlyTileCount: wordsOnlyTiles.length,
-      wordsOnlyWells: wordsOnlyTiles.filter((tile) => tile.querySelector('.aac-tile-icon')).length,
-      maximumWordsOnlyCenterOffset: Math.max(0, ...wordsOnlyTiles.map((tile) => {
+      // A prediction with no picture is a text tile: no picture well, word centred.
+      textTileWells: predictionTiles.filter((tile) => tile.dataset.picture === 'text' && tile.querySelector('.aac-tile-icon')).length,
+      maximumTextTileCenterOffset: Math.max(0, ...predictionTiles.filter((tile) => tile.dataset.picture === 'text').map((tile) => {
         const card = tile.getBoundingClientRect();
         const word = tile.querySelector<HTMLElement>('[data-testid="prediction-label"]')!.getBoundingClientRect();
         return Math.abs((card.top + card.bottom) / 2 - (word.top + word.bottom) / 2);
@@ -169,10 +168,8 @@ test('maximizes prediction and keyboard text without clipping', async ({ page },
     .toBeLessThanOrEqual(0.72);
   expect(metrics.maximumPredictionImageHeightRatio, `${expected.label}: bounded pictogram height`)
     .toBeLessThanOrEqual(0.72);
-  // Anonymous visitors get no generated pictures: every prediction is words only.
-  expect(metrics.wordsOnlyTileCount, `${expected.label}: predictions without pictures`).toBe(5);
-  expect(metrics.wordsOnlyWells, `${expected.label}: no empty picture well`).toBe(0);
-  expect(metrics.maximumWordsOnlyCenterOffset, `${expected.label}: words centered in the tile`)
+  expect(metrics.textTileWells, `${expected.label}: no empty picture well on a text tile`).toBe(0);
+  expect(metrics.maximumTextTileCenterOffset, `${expected.label}: text-tile words centered`)
     .toBeLessThanOrEqual(3);
   expect(metrics.minimumKeyWidth, `${expected.label}: minimum key width`).toBeGreaterThanOrEqual(48);
   expect(metrics.minimumKeyHeight, `${expected.label}: minimum key height`).toBeGreaterThanOrEqual(48);

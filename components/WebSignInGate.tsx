@@ -9,10 +9,11 @@ import { fetchWebAccess, hasVerifiedLocalAccess, rememberVerifiedLocalAccess, cl
   LOCAL_ACCESS_CLEARED, LOCAL_ACCESS_KEY, type WebAccess } from '@/services/webAccessService';
 import { rememberWebSignInDraft, recoverWebSignInDraft } from '@/services/webSignInDraft';
 import { reportWebGate, type WebGateOutcome } from '@/services/monetizationTelemetry';
+import { usePathname } from 'next/navigation';
+import { PRISM_AAC_TERMS_PATH, PRISM_AAC_TERMS_ROUTE } from '@/lib/appPaths';
 
 type AccessState = WebAccess['state'] | 'checking' | 'error';
 const PRIVACY_URL = 'https://synalux.ai/legal/privacy';
-const TERMS_URL = 'https://synalux.ai/legal/terms';
 const SIGNED_IN_RECHECK_MS = 5 * 60_000;
 const subscribeNative = () => () => {};
 // Any native shell, not only one that offers Sign in with Apple: the Browser
@@ -22,7 +23,9 @@ const serverNativeSnapshot = () => false;
 
 /** Registration gate only. Cloud entitlement is enforced separately by the portal. */
 export default function WebSignInGate({ children }: { children: ReactNode }) {
-  const enabled = process.env.NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE === '1';
+  const pathname = usePathname();
+  const publicTerms = pathname === PRISM_AAC_TERMS_ROUTE || pathname === PRISM_AAC_TERMS_PATH;
+  const enabled = process.env.NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE === '1' && !publicTerms;
   const native = useSyncExternalStore(subscribeNative, nativeSnapshot, serverNativeSnapshot);
   const { t } = useT();
   const profile = useAuthStore(s => s.profile);
@@ -127,11 +130,11 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
   // render. When the gate is off or running native no decision is ever
   // reached, so this stays silent without needing to test for it.
   useEffect(() => {
-    if (outcome) reportWebGate(outcome);
-  }, [outcome]);
+    if (outcome && enabled && !native) reportWebGate(outcome);
+  }, [outcome, enabled, native]);
 
   useEffect(() => {
-    if (state !== 'preview') return;
+    if (!enabled || native || state !== 'preview') return;
     const update = () => {
       const left = Math.max(0, expires.current - performance.now());
       setRemaining(Math.ceil(left / 1000));
@@ -144,7 +147,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     const tick = setInterval(update, 250);
     document.addEventListener('visibilitychange', update);
     return () => { clearInterval(tick); document.removeEventListener('visibilitychange', update); };
-  }, [state]);
+  }, [state, enabled, native]);
 
   useEffect(() => {
     if (state === 'sign_in_required' || state === 'error') signInButton.current?.focus();
@@ -196,7 +199,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
         {t('web_signin_check_again')}
       </button>
       <p className="text-sm"><a className="underline" href={PRIVACY_URL}>{t('cloud_privacy')}</a>
-        {' · '}<a className="underline" href={TERMS_URL}>{t('cloud_terms')}</a>
+        {' · '}<a className="underline" href={PRISM_AAC_TERMS_PATH}>{t('cloud_terms')}</a>
         {' · '}<a className="underline" href="https://github.com/dcostenco/prism-aac" target="_blank" rel="noopener noreferrer">{t('cloud_source_code')}</a></p>
     </section>
   </main>;

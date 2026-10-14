@@ -15,6 +15,10 @@ async function executeKillswitch(options: {
   cacheKeys?: string[];
   hasController?: boolean;
   unregisterRejects?: boolean;
+  preserveOffline?: boolean;
+  hostname?: string;
+  nativeBridge?: boolean;
+  parentContext?: 'native' | 'web' | 'different-origin' | 'inaccessible';
 } = {}) {
   const storage = new Map<string, string>();
   if (options.storedVersion !== undefined) storage.set(KEY, options.storedVersion);
@@ -34,15 +38,26 @@ async function executeKillswitch(options: {
   });
   const dispatchEvent = vi.fn();
 
-  runInNewContext(buildServiceWorkerKillswitchScript(VERSION), {
-    window: {
-      location: { hostname: 'preview.example.test', reload },
+  const hostname = options.hostname ?? 'preview.example.test';
+  const testWindow = {
+      location: { hostname, origin: `http://${hostname}`, reload },
+      prismNativeBridge: options.nativeBridge ? {} : undefined,
       dispatchEvent,
       localStorage: {
         getItem: (key: string) => storage.get(key) ?? null,
         setItem: (key: string, value: string) => storage.set(key, value),
       },
-    },
+      parent: null as unknown,
+  };
+  testWindow.parent = options.parentContext ? {
+    location: { origin: options.parentContext === 'different-origin' ? 'https://different.example.test' : testWindow.location.origin },
+    prismNativeBridge: options.parentContext === 'web' ? undefined : {},
+  } : testWindow;
+  if (options.parentContext === 'inaccessible') {
+    Object.defineProperty(testWindow.parent, 'location', { get() { throw new Error('Cross-origin access denied'); } });
+  }
+  runInNewContext(buildServiceWorkerKillswitchScript(VERSION, options.preserveOffline), {
+    window: testWindow,
     navigator: {
       serviceWorker: {
         controller: options.hasController ? {} : null,
@@ -70,10 +85,60 @@ async function executeKillswitch(options: {
     getCacheKeys,
     triggerControllerChange: () => controllerChange?.(),
     dispatchEvent,
+    childNativeBridge: testWindow.prismNativeBridge,
   };
 }
 
 describe('service-worker kill switch', () => {
+  it('keeps an installed worker and its app document during an offline-preserving update', async () => {
+    const result = await executeKillswitch({ storedVersion: 'old-build', registrationCount: 1,
+      cacheKeys: ['prism-core-navigation', 'serwist-precache-old', 'prism-static'], preserveOffline: true });
+    expect(result.unregister).not.toHaveBeenCalled();
+    expect(result.deleteCache).not.toHaveBeenCalled();
+    expect(result.reload).not.toHaveBeenCalled();
+    expect(result.storage.get(KEY)).toBe(VERSION);
+    expect(result.dispatchEvent).toHaveBeenCalledOnce();
+  });
+  it('retains a worker for the native app on its trusted loopback test origin', async () => {
+    const result = await executeKillswitch({ hostname: 'localhost', nativeBridge: true,
+      preserveOffline: true, registrationCount: 1, cacheKeys: ['prism-core-navigation'] });
+    expect(result.unregister).not.toHaveBeenCalled();
+    expect(result.deleteCache).not.toHaveBeenCalled();
+    expect(result.storage.get(KEY)).toBe(VERSION);
+  });
+
+  it('keeps ordinary local browser development free of installed workers', async () => {
+    const result = await executeKillswitch({ hostname: 'localhost', preserveOffline: true,
+      registrationCount: 1, cacheKeys: ['prism-core-navigation'] });
+    expect(result.unregister).toHaveBeenCalledOnce();
+    expect(result.deleteCache).toHaveBeenCalledWith('prism-core-navigation');
+    expect(result.storage.get(KEY)).toBeUndefined();
+  });
+
+  it('keeps native offline storage for an unmarked same-origin child without copying its parent native bridge', async () => {
+    const result = await executeKillswitch({ hostname: 'localhost', parentContext: 'native',
+      preserveOffline: true, registrationCount: 1, cacheKeys: ['prism-core-navigation', 'serwist-precache'] });
+    expect(result.unregister).not.toHaveBeenCalled();
+    expect(result.deleteCache).not.toHaveBeenCalled();
+    expect(result.storage.get(KEY)).toBe(VERSION);
+    expect(result.childNativeBridge).toBeUndefined();
+  });
+
+  it.each(['web', 'different-origin', 'inaccessible'] as const)('does not inherit native context from a %s parent', async parentContext => {
+    const result = await executeKillswitch({ hostname: 'localhost', parentContext,
+      preserveOffline: true, registrationCount: 1, cacheKeys: ['prism-core-navigation'] });
+    expect(result.unregister).toHaveBeenCalledOnce();
+    expect(result.deleteCache).toHaveBeenCalledWith('prism-core-navigation');
+    expect(result.storage.get(KEY)).toBeUndefined();
+  });
+
+  it('does not turn a non-preserving build into a native offline build through its parent', async () => {
+    const result = await executeKillswitch({ hostname: 'localhost', parentContext: 'native',
+      preserveOffline: false, registrationCount: 1, cacheKeys: ['prism-core-navigation'] });
+    expect(result.unregister).toHaveBeenCalledOnce();
+    expect(result.deleteCache).toHaveBeenCalledWith('prism-core-navigation');
+  });
+
   it('records the build without reloading a first-time visitor', async () => {
     const result = await executeKillswitch();
 

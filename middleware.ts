@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { PRISM_AAC_TERMS_PATH, PRISM_AAC_TERMS_ROUTE } from '@/lib/appPaths';
+const PICTURE_STORAGE_SOURCE = 'https://*.supabase.co';
 
 export function middleware(request: NextRequest) {
+  const termsDocument = request.nextUrl.pathname === PRISM_AAC_TERMS_PATH
+    || request.nextUrl.pathname === PRISM_AAC_TERMS_ROUTE;
   // Use Web Crypto API — Edge Runtime does not have Node.js `crypto`
   const nonceBytes = new Uint8Array(16);
   crypto.getRandomValues(nonceBytes);
@@ -34,13 +38,9 @@ export function middleware(request: NextRequest) {
     // (Settings → Local AI Models). The portal proxy's production CSP already
     // lists them; without them here the direct Vercel host and the dev server
     // refused every Ollama request and the panel read "not running".
-    // https://*.supabase.co: the portal answers a generated-picture request with
-    // a redirect to Supabase storage, and the browser checks every redirect hop
-    // against connect-src. The portal's own CSP already allows it; without it
-    // here the direct Vercel host refused every prediction picture.
-    "connect-src 'self' https://synalux.ai https://*.synalux.ai https://*.supabase.co https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com http://localhost:11434 http://127.0.0.1:11434",
+    `connect-src 'self' blob: ${PICTURE_STORAGE_SOURCE} https://synalux.ai https://*.synalux.ai https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com http://localhost:11434 http://127.0.0.1:11434`,
     "media-src 'self' blob: https://synalux.ai https://*.synalux.ai",
-    "img-src 'self' blob: data: " +
+    `img-src 'self' blob: data: ${PICTURE_STORAGE_SOURCE} ` +
     "https://lh3.googleusercontent.com " +
     "https://*.telegram.org https://t.me " +
     "https://*.whatsapp.net " +
@@ -52,14 +52,14 @@ export function middleware(request: NextRequest) {
     // worker and left returning AAC users without offline navigation.
     "worker-src 'self' blob:",
     "font-src 'self'",
-    "frame-src https:",
-    "frame-ancestors 'none'",
+    "frame-src 'self' https:",
+    `frame-ancestors ${termsDocument ? "'self'" : "'none'"}`,
   ].join('; ');
   response.headers.set('Content-Security-Policy', csp);
   // H13: Add missing security headers
   response.headers.set('Referrer-Policy', 'no-referrer');
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Frame-Options', termsDocument ? 'SAMEORIGIN' : 'DENY');
   // camera=(self): head/pose tracking and custom picture symbols call
   // getUserMedia from this origin. `camera=()` is an EMPTY allowlist — it
   // switches the camera off for self too, so getUserMedia rejects before any

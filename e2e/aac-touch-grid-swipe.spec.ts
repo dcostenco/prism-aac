@@ -99,7 +99,7 @@ test.describe('desktop input without touch emulation', () => {
         await expect(page.getByTestId('message-content')).toContainText('Type here');
         if (surface === strip) {
           await expect.poll(() => grid.getByTestId('phrase-tile-card').evaluateAll(cards => cards.length === 4 && cards.every(card => {
-            return Boolean(card.textContent?.trim());
+            if (card.getAttribute('data-picture') === 'text') return true; const img = card.querySelector('img'); return img?.complete && img.naturalWidth > 0;
           })), { timeout: 20_000 }).toBe(true);
           await safeScreenshot(page, testInfo.outputPath(`desktop-${mode}-category.png`), {
             expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="category-strip"]'],
@@ -115,7 +115,7 @@ test.describe('desktop input without touch emulation', () => {
       await expect(vocabularyStatus).toHaveText(/^2\s*\//);
       await expect(page.getByTestId('message-content')).toContainText('Type here');
       await expect.poll(() => grid.getByTestId('phrase-tile-card').evaluateAll(cards => cards.length === 4 && cards.every(card => {
-        return Boolean(card.textContent?.trim());
+        if (card.getAttribute('data-picture') === 'text') return true; const img = card.querySelector('img'); return img?.complete && img.naturalWidth > 0;
       })), { timeout: 20_000 }).toBe(true);
       await safeScreenshot(page, testInfo.outputPath(`desktop-${mode}.png`), {
         expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="picture-board"]'],
@@ -171,7 +171,9 @@ test('category-strip swipe reveals choices without opening a category or selecti
   // blank tiles is not visual evidence of the user's working board.
   await expect.poll(() => home.getByTestId('phrase-tile-card').evaluateAll(cards =>
     cards.length === 4 && cards.every(card => {
-      return Boolean(card.textContent?.trim());
+      if (card.getAttribute('data-picture') === 'text') return true;
+      const img = card.querySelector('img');
+      return img?.complete && img.naturalWidth > 0;
     })), { timeout: 20_000 }).toBe(true);
   await safeScreenshot(page, testInfo.outputPath('category-strip-swiped.png'), {
     expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="category-strip"]'],
@@ -227,7 +229,9 @@ for (const [size, cols] of [[4, 2], [6, 3]] as const) {
       if (requireImages || state === 'home') await expect.poll(() => grid.locator('[data-testid="phrase-tile-card"]').evaluateAll((cards, allowKnownMissingAsset) =>
         cards.length > 0 && cards.every(card => {
           if (allowKnownMissingAsset && card.getAttribute('aria-label') === 'Excuse me') return true;
-          return Boolean(card.textContent?.trim());
+          if (card.getAttribute('data-picture') === 'text') return true;
+          const img = card.querySelector('img');
+          return img?.complete && img.naturalWidth > 0;
         }), !requireImages && state === 'home'),
       { timeout: 20_000 }).toBe(true);
       await safeScreenshot(page, testInfo.outputPath(`${state}-${size}.png`), {

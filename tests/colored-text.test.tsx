@@ -24,6 +24,11 @@ describe('ColoredText — empty guard', () => {
 });
 
 describe('ColoredText — word rendering', () => {
+  it.each(['#16181d','#eeeeee'])('unclassified tokens inherit the theme foreground %s', (color) => {
+    render(<div style={{color}}><ColoredText text="🙂" /></div>);
+    expect(screen.getByText('🙂').style.color).toBe('');
+    expect(getComputedStyle(screen.getByText('🙂')).color).toBe(getComputedStyle(screen.getByText('🙂').parentElement!).color);
+  });
   it('renders all words in the text', () => {
     render(<ColoredText text="I want water" />);
     // classifyPhrase splits "I want water" into tokens; all should appear

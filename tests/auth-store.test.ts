@@ -63,6 +63,31 @@ describe('authStore — initial state', () => {
 // ── refresh() ─────────────────────────────────────────────────────────────────
 
 describe('authStore — refresh()', () => {
+  it('a pending profile fetch cannot sign the user back in after clear', async () => {
+    let finish!: (value: unknown) => void;
+    fetchProfileMock.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const pending = useAuthStore.getState().refresh();
+    useAuthStore.getState().clear();
+    const generation = useAuthStore.getState().identityGeneration;
+    finish({ tier: 'free', email: 'former@example.com' });
+    await pending;
+    expect(useAuthStore.getState().profile).toBeNull();
+    expect(useAuthStore.getState().identityGeneration).toBe(generation);
+    expect(useAuthStore.getState().loading).toBe(false);
+  });
+
+  it('identity generations distinguish signing out and returning to the same account', async () => {
+    fetchProfileMock.mockResolvedValue({ tier: 'free', email: 'same@example.com' });
+    await useAuthStore.getState().refresh();
+    const first = useAuthStore.getState().identityGeneration;
+    await useAuthStore.getState().refresh();
+    expect(useAuthStore.getState().identityGeneration).toBe(first);
+    useAuthStore.getState().clear();
+    expect(useAuthStore.getState().identityGeneration).toBeGreaterThan(first);
+    const signedOut = useAuthStore.getState().identityGeneration;
+    await useAuthStore.getState().refresh();
+    expect(useAuthStore.getState().identityGeneration).toBeGreaterThan(signedOut);
+  });
   it('sets profile and loaded=true on success', async () => {
     const fakeProfile = { tier: 'pro', email: 'test@example.com' };
     fetchProfileMock.mockResolvedValue(fakeProfile);

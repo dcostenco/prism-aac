@@ -9,11 +9,22 @@
  * HRR adds a fast contextual layer on top.
  */
 
+import { predictionTokenParts, predictionWordKey } from '../engine/predictionSpellings';
+
 const STORAGE_KEY = 'prism-aac-hrr-hologram';
 const DEFAULT_SCOPE = 'legacy';
 const DIM = 1024;
 const MIN_PHRASE_WORDS = 2;
 const MAX_PHRASE_LEN = 500;
+const EXACT_CONTEXT_RELEVANCE = 1;
+const EMOJI_TOKEN = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
+
+function contextWords(value: string): string[] {
+    return value.split(/\s+/).map(token => {
+        const word = predictionTokenParts(token).word;
+        return (word || (EMOJI_TOKEN.test(token) ? token : '')).normalize('NFC');
+    }).filter(Boolean);
+}
 
 interface HrrScopeState {
     hologram: any;
@@ -23,6 +34,20 @@ interface HrrScopeState {
 const _scopeStates = new Map<string, HrrScopeState>();
 const _initPromises = new Map<string, Promise<boolean>>();
 const _scopeGenerations = new Map<string, number>();
+let _wasmModule: Promise<typeof import('synalux-hrr')> | null = null;
+
+function loadHrrModule(): Promise<typeof import('synalux-hrr')> {
+    if (!_wasmModule) {
+        _wasmModule = import('synalux-hrr').then(async module => {
+            await module.default();
+            return module;
+        }).catch(error => {
+            _wasmModule = null;
+            throw error;
+        });
+    }
+    return _wasmModule;
+}
 
 function normalizeScope(scope?: string): string {
     const normalized = scope?.trim().toLowerCase();
@@ -56,7 +81,8 @@ export async function initAacHrr(scope?: string): Promise<boolean> {
 
 async function _doInit(scope: string, generation: number): Promise<boolean> {
     try {
-        const { HrrHologram } = await import('synalux-hrr');
+        const { HrrHologram } = await loadHrrModule();
+        if ((_scopeGenerations.get(scope) ?? 0) !== generation) return false;
         const hologram: any = new HrrHologram(DIM);
         const storageKey = storageKeyForScope(scope);
 
@@ -114,6 +140,7 @@ export function destroyAacHrr(scope?: string): void {
             state.persistTimer = null;
         }
         flushPersist(scopeKey);
+        state.hologram.free?.();
         _scopeStates.delete(scopeKey);
     }
 }
@@ -136,7 +163,7 @@ export function recordPhrase(phrase: string, context?: {
     const trimmed = phrase.trim();
     if (!trimmed || trimmed.length > MAX_PHRASE_LEN) return;
 
-    const words = trimmed.split(/\s+/).filter(Boolean);
+    const words = contextWords(trimmed);
 
     const ctxSuffix = [
         context?.language ? `lang:${context.language.trim().toLowerCase()}` : '',
@@ -155,12 +182,12 @@ export function recordPhrase(phrase: string, context?: {
     if (words.length < MIN_PHRASE_WORDS) return;
 
     for (let i = 0; i < words.length - 1; i++) {
-        const w = words[i].toLowerCase();
+        const w = predictionWordKey(words[i], context?.language);
         hologram.encode(`${ngramPrefix}w:${w}`, words[i + 1]);
 
         if (i < words.length - 2) {
             hologram.encode(
-                `${ngramPrefix}w:${w} ${words[i + 1].toLowerCase()}`,
+                `${ngramPrefix}w:${w} ${predictionWordKey(words[i + 1], context?.language)}`,
                 words[i + 2],
             );
         }
@@ -204,7 +231,7 @@ export function getNextWordSuggestions(
     if (!state || !currentText.trim()) return [];
     const hologram = state.hologram;
 
-    const words = currentText.trim().split(/\s+/).filter(Boolean);
+    const words = contextWords(currentText.trim());
     if (words.length === 0) return [];
 
     const seen = new Set<string>();
@@ -213,27 +240,25 @@ export function getNextWordSuggestions(
         ? `lang:${language.trim().toLowerCase()}|`
         : '';
 
-    function collect(results: any[]) {
-        for (const r of results) {
-            if (r.similarity < 0.02) continue;
-            // WASM probe returns the concept KEY (e.g. "w:want"), not the value.
-            // Use get_summary() to retrieve the actual next word.
-            const word = hologram.get_summary?.(r.concept) ?? r.concept;
-            if (typeof word !== 'string' || !word || seen.has(word.toLowerCase())) continue;
-            seen.add(word.toLowerCase());
-            out.push({ word, relevance: r.similarity });
-            if (out.length >= topK) return;
-        }
+    function collect(contextKey: string) {
+        // The WASM probe searches summary content. It cannot establish which
+        // context a next word belongs to; use the recorded context directly.
+        const word = hologram.get_summary(contextKey);
+        if (typeof word !== 'string' || !word || /\s/.test(word) || out.length >= topK) return;
+        const key = predictionWordKey(word, language);
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push({ word, relevance: EXACT_CONTEXT_RELEVANCE });
     }
 
     if (words.length >= 2) {
-        const triKey = `${ngramPrefix}w:${words[words.length - 2].toLowerCase()} ${words[words.length - 1].toLowerCase()}`;
-        collect(hologram.probe(triKey, topK));
+        const triKey = `${ngramPrefix}w:${predictionWordKey(words[words.length - 2], language)} ${predictionWordKey(words[words.length - 1], language)}`;
+        collect(triKey);
     }
 
     if (out.length < topK) {
-        const biKey = `${ngramPrefix}w:${words[words.length - 1].toLowerCase()}`;
-        collect(hologram.probe(biKey, topK - out.length));
+        const biKey = `${ngramPrefix}w:${predictionWordKey(words[words.length - 1], language)}`;
+        collect(biKey);
     }
 
     return out;

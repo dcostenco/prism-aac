@@ -15,6 +15,7 @@ interface AuthState {
   profile: SynaluxProfile | null;
   loaded: boolean;
   loading: boolean;
+  identityGeneration: number;
   refresh: () => Promise<void>;
   clear: () => void;
 }
@@ -23,15 +24,19 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   profile: null,
   loaded: false,
   loading: false,
+  identityGeneration: 0,
 
   refresh: async () => {
     if (get().loading) return;
+    const generation = get().identityGeneration;
     set({ loading: true });
     try {
       const profile = await fetchSynaluxProfile();
+      if (get().identityGeneration !== generation) return;
       const previousIdentity = get().profile?.email.toLowerCase() ?? null;
       const nextIdentity = profile?.email.toLowerCase() ?? null;
       if (previousIdentity !== nextIdentity) {
+        set({ identityGeneration: get().identityGeneration + 1 });
         clearPredictionMemoryCache();
         destroyAacHrr();
         rotateAnonymousPredictionSessionScope();
@@ -39,7 +44,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
       set({ profile, loaded: true, loading: false });
     } catch {
+      if (get().identityGeneration !== generation) return;
       if (get().profile) {
+        set({ identityGeneration: get().identityGeneration + 1 });
         clearPredictionMemoryCache();
         destroyAacHrr();
         rotateAnonymousPredictionSessionScope();
@@ -60,7 +67,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     destroyAacHrr();
     rotateAnonymousPredictionSessionScope();
     useSettingsStore.getState().update({ cloudPredictionEnabled: false });
-    set({ profile: null, loaded: true, loading: false });
+    set({ profile: null, loaded: true, loading: false, identityGeneration: get().identityGeneration + 1 });
   },
 }));
 

@@ -7,6 +7,8 @@ import { isNativeiOS, type SynaluxProfile } from '@/services/aiService';
 import { fetchAacBillingStatus, hasNativePurchases, manageAacSubscription, nativeSubscription,
   purchaseAacWithApple, purchaseAacWithStripe, restoreAacApplePurchases, AAC_BILLING_UPDATED, type AacBillingStatus } from '@/services/aacBillingService';
 import { firstOfferImpression, offerImpressionKey, reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
+import { APPLE_STANDARD_EULA_URL } from '@/lib/appPaths';
+import TermsLink from '@/components/TermsLink';
 
 export default function CloudSubscriptionSettings() {
   const { t } = useT();
@@ -162,13 +164,6 @@ export default function CloudSubscriptionSettings() {
       <button type="button" disabled={busy} className={button} onClick={() => void purchase()}>
         {t(native ? 'cloud_subscribe_apple' : 'cloud_subscribe_web').replace('{price}', quotedPrice!)}
       </button>
-      <p className="text-xs text-muted"><a href="https://synalux.ai/legal/privacy" target="_blank" rel="noopener noreferrer">{t('cloud_privacy')}</a>
-        {' · '}<a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer">{t('cloud_terms')}</a>
-        {/* AGPL-3.0: anyone running a modified copy owes its users the Corresponding
-            Source. We are the copyright holder and so are not bound by our own licence,
-            but the offer is what makes that term credible against a fork — and it is
-            what a user of this build is entitled to expect. */}
-        {' · '}<a href="https://github.com/dcostenco/prism-aac" target="_blank" rel="noopener noreferrer">{t('cloud_source_code')}</a></p>
     </>}
     {native && billing?.enabled && !hasNativePurchases() && !billing.betaExempt &&
       <p className="text-xs text-muted">{t('cloud_update_ios')}</p>}
@@ -198,6 +193,14 @@ export default function CloudSubscriptionSettings() {
       {t('cloud_manage_subscription')}
     </button>}
     <button type="button" disabled={busy} className={button} onClick={() => void act('refresh_failed', refresh)}>{t('cloud_refresh_plan')}</button>
+    <p className="text-xs text-muted" data-testid="aac-legal-links"><a href="https://synalux.ai/legal/privacy" target="_blank" rel="noopener noreferrer">{t('cloud_privacy')}</a>
+      {' · '}<TermsLink>{t('cloud_terms')}</TermsLink>
+      {' · '}<a href={APPLE_STANDARD_EULA_URL} target="_blank" rel="noopener noreferrer">{t('cloud_terms')} (Apple)</a>
+      {/* AGPL-3.0: anyone running a modified copy owes its users the Corresponding
+          Source. We are the copyright holder and so are not bound by our own licence,
+          but the offer is what makes that term credible against a fork — and it is
+          what a user of this build is entitled to expect. */}
+      {' · '}<a href="https://github.com/dcostenco/prism-aac" target="_blank" rel="noopener noreferrer">{t('cloud_source_code')}</a></p>
     {notice && <p role="status" className="text-xs text-muted">{notice}</p>}
     {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
   </div>;

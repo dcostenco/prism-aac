@@ -1,0 +1,5682 @@
+{
+  "format": 1,
+  "policy": "Stable pictured board concepts and localized labels. Competing meanings remain pending review rather than borrowing a picture.",
+  "cases": [
+    {
+      "locale": "am",
+      "word": "ንብ",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "ar",
+      "word": "نحلة",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Пчела",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "bn",
+      "word": "মৌমাছি",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "de",
+      "word": "Biene",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "en",
+      "word": "Bee",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "es",
+      "word": "Abeja",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Abeille",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "he",
+      "word": "דבורה",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "hi",
+      "word": "मधुमक्खी",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "id",
+      "word": "Lebah",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "it",
+      "word": "Ape",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "ja",
+      "word": "ハチ",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Pszczoła",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Abelha",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Albină",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Пчела",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Nyuki",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Bubuyog",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Arı",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Бджола",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Con ong",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "蜜蜂",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "蜜蜂",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "蜜蜂",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png"
+    },
+    {
+      "locale": "am",
+      "word": "መጽሐፍ",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "ar",
+      "word": "كتاب",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Книга",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "bn",
+      "word": "বই",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "de",
+      "word": "Buch",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "en",
+      "word": "Book",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "es",
+      "word": "Libro",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Livre",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "he",
+      "word": "ספר",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "hi",
+      "word": "किताब",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "id",
+      "word": "Buku",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "it",
+      "word": "Libro",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "ja",
+      "word": "本",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "ko",
+      "word": "책",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Boek",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Książka",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Livro",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Carte",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Книга",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Kitabu",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Libro",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Kitap",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Книга",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Sách",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "書",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "书",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "書",
+      "concept": "book",
+      "phraseId": "sw-book",
+      "file": "sw-book.png"
+    },
+    {
+      "locale": "am",
+      "word": "ውሻ",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "ar",
+      "word": "كلب",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Куче",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "bn",
+      "word": "কুকুর",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "de",
+      "word": "Hund",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "en",
+      "word": "Dog",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "es",
+      "word": "Perro",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Chien",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "he",
+      "word": "כלב",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "hi",
+      "word": "कुत्ता",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "id",
+      "word": "Anjing",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "it",
+      "word": "Cane",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "ja",
+      "word": "犬",
+      "concept": "dog",
+      "phraseId": "an-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "ja",
+      "word": "いぬ",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Hond",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Pies",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Cachorro",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Câine",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Собака",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Mbwa",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Aso",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Köpek",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Собака",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Chó",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "狗",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "狗",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "狗",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png"
+    },
+    {
+      "locale": "am",
+      "word": "ድመት",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "ar",
+      "word": "قطة",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Котка",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "bn",
+      "word": "বিড়াল",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "de",
+      "word": "Katze",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "en",
+      "word": "Cat",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "es",
+      "word": "Gato",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Chat",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "he",
+      "word": "חתול",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "hi",
+      "word": "बिल्ली",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "id",
+      "word": "Kucing",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "it",
+      "word": "Gatto",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "ja",
+      "word": "猫",
+      "concept": "cat",
+      "phraseId": "an-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "ja",
+      "word": "ねこ",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "ko",
+      "word": "고양이",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Kat",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Kot",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Gato",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Pisică",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Кошка",
+      "concept": "cat",
+      "phraseId": "an-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Кот",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Paka",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Pusa",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Kedi",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Кішка",
+      "concept": "cat",
+      "phraseId": "an-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Кіт",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Mèo",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "貓",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "猫",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "貓",
+      "concept": "cat",
+      "phraseId": "ap-cat",
+      "file": "an-cat.png"
+    },
+    {
+      "locale": "am",
+      "word": "ወፍ",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "ar",
+      "word": "عصفور",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Птица",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "bn",
+      "word": "পাখি",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "de",
+      "word": "Vogel",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "en",
+      "word": "Bird",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "es",
+      "word": "Pájaro",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Oiseau",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "he",
+      "word": "ציפור",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "hi",
+      "word": "पक्षी",
+      "concept": "bird",
+      "phraseId": "an-bird",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "hi",
+      "word": "चिड़िया",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "id",
+      "word": "Burung",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "it",
+      "word": "Uccello",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "ja",
+      "word": "鳥",
+      "concept": "bird",
+      "phraseId": "an-bird",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "ja",
+      "word": "とり",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Vogel",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Ptak",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Pássaro",
+      "concept": "bird",
+      "phraseId": "an-bird",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Passarinho",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Pasăre",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Птица",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Ibon",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Kuş",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Птах",
+      "concept": "bird",
+      "phraseId": "an-bird",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Пташка",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Chim",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "鳥",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "鸟",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "鳥",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png"
+    },
+    {
+      "locale": "am",
+      "word": "ፖም",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "ar",
+      "word": "تفاحة",
+      "concept": "apple",
+      "phraseId": "fd-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "ar",
+      "word": "تفاح",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Ябълка",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "bn",
+      "word": "আপেল",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "de",
+      "word": "Apfel",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "en",
+      "word": "Apple",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "es",
+      "word": "Manzana",
+      "concept": "apple",
+      "phraseId": "fd-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "es",
+      "word": "manzana",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Pomme",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "he",
+      "word": "תפוח",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "hi",
+      "word": "सेब",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "id",
+      "word": "Apel",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "it",
+      "word": "Mela",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "ja",
+      "word": "りんご",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "ko",
+      "word": "사과",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Appel",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Jabłko",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Maçã",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Măr",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Яблоко",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Tufaha",
+      "concept": "apple",
+      "phraseId": "fd-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Tofaa",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Mansanas",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Elma",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Яблуко",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Táo",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "蘋果",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "苹果",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "蘋果",
+      "concept": "apple",
+      "phraseId": "ff-apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "locale": "am",
+      "word": "ጫማ",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "ar",
+      "word": "حذاء",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Обувки",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "bn",
+      "word": "জুতো",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "de",
+      "word": "Schuhe",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "en",
+      "word": "Shoes",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "es",
+      "word": "Zapatos",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Chaussures",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "he",
+      "word": "נעליים",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "hi",
+      "word": "जूते",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "id",
+      "word": "Sepatu",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "it",
+      "word": "Scarpe",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "ja",
+      "word": "靴",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "ko",
+      "word": "신발",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Schoenen",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Buty",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Sapatos",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Pantofi",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Обувь",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Viatu",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Sapatos",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Ayakkabı",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Взуття",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Giày",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "鞋",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "鞋",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "鞋",
+      "concept": "shoe",
+      "phraseId": "cl-shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "locale": "am",
+      "word": "ኩባያ",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "ar",
+      "word": "كوب",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Чаша",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "bn",
+      "word": "কাপ",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "de",
+      "word": "Tasse",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "en",
+      "word": "Cup",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "es",
+      "word": "Taza",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Tasse",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "he",
+      "word": "כוס",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "hi",
+      "word": "कप",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "id",
+      "word": "Cangkir",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "it",
+      "word": "Tazza",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "ja",
+      "word": "コップ",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "ko",
+      "word": "컵",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Beker",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Kubek",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Xícara",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Ceașcă",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Стакан",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Kikombe",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Tasa",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Fincan",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Чашка",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Cốc",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "杯子",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "杯子",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "杯子",
+      "concept": "cup",
+      "phraseId": "fd-cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "locale": "am",
+      "word": "መኪና",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "ar",
+      "word": "سيارة",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Кола",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "bn",
+      "word": "গাড়ি",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "de",
+      "word": "Auto",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "en",
+      "word": "Car",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "es",
+      "word": "Carro",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Voiture",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "he",
+      "word": "מכונית",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "hi",
+      "word": "गाड़ी",
+      "concept": "car",
+      "phraseId": "pl-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "hi",
+      "word": "कार",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "id",
+      "word": "Mobil",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "it",
+      "word": "Macchina",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "ja",
+      "word": "車",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "ko",
+      "word": "자동차",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Auto",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Samochód",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Carro",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Mașină",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Машина",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Gari",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Kotse",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Araba",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Машина",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Xe hơi",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "車",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "车",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "車",
+      "concept": "car",
+      "phraseId": "tr-car",
+      "file": "pl-car.png"
+    },
+    {
+      "locale": "am",
+      "word": "ወንበር",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "ar",
+      "word": "كرسي",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Стол",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "bn",
+      "word": "চেয়ার",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "de",
+      "word": "Stuhl",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "en",
+      "word": "Chair",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "es",
+      "word": "Silla",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Chaise",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "he",
+      "word": "כיסא",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "hi",
+      "word": "कुर्सी",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "id",
+      "word": "Kursi",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "it",
+      "word": "Sedia",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "ja",
+      "word": "椅子",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "ko",
+      "word": "의자",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Stoel",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Krzesło",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Cadeira",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Scaun",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Стул",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Kiti",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Upuan",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Sandalye",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Стілець",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Ghế",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "椅子",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "椅子",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "椅子",
+      "concept": "chair",
+      "phraseId": "sw-chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "locale": "am",
+      "word": "ካልሲ",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "ar",
+      "word": "جوارب",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Чорапи",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "bn",
+      "word": "মোজা",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "de",
+      "word": "Socken",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "en",
+      "word": "Socks",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "es",
+      "word": "Calcetines",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Chaussettes",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "he",
+      "word": "גרביים",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "hi",
+      "word": "मोज़े",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "id",
+      "word": "Kaus kaki",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "it",
+      "word": "Calzini",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "ja",
+      "word": "靴下",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "ko",
+      "word": "양말",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Sokken",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Skarpetki",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Meias",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Șosete",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Носки",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Soksi",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Medyas",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Çoraplar",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Шкарпетки",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "襪子",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "袜子",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "襪子",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "locale": "am",
+      "word": "እጅ",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "ar",
+      "word": "يد",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Длан",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "bn",
+      "word": "হাত",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "de",
+      "word": "Hand",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "en",
+      "word": "Hand",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "es",
+      "word": "Mano",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Main",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "he",
+      "word": "יד",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "hi",
+      "word": "हाथ",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "id",
+      "word": "Tangan",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "it",
+      "word": "Mano",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "ja",
+      "word": "て",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "ko",
+      "word": "손",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Hand",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Dłoń",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Mão",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Mână",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Кисть",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Kiganja",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Kamay",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "tr",
+      "word": "El",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Долоня",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Bàn tay",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "手",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "手",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "手",
+      "concept": "hand",
+      "phraseId": "hbp-hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "locale": "am",
+      "word": "የእግር መዳፍ",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "ar",
+      "word": "قدم",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Стъпало",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "bn",
+      "word": "পায়ের পাতা",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "de",
+      "word": "Fuß",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "en",
+      "word": "Foot",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "es",
+      "word": "Pie",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Pied",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "he",
+      "word": "כף רגל",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "hi",
+      "word": "पैर",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "id",
+      "word": "Telapak kaki",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "it",
+      "word": "Piede",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "ko",
+      "word": "발",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Voet",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Stopa",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Pé",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Laba piciorului",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Ступня",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Wayo",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Paa",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Ayak",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Ступня",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Bàn chân",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "腳",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "脚",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "腳",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "locale": "am",
+      "word": "ሕፃን",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Бебе",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "de",
+      "word": "Baby",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "en",
+      "word": "Baby",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "es",
+      "word": "Bebé",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Bébé",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "he",
+      "word": "תינוק",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "id",
+      "word": "Bayi",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "it",
+      "word": "Bebè",
+      "concept": "baby",
+      "phraseId": "pp-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "ja",
+      "word": "赤ちゃん",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "ko",
+      "word": "아기",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Baby",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Niemowlę",
+      "concept": "baby",
+      "phraseId": "pp-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Dzidziuś",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Bebê",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Bebeluș",
+      "concept": "baby",
+      "phraseId": "pp-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Bebeluş",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Малыш",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Mtoto mchanga",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Sanggol",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Малюк",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Em bé",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "寶寶",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "宝宝",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "寶寶",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "locale": "am",
+      "word": "አውቶቡስ",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "ar",
+      "word": "حافلة",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Автобус",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "bn",
+      "word": "বাস",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "de",
+      "word": "Bus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "en",
+      "word": "Bus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "es",
+      "word": "Autobús",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Bus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "he",
+      "word": "אוטובוס",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "id",
+      "word": "Bus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "it",
+      "word": "Autobus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "ja",
+      "word": "バス",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "ko",
+      "word": "버스",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Bus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Autobus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Ônibus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Autobuz",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Автобус",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Bus",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Otobüs",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Автобус",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Xe buýt",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "巴士",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "公交车",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "公車",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "locale": "am",
+      "word": "ማንኪያ",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "ar",
+      "word": "ملعقة",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Лъжица",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "bn",
+      "word": "চামচ",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "de",
+      "word": "Löffel",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "en",
+      "word": "Spoon",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "es",
+      "word": "Cuchara",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Cuillère",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "he",
+      "word": "כף",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "hi",
+      "word": "चम्मच",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "id",
+      "word": "Sendok",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "it",
+      "word": "Cucchiaio",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "ja",
+      "word": "スプーン",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "ko",
+      "word": "숟가락",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Lepel",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Łyżka",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Colher",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Lingură",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Ложка",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Kijiko",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Kutsara",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Kaşık",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Ложка",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Thìa",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "匙羹",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "勺子",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "湯匙",
+      "concept": "spoon",
+      "phraseId": "fd-spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "locale": "am",
+      "word": "ሹካ",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "ar",
+      "word": "شوكة",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Вилица",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "bn",
+      "word": "কাঁটাচামচ",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "de",
+      "word": "Gabel",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "en",
+      "word": "Fork",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "es",
+      "word": "Tenedor",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Fourchette",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "he",
+      "word": "מזלג",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "hi",
+      "word": "काँटा",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "id",
+      "word": "Garpu",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "it",
+      "word": "Forchetta",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "ja",
+      "word": "フォーク",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "ko",
+      "word": "포크",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Vork",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Widelec",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Garfo",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Furculiță",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Вилка",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Tinidor",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Çatal",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Виделка",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Nĩa",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "叉子",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "叉子",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "叉子",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "locale": "am",
+      "word": "ሳህን",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "ar",
+      "word": "طبق",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Чиния",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "bn",
+      "word": "প্লেট",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "de",
+      "word": "Teller",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "en",
+      "word": "Plate",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "es",
+      "word": "Plato",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Assiette",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "he",
+      "word": "צלחת",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "hi",
+      "word": "थाली",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "id",
+      "word": "Piring",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "it",
+      "word": "Piatto",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "ja",
+      "word": "お皿",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "ko",
+      "word": "접시",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Talerz",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Prato",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Farfurie",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Тарелка",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Sahani",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Plato",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Tabak",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Тарілка",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Đĩa",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "盤子",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "盘子",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "盤子",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "locale": "am",
+      "word": "ሙዝ",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "ar",
+      "word": "موز",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Банан",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "bn",
+      "word": "কলা",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "de",
+      "word": "Banane",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "en",
+      "word": "Banana",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "es",
+      "word": "Plátano",
+      "concept": "banana",
+      "phraseId": "fd-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "es",
+      "word": "banana",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Banane",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "he",
+      "word": "בננה",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "hi",
+      "word": "केला",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "id",
+      "word": "Pisang",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "it",
+      "word": "Banana",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "ja",
+      "word": "バナナ",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "ko",
+      "word": "바나나",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Banaan",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Banan",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Banana",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Banană",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Банан",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Ndizi",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Saging",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Muz",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Банан",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Chuối",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "香蕉",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "香蕉",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "香蕉",
+      "concept": "banana",
+      "phraseId": "ff-banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "locale": "am",
+      "word": "ብርቱካን",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "ar",
+      "word": "برتقال",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Портокал",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "bn",
+      "word": "কমলা",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "es",
+      "word": "Naranja",
+      "concept": "orange",
+      "phraseId": "fd-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "es",
+      "word": "naranja",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Orange",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "he",
+      "word": "תפוז",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "hi",
+      "word": "संतरा",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "id",
+      "word": "Jeruk",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "it",
+      "word": "Arancia",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "ja",
+      "word": "オレンジ",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "ko",
+      "word": "오렌지",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Sinaasappel",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Pomarańcza",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Laranja",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Portocală",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Апельсин",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Chungwa",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Dalandan",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Portakal",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Апельсин",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Cam",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "橙",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "橙子",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "柳橙",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png"
+    },
+    {
+      "locale": "am",
+      "word": "ድንች",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "ar",
+      "word": "بطاطس",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Картоф",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "bn",
+      "word": "আলু",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "de",
+      "word": "Kartoffel",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "en",
+      "word": "Potato",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "es",
+      "word": "Papa",
+      "concept": "potato",
+      "phraseId": "fd-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "es",
+      "word": "papas",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Pomme de terre",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "he",
+      "word": "תפוח אדמה",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "hi",
+      "word": "आलू",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "id",
+      "word": "Kentang",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "it",
+      "word": "Patata",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "ja",
+      "word": "じゃがいも",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "ko",
+      "word": "감자",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Aardappel",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Ziemniak",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Batata",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Cartof",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Картошка",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Viazi",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Patatas",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Patates",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Картопля",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Khoai tây",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "薯仔",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "土豆",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "馬鈴薯",
+      "concept": "potato",
+      "phraseId": "fv-potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "locale": "am",
+      "word": "ቲማቲም",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "ar",
+      "word": "طماطم",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Домат",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "bn",
+      "word": "টমেটো",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "de",
+      "word": "Tomate",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "en",
+      "word": "Tomato",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "es",
+      "word": "Tomate",
+      "concept": "tomato",
+      "phraseId": "fd-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "es",
+      "word": "tomate",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Tomate",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "he",
+      "word": "עגבנייה",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "hi",
+      "word": "टमाटर",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "id",
+      "word": "Tomat",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "it",
+      "word": "Pomodoro",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "ja",
+      "word": "トマト",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "ko",
+      "word": "토마토",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Tomaat",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Pomidor",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Tomate",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Помидор",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Nyanya",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Kamatis",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Domates",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Помідор",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Cà chua",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "番茄",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "番茄",
+      "concept": "tomato",
+      "phraseId": "fd-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "西红柿",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "番茄",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "locale": "am",
+      "word": "ኳስ",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "ar",
+      "word": "كرة",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Топка",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "bn",
+      "word": "বল",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "de",
+      "word": "Ball",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "en",
+      "word": "Ball",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "es",
+      "word": "Pelota",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Ballon",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "hi",
+      "word": "गेंद",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "id",
+      "word": "Bola",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "it",
+      "word": "Palla",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "ja",
+      "word": "ボール",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "ko",
+      "word": "공",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Bal",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Piłka",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Bola",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Minge",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Мяч",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Mpira",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Bola",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Top",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "uk",
+      "word": "М'яч",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Bóng",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "球",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "球",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "球",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "locale": "am",
+      "word": "ሸሚዝ",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "ar",
+      "word": "قميص",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Риза",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "bn",
+      "word": "শার্ট",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "de",
+      "word": "Hemd",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "en",
+      "word": "Shirt",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "es",
+      "word": "Camisa",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Chemise",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "he",
+      "word": "חולצה",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "hi",
+      "word": "कमीज़",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "id",
+      "word": "Baju",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "it",
+      "word": "Camicia",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "ja",
+      "word": "シャツ",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "ko",
+      "word": "셔츠",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Shirt",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Koszula",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Camisa",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Cămașă",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Рубашка",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Shati",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Gömlek",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Сорочка",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Áo",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "襯衫",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "衬衫",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "襯衫",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "locale": "am",
+      "word": "ኮት",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "ar",
+      "word": "معطف",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Палто",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "bn",
+      "word": "কোট",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "de",
+      "word": "Mantel",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "en",
+      "word": "Coat",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "es",
+      "word": "Abrigo",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Manteau",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "he",
+      "word": "מעיל",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "hi",
+      "word": "कोट",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "id",
+      "word": "Mantel",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "it",
+      "word": "Cappotto",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "ja",
+      "word": "コート",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "ko",
+      "word": "코트",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Jas",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Płaszcz",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Casaco",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Haină",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Пальто",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Koti",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Amerikana",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Palto",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Пальто",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Áo khoác dài",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "大衣",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "大衣",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "大衣",
+      "concept": "coat",
+      "phraseId": "cl-coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "locale": "am",
+      "word": "ቆብ",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "ar",
+      "word": "قبعة",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Шапка",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "bn",
+      "word": "টুপি",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "de",
+      "word": "Hut",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "en",
+      "word": "Hat",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "es",
+      "word": "Sombrero",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Chapeau",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "he",
+      "word": "כובע",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "hi",
+      "word": "टोपी",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "id",
+      "word": "Topi",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "it",
+      "word": "Cappello",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "ja",
+      "word": "帽子",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "ko",
+      "word": "모자",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Hoed",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Czapka",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Chapéu",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Pălărie",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Шляпа",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Kofia",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Sombrero",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Şapka",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Капелюх",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Mũ",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "帽子",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "帽子",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "帽子",
+      "concept": "hat",
+      "phraseId": "cl-hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "locale": "am",
+      "word": "ጣት",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "ar",
+      "word": "إصبع",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Пръст",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "bn",
+      "word": "আঙুল",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "de",
+      "word": "Finger",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "en",
+      "word": "Finger",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "es",
+      "word": "Dedo",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Doigt",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "he",
+      "word": "אצבע",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "hi",
+      "word": "उंगली",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "id",
+      "word": "Jari",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "it",
+      "word": "Dito",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "ja",
+      "word": "ゆび",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "ko",
+      "word": "손가락",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Vinger",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Palec",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Dedo",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Deget",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Палец",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Kidole cha mkono",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Daliri",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Parmak",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Палець",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Ngón tay",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "手指",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "手指",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "手指",
+      "concept": "finger",
+      "phraseId": "hbp-finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "locale": "am",
+      "word": "ዓይን",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "ar",
+      "word": "عين",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Око",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "bn",
+      "word": "চোখ",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "de",
+      "word": "Auge",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "en",
+      "word": "Eye",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "es",
+      "word": "Ojo",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Œil",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "he",
+      "word": "עין",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "hi",
+      "word": "आँख",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "id",
+      "word": "Mata",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "it",
+      "word": "Occhio",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "ja",
+      "word": "目",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Oog",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Oko",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Olho",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Ochi",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Глаз",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Jicho",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Mata",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Göz",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Око",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Mắt",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "眼睛",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "眼睛",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "眼睛",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "locale": "am",
+      "word": "ጆሮ",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "ar",
+      "word": "أذن",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "bg",
+      "word": "Ухо",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "bn",
+      "word": "কান",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "de",
+      "word": "Ohr",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "en",
+      "word": "Ear",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "es",
+      "word": "Oreja",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "fr",
+      "word": "Oreille",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "he",
+      "word": "אוזן",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "hi",
+      "word": "कान",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "id",
+      "word": "Telinga",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "it",
+      "word": "Orecchio",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "ja",
+      "word": "耳",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "ko",
+      "word": "귀",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "nl",
+      "word": "Oor",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "pl",
+      "word": "Ucho",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "pt",
+      "word": "Orelha",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "ro",
+      "word": "Ureche",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "ru",
+      "word": "Ухо",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Sikio",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "tl",
+      "word": "Tenga",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Kulak",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "uk",
+      "word": "Вухо",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "vi",
+      "word": "Tai",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "zh-HK",
+      "word": "耳朵",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "zh-Hans",
+      "word": "耳朵",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "locale": "zh-Hant",
+      "word": "耳朵",
+      "concept": "ear",
+      "phraseId": "hb-ear",
+      "file": "hb-ear.png"
+    }
+  ],
+  "pendingMeaningReview": [
+    {
+      "locale": "ko",
+      "word": "벌",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "nl",
+      "word": "Bij",
+      "concept": "bee",
+      "phraseId": "an-bee",
+      "file": "an-bee.png",
+      "status": "symbol",
+      "current_file": "cw-at.png"
+    },
+    {
+      "locale": "ko",
+      "word": "개",
+      "concept": "dog",
+      "phraseId": "an-dog",
+      "file": "an-dog.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "ko",
+      "word": "강아지",
+      "concept": "dog",
+      "phraseId": "ap-dog",
+      "file": "an-dog.png",
+      "status": "symbol",
+      "current_file": "an-puppy.png"
+    },
+    {
+      "locale": "ko",
+      "word": "새",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "sw",
+      "word": "Ndege",
+      "concept": "bird",
+      "phraseId": "ap-bird-pet",
+      "file": "an-bird.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "vi",
+      "word": "Tất",
+      "concept": "sock",
+      "phraseId": "cl-socks",
+      "file": "cl-socks.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "ja",
+      "word": "あし",
+      "concept": "foot",
+      "phraseId": "hbp-foot",
+      "file": "hb-foot.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "ar",
+      "word": "طفل",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png",
+      "status": "symbol",
+      "current_file": "pp-kid.png"
+    },
+    {
+      "locale": "bn",
+      "word": "বাচ্চা",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png",
+      "status": "symbol",
+      "current_file": "pp-kid.png"
+    },
+    {
+      "locale": "hi",
+      "word": "बच्चा",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png",
+      "status": "symbol",
+      "current_file": "pp-kid.png"
+    },
+    {
+      "locale": "it",
+      "word": "Bambino",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png",
+      "status": "symbol",
+      "current_file": "pp-kid.png"
+    },
+    {
+      "locale": "tr",
+      "word": "Bebek",
+      "concept": "baby",
+      "phraseId": "pf-baby",
+      "file": "pp-baby.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "hi",
+      "word": "बस",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png",
+      "status": "symbol",
+      "current_file": "cw-stop.png"
+    },
+    {
+      "locale": "sw",
+      "word": "Basi",
+      "concept": "bus",
+      "phraseId": "tr-bus",
+      "file": "tr-bus.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "sw",
+      "word": "Uma",
+      "concept": "fork",
+      "phraseId": "fd-fork",
+      "file": "fd-fork.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "nl",
+      "word": "Bord",
+      "concept": "plate",
+      "phraseId": "fd-plate",
+      "file": "fd-plate.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "de",
+      "word": "Orange",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "en",
+      "word": "Orange",
+      "concept": "orange",
+      "phraseId": "ff-orange",
+      "file": "fd-orange.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "ro",
+      "word": "Roșie",
+      "concept": "tomato",
+      "phraseId": "fv-tomato",
+      "file": "fd-tomato.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "he",
+      "word": "כדור",
+      "concept": "ball",
+      "phraseId": "tf-ball",
+      "file": "tf-ball.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "tl",
+      "word": "Damit",
+      "concept": "shirt",
+      "phraseId": "cl-shirt",
+      "file": "cl-shirt.png",
+      "status": "ambiguous",
+      "current_file": null
+    },
+    {
+      "locale": "ko",
+      "word": "눈",
+      "concept": "eye",
+      "phraseId": "hb-eye",
+      "file": "hb-eye.png",
+      "status": "ambiguous",
+      "current_file": null
+    }
+  ]
+}

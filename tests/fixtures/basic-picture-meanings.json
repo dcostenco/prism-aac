@@ -1,0 +1,239 @@
+{
+  "alternatives": [
+    {
+      "locale": "nl",
+      "word": "bij",
+      "files": [
+        "an-bee.png",
+        "cw-at.png",
+        "cw-by.png"
+      ],
+      "meaning": "bee; at; by",
+      "source": "https://en.wiktionary.org/wiki/bij"
+    },
+    {
+      "locale": "ko",
+      "word": "새",
+      "files": [
+        "an-bird.png",
+        "dw-new.png"
+      ],
+      "meaning": "bird; new",
+      "source": "https://en.wiktionary.org/wiki/새"
+    },
+    {
+      "locale": "sw",
+      "word": "ndege",
+      "files": [
+        "an-bird.png",
+        "tr-airplane.png"
+      ],
+      "meaning": "bird; airplane",
+      "source": "https://en.wiktionary.org/wiki/ndege"
+    },
+    {
+      "locale": "vi",
+      "word": "tất",
+      "files": [
+        "cl-socks.png",
+        "cw-all.png"
+      ],
+      "meaning": "sock; all or complete",
+      "source": "https://en.wiktionary.org/wiki/tất"
+    },
+    {
+      "locale": "ja",
+      "word": "あし",
+      "files": [
+        "hb-foot.png",
+        "hbp-leg.png"
+      ],
+      "meaning": "foot; leg",
+      "source": "https://en.wiktionary.org/wiki/あし"
+    },
+    {
+      "locale": "tr",
+      "word": "bebek",
+      "files": [
+        "pp-baby.png",
+        "pp-kid.png",
+        "tf-doll.png"
+      ],
+      "meaning": "baby; kid; doll",
+      "source": "https://en.wiktionary.org/wiki/bebek"
+    },
+    {
+      "locale": "hi",
+      "word": "बस",
+      "files": [
+        "tr-bus.png",
+        "cw-stop.png",
+        "w-enough.png"
+      ],
+      "meaning": "bus; stop or enough",
+      "source": "https://en.wiktionary.org/wiki/बस"
+    },
+    {
+      "locale": "sw",
+      "word": "basi",
+      "files": [
+        "tr-bus.png",
+        "cw-then.png",
+        "w-enough.png"
+      ],
+      "meaning": "bus; then; enough",
+      "source": "https://en.wiktionary.org/wiki/basi"
+    },
+    {
+      "locale": "sw",
+      "word": "uma",
+      "files": [
+        "fd-fork.png",
+        "cw-bite.png",
+        "hb-pain.png"
+      ],
+      "meaning": "fork; bite; ache or hurt",
+      "source": "https://en.wiktionary.org/wiki/uma"
+    },
+    {
+      "locale": "nl",
+      "word": "bord",
+      "files": [
+        "fd-plate.png",
+        "sw-whiteboard.png"
+      ],
+      "meaning": "plate; board (classroom whiteboard); sign remains unpictured",
+      "source": "https://en.wiktionary.org/wiki/bord"
+    },
+    {
+      "locale": "de",
+      "word": "orange",
+      "files": [
+        "fd-orange.png",
+        "co-orange.png"
+      ],
+      "meaning": "orange fruit; orange color",
+      "source": "https://en.wiktionary.org/wiki/orange"
+    },
+    {
+      "locale": "en",
+      "word": "orange",
+      "files": [
+        "fd-orange.png",
+        "co-orange.png"
+      ],
+      "meaning": "orange fruit; orange color",
+      "source": "https://en.wiktionary.org/wiki/orange"
+    },
+    {
+      "locale": "ro",
+      "word": "roșie",
+      "files": [
+        "fd-tomato.png",
+        "co-red.png"
+      ],
+      "meaning": "tomato; red feminine form",
+      "source": "https://en.wiktionary.org/wiki/roșie"
+    },
+    {
+      "locale": "he",
+      "word": "כדור",
+      "files": [
+        "tf-ball.png",
+        "hb-pill.png"
+      ],
+      "meaning": "ball; pill; other dictionary senses remain unpictured",
+      "source": "https://en.wiktionary.org/wiki/כדור"
+    },
+    {
+      "locale": "ko",
+      "word": "눈",
+      "files": [
+        "hb-eye.png",
+        "w-snow.png"
+      ],
+      "meaning": "eye; snow",
+      "source": "https://en.wiktionary.org/wiki/눈"
+    },
+    {
+      "locale": "en",
+      "word": "mouse",
+      "files": [
+        "w-mouse-animal.png",
+        "w-mouse-computer.png"
+      ],
+      "meaning": "Mouse animal; computer mouse input device",
+      "source": "https://en.wiktionary.org/wiki/mouse"
+    },
+    {
+      "locale": "en",
+      "word": "mice",
+      "files": [
+        "w-mouse-animal.png",
+        "w-mouse-computer.png"
+      ],
+      "meaning": "Mouse animal; computer mouse input device",
+      "source": "https://en.wiktionary.org/wiki/mouse"
+    },
+    {
+      "locale": "ro",
+      "word": "au",
+      "files": [
+        "cw-have.png",
+        "help-hurts.png"
+      ],
+      "meaning": "Have; ouch pain interjection",
+      "source": "https://en.wiktionary.org/wiki/au#Romanian"
+    }
+  ],
+  "labels": [
+    {
+      "locale": "tl",
+      "phraseId": "cl-shirt",
+      "before": "Damit",
+      "word": "Kamisa",
+      "file": "cl-shirt.png",
+      "source": "https://en.wiktionary.org/wiki/kamisa"
+    },
+    {
+      "locale": "tl",
+      "phraseId": "cl-dress",
+      "before": "Damit",
+      "word": "Bestida",
+      "file": "cl-dress.png",
+      "source": "https://en.wiktionary.org/wiki/bestida"
+    },
+    {
+      "locale": "ko",
+      "phraseId": "an-bee",
+      "before": "벌",
+      "word": "꿀벌",
+      "file": "an-bee.png",
+      "source": "https://en.wiktionary.org/wiki/꿀벌"
+    }
+  ],
+  "held": [
+    {
+      "locale": "ko",
+      "word": "벌",
+      "reason": "Bee and punishment; no reviewed punishment artwork"
+    },
+    {
+      "locale": "ko",
+      "word": "개",
+      "reason": "Dog and general counter; a box is not an approved counter picture"
+    }
+  ],
+  "partial": [
+    {
+      "locale": "nl",
+      "word": "bord",
+      "unpictured": "sign"
+    },
+    {
+      "locale": "he",
+      "word": "כדור",
+      "unpictured": "other dictionary senses including bullet"
+    }
+  ]
+}

@@ -65,7 +65,9 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => (
     [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')]
       .filter((tile) => {
-        return Boolean(tile.textContent?.trim());
+        if (tile.dataset.picture === 'text') return true;
+        const image = tile.querySelector<HTMLImageElement>('img');
+        return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
       }).length
   )), { timeout: 20_000 }).toBe(5);
 }
@@ -113,7 +115,8 @@ for (const family of KEYBOARD_FAMILIES) {
 
     const predictionGeometry = await page.evaluate(() => {
       const tiles = [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')];
-      const icons = tiles.map((tile) => tile.querySelector<HTMLElement>('.aac-tile-icon')!);
+      const icons = tiles.map((tile) => tile.querySelector<HTMLElement>('.aac-tile-icon'))
+        .filter((icon): icon is HTMLElement => icon !== null);
       const images = icons.map((icon) => icon.querySelector<HTMLImageElement>('img')!);
       const labels = tiles.map((tile) => tile.querySelector<HTMLElement>('[data-testid="prediction-label"]')!);
       return {

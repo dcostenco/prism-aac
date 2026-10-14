@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { classifyWord, classifyPhrase, CATEGORY_COLORS, CATEGORY_LEGEND } from '@/engine/colorCoding';
+import multilingualWords from './fixtures/pictogram-positive.json';
+
+it.each(multilingualWords)('$lang letters and combining marks remain classifiable in $word', ({lang,word}) => {
+  expect(classifyWord(word,lang)).not.toBe('unknown');
+  expect(classifyWord(word.normalize('NFD'),lang)).toBe(classifyWord(word,lang));
+});
 
 describe('ColorCoding — Modified Fitzgerald Key word classification', () => {
   // Yellow: Pronouns / People

@@ -17,8 +17,10 @@ const ARTIFACT_DIR = process.env.AAC_LAYOUT_ARTIFACT_DIR;
 async function expectVisiblePredictionPictograms(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => [...document.querySelectorAll('.aac-prediction-tile')]
     .filter((tile) => {
-      if (!tile.textContent?.trim()) return false;
-      const rect = tile.getBoundingClientRect();
+      if (tile.getAttribute('data-picture') === 'text') return true;
+      const image = tile.querySelector<HTMLImageElement>('img');
+      if (!image || !image.complete || image.naturalWidth <= 0) return false;
+      const rect = image.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
     }).length), { timeout: 20_000 }).toBeGreaterThanOrEqual(3);
 }

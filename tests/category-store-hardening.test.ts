@@ -97,3 +97,35 @@ describe('categoryStore — hydration validator', () => {
     expect(useCategoryStore.getState().customPhrases.length).toBeLessThanOrEqual(1000);
   });
 });
+
+describe('categoryStore — custom phrases never read as built-in', () => {
+  // Board tiles show a built-in phrase's approved symbol by id. A custom entry
+  // reusing a built-in id would otherwise put that symbol over other words.
+  const customEntry = (text: string) => useCategoryStore.getState()
+    .getPhrasesForCategory('help-needs')
+    .find((p) => p.text === text);
+
+  it('marks a rehydrated custom phrase custom even if it claims isCustom:false and a built-in id', () => {
+    seedPersisted({
+      customPhrases: [
+        { id: 'cw-stop', categoryId: 'help-needs', text: 'Go away now', sortOrder: 100, isCustom: false, usageCount: 0 },
+      ],
+    });
+    void useCategoryStore.persist.rehydrate();
+    expect(customEntry('Go away now')?.isCustom).toBe(true);
+  });
+
+  it('marks a synced custom phrase without the flag custom', () => {
+    useCategoryStore.setState({
+      customPhrases: [
+        { id: 'cw-stop', categoryId: 'help-needs', text: 'Synced words', sortOrder: 100, usageCount: 0 } as never,
+      ],
+    });
+    expect(customEntry('Synced words')?.isCustom).toBe(true);
+  });
+
+  it('leaves built-in phrases built-in', () => {
+    const builtIn = useCategoryStore.getState().getPhrasesForCategory('help-needs').filter((p) => !p.isCustom);
+    expect(builtIn.length).toBeGreaterThan(0);
+  });
+});

@@ -1,0 +1,5138 @@
+{
+  "format": 1,
+  "policy": "Freeze existing reviewed basic-noun form pictures across all locales and verify no cloud generation. This inventory is a regression boundary, not a dictionary of every possible inflection. New aliases retain the existing singular primary noun sense; suffix candidates are never applied automatically.",
+  "cases": [
+    {
+      "lang": "en",
+      "word": "bee",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "en",
+      "word": "bees",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "en",
+      "word": "book",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "en",
+      "word": "books",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "en",
+      "word": "dog",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "en",
+      "word": "dogs",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "en",
+      "word": "cat",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "en",
+      "word": "cats",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "en",
+      "word": "bird",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "en",
+      "word": "birds",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "en",
+      "word": "apple",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "en",
+      "word": "apples",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "en",
+      "word": "egg",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "en",
+      "word": "eggs",
+      "file": "fd-eggs.png"
+    },
+    {
+      "lang": "en",
+      "word": "shoe",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "en",
+      "word": "shoes",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "en",
+      "word": "cup",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "en",
+      "word": "cups",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "en",
+      "word": "flower",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "en",
+      "word": "flowers",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "en",
+      "word": "car",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "en",
+      "word": "cars",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "en",
+      "word": "tree",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "en",
+      "word": "trees",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "en",
+      "word": "bottle",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "en",
+      "word": "bottles",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "en",
+      "word": "chair",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "en",
+      "word": "chairs",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "en",
+      "word": "bed",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "en",
+      "word": "beds",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "en",
+      "word": "sock",
+      "file": "cl-socks.png"
+    },
+    {
+      "lang": "en",
+      "word": "socks",
+      "file": "cl-socks.png"
+    },
+    {
+      "lang": "en",
+      "word": "hand",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "en",
+      "word": "hands",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "en",
+      "word": "foot",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "en",
+      "word": "feet",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "en",
+      "word": "tooth",
+      "file": "w-tooth.png"
+    },
+    {
+      "lang": "en",
+      "word": "teeth",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "en",
+      "word": "baby",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "en",
+      "word": "babies",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "en",
+      "word": "bus",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "en",
+      "word": "buses",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "en",
+      "word": "spoon",
+      "file": "fd-spoon.png"
+    },
+    {
+      "lang": "en",
+      "word": "spoons",
+      "file": "fd-spoon.png"
+    },
+    {
+      "lang": "en",
+      "word": "fork",
+      "file": "fd-fork.png"
+    },
+    {
+      "lang": "en",
+      "word": "forks",
+      "file": "fd-fork.png"
+    },
+    {
+      "lang": "en",
+      "word": "plate",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "en",
+      "word": "plates",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "en",
+      "word": "banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "en",
+      "word": "bananas",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "en",
+      "word": "oranges",
+      "file": "fd-orange.png"
+    },
+    {
+      "lang": "en",
+      "word": "potato",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "en",
+      "word": "potatoes",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "en",
+      "word": "tomato",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "en",
+      "word": "tomatoes",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "en",
+      "word": "ball",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "en",
+      "word": "balls",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "en",
+      "word": "toy",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "en",
+      "word": "toys",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "en",
+      "word": "door",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "en",
+      "word": "doors",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "en",
+      "word": "window",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "en",
+      "word": "windows",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "en",
+      "word": "shirt",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "en",
+      "word": "shirts",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "en",
+      "word": "coat",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "en",
+      "word": "coats",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "en",
+      "word": "hat",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "en",
+      "word": "hats",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "en",
+      "word": "finger",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "en",
+      "word": "fingers",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "en",
+      "word": "eye",
+      "file": "hb-eye.png"
+    },
+    {
+      "lang": "en",
+      "word": "eyes",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "en",
+      "word": "ear",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "en",
+      "word": "ears",
+      "file": "hbp-ears.png"
+    },
+    {
+      "lang": "en",
+      "word": "beer",
+      "file": "w-beer.png"
+    },
+    {
+      "lang": "en",
+      "word": "beers",
+      "file": "w-beer.png"
+    },
+    {
+      "lang": "en",
+      "word": "cupcake",
+      "file": "fd-cupcake.png"
+    },
+    {
+      "lang": "en",
+      "word": "cupcakes",
+      "file": "fd-cupcake.png"
+    },
+    {
+      "lang": "am",
+      "word": "መጫወቻ",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "am",
+      "word": "መጽሐፉን",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "am",
+      "word": "በሳህን",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "am",
+      "word": "በእግር",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "am",
+      "word": "አበባ",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "am",
+      "word": "እጄ",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "am",
+      "word": "እግሬ",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "am",
+      "word": "ዛፍ",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "am",
+      "word": "የመኝታ",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "am",
+      "word": "የመኪና",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "am",
+      "word": "የሙዝ",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "am",
+      "word": "የዓይን",
+      "file": "hb-eye.png"
+    },
+    {
+      "lang": "am",
+      "word": "የጥርስ",
+      "file": "w-tooth.png"
+    },
+    {
+      "lang": "am",
+      "word": "የፖም",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "am",
+      "word": "ጣቴ",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "am",
+      "word": "ጥርስህን",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أبواب",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أبوابها",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أصابع",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أطباق",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أطفالا",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أطفالنا",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أطفالهم",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أقدام",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أيدي",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أيديكم",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ar",
+      "word": "أيديهم",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأبواب",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأحذية",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأذن",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأسنان",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأصابع",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأطباق",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأعين",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأقدام",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الأيدي",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الابواب",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الاسنان",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الباب",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الباص",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ar",
+      "word": "البطاطا",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ar",
+      "word": "البطاطس",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ar",
+      "word": "البيضة",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "ar",
+      "word": "التفاح",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الجوارب",
+      "file": "cl-socks.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الحافلة",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الحذاء",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الرضع",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الرضيع",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الزهرة",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ar",
+      "word": "السرير",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "ar",
+      "word": "السيارات",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ar",
+      "word": "السيارة",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الشباك",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الطائر",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الطبق",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الطماطم",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "ar",
+      "word": "العين",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "العينين",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "العيون",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "القبعة",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "ar",
+      "word": "القدمين",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "ar",
+      "word": "القط",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ar",
+      "word": "القطط",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ar",
+      "word": "القميص",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الكتاب",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الكتب",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الكرات",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الكراسي",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الكرة",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الكرسي",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الكلب",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ar",
+      "word": "المعطف",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الموز",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "ar",
+      "word": "النافذة",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ar",
+      "word": "النوافذ",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الورد",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ar",
+      "word": "الورود",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ar",
+      "word": "اليد",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ar",
+      "word": "اليدين",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بأيدي",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ar",
+      "word": "باب",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ar",
+      "word": "باص",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بالأطفال",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بالسيارة",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بالعين",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بالكتاب",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "باليد",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بسيارة",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بعين",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بعيون",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بكتاب",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "بيضة",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "ar",
+      "word": "حافلات",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ar",
+      "word": "حذاءك",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "حذاءً",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "زجاجة",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ar",
+      "word": "زهرة",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ar",
+      "word": "سرير",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "ar",
+      "word": "سيارات",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ar",
+      "word": "شباك",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ar",
+      "word": "شجرة",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ar",
+      "word": "صحن",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "ar",
+      "word": "طائر",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ar",
+      "word": "طفلين",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "عيناه",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "عيونهم",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "فنجان",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ar",
+      "word": "قط",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كتابا",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كتابه",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كتابها",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كتابي",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كتابًا",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كرات",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كرسيَّ",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كلبًا",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ar",
+      "word": "كوبي",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ar",
+      "word": "لسيارة",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ar",
+      "word": "لطفل",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "لكتاب",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "لكرة",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ar",
+      "word": "للسيارات",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ar",
+      "word": "للسيارة",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ar",
+      "word": "للطفل",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "للعين",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ar",
+      "word": "للكتاب",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "للكرة",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ar",
+      "word": "معطفًا",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "ar",
+      "word": "نافذة",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ar",
+      "word": "نوافذ",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ar",
+      "word": "والبطاطس",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ar",
+      "word": "والطفل",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ar",
+      "word": "والكتاب",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "وبطاطس",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ar",
+      "word": "ورد",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ar",
+      "word": "وردا",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ar",
+      "word": "وردة",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ar",
+      "word": "ورود",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ar",
+      "word": "وكتاب",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ar",
+      "word": "وكرة",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ar",
+      "word": "يدا",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "bg",
+      "word": "бутилка",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "bg",
+      "word": "дърво",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "bg",
+      "word": "играчка",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "bg",
+      "word": "картофи",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "bg",
+      "word": "легло",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "bg",
+      "word": "обувка",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "bg",
+      "word": "прозорец",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "bg",
+      "word": "пръсти",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "bg",
+      "word": "ръце",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "bg",
+      "word": "цвете",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "bg",
+      "word": "яйце",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "bn",
+      "word": "খেলনা",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "bn",
+      "word": "গাছ",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "bn",
+      "word": "দাঁতের",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "bn",
+      "word": "পটেটো",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "bn",
+      "word": "ফুল",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "bn",
+      "word": "বিছানা",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "bn",
+      "word": "বিড়াল",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "bn",
+      "word": "হাতে",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "de",
+      "word": "autos",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "de",
+      "word": "babys",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "de",
+      "word": "bananen",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "de",
+      "word": "baum",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "de",
+      "word": "bett",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "de",
+      "word": "bienen",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "de",
+      "word": "blume",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "de",
+      "word": "blumen",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "de",
+      "word": "buches",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "de",
+      "word": "buchs",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "de",
+      "word": "bälle",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "de",
+      "word": "bücher",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "de",
+      "word": "büchern",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "de",
+      "word": "ei",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "de",
+      "word": "fenster",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "de",
+      "word": "flasche",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "de",
+      "word": "flaschen",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "de",
+      "word": "fuss",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "de",
+      "word": "fusse",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "de",
+      "word": "hemden",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "de",
+      "word": "hunde",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "de",
+      "word": "hunden",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "de",
+      "word": "hundes",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "de",
+      "word": "hände",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "de",
+      "word": "händen",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "de",
+      "word": "kartoffeln",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "de",
+      "word": "katzen",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "de",
+      "word": "mütze",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "de",
+      "word": "schuh",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "de",
+      "word": "schuhen",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "de",
+      "word": "stühle",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "de",
+      "word": "stühlen",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "de",
+      "word": "tassen",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "de",
+      "word": "tomaten",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "de",
+      "word": "tür",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "de",
+      "word": "türen",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "de",
+      "word": "wagen",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "de",
+      "word": "wagens",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "de",
+      "word": "zahn",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "de",
+      "word": "zähnen",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "de",
+      "word": "äpfel",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "es",
+      "word": "abejas",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "es",
+      "word": "auto",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "es",
+      "word": "autobuses",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "es",
+      "word": "autos",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "es",
+      "word": "ave",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "es",
+      "word": "aves",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "es",
+      "word": "balón",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "es",
+      "word": "bananas",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "es",
+      "word": "bebés",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "es",
+      "word": "botella",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "es",
+      "word": "botellas",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "es",
+      "word": "cama",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "es",
+      "word": "camas",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "es",
+      "word": "camisas",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "es",
+      "word": "carros",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "es",
+      "word": "coche",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "es",
+      "word": "coches",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "es",
+      "word": "dedos",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "es",
+      "word": "diente",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "es",
+      "word": "flor",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "es",
+      "word": "gata",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "es",
+      "word": "gatos",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "es",
+      "word": "gorro",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "es",
+      "word": "huevo",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "es",
+      "word": "libros",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "es",
+      "word": "manos",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "es",
+      "word": "manzanas",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "es",
+      "word": "oído",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "es",
+      "word": "oídos",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "es",
+      "word": "patata",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "es",
+      "word": "patatas",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "es",
+      "word": "pelotas",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "es",
+      "word": "perras",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "es",
+      "word": "perros",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "es",
+      "word": "pies",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "es",
+      "word": "platos",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "es",
+      "word": "puerta",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "es",
+      "word": "puertas",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "es",
+      "word": "pájaros",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "es",
+      "word": "sillas",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "es",
+      "word": "sombreros",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "es",
+      "word": "tazas",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "es",
+      "word": "tomates",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "es",
+      "word": "ventana",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "es",
+      "word": "ventanas",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "es",
+      "word": "zapato",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "es",
+      "word": "árbol",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "es",
+      "word": "árboles",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "fr",
+      "word": "abeilles",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "fr",
+      "word": "arbre",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "fr",
+      "word": "arbres",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "fr",
+      "word": "assiettes",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "fr",
+      "word": "autobus",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "fr",
+      "word": "balle",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "fr",
+      "word": "balles",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "fr",
+      "word": "ballons",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "fr",
+      "word": "bananes",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "fr",
+      "word": "bonnet",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "fr",
+      "word": "bonnets",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "fr",
+      "word": "bouteille",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "fr",
+      "word": "bouteilles",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "fr",
+      "word": "bébés",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "fr",
+      "word": "chaises",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "fr",
+      "word": "chapeaux",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "fr",
+      "word": "chats",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "fr",
+      "word": "chaussure",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "fr",
+      "word": "chemises",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "fr",
+      "word": "chiens",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "fr",
+      "word": "dent",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "fr",
+      "word": "doigts",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "fr",
+      "word": "fenêtre",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "fr",
+      "word": "fenêtres",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "fr",
+      "word": "fleur",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "fr",
+      "word": "fleurs",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "fr",
+      "word": "lit",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "fr",
+      "word": "lits",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "fr",
+      "word": "livres",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "fr",
+      "word": "mains",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "fr",
+      "word": "manteaux",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "fr",
+      "word": "oeil",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "fr",
+      "word": "oiseaux",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "fr",
+      "word": "pieds",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "fr",
+      "word": "pommes",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "fr",
+      "word": "porte",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "fr",
+      "word": "portes",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "fr",
+      "word": "tomates",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "fr",
+      "word": "voitures",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "fr",
+      "word": "œuf",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "he",
+      "word": "באוטובוס",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "he",
+      "word": "באצבע",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "he",
+      "word": "ביד",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "he",
+      "word": "בננות",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "he",
+      "word": "בספר",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "he",
+      "word": "האוטובוס",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "he",
+      "word": "הגרביים",
+      "file": "cl-socks.png"
+    },
+    {
+      "lang": "he",
+      "word": "החולצה",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "he",
+      "word": "היד",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "he",
+      "word": "המיטה",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "he",
+      "word": "המעיל",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "he",
+      "word": "הצעצוע",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "he",
+      "word": "חלון",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "he",
+      "word": "ידיים",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "he",
+      "word": "כלבים",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "he",
+      "word": "מכוניות",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "he",
+      "word": "נעלי",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "he",
+      "word": "עץ",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "he",
+      "word": "פרח",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "he",
+      "word": "צלחות",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "he",
+      "word": "צעצוע",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "he",
+      "word": "שהמיטה",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "he",
+      "word": "תפוחים",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "hi",
+      "word": "आँखों",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "hi",
+      "word": "उंगलियों",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "hi",
+      "word": "कानों",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "hi",
+      "word": "कुत्ते",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "hi",
+      "word": "केले",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "hi",
+      "word": "खिड़की",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "hi",
+      "word": "खिलौना",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "hi",
+      "word": "खिलौने",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "hi",
+      "word": "दांतों",
+      "file": "w-tooth.png"
+    },
+    {
+      "lang": "hi",
+      "word": "पेड़",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "hi",
+      "word": "पैरों",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "hi",
+      "word": "पोटैटो",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "hi",
+      "word": "प्लेट",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "hi",
+      "word": "फूल",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "hi",
+      "word": "बिस्तर",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "hi",
+      "word": "शर्ट",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "hi",
+      "word": "हाथों",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "id",
+      "word": "bajumu",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "id",
+      "word": "bis",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "id",
+      "word": "bukumu",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "id",
+      "word": "bukunya",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "id",
+      "word": "bunga",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "id",
+      "word": "gigimu",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "id",
+      "word": "jariku",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "id",
+      "word": "jendela",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "id",
+      "word": "mainanku",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "id",
+      "word": "mataku",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "id",
+      "word": "piringnya",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "id",
+      "word": "pohon",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "id",
+      "word": "sepatumu",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "id",
+      "word": "tanganku",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "id",
+      "word": "tanganmu",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "it",
+      "word": "albero",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "it",
+      "word": "auto",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "it",
+      "word": "banane",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "it",
+      "word": "calze",
+      "file": "cl-socks.png"
+    },
+    {
+      "lang": "it",
+      "word": "cani",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "it",
+      "word": "dita",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "it",
+      "word": "finestra",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "it",
+      "word": "fiore",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "it",
+      "word": "giocattolo",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "it",
+      "word": "letto",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "it",
+      "word": "mani",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "it",
+      "word": "mele",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "it",
+      "word": "patate",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "it",
+      "word": "piatti",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "it",
+      "word": "piedi",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "it",
+      "word": "pomodori",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "it",
+      "word": "uccelli",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "it",
+      "word": "uccellino",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ja",
+      "word": "カップ",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ja",
+      "word": "手",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ja",
+      "word": "木",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ja",
+      "word": "花",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ko",
+      "word": "꽃",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ko",
+      "word": "나무",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ko",
+      "word": "문",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ko",
+      "word": "장난감",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "ko",
+      "word": "차량",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "nl",
+      "word": "appels",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "nl",
+      "word": "bananen",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "nl",
+      "word": "bed",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "nl",
+      "word": "bloem",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "nl",
+      "word": "boom",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "nl",
+      "word": "handen",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "nl",
+      "word": "honden",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "nl",
+      "word": "lievelingsboek",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "nl",
+      "word": "lievelingsspeelgoed",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "nl",
+      "word": "muts",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "nl",
+      "word": "raam",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "nl",
+      "word": "speelgoed",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "nl",
+      "word": "tomaten",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "nl",
+      "word": "vingers",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "pl",
+      "word": "auta",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "pl",
+      "word": "babeczki",
+      "file": "fd-cupcake.png"
+    },
+    {
+      "lang": "pl",
+      "word": "babeczkę",
+      "file": "fd-cupcake.png"
+    },
+    {
+      "lang": "pl",
+      "word": "bananów",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "pl",
+      "word": "drzewo",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "pl",
+      "word": "jabłka",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "pl",
+      "word": "jajek",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "pl",
+      "word": "książki",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "pl",
+      "word": "książko",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "pl",
+      "word": "książkę",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "pl",
+      "word": "kwiatku",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "pl",
+      "word": "okno",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "pl",
+      "word": "piesku",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "pl",
+      "word": "piłkę",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "pl",
+      "word": "pomidorów",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "pl",
+      "word": "psa",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "pl",
+      "word": "psy",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "pl",
+      "word": "ptaszku",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "pl",
+      "word": "rąk",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "pl",
+      "word": "ręce",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "pl",
+      "word": "rękę",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "pl",
+      "word": "zabawko",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "pl",
+      "word": "zabawkę",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "pl",
+      "word": "ziemniaków",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "pl",
+      "word": "zębów",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "pl",
+      "word": "łóżko",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "pt",
+      "word": "abelhas",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "pt",
+      "word": "ave",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "pt",
+      "word": "aves",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "pt",
+      "word": "bananas",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "pt",
+      "word": "batatas",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "pt",
+      "word": "bebês",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "pt",
+      "word": "bolas",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "pt",
+      "word": "bolinha",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "pt",
+      "word": "bolinhas",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "pt",
+      "word": "bolinho",
+      "file": "fd-cupcake.png"
+    },
+    {
+      "lang": "pt",
+      "word": "cachorros",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "pt",
+      "word": "cadeiras",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "pt",
+      "word": "cadela",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "pt",
+      "word": "cama",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "pt",
+      "word": "camas",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "pt",
+      "word": "camisas",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "pt",
+      "word": "caneca",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "pt",
+      "word": "carros",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "pt",
+      "word": "casacos",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "pt",
+      "word": "chapéus",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "pt",
+      "word": "cães",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "pt",
+      "word": "cão",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "pt",
+      "word": "dedos",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "pt",
+      "word": "dente",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "pt",
+      "word": "flor",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "pt",
+      "word": "flores",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "pt",
+      "word": "garrafa",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "pt",
+      "word": "garrafas",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "pt",
+      "word": "gatinhos",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "pt",
+      "word": "gatos",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "pt",
+      "word": "janela",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "pt",
+      "word": "janelas",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "pt",
+      "word": "livros",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "pt",
+      "word": "maçãs",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "pt",
+      "word": "mãos",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "pt",
+      "word": "ouvido",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "pt",
+      "word": "ouvidos",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "pt",
+      "word": "ovo",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "pt",
+      "word": "porta",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "pt",
+      "word": "portas",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "pt",
+      "word": "pratos",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "pt",
+      "word": "pássaros",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "pt",
+      "word": "pés",
+      "file": "hb-foot.png"
+    },
+    {
+      "lang": "pt",
+      "word": "sapato",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "pt",
+      "word": "tomates",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "pt",
+      "word": "árvore",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "pt",
+      "word": "árvores",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ro",
+      "word": "albine",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "ro",
+      "word": "albinele",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "ro",
+      "word": "autobuze",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ro",
+      "word": "autobuzele",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ro",
+      "word": "autobuzul",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ro",
+      "word": "banane",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "ro",
+      "word": "bananele",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "ro",
+      "word": "bebeluși",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ro",
+      "word": "bebelușul",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cana",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cană",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cartea",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cartile",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cartofi",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cartofii",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ro",
+      "word": "copac",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ro",
+      "word": "copaci",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ro",
+      "word": "copacii",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ro",
+      "word": "copacilor",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ro",
+      "word": "copacul",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ro",
+      "word": "copacule",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ro",
+      "word": "câinele",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ro",
+      "word": "câinelui",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ro",
+      "word": "câini",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ro",
+      "word": "câinii",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ro",
+      "word": "câinilor",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cămașa",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cărți",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cărții",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cărțile",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ro",
+      "word": "cărților",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ro",
+      "word": "degete",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ro",
+      "word": "degetele",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ro",
+      "word": "degetelor",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ro",
+      "word": "degetul",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ro",
+      "word": "dinte",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ro",
+      "word": "dinții",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ro",
+      "word": "dinților",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ro",
+      "word": "farfurii",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "ro",
+      "word": "fereastra",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "fereastră",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ferestre",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ferestrele",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ferestrelor",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "floare",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ro",
+      "word": "floarea",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ro",
+      "word": "flori",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ro",
+      "word": "florile",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ro",
+      "word": "florilor",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ro",
+      "word": "geam",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "geamul",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "geamuri",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "geamurile",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ro",
+      "word": "haina",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "ro",
+      "word": "hainele",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "ro",
+      "word": "lingura",
+      "file": "fd-spoon.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mașina",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mașini",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mașinii",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mașinile",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mașinilor",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mere",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mingea",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mingi",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mâini",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mâinii",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mâinile",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mâinilor",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mâna",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mîna",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ro",
+      "word": "mărul",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ochii",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ochilor",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ochiul",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ochiului",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ou",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "ro",
+      "word": "oul",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ouăle",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "ro",
+      "word": "pantofii",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "ro",
+      "word": "pasărea",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ro",
+      "word": "pat",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "ro",
+      "word": "patul",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "ro",
+      "word": "patului",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "ro",
+      "word": "paturi",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "ro",
+      "word": "pisica",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ro",
+      "word": "pisici",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ro",
+      "word": "pisicile",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ro",
+      "word": "pălăria",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "ro",
+      "word": "păsări",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ro",
+      "word": "păsările",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ro",
+      "word": "păsărilor",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ro",
+      "word": "roșia",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "ro",
+      "word": "scaune",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "ro",
+      "word": "scaunele",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "ro",
+      "word": "scaunul",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "ro",
+      "word": "scaunului",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "ro",
+      "word": "sticla",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ro",
+      "word": "sticle",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ro",
+      "word": "sticlei",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ro",
+      "word": "sticlă",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ro",
+      "word": "urechea",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "ro",
+      "word": "urechile",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ușa",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ro",
+      "word": "uși",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ușii",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ușile",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ușilor",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ro",
+      "word": "ușă",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ro",
+      "word": "șosetele",
+      "file": "cl-socks.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автобуса",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автобусе",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автобусов",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автобусы",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автомобиле",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автомобилей",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автомобилем",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автомобили",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автомобиль",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "автомобиля",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "бананы",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "ru",
+      "word": "бутылка",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ru",
+      "word": "бутылки",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ru",
+      "word": "бутылку",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ru",
+      "word": "бутылок",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "ru",
+      "word": "глазам",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ru",
+      "word": "глазами",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ru",
+      "word": "глазах",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ru",
+      "word": "глазом",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ru",
+      "word": "глазу",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "ru",
+      "word": "дверей",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ru",
+      "word": "двери",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ru",
+      "word": "дверь",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ru",
+      "word": "дверью",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "ru",
+      "word": "дерева",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ru",
+      "word": "дереве",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ru",
+      "word": "дерево",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ru",
+      "word": "деревом",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ru",
+      "word": "дереву",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ru",
+      "word": "деревьев",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ru",
+      "word": "деревья",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "ru",
+      "word": "зуб",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ru",
+      "word": "зубами",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ru",
+      "word": "зубов",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "ru",
+      "word": "картофель",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ru",
+      "word": "картофеля",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ru",
+      "word": "картошку",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "ru",
+      "word": "книг",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ru",
+      "word": "книгами",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ru",
+      "word": "книгах",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ru",
+      "word": "книге",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ru",
+      "word": "книги",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ru",
+      "word": "книгой",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ru",
+      "word": "книгу",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кота",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ru",
+      "word": "котов",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кошек",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кошке",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кошки",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кошку",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кровати",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кровать",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кружка",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ru",
+      "word": "кружки",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ru",
+      "word": "ложки",
+      "file": "fd-spoon.png"
+    },
+    {
+      "lang": "ru",
+      "word": "малыша",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ru",
+      "word": "малышей",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ru",
+      "word": "машин",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "машинами",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "машинах",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "машине",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "машиной",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "машину",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "машины",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "ru",
+      "word": "младенца",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "ru",
+      "word": "мяча",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ru",
+      "word": "мячей",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ru",
+      "word": "мячом",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ru",
+      "word": "обуви",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "ru",
+      "word": "окна",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ru",
+      "word": "окнами",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ru",
+      "word": "окне",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ru",
+      "word": "окно",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ru",
+      "word": "окном",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ru",
+      "word": "окон",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "ru",
+      "word": "пальца",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ru",
+      "word": "пальцами",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ru",
+      "word": "пальцев",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ru",
+      "word": "пальцем",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ru",
+      "word": "пальцы",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "ru",
+      "word": "пес",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ru",
+      "word": "помидоры",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "ru",
+      "word": "пса",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ru",
+      "word": "птиц",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ru",
+      "word": "птицу",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ru",
+      "word": "птицы",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "ru",
+      "word": "пёс",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ru",
+      "word": "рубашки",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "ru",
+      "word": "рубашку",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "ru",
+      "word": "рук",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ru",
+      "word": "рукам",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ru",
+      "word": "руками",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ru",
+      "word": "руках",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ru",
+      "word": "руке",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ru",
+      "word": "руки",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ru",
+      "word": "рукой",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ru",
+      "word": "руку",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "ru",
+      "word": "собак",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ru",
+      "word": "собаки",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ru",
+      "word": "собакой",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ru",
+      "word": "собаку",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "ru",
+      "word": "стулья",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "ru",
+      "word": "тарелки",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "ru",
+      "word": "тарелку",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "ru",
+      "word": "туфли",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "ru",
+      "word": "уха",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "ru",
+      "word": "ушах",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "ru",
+      "word": "ушей",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "ru",
+      "word": "цветами",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ru",
+      "word": "цветов",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ru",
+      "word": "цветок",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ru",
+      "word": "цветы",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "ru",
+      "word": "чашки",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ru",
+      "word": "чашку",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "ru",
+      "word": "шапку",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "ru",
+      "word": "шар",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ru",
+      "word": "шара",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ru",
+      "word": "шары",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "ru",
+      "word": "шляпу",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "ru",
+      "word": "яблок",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "ru",
+      "word": "яблока",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "ru",
+      "word": "яблоки",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "ru",
+      "word": "яиц",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "ru",
+      "word": "яйцо",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "sw",
+      "word": "dirisha",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "sw",
+      "word": "kidole",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "sw",
+      "word": "kitanda",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "sw",
+      "word": "magari",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "sw",
+      "word": "maua",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "sw",
+      "word": "mikono",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "sw",
+      "word": "milango",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "sw",
+      "word": "mipira",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "sw",
+      "word": "mti",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "sw",
+      "word": "ua",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "sw",
+      "word": "vidole",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "sw",
+      "word": "vitabu",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "tl",
+      "word": "banana",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "tl",
+      "word": "bintana",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "tl",
+      "word": "bulaklak",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "tl",
+      "word": "kama",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "tl",
+      "word": "laruan",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "tl",
+      "word": "sumbrero",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "tr",
+      "word": "arabaya",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "tr",
+      "word": "ayakkabılarını",
+      "file": "cl-shoes.png"
+    },
+    {
+      "lang": "tr",
+      "word": "ağaç",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "tr",
+      "word": "diş",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "tr",
+      "word": "dişlerini",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "tr",
+      "word": "domatesten",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "tr",
+      "word": "ellerini",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "tr",
+      "word": "kitabı",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "tr",
+      "word": "mont",
+      "file": "cl-coat.png"
+    },
+    {
+      "lang": "tr",
+      "word": "muzdan",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "tr",
+      "word": "muzlu",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "tr",
+      "word": "otobüse",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "tr",
+      "word": "parmağım",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "tr",
+      "word": "pencere",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "tr",
+      "word": "tabağı",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "tr",
+      "word": "tabağından",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "tr",
+      "word": "çiçek",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "tr",
+      "word": "çorap",
+      "file": "cl-socks.png"
+    },
+    {
+      "lang": "tr",
+      "word": "çorapları",
+      "file": "cl-socks.png"
+    },
+    {
+      "lang": "uk",
+      "word": "авт",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "авто",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автобуса",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автобуси",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автобусом",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автобусі",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автобусів",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автомобілем",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автомобіль",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автомобіля",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автомобілі",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "автомобілів",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "банани",
+      "file": "fd-banana.png"
+    },
+    {
+      "lang": "uk",
+      "word": "бджіл",
+      "file": "an-bee.png"
+    },
+    {
+      "lang": "uk",
+      "word": "вух",
+      "file": "hb-ear.png"
+    },
+    {
+      "lang": "uk",
+      "word": "вікна",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "uk",
+      "word": "вікнами",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "uk",
+      "word": "вікно",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "uk",
+      "word": "вікном",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "uk",
+      "word": "вікні",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "uk",
+      "word": "вікон",
+      "file": "w-window.png"
+    },
+    {
+      "lang": "uk",
+      "word": "дверей",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "uk",
+      "word": "дверима",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "uk",
+      "word": "двері",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "uk",
+      "word": "дерев",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "uk",
+      "word": "дерева",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "uk",
+      "word": "деревах",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "uk",
+      "word": "дерево",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "uk",
+      "word": "дереві",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "uk",
+      "word": "долоні",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "uk",
+      "word": "зуб",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "uk",
+      "word": "зубами",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "uk",
+      "word": "зубах",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "uk",
+      "word": "зубів",
+      "file": "hb-teeth.png"
+    },
+    {
+      "lang": "uk",
+      "word": "картоплею",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "uk",
+      "word": "картоплю",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "uk",
+      "word": "картоплі",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "uk",
+      "word": "квітка",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "uk",
+      "word": "квітки",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "uk",
+      "word": "квітку",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книг",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книгами",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книгах",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книги",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книгою",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книгу",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книжка",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книжки",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книжку",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книжок",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книжці",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "книзі",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "uk",
+      "word": "кота",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "uk",
+      "word": "коти",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "uk",
+      "word": "котів",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "uk",
+      "word": "кішки",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "uk",
+      "word": "кішок",
+      "file": "an-cat.png"
+    },
+    {
+      "lang": "uk",
+      "word": "ложки",
+      "file": "fd-spoon.png"
+    },
+    {
+      "lang": "uk",
+      "word": "ліжка",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "uk",
+      "word": "ліжко",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "uk",
+      "word": "ліжку",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "uk",
+      "word": "ліжок",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "uk",
+      "word": "м'яча",
+      "file": "tf-ball.png"
+    },
+    {
+      "lang": "uk",
+      "word": "малюка",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "uk",
+      "word": "машин",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "машинах",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "машини",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "машиною",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "машину",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "машині",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "uk",
+      "word": "немовля",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "uk",
+      "word": "немовлят",
+      "file": "pp-baby.png"
+    },
+    {
+      "lang": "uk",
+      "word": "ока",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "uk",
+      "word": "оком",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "uk",
+      "word": "очах",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "uk",
+      "word": "очей",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "uk",
+      "word": "очима",
+      "file": "hbp-eyes.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пальцем",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пальця",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пальцями",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пальцях",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пальці",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пальців",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пес",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пляшка",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пляшки",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пляшку",
+      "file": "w-bottle.png"
+    },
+    {
+      "lang": "uk",
+      "word": "помідори",
+      "file": "fd-tomato.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пса",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пси",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "uk",
+      "word": "птаха",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "uk",
+      "word": "птахи",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "uk",
+      "word": "птахів",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "uk",
+      "word": "пташко",
+      "file": "an-bird.png"
+    },
+    {
+      "lang": "uk",
+      "word": "рук",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "uk",
+      "word": "руками",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "uk",
+      "word": "руках",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "uk",
+      "word": "руки",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "uk",
+      "word": "рукою",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "uk",
+      "word": "руку",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "uk",
+      "word": "собак",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "uk",
+      "word": "собаки",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "uk",
+      "word": "собакою",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "uk",
+      "word": "собаку",
+      "file": "an-dog.png"
+    },
+    {
+      "lang": "uk",
+      "word": "сорочки",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "uk",
+      "word": "сорочку",
+      "file": "cl-shirt.png"
+    },
+    {
+      "lang": "uk",
+      "word": "стільці",
+      "file": "sw-chair.png"
+    },
+    {
+      "lang": "uk",
+      "word": "тарілки",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "uk",
+      "word": "тарілку",
+      "file": "fd-plate.png"
+    },
+    {
+      "lang": "uk",
+      "word": "чашки",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "uk",
+      "word": "шапку",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "uk",
+      "word": "яблука",
+      "file": "fd-apple.png"
+    },
+    {
+      "lang": "uk",
+      "word": "яйце",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "uk",
+      "word": "яйцями",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "uk",
+      "word": "яєць",
+      "file": "w-egg.png"
+    },
+    {
+      "lang": "vi",
+      "word": "buýt",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "vi",
+      "word": "cửa",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "vi",
+      "word": "giường",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "vi",
+      "word": "hoa",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "vi",
+      "word": "khoai",
+      "file": "fd-potato.png"
+    },
+    {
+      "lang": "vi",
+      "word": "ngón",
+      "file": "hb-finger.png"
+    },
+    {
+      "lang": "vi",
+      "word": "nón",
+      "file": "cl-hat.png"
+    },
+    {
+      "lang": "vi",
+      "word": "tay",
+      "file": "hb-hand.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "书",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "书籍",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "床",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "書籍",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "杯",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "树",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "樹",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "汽車",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "汽车",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "牀",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "玩具",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "花",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "车",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "车辆",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "門",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "zh-HK",
+      "word": "门",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "书籍",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "公交",
+      "file": "tr-bus.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "床",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "杯",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "树",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "汽车",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "玩具",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "花",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "车辆",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-Hans",
+      "word": "门",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "书",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "书籍",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "床",
+      "file": "w-bed.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "書籍",
+      "file": "sw-book.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "杯",
+      "file": "fd-cup.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "树",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "樹",
+      "file": "w-tree.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "汽車",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "汽车",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "玩具",
+      "file": "w-toy.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "花",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "车",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "车辆",
+      "file": "pl-car.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "門",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "zh-Hant",
+      "word": "门",
+      "file": "w-door.png"
+    },
+    {
+      "lang": "es",
+      "word": "flores",
+      "file": "w-flowers.png"
+    },
+    {
+      "lang": "es",
+      "word": "naranjas",
+      "file": "fd-orange.png"
+    },
+    {
+      "lang": "fr",
+      "word": "oranges",
+      "file": "fd-orange.png"
+    },
+    {
+      "lang": "pt",
+      "word": "laranjas",
+      "file": "fd-orange.png"
+    },
+    {
+      "lang": "en",
+      "word": "bears",
+      "file": "an-bear.png"
+    },
+    {
+      "lang": "en",
+      "word": "bones",
+      "file": "hb-bone.png"
+    },
+    {
+      "lang": "en",
+      "word": "bugs",
+      "file": "an-bug.png"
+    },
+    {
+      "lang": "en",
+      "word": "belts",
+      "file": "cl-belt.png"
+    },
+    {
+      "lang": "en",
+      "word": "bowls",
+      "file": "fd-bowl.png"
+    },
+    {
+      "lang": "en",
+      "word": "ants",
+      "file": "an-ant.png"
+    },
+    {
+      "lang": "en",
+      "word": "mouths",
+      "file": "hb-mouth.png"
+    },
+    {
+      "lang": "en",
+      "word": "allergies",
+      "file": "hb-allergic-reaction.png"
+    },
+    {
+      "lang": "en",
+      "word": "ankles",
+      "file": "hb-ankle.png"
+    },
+    {
+      "lang": "en",
+      "word": "diapers",
+      "file": "cl-diaper.png"
+    },
+    {
+      "lang": "en",
+      "word": "elbows",
+      "file": "hb-elbow.png"
+    },
+    {
+      "lang": "en",
+      "word": "brownies",
+      "file": "fd-brownie.png"
+    },
+    {
+      "lang": "es",
+      "word": "brownies",
+      "file": "fd-brownie.png"
+    },
+    {
+      "lang": "pt",
+      "word": "bocas",
+      "file": "hb-mouth.png"
+    },
+    {
+      "lang": "pt",
+      "word": "brownies",
+      "file": "fd-brownie.png"
+    },
+    {
+      "lang": "en",
+      "word": "whales",
+      "file": "an-whale.png"
+    }
+  ],
+  "newAliases": [
+    {
+      "lang": "es",
+      "word": "flores",
+      "file": "w-flowers.png",
+      "source": "https://en.wiktionary.org/wiki/flores#Spanish"
+    },
+    {
+      "lang": "es",
+      "word": "naranjas",
+      "file": "fd-orange.png",
+      "source": "https://en.wiktionary.org/wiki/naranjas#Spanish"
+    },
+    {
+      "lang": "fr",
+      "word": "oranges",
+      "file": "fd-orange.png",
+      "source": "https://en.wiktionary.org/wiki/orange#French"
+    },
+    {
+      "lang": "pt",
+      "word": "laranjas",
+      "file": "fd-orange.png",
+      "source": "https://en.wiktionary.org/wiki/laranja#Portuguese"
+    },
+    {
+      "lang": "en",
+      "word": "bears",
+      "file": "an-bear.png",
+      "source": "https://en.wiktionary.org/wiki/bears#en"
+    },
+    {
+      "lang": "en",
+      "word": "bones",
+      "file": "hb-bone.png",
+      "source": "https://en.wiktionary.org/wiki/bones#en"
+    },
+    {
+      "lang": "en",
+      "word": "bugs",
+      "file": "an-bug.png",
+      "source": "https://en.wiktionary.org/wiki/bugs#en"
+    },
+    {
+      "lang": "en",
+      "word": "belts",
+      "file": "cl-belt.png",
+      "source": "https://en.wiktionary.org/wiki/belts#en"
+    },
+    {
+      "lang": "en",
+      "word": "bowls",
+      "file": "fd-bowl.png",
+      "source": "https://en.wiktionary.org/wiki/bowls#en"
+    },
+    {
+      "lang": "en",
+      "word": "ants",
+      "file": "an-ant.png",
+      "source": "https://en.wiktionary.org/wiki/ants#en"
+    },
+    {
+      "lang": "en",
+      "word": "mouths",
+      "file": "hb-mouth.png",
+      "source": "https://en.wiktionary.org/wiki/mouths#en"
+    },
+    {
+      "lang": "en",
+      "word": "allergies",
+      "file": "hb-allergic-reaction.png",
+      "source": "https://en.wiktionary.org/wiki/allergies#en"
+    },
+    {
+      "lang": "en",
+      "word": "ankles",
+      "file": "hb-ankle.png",
+      "source": "https://en.wiktionary.org/wiki/ankles#en"
+    },
+    {
+      "lang": "en",
+      "word": "diapers",
+      "file": "cl-diaper.png",
+      "source": "https://en.wiktionary.org/wiki/diapers#en"
+    },
+    {
+      "lang": "en",
+      "word": "elbows",
+      "file": "hb-elbow.png",
+      "source": "https://en.wiktionary.org/wiki/elbows#en"
+    },
+    {
+      "lang": "en",
+      "word": "brownies",
+      "file": "fd-brownie.png",
+      "source": "https://en.wiktionary.org/wiki/brownies#en"
+    },
+    {
+      "lang": "es",
+      "word": "brownies",
+      "file": "fd-brownie.png",
+      "source": "https://en.wiktionary.org/wiki/brownies#es"
+    },
+    {
+      "lang": "pt",
+      "word": "bocas",
+      "file": "hb-mouth.png",
+      "source": "https://en.wiktionary.org/wiki/bocas#pt"
+    },
+    {
+      "lang": "pt",
+      "word": "brownies",
+      "file": "fd-brownie.png",
+      "source": "https://en.wiktionary.org/wiki/brownies#pt"
+    },
+    {
+      "lang": "en",
+      "word": "whales",
+      "file": "an-whale.png",
+      "source": "https://en.wiktionary.org/wiki/whales#English"
+    }
+  ],
+  "browserCases": [
+    {
+      "lang": "es",
+      "word": "flores",
+      "file": "w-flowers.png",
+      "source": "https://en.wiktionary.org/wiki/flores#Spanish"
+    },
+    {
+      "lang": "es",
+      "word": "naranjas",
+      "file": "fd-orange.png",
+      "source": "https://en.wiktionary.org/wiki/naranjas#Spanish"
+    },
+    {
+      "lang": "fr",
+      "word": "oranges",
+      "file": "fd-orange.png",
+      "source": "https://en.wiktionary.org/wiki/orange#French"
+    },
+    {
+      "lang": "pt",
+      "word": "laranjas",
+      "file": "fd-orange.png",
+      "source": "https://en.wiktionary.org/wiki/laranja#Portuguese"
+    },
+    {
+      "lang": "en",
+      "word": "bears",
+      "file": "an-bear.png",
+      "source": "https://en.wiktionary.org/wiki/bears#en"
+    },
+    {
+      "lang": "en",
+      "word": "belts",
+      "file": "cl-belt.png",
+      "source": "https://en.wiktionary.org/wiki/belts#en"
+    },
+    {
+      "lang": "en",
+      "word": "bowls",
+      "file": "fd-bowl.png",
+      "source": "https://en.wiktionary.org/wiki/bowls#en"
+    },
+    {
+      "lang": "en",
+      "word": "whales",
+      "file": "an-whale.png",
+      "source": "https://en.wiktionary.org/wiki/whales#English"
+    }
+  ]
+}

@@ -440,6 +440,15 @@ describe('SettingsModal — account section', () => {
     expect(screen.getByText('checking_sign_in')).toBeInTheDocument();
   });
 
+  it('offers approved AAC terms and separate Apple terms without signing in', () => {
+    mocks.uiState.showSettings = true;
+    mocks.authState.profile = null;
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByRole('button', { name: /synalux_account/i }));
+    expect(screen.getByRole('link', { name: 'cloud_terms', exact: true })).toHaveAttribute('href', '/prism-aac/terms');
+    expect(screen.getByRole('link', { name: 'cloud_terms (Apple)' })).toHaveAttribute('href', 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
+  });
+
   it('shows sign-in link when not signed in', () => {
     mocks.authState.loaded = true;
     mocks.authState.profile = null;
@@ -611,5 +620,17 @@ describe('SettingsModal — Sign out', () => {
     } finally {
       mocks.authState.profile = null;
     }
+  });
+});
+
+describe('SettingsModal — Symbol credits', () => {
+  it('says where the bundled symbols come from and links their notice', () => {
+    mocks.uiState.showSettings = true;
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByRole('button', { name: /Symbol credits/ })); // starts collapsed
+    const credits = screen.getByTestId('symbol-credits');
+    expect(credits).toHaveTextContent('drawn for Prism AAC');
+    expect(credits).not.toHaveTextContent(/Mulberry|Fluent/);
+    expect(screen.getByRole('link', { name: 'About the symbols' }).getAttribute('href')).toBe('/prism-aac/symbols/ATTRIBUTION.txt');
   });
 });

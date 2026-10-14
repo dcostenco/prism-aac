@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Generate the Watch's iOSDefaultSet Swift literal from constants/phrases.ts.
 
-Every phrase shows its category's SF Symbol.
+A phrase carries no symbol, so its card shows the word: one category symbol on
+every phrase showed a game controller for Crayons and a smiling face for Sad.
+Categories keep their SF Symbol. The Watch draws nothing from the network.
 
 Run after editing constants/phrases.ts to keep the Watch in parity with iOS.
 """
@@ -9,8 +11,7 @@ import re, sys
 from collections import defaultdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-PHRASES_TS = ROOT / 'constants' / 'phrases.ts'
+PHRASES_TS = Path(__file__).resolve().parent.parent / 'constants' / 'phrases.ts'
 
 TOP_CATS = {
     'core-pronouns':     ('person.2.fill',                    'I / You / We',     'person.fill'),
@@ -58,7 +59,8 @@ EMERGENCY_IDS = {'cw-help', 'cw-hurt', 'help-need-help', 'help-call911'}
 
 def main():
     c = PHRASES_TS.read_text()
-    pattern = re.compile(r"p\('([^']+)', '([^']+)', '((?:[^'\\]|\\.)*)', \s*\d+\)")
+    # p(id, category, text, sortOrder[, aacCoreRank])
+    pattern = re.compile(r"p\('([^']+)', '([^']+)', '((?:[^'\\]|\\.)*)', \s*\d+(?:, \s*\d+)?\)")
     by_cat = defaultdict(list)
     for m in pattern.finditer(c):
         pid, cat, text = m.group(1), m.group(2), m.group(3).replace("\\'", "'")
@@ -74,7 +76,7 @@ def main():
     out.append('    /// changes, re-run gen-watch-default-set.py.')
     out.append('    static let iOSDefaultSet: [WatchCategory] = [')
     n_total = 0
-    for cat_id, (cat_icon, cat_name, default_sym) in TOP_CATS.items():
+    for cat_id, (cat_icon, cat_name, _phrase_sym) in TOP_CATS.items():
         items = rolled.get(cat_id, [])
         if not items: continue
         out.append(f'        WatchCategory(id: "{cat_id}", icon: "{cat_icon}", name: "{cat_name}", phrases: [')
@@ -82,10 +84,10 @@ def main():
             n_total += 1
             esc = text.replace('\\', '\\\\').replace('"', '\\"')
             is_em = "true" if pid in EMERGENCY_IDS else "false"
-            out.append(f'            WatchPhrase(id: "{pid[:50]}", label: "{esc}", sfSymbol: "{default_sym}", isEmergency: {is_em}),')
+            out.append(f'            WatchPhrase(id: "{pid[:50]}", label: "{esc}", sfSymbol: "", isEmergency: {is_em}),')
         out.append('        ]),')
     out.append('    ]')
-    print(f'// generated: {n_total} phrases × {sum(1 for c in TOP_CATS if rolled.get(c))} categories', file=sys.stderr)
+    print(f'// {n_total} phrases', file=sys.stderr)
     print('\n'.join(out))
 
 if __name__ == '__main__':

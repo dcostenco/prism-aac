@@ -1,0 +1,176 @@
+{
+  "cases": [
+    {
+      "lang": "en",
+      "text": "bee",
+      "word": "bees",
+      "file": "an-bee.png",
+      "expectedText": "bees"
+    },
+    {
+      "lang": "en",
+      "text": "babie",
+      "word": "babies",
+      "file": "pp-baby.png",
+      "expectedText": "babies"
+    },
+    {
+      "lang": "en",
+      "text": "hat",
+      "word": "hats",
+      "file": "cl-hat.png",
+      "expectedText": "hats"
+    },
+    {
+      "lang": "en",
+      "text": "apple",
+      "word": "apples",
+      "file": "fd-apple.png",
+      "expectedText": "apples"
+    },
+    {
+      "lang": "en",
+      "text": "cup",
+      "word": "cups",
+      "file": "fd-cup.png",
+      "expectedText": "cups"
+    },
+    {
+      "lang": "en",
+      "text": "chair",
+      "word": "chairs",
+      "file": "sw-chair.png",
+      "expectedText": "chairs"
+    },
+    {
+      "lang": "en",
+      "text": "buse",
+      "word": "buses",
+      "file": "tr-bus.png",
+      "expectedText": "buses"
+    },
+    {
+      "lang": "en",
+      "text": "spoon",
+      "word": "spoons",
+      "file": "fd-spoon.png",
+      "expectedText": "spoons"
+    },
+    {
+      "lang": "en",
+      "text": "fork",
+      "word": "forks",
+      "file": "fd-fork.png",
+      "expectedText": "forks"
+    },
+    {
+      "lang": "en",
+      "text": "plate",
+      "word": "plates",
+      "file": "fd-plate.png",
+      "expectedText": "plates"
+    },
+    {
+      "lang": "en",
+      "text": "banana",
+      "word": "bananas",
+      "file": "fd-banana.png",
+      "expectedText": "bananas"
+    },
+    {
+      "lang": "en",
+      "text": "orange",
+      "word": "oranges",
+      "file": "fd-orange.png",
+      "expectedText": "oranges"
+    },
+    {
+      "lang": "en",
+      "text": "potatoe",
+      "word": "potatoes",
+      "file": "fd-potato.png",
+      "expectedText": "potatoes"
+    },
+    {
+      "lang": "en",
+      "text": "tomatoe",
+      "word": "tomatoes",
+      "file": "fd-tomato.png",
+      "expectedText": "tomatoes"
+    },
+    {
+      "lang": "en",
+      "text": "shirt",
+      "word": "shirts",
+      "file": "cl-shirt.png",
+      "expectedText": "shirts"
+    },
+    {
+      "lang": "en",
+      "text": "coat",
+      "word": "coats",
+      "file": "cl-coat.png",
+      "expectedText": "coats"
+    }
+  ],
+  "unofferedByTestedPrefixes": [
+    {
+      "lang": "en",
+      "word": "shoe",
+      "testedPrefixes": [
+        "sho",
+        "shoe",
+        "a sho",
+        "a shoe",
+        "my sho",
+        "my shoe",
+        "your sho",
+        "your shoe",
+        "one sho",
+        "one shoe",
+        "the sho",
+        "the shoe",
+        "wear a sho",
+        "wear a shoe",
+        "put on a sho",
+        "put on a shoe",
+        "I need a sho",
+        "I need a shoe",
+        "I want sho",
+        "I want shoe",
+        "I want some sho",
+        "I want some shoe"
+      ],
+      "reason": "The unchanged prediction ranking did not offer this spelling in the first five candidates. Exact picture resolution and native alias checks cover the mapping separately."
+    },
+    {
+      "lang": "en",
+      "word": "sock",
+      "testedPrefixes": [
+        "soc",
+        "sock",
+        "a soc",
+        "a sock",
+        "my soc",
+        "my sock",
+        "your soc",
+        "your sock",
+        "one soc",
+        "one sock",
+        "the soc",
+        "the sock",
+        "wear a soc",
+        "wear a sock",
+        "put on a soc",
+        "put on a sock",
+        "I need a soc",
+        "I need a sock",
+        "I want soc",
+        "I want sock",
+        "I want some soc",
+        "I want some sock"
+      ],
+      "reason": "The unchanged prediction ranking did not offer this spelling in the first five candidates. Exact picture resolution and native alias checks cover the mapping separately."
+    }
+  ]
+}

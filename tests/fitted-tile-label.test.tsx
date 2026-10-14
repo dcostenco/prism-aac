@@ -135,4 +135,33 @@ describe('FittedTileLabel', () => {
     expect(Number.parseFloat(label.style.fontSize)).toBeLessThan(20);
     expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth + 1);
   });
+
+  it('keeps the whole translated caption when a loaded picture takes space inside an unchanged tile', () => {
+    const observed = new Set<Element>();
+    let resized: ResizeObserverCallback | undefined;
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(callback: ResizeObserverCallback) { resized = callback; }
+      observe = (element: Element) => observed.add(element);
+      disconnect = vi.fn();
+    });
+    render(<FittedTileLabel text="Mai mult" testId="fitted-label" className="test-fitted-label" />);
+    const label = screen.getByTestId('fitted-label');
+    let availableHeight = 40;
+    Object.defineProperties(label, {
+      clientWidth: { configurable: true, value: 80 },
+      clientHeight: { configurable: true, get: () => availableHeight },
+      scrollWidth: { configurable: true, value: 80 },
+      scrollHeight: { configurable: true, get: () => Number.parseFloat(label.style.fontSize || '20') > 16 ? 40 : 20 },
+    });
+    act(() => { queuedFrames.shift()?.(0); });
+    // The outer tile keeps its size; only the caption's content box changes.
+    availableHeight = 20;
+    act(() => {
+      if (observed.has(label)) resized?.([], {} as ResizeObserver);
+      queuedFrames.shift()?.(0);
+    });
+    expect(label.scrollHeight).toBeLessThanOrEqual(label.clientHeight + 1);
+    expect(label).toHaveTextContent('Mai mult');
+    expect(label).toHaveAttribute('data-fit-status', 'fit');
+  });
 });

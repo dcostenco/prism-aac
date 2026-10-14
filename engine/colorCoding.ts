@@ -1,3 +1,5 @@
+import { normalizePredictionSpelling } from '@/engine/predictionSpellings';
+
 /**
  * Modified Fitzgerald Key — Color Coding Engine
  *
@@ -90,8 +92,8 @@ const PLACES = new Set([
 ]);
 
 export function classifyWord(word: string, lang: string = 'en'): WordCategory {
-  const w = word.toLowerCase().replace(/’/g, "'").replace(/[^a-z'À-ɏЀ-ӿ؀-ۿ　-鿿가-힯]/g, '');
-  if (!w) return 'unknown';
+  const w = normalizePredictionSpelling(word, lang).replace(/’/g, "'").replace(/[^\p{L}\p{M}']/gu, '');
+  if (!/\p{L}/u.test(w)) return 'unknown';
   // Dictionary lookups work for any language (English word lists)
   if (PRONOUNS.has(w)) return 'pronoun';
   if (SOCIAL.has(w)) return 'social';

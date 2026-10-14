@@ -275,7 +275,7 @@ Funciona sem o iPhone — modo autônomo com dicionário de frases offline.
 </p>
 
 - **Tradução offline:** 1.261 frases × 20 idiomas incluídos (JSON de 411 KB) — busca instantânea, 100% precisa, sem necessidade de rede
-- Grade de 2 colunas de cartões de frases com SF Symbols
+- Grade de pictogramas de 2 colunas com imagens geradas
 - Chat de IA com entrada por ditado + teclado (nuvem quando online, dicionário de frases quando offline)
 - Sistema de emergência: contagem regressiva → WCSession → rede celular alternativa → TTS
 - Tradução com saída de áudio TTS (dicionário offline primeiro, nuvem como alternativa)
@@ -429,7 +429,7 @@ Cartões de imagem no estilo PECS. Toque em uma categoria, toque em um cartão, 
 - 22 categorias padrão: pessoas, comida, sentimentos, corpo, roupas, animais, lugares, etc.
 - O cuidador pode adicionar / remover / reordenar cartões para cada criança
 - Cada cartão possui uma chave `textKey` para internacionalização — alterar o idioma do aplicativo reetiqueta todos os cartões com um toque
-- Os cartões mostram as suas palavras, e as palavras digitadas podem receber imagens geradas nos planos pagos; a clonagem de voz permite combinar a voz do cartão com a dos irmãos ou pais da criança (plano pago)
+- Os pictogramas dos cartões vêm da biblioteca de imagens geradas; a clonagem de voz permite combinar a voz do cartão com a dos irmãos ou pais da criança (plano pago)
 - Aprendizado de n-gramas por usuário: se a criança tocar em "Eu quero comer" três vezes, a palavra "comer" subirá de posição após "quero" na sessão seguinte
 - Memória holográfica HRR: predições contextuais sem busca em ~0,2ms via Rust WASM — +27% de precisão Top-1 nas frases principais de CAA
 

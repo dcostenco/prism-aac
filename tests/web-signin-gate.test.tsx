@@ -1,7 +1,8 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ access: vi.fn(), native: false, profile: null as null | { email: string }, ddAction: vi.fn() }));
+const mocks = vi.hoisted(() => ({ access: vi.fn(), native: false, pathname: '/', profile: null as null | { email: string }, ddAction: vi.fn() }));
+vi.mock('next/navigation', () => ({ usePathname: () => mocks.pathname }));
 vi.mock('@/services/webAccessService', async importOriginal => ({
   ...await importOriginal<typeof import('@/services/webAccessService')>(), fetchWebAccess: mocks.access,
 }));
@@ -33,7 +34,7 @@ const nativeShells = [['the Prism AAC app', PRISM_AAC_SHELL_BRIDGE],
   ['the Prism AAC Browser app', PRISM_AAC_BROWSER_SHELL_BRIDGE]] as const;
 
 beforeEach(() => {
-  vi.clearAllMocks(); mocks.native = false; mocks.profile = null;
+  vi.clearAllMocks(); mocks.native = false; mocks.pathname = '/'; mocks.profile = null;
   clearVerifiedLocalAccess();
   useMessageStore.setState({ text: '' });
   // The reporter's per-tab event budget is module state. Without this the
@@ -50,6 +51,27 @@ const gateOutcomes = () => mocks.ddAction.mock.calls
   .filter(([name]) => name === 'aac_web_gate').map(([, ctx]) => (ctx as { outcome: string }).outcome);
 
 describe('full web sign-in gate', () => {
+  it.each(['/terms', '/prism-aac/terms'])('keeps %s readable without an account or network', async pathname => {
+    mocks.pathname = pathname;
+    mocks.access.mockRejectedValue(new Error('Offline'));
+    render(<WebSignInGate><article>Approved AAC terms</article></WebSignInGate>);
+    await tick(60_001);
+    expect(screen.getByText('Approved AAC terms')).toBeVisible();
+    expect(screen.queryByTestId('web-signin-gate')).not.toBeInTheDocument();
+    expect(mocks.access).not.toHaveBeenCalled();
+    expect(gateOutcomes()).toEqual([]);
+  });
+
+  it('keeps ordinary app routes gated and offers the public AAC terms link', async () => {
+    mocks.pathname = '/terms-other';
+    mocks.access.mockResolvedValue({ state: 'sign_in_required', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>);
+    await tick(1);
+    expect(screen.getByTestId('web-signin-gate')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Terms of use' })).toHaveAttribute('href', '/prism-aac/terms');
+    expect(screen.queryByText('Communication board action')).not.toBeInTheDocument();
+  });
+
   it('preserves verified local communication after a network failure and offline remount', async () => {
     mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
     const first = render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);

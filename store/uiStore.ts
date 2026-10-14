@@ -87,7 +87,8 @@ let alertTimer: ReturnType<typeof setTimeout> | null = null;
 // concurrent timers, each clearing the status independently.
 let alertStatusTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Upgrade the legacy three-state layout into two explicit modes. A saved
+// First visits show the picture board. Upgrade saved legacy layouts into
+// two explicit modes. A saved
 // maximized keyboard is Typing; an explicitly closed keyboard is Picture.
 // The old default (open + not maximized) was the unusable mixed state, so it
 // upgrades to Typing to preserve immediate keyboard access for existing users.
@@ -96,9 +97,10 @@ const initialCategoryTypingMode = (() => {
   try {
     const open = localStorage.getItem('prism-cat-kb-open');
     const maximized = localStorage.getItem('prism-kb-max');
+    if (open === null && maximized === null) return false;
     return maximized === 'true' || open !== 'false';
   } catch {
-    return true;
+    return false;
   }
 })();
 

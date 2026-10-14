@@ -32,7 +32,7 @@ export default function ColoredText({ text, className = '', activeWordIndex = nu
             data-active-word={isActive ? '1' : undefined}
             className={isActive ? 'rounded-sm px-0.5 -mx-0.5' : undefined}
             style={{
-              color: t.color !== 'transparent' ? t.color : undefined,
+              color: t.category !== 'unknown' && t.color !== 'transparent' ? t.color : undefined,
               // Translucent yellow highlight — works on light + dark themes
               // without overriding the per-category text color.
               backgroundColor: isActive ? 'rgba(255, 235, 59, 0.55)' : undefined,

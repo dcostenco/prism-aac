@@ -41,3 +41,20 @@ jobs:
       # means nothing. It earns a gate after a cleanup pass, not before.
       - name: Tests
         run: npm test
+      - name: Native picture installer tests
+        run: npm run test:native-pictures
+      - name: Real contextual memory tests
+        run: npm run test:hrr-real
+
+  native-project:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install project generator
+        run: command -v xcodegen || brew install xcodegen
+      - name: Native project generation gate
+        run: npm run test:native-project

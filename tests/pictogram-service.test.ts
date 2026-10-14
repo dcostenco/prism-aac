@@ -1,45 +1,53 @@
 /**
- * pictogramService unit tests.
+ * pictogramService — generated pictures for typed words on paid plans.
  *
- * Third-party pictograms are retired: no lookup may reach their hosts, tiles
- * show words, and only prediction-bar words on paid plans ask the Synalux
- * portal for a generated picture. Also covers mode guards, the 2MB blob cap,
- * non-image content-type rejection, in-memory deduplication and the plan
- * mapping.
+ * Built-in phrases use bundled symbols (tests/phrase-symbols.test.ts); this
+ * module only serves custom phrases and predicted words that are not built-in
+ * vocabulary. Pinned here: free and anonymous users never cause a request,
+ * nothing ever goes to a third-party symbol service, sensitive phrases are
+ * never sent for generation, and the 2 MB / content-type guards hold.
  *
- * vi.resetModules() in beforeEach gives each test a fresh in-memory cache.
+ * vi.resetModules() in beforeEach gives each test a fresh MEM_CACHE and
+ * dbPromise — no cross-test cache pollution.
  */
+import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const MOCK_BLOB_URL = 'blob:mock-pictogram-url';
-const RETIRED_HOSTS = ['api.arasaac.org', 'static.arasaac.org'];
-
-function requestHostname(input: unknown): string {
-  if (input instanceof URL) return input.hostname;
-  if (typeof Request !== 'undefined' && input instanceof Request) return new URL(input.url).hostname;
-  if (typeof input !== 'string') return '';
-  return new URL(input, 'https://prism-aac.test').hostname;
-}
-
-const isRetiredRequest = (input: unknown) => {
-  const hostname = requestHostname(input);
-  return RETIRED_HOSTS.some(host => hostname === host || hostname.endsWith(`.${host.split('.').slice(-2).join('.')}`));
-};
+const AI_PATH = '/prism-aac/pictogram';
 
 function mockCreateObjectURL(): void {
   // jsdom does not implement URL.createObjectURL — provide a stable mock
-  Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: vi.fn(() => MOCK_BLOB_URL) });
-  Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: vi.fn() });
+  Object.defineProperty(URL, 'createObjectURL', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(() => MOCK_BLOB_URL),
+  });
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(),
+  });
 }
 
-/** Every request is recorded; the portal answers with `handler`, anything else 404s. */
-function stubNetwork(handler: (url: string, init?: RequestInit) => Promise<Response> = async () =>
-  new Response(new ArrayBuffer(100), { status: 200, headers: { 'Content-Type': 'image/png' } })) {
-  const fetchSpy = vi.fn(async (url: string, init?: RequestInit) =>
-    url.includes('/prism-aac/pictogram') ? handler(url, init) : new Response('', { status: 404 }));
+function pngResponse(bytes = 200, headers: Record<string, string> = {}) {
+  return new Response(new ArrayBuffer(bytes), {
+    status: 200, headers: { 'Content-Type': 'image/png', ...headers },
+  });
+}
+
+/** fetch stub that answers the Synalux AI route and records every URL. */
+function stubAI(handler: (init?: RequestInit) => Promise<Response> | Response = () => pngResponse()) {
+  const fetchSpy = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes(AI_PATH)) return handler(init);
+    return new Response('', { status: 404 });
+  });
   vi.stubGlobal('fetch', fetchSpy);
   return fetchSpy;
 }
+
+const urls = (spy: ReturnType<typeof stubAI>) => spy.mock.calls.map(([u]) => String(u));
 
 beforeEach(() => {
   vi.resetModules();
@@ -51,49 +59,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('retired third-party pictograms', () => {
-  it('matches the retired hosts and their subdomains, not lookalikes', () => {
-    expect(isRetiredRequest('https://api.arasaac.org/v1/pictograms/en/search/food')).toBe(true);
-    expect(isRetiredRequest('https://static.arasaac.org/pictograms/42/42_500.png')).toBe(true);
-    expect(isRetiredRequest('https://api.arasaac.org.attacker.test/pictograms')).toBe(false);
-    expect(isRetiredRequest('https://attacker.test/static.arasaac.org/42.png')).toBe(false);
-  });
-
-  it.each([
-    ['tile, free plan', 'symbols', {}],
-    ['tile, paid plan', 'symbols-ai', {}],
-    ['prediction, free plan', 'symbols', { generated: true }],
-    ['prediction, paid plan', 'symbols-ai', { generated: true }],
-  ] as const)('never contacts a retired host (%s)', async (_case, mode, options) => {
-    const fetchSpy = stubNetwork();
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    for (const phrase of ['food', 'come here', 'how are you?', 'water', 'help']) {
-      await getPictogramUrl(phrase, 'en', mode, options);
-      await getPictogramUrl(phrase, 'es', mode, options);
-    }
-    expect(fetchSpy.mock.calls.filter(([url]) => isRetiredRequest(url))).toEqual([]);
-  });
-
-  it('shows words on tiles: no request at all, even on a paid plan', async () => {
-    const fetchSpy = stubNetwork();
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('food', 'en', 'symbols-ai')).toBeNull();
-    expect(await getPictogramUrl('water', 'en', 'symbols')).toBeNull();
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
-  it('free and anonymous predictions make no request', async () => {
-    const fetchSpy = stubNetwork();
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('food', 'en', 'symbols', { generated: true })).toBeNull();
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-});
+// ── plan → mode ────────────────────────────────────────────────────────────
 
 describe('pictureModeForProfile — plan → mode mapping', () => {
-  it('free plan returns "symbols" (no generated pictures for free tier)', async () => {
+  it('free plan returns "symbols" (no generated pictures)', async () => {
     const { pictureModeForProfile } = await import('@/services/pictogramService');
-    expect(pictureModeForProfile({ email: 'a@b.com', name: 'A', plan: 'free', isPlatformAdmin: false })).toBe('symbols');
+    expect(pictureModeForProfile({ email: 'a@b.com', name: 'A', plan: 'free', isPlatformAdmin: false }))
+      .toBe('symbols');
   });
 
   it('null profile returns "symbols" so anonymous visits never call the paid route', async () => {
@@ -101,123 +73,278 @@ describe('pictureModeForProfile — plan → mode mapping', () => {
     expect(pictureModeForProfile(null)).toBe('symbols');
   });
 
-  it.each(['standard', 'advanced', 'enterprise'] as const)('%s plan returns "symbols-ai"', async (plan) => {
-    const { pictureModeForProfile } = await import('@/services/pictogramService');
-    expect(pictureModeForProfile({ email: 'a@b.com', name: 'A', plan, isPlatformAdmin: false })).toBe('symbols-ai');
+  it.each(['standard', 'advanced', 'enterprise'] as const)(
+    '%s plan returns "symbols-ai"',
+    async (plan) => {
+      const { pictureModeForProfile } = await import('@/services/pictogramService');
+      expect(pictureModeForProfile({ email: 'a@b.com', name: 'A', plan, isPlatformAdmin: false }))
+        .toBe('symbols-ai');
+    },
+  );
+
+  it('only "symbols-ai" gives typed words a generated picture', async () => {
+    const { typedWordPicturesEnabled } = await import('@/services/pictogramService');
+    expect(typedWordPicturesEnabled('symbols-ai')).toBe(true);
+    expect(typedWordPicturesEnabled('symbols')).toBe(false);
+    expect(typedWordPicturesEnabled('off')).toBe(false);
   });
 });
 
-describe('getPictogramUrl — early exits', () => {
-  it('returns null immediately when mode is "off" — no network call', async () => {
-    const fetchSpy = stubNetwork();
+// ── no request at all ──────────────────────────────────────────────────────
+
+describe('getPictogramUrl — free, anonymous and off make no request', () => {
+  it.each(['symbols', 'off'] as const)('mode "%s" returns null without touching the network', async (mode) => {
+    const fetchSpy = stubAI();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('food', 'en', 'off', { generated: true })).toBeNull();
+    expect(await getPictogramUrl('pizza with mushrooms', 'en', mode)).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it.each(['!!! --- ???', ''])('returns null without a request for an empty head word (%j)', async (phrase) => {
-    const fetchSpy = stubNetwork();
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl(phrase, 'en', 'symbols-ai', { generated: true })).toBeNull();
+  it('an anonymous profile never reaches the paid route', async () => {
+    const fetchSpy = stubAI();
+    const { getPictogramUrl, pictureModeForProfile } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('my red bike', 'en', pictureModeForProfile(null))).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('never requests a picture for a blocked or sensitive word', async () => {
-    const fetchSpy = stubNetwork();
-    const { PROFANITY, SENSITIVE } = await import('@/engine/ageBlocklist');
+  it('returns null for an empty or punctuation-only phrase', async () => {
+    const fetchSpy = stubAI();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    const blocked = [...PROFANITY][0], sensitive = [...SENSITIVE][0];
-    expect(await getPictogramUrl(blocked, 'en', 'symbols-ai', { generated: true })).toBeNull();
-    expect(await getPictogramUrl(sensitive, 'en', 'symbols-ai', { generated: true })).toBeNull();
+    expect(await getPictogramUrl('', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('!!! --- ???', 'en', 'symbols-ai')).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('never sends a phrase with a sensitive or profane word, even when it is not the head word', async () => {
+    const fetchSpy = stubAI();
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    // "kill" is not the head word here ("want" is picked first), so a head-word
+    // check alone would have sent the whole phrase for generation.
+    expect(await getPictogramUrl('I want to kill time', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('weed', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('shit happens', 'en', 'symbols-ai')).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('keeps vowel signs when it checks a word: Hindi चूतिया is never sent', async () => {
+    const fetchSpy = stubAI();
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('चूतिया', 'hi', 'symbols-ai')).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('sees a listed word glued by punctuation or inside unspaced Chinese', async () => {
+    const fetchSpy = stubAI();
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('shit,dog', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('banana,kill', 'en', 'symbols-ai')).toBeNull();
+    expect(await getPictogramUrl('你是傻瓜', 'zh-Hant', 'symbols-ai')).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('never sends an English request for a phrase whose shown text is listed in its own language', async () => {
+    const fetchSpy = stubAI();
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('buttock', 'en', 'symbols-ai', { text: 'tako', lang: 'sw' })).toBeNull();
+    expect(await getPictogramUrl('dry', 'en', 'symbols-ai', { text: '幹', lang: 'zh-Hant' })).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    // a clean shown text still gets its picture
+    expect(await getPictogramUrl('dog', 'en', 'symbols-ai', { text: 'mbwa', lang: 'sw' })).not.toBeNull();
+    expect(fetchSpy).toHaveBeenCalled();
   });
 });
 
-describe('getPictogramUrl — generated prediction pictures', () => {
-  it('asks the Synalux portal once and returns a blob URL on a paid plan', async () => {
-    const fetchSpy = stubNetwork();
+// ── paid: Synalux AI ───────────────────────────────────────────────────────
+
+describe('getPictogramUrl — paid plans', () => {
+  it('asks the Synalux portal and returns a blob URL', async () => {
+    const fetchSpy = stubAI();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('cupboard', 'en', 'symbols-ai', { generated: true })).toBe(MOCK_BLOB_URL);
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchSpy.mock.calls[0];
-    expect(url).toMatch(/\/prism-aac\/pictogram$/);
-    expect(JSON.parse(String(init?.body))).toMatchObject({ phrase: 'cupboard', lang: 'en', styleVersion: 2 });
+    expect(await getPictogramUrl('grandma garden', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(urls(fetchSpy)).toHaveLength(1);
+    expect(urls(fetchSpy)[0]).toContain(AI_PATH);
   });
 
-  it('returns null when the portal fails', async () => {
-    stubNetwork(async () => new Response('', { status: 500 }));
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('cupboard', 'en', 'symbols-ai', { generated: true })).toBeNull();
+  it('never contacts a third-party symbol service', async () => {
+    const fetchSpy = stubAI(() => new Response('', { status: 500 }));
+    const { getPictogramUrl, PicturePendingError } = await import('@/services/pictogramService');
+    await expect(getPictogramUrl('dinosaur', 'en', 'symbols-ai')).rejects.toBeInstanceOf(PicturePendingError);
+    await expect(getPictogramUrl('Kiganja', 'sw', 'symbols-ai')).rejects.toBeInstanceOf(PicturePendingError);
+    expect(urls(fetchSpy).length).toBeGreaterThan(0);
+    expect(urls(fetchSpy).every((u) => u.includes(AI_PATH))).toBe(true);
+    expect(urls(fetchSpy).some((u) => /arasaac/i.test(u))).toBe(false);
   });
-});
 
-describe('getPictogramUrl — Synalux AI content safety', () => {
-  it('returns null when Synalux AI sends non-image content-type', async () => {
-    stubNetwork(async () => new Response(JSON.stringify({ error: 'rate limited' }), {
+  it('returns null for a permanent portal rejection', async () => {
+    stubAI(() => new Response('', { status: 403 }));
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('xyzzy-unique-3', 'en', 'symbols-ai')).toBeNull();
+  });
+
+  it('returns null for non-image content', async () => {
+    stubAI(() => new Response(JSON.stringify({ error: 'rate limited' }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     }));
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('safety-ct-1', 'en', 'symbols-ai', { generated: true })).toBeNull();
+    expect(await getPictogramUrl('safety-ct-1', 'en', 'symbols-ai')).toBeNull();
   });
 
-  it('returns null when Content-Length exceeds 2MB cap', async () => {
-    stubNetwork(async () => new Response(new ArrayBuffer(100), {
-      status: 200, headers: { 'Content-Type': 'image/png', 'Content-Length': String(2 * 1024 * 1024 + 1) },
+  it('returns null when Content-Length exceeds the 2MB cap', async () => {
+    stubAI(() => pngResponse(100, { 'Content-Length': String(2 * 1024 * 1024 + 1) }));
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('safety-cl-2', 'en', 'symbols-ai')).toBeNull();
+  });
+
+  it('returns null when the blob itself exceeds 2MB (no Content-Length header)', async () => {
+    stubAI(() => new Response(new Uint8Array(2 * 1024 * 1024 + 1024).buffer, {
+      status: 200, headers: { 'Content-Type': 'image/png' },
     }));
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('safety-cl-2', 'en', 'symbols-ai', { generated: true })).toBeNull();
+    expect(await getPictogramUrl('safety-blob-3', 'en', 'symbols-ai')).toBeNull();
   });
 
-  it('returns null when actual blob exceeds 2MB (no Content-Length header)', async () => {
-    const oversized = new Uint8Array(2 * 1024 * 1024 + 1024);
-    stubNetwork(async () => new Response(oversized.buffer, { status: 200, headers: { 'Content-Type': 'image/png' } }));
+  it('sends credentials: same-origin to avoid a CORS block on the storage redirect', async () => {
+    let credentials: RequestCredentials | undefined;
+    stubAI((init) => { credentials = init?.credentials; return pngResponse(); });
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl('safety-blob-3', 'en', 'symbols-ai', { generated: true })).toBeNull();
+    await getPictogramUrl('safety-creds-4', 'en', 'symbols-ai');
+    expect(credentials).toBe('same-origin');
   });
 
-  it('sends credentials: same-origin to avoid CORS block on Supabase redirects', async () => {
-    const fetchSpy = stubNetwork();
+  it('sends the phrase truncated to 100 chars', async () => {
+    let body: { phrase?: string } = {};
+    stubAI((init) => { body = JSON.parse(String(init?.body)); return pngResponse(); });
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('safety-creds-4', 'en', 'symbols-ai', { generated: true });
-    expect(fetchSpy.mock.calls[0][1]?.credentials).toBe('same-origin');
-  });
-
-  it('sends phrase truncated to 100 chars in request body', async () => {
-    const fetchSpy = stubNetwork();
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('a'.repeat(200), 'en', 'symbols-ai', { generated: true });
-    expect(JSON.parse(String(fetchSpy.mock.calls[0][1]?.body)).phrase.length).toBeLessThanOrEqual(100);
+    await getPictogramUrl('a'.repeat(200), 'en', 'symbols-ai');
+    expect(body.phrase?.length).toBe(100);
   });
 });
 
-describe('getPictogramUrl — in-memory deduplication', () => {
-  it('coalesces concurrent callers for the same phrase + lang + mode', async () => {
+// ── caching ────────────────────────────────────────────────────────────────
+
+describe('getPictogramUrl — portal generation switched off', () => {
+  const generationOff = (marker: 'header' | 'body') => new Response(
+    JSON.stringify({ error: 'Picture not found', styleVersion: 3, ...(marker === 'body' ? { generation: false } : {}) }),
+    { status: 404, headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3',
+      ...(marker === 'header' ? { 'X-AAC-Picture-Generation': 'off' } : {}) } },
+  );
+
+  it.each(['header', 'body'] as const)('a miss marked off (%s) shows the word after one cache probe, with no generation request', async marker => {
+    const fetchSpy = stubAI(() => generationOff(marker));
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('wales', 'en', 'symbols-ai')).toBeNull();
+    expect(urls(fetchSpy)).toHaveLength(1);
+    expect(urls(fetchSpy)[0]).toContain('cacheOnly=1');
+  });
+
+  it('the word is not asked again in the same session', async () => {
+    const fetchSpy = stubAI(() => generationOff('header'));
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    await getPictogramUrl('wales', 'en', 'symbols-ai');
+    await getPictogramUrl('wales', 'en', 'symbols-ai');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('an unmarked miss still asks for a new picture (generation on)', async () => {
+    let call = 0;
+    const fetchSpy = stubAI(() => (call++ === 0
+      ? new Response(JSON.stringify({ styleVersion: 3 }), { status: 404, headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3' } })
+      : pngResponse()));
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('wales', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(urls(fetchSpy)).toHaveLength(2);
+    expect(urls(fetchSpy)[1]).not.toContain('cacheOnly=1');
+  });
+});
+
+describe('getPictogramUrl — caching', () => {
+  it('coalesces concurrent callers for the same word into one request', async () => {
     let release!: () => void;
-    const gate = new Promise<void>(resolve => { release = resolve; });
-    const fetchSpy = stubNetwork(async () => {
-      await gate;
-      return new Response(new ArrayBuffer(100), { status: 200, headers: { 'Content-Type': 'image/png' } });
-    });
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const fetchSpy = stubAI(async () => { await gate; return pngResponse(); });
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    const calls = [1, 2, 3].map(() => getPictogramUrl('dedup', 'en', 'symbols-ai', { generated: true }));
+
+    const first = getPictogramUrl('concurrent-cache-test', 'en', 'symbols-ai');
+    const second = getPictogramUrl('concurrent-cache-test', 'en', 'symbols-ai');
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
     release();
-    expect(await Promise.all(calls)).toEqual([MOCK_BLOB_URL, MOCK_BLOB_URL, MOCK_BLOB_URL]);
+    const [a, b] = await Promise.all([first, second]);
+    expect(a).toBe(MOCK_BLOB_URL);
+    expect(b).toBe(a);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('a repeat for the same phrase + lang + mode is served from memory', async () => {
-    const fetchSpy = stubNetwork();
+  it('serves a repeat from memory without another request', async () => {
+    const fetchSpy = stubAI();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('repeat', 'en', 'symbols-ai', { generated: true });
-    await getPictogramUrl('repeat', 'en', 'symbols-ai', { generated: true });
+    await getPictogramUrl('cache-test-phrase', 'en', 'symbols-ai');
+    await getPictogramUrl('cache-test-phrase', 'en', 'symbols-ai');
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('different phrases are separate requests', async () => {
-    const fetchSpy = stubNetwork();
+  it('keeps different words apart', async () => {
+    const fetchSpy = stubAI();
     const { getPictogramUrl } = await import('@/services/pictogramService');
-    await getPictogramUrl('first', 'en', 'symbols-ai', { generated: true });
-    await getPictogramUrl('second', 'en', 'symbols-ai', { generated: true });
+    await getPictogramUrl('apple', 'en', 'symbols-ai');
+    await getPictogramUrl('banana', 'en', 'symbols-ai');
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('persists on the device: a fresh session reads IndexedDB instead of asking again', async () => {
+    const first = stubAI();
+    const service = await import('@/services/pictogramService');
+    expect(await service.getPictogramUrl('persisted-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(first).toHaveBeenCalledTimes(1);
+
+    vi.resetModules();
+    const second = stubAI();
+    const fresh = await import('@/services/pictogramService');
+    expect(await fresh.getPictogramUrl('persisted-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(second).not.toHaveBeenCalled();
+  });
+});
+
+// ── cache left by earlier versions ─────────────────────────────────────────
+
+describe('clearLegacyPictogramCache', () => {
+  async function seedLegacyDatabase() {
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open('prism-aac-pictograms', 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore('blobs'); };
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').put(new Blob(['old picture']), 'some-key');
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  const databaseNames = async () => (await indexedDB.databases()).map((d) => d.name);
+
+  it('deletes the retired pictogram database and miss list', async () => {
+    localStorage.clear();
+    await seedLegacyDatabase();
+    localStorage.setItem('prism-arasaac-misses', JSON.stringify(['en:xyz']));
+    expect(await databaseNames()).toContain('prism-aac-pictograms');
+
+    const { clearLegacyPictogramCache } = await import('@/services/pictogramService');
+    await clearLegacyPictogramCache();
+
+    await vi.waitFor(async () => expect(await databaseNames()).not.toContain('prism-aac-pictograms'));
+    expect(localStorage.getItem('prism-arasaac-misses')).toBeNull();
+    expect(localStorage.getItem('prism-legacy-pictograms-cleared')).toBe('2');
+  });
+
+  it('cleans stale legacy data again even after a previous completion marker', async () => {
+    localStorage.setItem('prism-legacy-pictograms-cleared', '1');
+    await seedLegacyDatabase();
+    const deleteSpy = vi.spyOn(indexedDB, 'deleteDatabase');
+    const { clearLegacyPictogramCache } = await import('@/services/pictogramService');
+    await clearLegacyPictogramCache();
+    expect(deleteSpy).toHaveBeenCalledWith('prism-aac-pictograms');
+    expect(await databaseNames()).not.toContain('prism-aac-pictograms');
   });
 });

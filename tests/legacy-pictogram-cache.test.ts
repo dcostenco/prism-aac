@@ -18,9 +18,9 @@ async function seed(name: string, value: string) {
   });
 }
 
-it('removes only retired-host HTTP entries and the retired database, keeping other caches and databases', async () => {
+it('removes only retired origin HTTP entries and the retired DB, preserving current Flux and pack caches', async () => {
   await seed('prism-aac-pictograms', 'retired bytes');
-  await seed('prism-aac-generated-pictures', 'other bytes');
+  await seed('prism-aac-generated-pictures', 'current Flux bytes');
   localStorage.setItem('prism-legacy-pictograms-cleared', '1');
   localStorage.setItem('prism-arasaac-misses', '["en:fixture"]');
   const entries = new Set([

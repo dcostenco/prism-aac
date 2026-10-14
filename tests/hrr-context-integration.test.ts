@@ -20,6 +20,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Spy on the mock HrrHologram to track encode calls
 const encodeSpy = vi.fn();
 const probeSpy = vi.fn();
+const initSpy = vi.fn(async () => ({}));
 
 vi.mock('synalux-hrr', async () => {
     const original = await vi.importActual<typeof import('synalux-hrr')>('synalux-hrr');
@@ -35,7 +36,7 @@ vi.mock('synalux-hrr', async () => {
             return super.probe(query, topK);
         }
     }
-    return { HrrHologram: SpyHologram };
+    return { HrrHologram: SpyHologram, default: () => initSpy() };
 });
 
 let mod: typeof import('../services/hrrContext');
@@ -43,6 +44,8 @@ let mod: typeof import('../services/hrrContext');
 beforeEach(async () => {
     encodeSpy.mockClear();
     probeSpy.mockClear();
+    initSpy.mockReset();
+    initSpy.mockResolvedValue({});
     vi.useFakeTimers();
 
     // Fresh module state
@@ -71,6 +74,28 @@ describe('initAacHrr', () => {
         encodeSpy.mockClear();
         const ok = await mod.initAacHrr();
         expect(ok).toBe(true);
+    });
+
+    it('shares awaited WASM initialization across concurrent user scopes', async () => {
+        let complete!: (value: object) => void;
+        initSpy.mockImplementationOnce(() => new Promise(resolve => { complete = resolve; }));
+        const first = mod.initAacHrr('user:first@example.com');
+        const second = mod.initAacHrr('user:second@example.com');
+        await vi.waitFor(() => expect(initSpy).toHaveBeenCalledTimes(1));
+        expect(mod.isAacHrrReady('user:first@example.com')).toBe(false);
+        expect(mod.isAacHrrReady('user:second@example.com')).toBe(false);
+        complete({});
+        expect(await first).toBe(true); expect(await second).toBe(true);
+        expect(initSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries a failed module initialization and keeps fallback available', async () => {
+        initSpy.mockRejectedValueOnce(new Error('WASM unavailable'));
+        expect(await mod.initAacHrr()).toBe(false);
+        expect(mod.isAacHrrReady()).toBe(false);
+        expect(mod.getNextWordSuggestions('I')).toEqual([]);
+        expect(await mod.initAacHrr()).toBe(true);
+        expect(initSpy).toHaveBeenCalledTimes(2);
     });
 
     it('restores valid hologram from localStorage', async () => {
@@ -335,35 +360,31 @@ describe('getNextWordSuggestions', () => {
         expect(fresh.getNextWordSuggestions('hello')).toEqual([]);
     });
 
-    it('probes bigram only for single-word input', () => {
-        mod.getNextWordSuggestions('hello');
-        expect(probeSpy).toHaveBeenCalledWith('w:hello', 5);
-        // No trigram probe (only 1 word)
-        expect(probeSpy).toHaveBeenCalledTimes(1);
+    it('retrieves the learned continuation for single-word input', () => {
+        mod.recordPhrase('hello world');
+        expect(mod.getNextWordSuggestions('hello').map(value => value.word)).toEqual(['world']);
     });
 
-    it('probes trigram + bigram for 2+ word input', () => {
-        mod.getNextWordSuggestions('I want');
-        expect(probeSpy).toHaveBeenCalledWith('w:i want', 5); // trigram first
-        expect(probeSpy).toHaveBeenCalledWith('w:want', expect.any(Number)); // bigram second
+    it('combines a specific continuation with the general continuation', () => {
+        mod.recordPhrase('I want water');
+        mod.recordPhrase('you want food');
+        expect(mod.getNextWordSuggestions('I want').map(value => value.word)).toEqual(['water', 'food']);
     });
 
-    it('trigram probe comes before bigram', () => {
-        mod.getNextWordSuggestions('I want');
-        expect(probeSpy.mock.calls[0][0]).toBe('w:i want');
-        expect(probeSpy.mock.calls[1][0]).toBe('w:want');
+    it('prioritizes specific context when only one suggestion fits', () => {
+        mod.recordPhrase('I need water');
+        mod.recordPhrase('you need food');
+        expect(mod.getNextWordSuggestions('I need', 1).map(value => value.word)).toEqual(['water']);
     });
 
     it('uses last 2 words for trigram in long text', () => {
-        mod.getNextWordSuggestions('please can you help me now');
-        expect(probeSpy.mock.calls[0][0]).toBe('w:me now');
-        expect(probeSpy.mock.calls[1][0]).toBe('w:now');
+        mod.recordPhrase('me now please');
+        expect(mod.getNextWordSuggestions('please can you help me now').map(value => value.word)).toEqual(['please']);
     });
 
-    it('lowercases the probe keys', () => {
-        mod.getNextWordSuggestions('Hello World');
-        expect(probeSpy).toHaveBeenCalledWith('w:hello world', 5);
-        expect(probeSpy).toHaveBeenCalledWith('w:world', expect.any(Number));
+    it('matches equivalent capitalization without changing the learned continuation', () => {
+        mod.recordPhrase('hello world again');
+        expect(mod.getNextWordSuggestions('Hello World').map(value => value.word)).toEqual(['again']);
     });
 
     it('record then suggest: "I want" → "water"', () => {
@@ -404,10 +425,9 @@ describe('getNextWordSuggestions', () => {
 
     it('handles trailing space correctly (word is complete)', () => {
         mod.recordPhrase('I want water');
-        probeSpy.mockClear();
-        mod.getNextWordSuggestions('I want ');
-        // split+filter gives ["I", "want"], trigram key: "w:i want"
-        expect(probeSpy.mock.calls[0][0]).toBe('w:i want');
+        mod.recordPhrase('you want food');
+        expect(mod.getNextWordSuggestions('I want ').map(value => value.word)).toEqual(['water', 'food']);
+        expect(mod.getNextWordSuggestions('I want ').every(value => !/\s/.test(value.word))).toBe(true);
     });
 });
 

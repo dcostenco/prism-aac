@@ -40,8 +40,10 @@ async function expectVisiblePictograms(page: Page, includePredictions: boolean):
     const firstLoaded = (selector: string, count: number) => [...document.querySelectorAll<HTMLElement>(selector)]
       .slice(0, count)
       .every((tile) => {
-        if (!tile.textContent?.trim()) return false;
-        const rect = tile.getBoundingClientRect();
+        if (tile.dataset.picture === 'text') return true;
+        const image = tile.querySelector<HTMLImageElement>('img');
+        if (!image?.complete || image.naturalWidth <= 0 || image.naturalHeight <= 0) return false;
+        const rect = image.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
       });
     return (!shouldCheckPredictions || firstLoaded('[data-testid="prediction-tile"]', 5))
@@ -117,8 +119,7 @@ test('fits four full-width picture targets with reachable navigation and readabl
     const categories = [...document.querySelectorAll<HTMLElement>('[data-testid="category-tile"]')];
     const categoryLabels = categories.map((card) => card.querySelector<HTMLElement>('.aac-category-label')!);
     const firstPhrase = phrases[0];
-    const firstIcon = firstPhrase.querySelector<HTMLElement>('.aac-tile-icon');
-    const firstLabel = firstPhrase.querySelector<HTMLElement>('[data-testid="phrase-tile-label"]')!;
+    const firstIcon = firstPhrase.querySelector<HTMLElement>('.aac-tile-icon')!;
     const rect = (element: Element) => {
       const value = element.getBoundingClientRect();
       return { left: value.left, top: value.top, right: value.right, bottom: value.bottom, width: value.width, height: value.height };
@@ -164,7 +165,14 @@ test('fits four full-width picture targets with reachable navigation and readabl
       }).length,
       phraseLabelColors: phraseLabels.slice(0, 4).map((label) => getComputedStyle(label).color),
       categoryLabelColors: categoryLabels.slice(0, 4).map((label) => getComputedStyle(label).color),
-      phraseLabelFonts: phraseLabels.slice(0, 4).map((label) => Number.parseFloat(getComputedStyle(label).fontSize)),
+      // Captions under a picture, and text tiles (no picture: the word alone,
+      // 1.35x larger by design), are measured separately.
+      phraseLabelFonts: phraseLabels.slice(0, 4)
+        .filter((label) => label.closest('[data-picture]')?.getAttribute('data-picture') !== 'text')
+        .map((label) => Number.parseFloat(getComputedStyle(label).fontSize)),
+      textTileLabelFonts: phraseLabels.slice(0, 4)
+        .filter((label) => label.closest('[data-picture]')?.getAttribute('data-picture') === 'text')
+        .map((label) => Number.parseFloat(getComputedStyle(label).fontSize)),
       categoryLabelFonts: categoryLabels.slice(0, 4).map((label) => Number.parseFloat(getComputedStyle(label).fontSize)),
       splitShortWords: phraseLabels.slice(0, 12).flatMap((label) => {
         const text = label.textContent?.trim() ?? '';
@@ -182,12 +190,7 @@ test('fits four full-width picture targets with reachable navigation and readabl
           fontSize: getComputedStyle(label).fontSize,
         })),
       firstPhraseBackground: getComputedStyle(firstPhrase).backgroundColor,
-      firstTilePicture: firstPhrase.dataset.tilePicture ?? null,
-      firstIconWell: Boolean(firstIcon),
-      firstWordCenterOffset: Math.abs(
-        (firstPhrase.getBoundingClientRect().top + firstPhrase.getBoundingClientRect().bottom) / 2
-        - (firstLabel.getBoundingClientRect().top + firstLabel.getBoundingClientRect().bottom) / 2,
-      ),
+      firstIconBackground: getComputedStyle(firstIcon).backgroundColor,
       documentOverflowX: document.documentElement.scrollWidth - innerWidth,
     };
   });
@@ -233,9 +236,10 @@ test('fits four full-width picture targets with reachable navigation and readabl
   expect(metrics.phraseLabelColors.every((color) => color === 'rgb(0, 0, 0)')).toBe(true);
   expect(metrics.categoryLabelColors.every((color) => color === 'rgb(0, 0, 0)')).toBe(true);
   expect(Math.min(...metrics.phraseLabelFonts)).toBeGreaterThanOrEqual(isLandscape ? 16 : 18);
-  // The 22px ceiling left room for a picture. A tile without one gives its
-  // words the whole card, so only the readable floor and the fit apply.
-  if (metrics.firstTilePicture === 'shown') expect(Math.max(...metrics.phraseLabelFonts)).toBeLessThanOrEqual(22);
+  expect(Math.max(...metrics.phraseLabelFonts)).toBeLessThanOrEqual(22);
+  expect(metrics.textTileLabelFonts.length).toBeGreaterThan(0);
+  expect(Math.min(...metrics.textTileLabelFonts)).toBeGreaterThanOrEqual(isLandscape ? 16 : 18);
+  expect(Math.max(...metrics.textTileLabelFonts)).toBeLessThanOrEqual(30);
   expect(Math.min(...metrics.categoryLabelFonts)).toBeGreaterThanOrEqual(14);
   expect(Math.max(...metrics.categoryLabelFonts)).toBeLessThanOrEqual(20);
   expect(metrics.splitShortWords).toEqual([]);
@@ -243,11 +247,7 @@ test('fits four full-width picture targets with reachable navigation and readabl
   expect(metrics.phraseLabelOverflow).toEqual([]);
 
   expect(metrics.firstPhraseBackground).not.toBe('rgb(255, 255, 255)');
-  // Board tiles show words: no empty picture well, and the words sit in the
-  // middle of the card.
-  expect(metrics.firstTilePicture).toBe('none');
-  expect(metrics.firstIconWell).toBe(false);
-  expect(metrics.firstWordCenterOffset).toBeLessThanOrEqual(3);
+  expect(metrics.firstIconBackground).toBe('rgba(0, 0, 0, 0)');
   await expect.poll(async () => page.locator('.aac-tile-label:visible').evaluateAll((labels) => (
     labels.length > 0
       && labels.every((label) => Boolean((label as HTMLElement).dataset.fitStatus))

@@ -109,6 +109,15 @@ function record(surface, lang, ids) {
 {
   const cur = parsePhraseMap(fs.readFileSync(path.join(ROOT, 'constants', 'phraseTranslations.ts'), 'utf-8'));
   const old = parsePhraseMap(show('constants/phraseTranslations.ts'));
+  // Imported relation labels remain part of the phrase translation surface.
+  const overridePath = 'constants/generated/spatialGrammarPictures.json';
+  const mergeOverrides = (table, source) => {
+    for (const [id, langs] of Object.entries(source?.translationOverrides ?? {})) {
+      table[id] = { ...table[id], ...langs };
+    }
+  };
+  mergeOverrides(cur, JSON.parse(fs.readFileSync(path.join(ROOT, overridePath), 'utf-8')));
+  mergeOverrides(old, JSON.parse(show(overridePath) ?? '{}'));
   const byLang = {};
   for (const [id, langs] of Object.entries(cur)) {
     for (const lang of Object.keys(langs)) {

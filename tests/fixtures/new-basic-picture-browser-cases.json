@@ -1,0 +1,36 @@
+{
+  "cases": [
+    {
+      "lang": "en",
+      "text": "were bee",
+      "word": "beer",
+      "file": "w-beer.png",
+      "expectedText": "were beer"
+    },
+    {
+      "lang": "en",
+      "text": "were bee",
+      "word": "beers",
+      "file": "w-beer.png",
+      "expectedText": "were beers"
+    },
+    {
+      "lang": "en",
+      "text": "mous",
+      "word": "mouse",
+      "files": [
+        "w-mouse-animal.png",
+        "w-mouse-computer.png"
+      ]
+    },
+    {
+      "lang": "en",
+      "text": "mic",
+      "word": "mice",
+      "files": [
+        "w-mouse-animal.png",
+        "w-mouse-computer.png"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState, useRef, useCallback, memo } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, useRef, useCallback, memo } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -10,8 +10,8 @@ import { speakWord } from '@/services/speechService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
-import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
-import { englishSourceFor } from '@/constants/reverseTranslation';
+import { pictureModeForProfile } from '@/services/pictogramService';
+import { usePredictionPicture } from '@/hooks/usePredictionPicture';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { PROVIDER_ICONS, PROVIDER_LABELS } from '@/services/sendToContact';
@@ -21,9 +21,11 @@ import {
 } from '@/services/predictionMemoryService';
 
 import { isAllowedInLang, ensureLangCorpusLoaded } from '@/lib/langAllowlist';
+import { isAgeBlocked } from '@/engine/ageBlocklist';
 import { useVisionStore } from '@/store/visionStore';
 import type { SceneType } from '@/services/sceneInference';
 import FittedTileLabel from './FittedTileLabel';
+import { matchesPredictionPrefix, normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, predictionTokenParts } from '@/engine/predictionSpellings';
 
 const MEMORY_PREDICTION_DEBOUNCE_MS = 650;
 const MIN_CLOUD_PREDICTION_INTERVAL_MS = 1_200;
@@ -101,19 +103,23 @@ function ContactTile({ contact, extraCount, onTap }: { contact: AacContact; extr
   );
 }
 
-function computeStableSlots(prev: string[], predictions: string[]): string[] {
-  const next = [...prev];
-  const used = new Set(next.map(s => s.toLowerCase()));
+function computeStableSlots(prev: string[], predictions: string[], language: string): string[] {
+  const next = [...new Map(prev.map(word => [predictionWordKey(word, language), preferredPredictionSpelling(word, language)])).values()];
+  const used = new Set(next.map(word => predictionWordKey(word, language)));
   for (let i = 0; i < 5; i++) {
-    const pred = predictions[i];
-    if (pred && !used.has(pred.toLowerCase())) {
+    const pred = predictions[i] && preferredPredictionSpelling(predictions[i], language);
+    const key = pred && predictionWordKey(pred, language);
+    if (pred && key && !used.has(key)) {
       const deadSlot = next.findIndex(
-        (s) => !predictions.some((p) => p.toLowerCase() === s.toLowerCase())
+        (s) => !predictions.some((p) => predictionWordKey(p, language) === predictionWordKey(s, language))
       );
       if (deadSlot >= 0) {
-        used.delete(next[deadSlot].toLowerCase());
+        used.delete(predictionWordKey(next[deadSlot], language));
         next[deadSlot] = pred;
-        used.add(pred.toLowerCase());
+        used.add(key);
+      } else if (next.length < 5) {
+        next.push(pred);
+        used.add(key);
       }
     }
   }
@@ -125,10 +131,9 @@ function mergeAiCompletion(
   ai: string | null,
   language: string,
 ): string[] {
-  if (!ai || !isAllowedInLang(ai, language)) return corpusPreds;
-  const lc = ai.toLowerCase();
-  const dedup = corpusPreds.filter((prediction) => prediction.toLowerCase() !== lc);
-  return [ai, ...dedup].slice(0, 5);
+  // The AI completion skips the engine's filter, so the word lists apply here too.
+  if (!ai || !isAllowedInLang(ai, language) || isAgeBlocked(ai, language)) return corpusPreds;
+  return mergeAdvisoryPredictions(corpusPreds, [ai], language);
 }
 
 export function mergeAdvisoryPredictions(
@@ -139,9 +144,9 @@ export function mergeAdvisoryPredictions(
   const merged: string[] = [];
   const seen = new Set<string>();
   for (const candidate of [...advisory, ...baseline]) {
-    const word = candidate.trim();
-    const key = word.toLocaleLowerCase();
-    if (!word || seen.has(key) || !isAllowedInLang(word, language)) continue;
+    const word = preferredPredictionSpelling(candidate.trim(), language);
+    const key = predictionWordKey(word, language);
+    if (!word || seen.has(key) || !isAllowedInLang(word, language) || isAgeBlocked(normalizePredictionSpelling(word, language), language)) continue;
     seen.add(key);
     merged.push(word);
     if (merged.length === 5) break;
@@ -150,7 +155,7 @@ export function mergeAdvisoryPredictions(
 }
 
 function memoryContextKey(text: string, language: string, sessionScope: string): string {
-  return `${sessionScope}\u0000${language.toLowerCase()}\u0000${text.replace(/\s+/g, ' ').trim().toLowerCase()}`;
+  return `${sessionScope}\u0000${language.toLowerCase()}\u0000${normalizePredictionSpelling(text.replace(/\s+/g, ' ').trim(), language)}`;
 }
 
 function hasCommittedPredictionContext(text: string): boolean {
@@ -165,13 +170,13 @@ function dropForeignTiles(
   // Curated AAC core defaults are authoritative for their language. Some are
   // shared across languages ("Tu" is valid Romanian and Spanish), so a
   // cross-corpus frequency comparison must never evict them.
-  const trustedDefaults = new Set(langDefaults.map((word) => word.toLowerCase()));
+  const trustedDefaults = new Set(langDefaults.map((word) => predictionWordKey(word, language)));
   const cleaned = displayed.filter(
-    (word) => trustedDefaults.has(word.toLowerCase()) || isAllowedInLang(word, language),
+    (word) => trustedDefaults.has(predictionWordKey(word, language)) || isAllowedInLang(word, language),
   );
   if (cleaned.length === displayed.length) return displayed;
   const filler = langDefaults.filter(
-    (word) => !cleaned.some((kept) => kept.toLowerCase() === word.toLowerCase()),
+    (word) => !cleaned.some((kept) => predictionWordKey(kept, language) === predictionWordKey(word, language)),
   );
   return [...cleaned, ...filler].slice(0, 5);
 }
@@ -189,14 +194,14 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
-  const [iconUrl, setIconUrl] = useState<string | null>(null);
-  const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null);
-  // No picture, or one that failed to load: the word gets the whole tile.
-  const wordsOnly = !iconUrl || failedIconUrl === iconUrl;
+  const contextText = useMessageStore((s) => s.text);
+  const committedContextRef = useRef(contextText);
+  useLayoutEffect(() => { committedContextRef.current = contextText; }, [contextText]);
   type FrozenVisual = {
     word: string;
     color: string;
     visionBoosted: boolean;
+    context: string;
   };
   const [pointerVisual, setPointerVisual] = useState<FrozenVisual | null>(null);
   const [focusVisual, setFocusVisual] = useState<FrozenVisual | null>(null);
@@ -211,22 +216,18 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
   const visibleColor = visibleVisual?.color ?? color;
   const visibleVisionBoosted = visibleVisual?.visionBoosted ?? visionBoosted;
 
-  useEffect(() => {
-    let cancelled = false;
-    // Generated pictures are shared by meaning. Recover the English source so
-    // every language asks for the same picture; fall back to the localized word
-    // when the prediction is not vocabulary we can map.
-    const english = englishSourceFor(visibleWord, language);
-    getPictogramUrl(english ?? visibleWord, english ? 'en' : language, pictureMode, { generated: true })
-      .then((url) => { if (!cancelled) setIconUrl(url); })
-      .catch(() => { if (!cancelled) setIconUrl(null); });
-    return () => { cancelled = true; };
-  }, [visibleWord, language, pictureMode]);
+  const { picture, pictureUrl, onImageError, imageKey, reason, alternativeImages } =
+    usePredictionPicture(visibleWord, language, pictureMode, visibleVisual?.context ?? contextText);
+  // No picture is coming: show the word alone, centred, like a board text
+  // tile, instead of a caption under an empty well. A generated picture that
+  // is still loading keeps the well so the word does not jump.
+  const textTile = picture === 'text';
 
   const currentVisual = (): FrozenVisual => ({
     word: visibleWord,
     color: visibleColor,
     visionBoosted: !!visibleVisionBoosted,
+    context: visibleVisual?.context ?? contextText,
   });
 
   const clearPointerVisual = () => {
@@ -249,6 +250,7 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
           word,
           color,
           visionBoosted: !!visionBoosted,
+          context: committedContextRef.current,
         });
       } else if (!highlighted && switchWordRef.current) {
         switchWordRef.current = null;
@@ -330,20 +332,28 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
       aria-label={`Predict: ${visibleWord}`}
       title={visibleWord}
       data-testid="prediction-tile"
-      data-tile-picture={wordsOnly ? 'none' : 'shown'}
-      className={`aac-btn aac-prediction-tile flex-1 min-w-0 rounded-xl flex flex-col items-center${wordsOnly ? ' justify-center' : ''} overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
+      data-picture={picture}
+      data-picture-reason={reason}
+      data-picture-choices={alternativeImages.length || undefined}
+      className={`aac-btn aac-prediction-tile flex-1 min-w-0 rounded-xl flex flex-col items-center${textTile ? ' justify-center' : ''} overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
       style={{ borderLeftColor: visibleColor, backgroundColor: visibleColor }}
     >
-      {!wordsOnly && (
+      {!textTile && (
         <span className="aac-tile-icon flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0 bg-white">
-          <img src={iconUrl!} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={() => setFailedIconUrl(iconUrl)} />
+          {alternativeImages.length > 0 ? (
+            <span className="aac-picture-choices">
+              {alternativeImages.map(image => <img key={image.key} src={image.url} alt="" aria-hidden
+                data-picture-file={image.file} loading="eager" className="object-contain" onError={image.onError} />)}
+            </span>
+          ) : pictureUrl && (
+            <img key={imageKey} src={pictureUrl} alt="" aria-hidden loading="eager" className="w-full h-full max-w-full max-h-full object-contain" onError={onImageError} />
+          )}
         </span>
       )}
       <FittedTileLabel
         text={visibleWord}
         testId="prediction-label"
         minFontSizePx={16}
-        growToFit={wordsOnly ? 1.3 : undefined}
         className="aac-tile-label aac-prediction-label"
       />
     </button>
@@ -373,6 +383,7 @@ export default function PredictionBar() {
   const authLoaded = useAuthStore((s) => s.loaded);
   const predictionSessionScope = getPredictionSessionScope(authProfile?.email);
   const langDefaults = useMemo(() => getPredictionsForLanguage(language), [language]);
+  const [corpusRevision, setCorpusRevision] = useState(0);
   const currentMemoryContext = memoryContextKey(text, language, predictionSessionScope);
   const [memoryState, setMemoryState] = useState<{
     context: string;
@@ -399,7 +410,7 @@ export default function PredictionBar() {
     );
     return {
       language,
-      tiles: text.trim() ? computeStableSlots(langDefaults, merged) : merged,
+      tiles: text.trim() ? computeStableSlots(langDefaults, merged, language) : merged,
     };
   });
   // A language switch must never render stale tiles while the stabilization
@@ -423,11 +434,22 @@ export default function PredictionBar() {
   // ensureLangCorpusLoaded itself also preloads EN unconditionally,
   // so the EN side is always covered.
   useEffect(() => {
-    void ensureLangCorpusLoaded(language);
+    let cancelled = false;
+    const loads = [ensureLangCorpusLoaded(language)];
     if (outputLanguage && outputLanguage !== language) {
-      void ensureLangCorpusLoaded(outputLanguage);
+      loads.push(ensureLangCorpusLoaded(outputLanguage));
     }
-  }, [language, outputLanguage]);
+    void Promise.all(loads).then(() => {
+      if (cancelled || useSettingsStore.getState().language !== language) return;
+      // Imports finish independently of typing. Refine the current message,
+      // then reapply the now-complete cross-language gate without a keystroke.
+      updatePredictions(useMessageStore.getState().text, language);
+      setCorpusRevision((revision) => revision + 1);
+    }).catch((error) => {
+      if (!cancelled) console.warn('Prediction corpus preload failed', error);
+    });
+    return () => { cancelled = true; };
+  }, [language, outputLanguage, updatePredictions]);
 
   // Ask the prediction store to refine non-empty text. Empty text is handled
   // directly by the display calculation below.
@@ -444,6 +466,7 @@ export default function PredictionBar() {
     const normalizedText = text.replace(/\s+/g, ' ').trim();
     const context = memoryContextKey(normalizedText, language, predictionSessionScope);
     const requestId = ++memoryRequestIdRef.current;
+    const authGeneration = useAuthStore.getState().identityGeneration;
     let cancelled = false;
     let cloudController: AbortController | null = null;
 
@@ -456,7 +479,11 @@ export default function PredictionBar() {
     const localWordsPromise = ensureLangCorpusLoaded(language)
       .then(() => import('../services/hrrContext'))
       .then(async (memory) => {
+        if (cancelled || memoryRequestIdRef.current !== requestId
+          || useAuthStore.getState().identityGeneration !== authGeneration) return [];
         if (!await memory.initAacHrr(predictionSessionScope)) return [];
+        if (cancelled || memoryRequestIdRef.current !== requestId
+          || useAuthStore.getState().identityGeneration !== authGeneration) return [];
         const seen = new Set<string>();
         return memory.getNextWordSuggestions(
           normalizedText,
@@ -466,7 +493,7 @@ export default function PredictionBar() {
         )
           .map((candidate) => candidate.word.trim())
           .filter((word) => {
-            const key = word.toLocaleLowerCase();
+            const key = predictionWordKey(word, language);
             if (!word || seen.has(key) || !isAllowedInLang(word, language)) return false;
             seen.add(key);
             return true;
@@ -578,7 +605,7 @@ export default function PredictionBar() {
     } else {
       const withMemory = mergeAdvisoryPredictions(predictions, memoryWords, language);
       const merged = mergeAiCompletion(withMemory, aiCompletion, language);
-      final = computeStableSlots(previous, merged);
+      final = computeStableSlots(previous, merged, language);
     }
 
     // This state intentionally preserves tile positions for switch scanning.
@@ -606,13 +633,14 @@ export default function PredictionBar() {
     return () => {
       cancelled = true;
     };
-  }, [predictions, memoryWords, aiCompletion, text, language, langDefaults, displayedState]);
+  }, [predictions, memoryWords, aiCompletion, text, language, langDefaults, displayedState, corpusRevision]);
 
   const handleTap = useCallback((word: string) => {
     tapFeedback();
-    const midWord = text.length > 0 && !text.endsWith(' ');
     const words = text.trim().split(/\s+/).filter(Boolean);
-    const isCompletion = midWord && words.length > 0 && word.toLowerCase().startsWith(words[words.length - 1].toLowerCase());
+    const partial = predictionTokenParts(words.at(-1) ?? '');
+    const midWord = text.length > 0 && !/\s$/u.test(text) && !partial.trailing;
+    const isCompletion = midWord && !!partial.word && matchesPredictionPrefix(word, partial.word, language);
 
     // For trigram learning we need the two committed words BEFORE the new tap.
     // If the user is completing a partial word, the in-progress word doesn't count as committed,
@@ -623,7 +651,8 @@ export default function PredictionBar() {
 
     if (isCompletion && words.length > 0) {
       const prefix = words.slice(0, -1).join(' ');
-      const newText = prefix ? `${prefix} ${word} ` : `${word} `;
+      const completed = `${partial.leading}${word}`;
+      const newText = prefix ? `${prefix} ${completed} ` : `${completed} `;
       useMessageStore.getState().setText(newText);
     } else {
       const current = useMessageStore.getState().text;
@@ -631,7 +660,7 @@ export default function PredictionBar() {
       useMessageStore.getState().setText(newText);
     }
 
-    learnWord(word.toLowerCase(), previousWord?.toLowerCase(), prevPrevWord?.toLowerCase());
+    learnWord(word, previousWord, prevPrevWord);
     ddAction('prediction.word_selected', { categoryId: undefined, position: predictions.indexOf(word), isCompletion, wordCount: words.length + 1 });
     import('@/store/metricsStore').then(m => m.useMetricsStore.getState().recordPredictionHit()).catch(() => {});
     const fullPhrase = isCompletion
@@ -688,7 +717,7 @@ export default function PredictionBar() {
   // when sidePanel toggles between 'aac-chat' and anything else.)
   const finalTiles = useMemo(
     () => dropForeignTiles(displayed, language, langDefaults),
-    [displayed, language, langDefaults],
+    [displayed, language, langDefaults, corpusRevision],
   );
 
   // All hooks MUST be called before any early return — React error #300.
@@ -751,7 +780,8 @@ export default function PredictionBar() {
         </span>
       )}
       {finalTiles.map((word, i) => {
-        const color = CATEGORY_COLORS[classifyWord(word)];
+        // the language matters: the English suffix rules (-ed = verb) must not colour a Spanish "red" (network) as an action
+        const color = CATEGORY_COLORS[classifyWord(word, language)];
         const isVisionBoosted = activeScene && aiCompletion && word === aiCompletion;
         return <PredictionTile key={`slot-${i}`} word={word} color={color} onTap={handleTap} visionBoosted={!!isVisionBoosted} />;
       })}

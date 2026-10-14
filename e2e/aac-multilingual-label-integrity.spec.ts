@@ -102,8 +102,10 @@ async function goToLanguage(
 async function expectLoadedImages(page: Page, tileSelector: string, minimum: number): Promise<void> {
   await expect.poll(async () => page.evaluate(({ selector }) => (
     [...document.querySelectorAll(selector)].filter((tile) => {
-      if (!tile.textContent?.trim()) return false;
-      const rect = tile.getBoundingClientRect();
+      if (tile.getAttribute('data-picture') === 'text') return true;
+      const image = tile.querySelector<HTMLImageElement>('img');
+      if (!image || !image.complete || image.naturalWidth <= 0) return false;
+      const rect = image.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
     }).length
   ), { selector: tileSelector }), { timeout: 20_000 }).toBeGreaterThanOrEqual(minimum);
@@ -231,7 +233,6 @@ async function endImeComposition(page: Page, committed: string, cancelled = fals
 test('prediction labels remain black on white in Dark mode', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'ipad-7-land', 'primary iPad Mini landscape acceptance');
   await installBootstrap(page);
-  await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, (route) => route.abort());
   await goToLanguage(page, 'en', 'typing', 'dark');
   await expect(page.locator('.dark')).toHaveCount(1);
   await expectPredictionContract(page, 'en');
@@ -331,7 +332,6 @@ for (const { code: language } of LANG_META) {
   test(`${language} keeps one complete usable Typing surface`, async ({ page }, testInfo) => {
     test.skip(!IPAD_STAGE_PROJECTS.has(testInfo.project.name), 'first-stage iPad acceptance matrix');
     await installBootstrap(page);
-    await page.route(/^https:\/\/(api|static)\.arasaac\.org\//, (route) => route.abort());
     const pageErrors: string[] = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
 

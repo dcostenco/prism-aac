@@ -43,6 +43,11 @@ targets:
         CFBundleDisplayName: Prism AAC
         NSHumanReadableCopyright: "Copyright © 2024-2026 Synalux LLC. Licensed under AGPL-3.0-or-later."
         AACMonthlyProductID: ai.synalux.prismaac.cloud.monthly
+        WKAppBoundDomains:
+          - synalux.ai
+          - www.synalux.ai
+          - prism-aac.vercel.app
+          - localhost
         # Home-screen quick actions — core one-tap AAC phrases. Hand-added to
         # Info.plist previously and wiped by every regeneration (same trap as
         # the entitlement above), so they never shipped either.
@@ -163,6 +168,30 @@ targets:
       - path: PrismAACWatch/Sources
         excludes:
           - "**/*.md"
+    postBuildScripts:
+      - name: Install generated pictures
+        script: /bin/sh "$SRCROOT/../scripts/install-native-picture-pack.sh"
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - $(SRCROOT)/../scripts/install-native-picture-pack.sh
+          - $(SRCROOT)/../scripts/prepare-native-picture-pack.mjs
+          - $(SRCROOT)/../package.json
+          - $(SRCROOT)/../constants/generated/picturePack.json
+          - $(SRCROOT)/../constants/generated/phraseSymbols.json
+          - $(SRCROOT)/../constants/generated/basicVocabularyPictures.json
+          - $(SRCROOT)/../constants/generated/phraseSymbolFiles.json
+          - $(SRCROOT)/../public/symbols/ATTRIBUTION.txt
+          - $(AAC_PICTURE_PACK_DIR)
+          - $(AAC_PICTURE_PACK_DIR)/pictures-0000.aacpack
+          - $(AAC_PICTURE_PACK_DIR)/pictures-0001.aacpack
+          - $(AAC_PICTURE_PACK_DIR)/pictures-0002.aacpack
+          - $(AAC_PICTURE_PACK_DIR)/pictures-0003.aacpack
+          - $(AAC_PICTURE_PACK_DIR)/pictures-0004.aacpack
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AACPictures.aacpack
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/aacPictureManifest.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/aacPictureSymbols.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AACPictureAttribution.txt
     info:
       path: PrismAACWatch/Info.plist
       properties:
@@ -184,6 +213,21 @@ targets:
       GENERATE_INFOPLIST_FILE: NO
       SDKROOT: watchos
       SUPPORTED_PLATFORMS: watchos watchsimulator
+
+  PrismAACWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - path: PrismAACWatchUITests
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.watchuitests
+      TEST_TARGET_NAME: PrismAACWatch
+      SDKROOT: watchos
+      SUPPORTED_PLATFORMS: watchos watchsimulator
+    dependencies:
+      - target: PrismAACWatch
 
   # ── Unit tests ──────────────────────────────────────────────────────────────
   PrismAACTests:
@@ -236,3 +280,8 @@ schemes:
         PrismAACWatch: all
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - name: PrismAACWatchUITests
+          parallelizable: false

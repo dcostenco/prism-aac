@@ -38,7 +38,9 @@ async function expectPredictionPictogramsReady(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => (
     [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-tile"]')]
       .filter((tile) => {
-        return Boolean(tile.textContent?.trim());
+        if (tile.dataset.picture === 'text') return true;
+        const image = tile.querySelector<HTMLImageElement>('img');
+        return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
       }).length
   )), { timeout: 20_000 }).toBe(5);
 }

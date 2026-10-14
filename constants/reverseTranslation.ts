@@ -2,27 +2,32 @@ import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { getAacCorePairs } from '@/constants/aacCore';
 import type { SupportedLanguage } from '@/engine/i18n';
+import spatialGrammarPictures from '@/constants/generated/spatialGrammarPictures.json';
 
 /**
  * Map a localized word back to the English it was translated from.
  *
  * Why this exists
  * ---------------
- * Pictures are language-neutral: the generated-picture cache is keyed by the
- * English meaning, so a prediction in any language should ask for the picture
- * of its English source. A predicted word arrives as bare localized text with
- * no English source attached, so it has to be recovered here.
+ * Pictures are chosen in English: a built-in phrase's symbol belongs to its
+ * English meaning, and generated pictures are keyed on English. A phrase tile
+ * is handed `englishPhrase` alongside the localized text, but a predicted word
+ * arrives as bare localized text with no English source attached.
  *
  * Recovering the English by reverse lookup is possible because predictions are
  * drawn from the same vocabulary the tiles use, so the localized surface form
- * is usually one this table already knows.
+ * is usually one this table already knows. lib/builtInSymbols.ts uses it to tie
+ * AAC core-list wording to the built-in phrases it means; PredictionBar uses it
+ * to ask for a generated picture in English.
  *
  * Best-effort by design. A predicted word that is not vocabulary (an inflected
- * form, a user's own word) will not resolve, and the caller falls back to its
- * previous behaviour rather than showing nothing.
+ * form, a user's own word) will not resolve, and the caller falls back to the
+ * localized word rather than showing nothing.
  */
 
 const caches = new Map<string, Map<string, string>>();
+const englishByPhraseId = new Map(DEFAULT_PHRASES.map(phrase => [phrase.id, phrase.text]));
+const spatialAliases = spatialGrammarPictures.aliases as Record<string, Record<string, string>>;
 
 /** Case-fold and trim. A no-op for unicased scripts like Ge'ez and Bengali. */
 const norm = (s: string) => s.trim().toLowerCase();
@@ -37,7 +42,7 @@ function tableFor(lang: SupportedLanguage): Map<string, string> {
   // from the phrase table, and the two disagree on wording — Amharic "Help" is
   // እርዳታ in the core matrix and ርዳኝ in the phrase table. Seeding core first
   // means the words most likely to appear as predictions resolve, and to the
-  // shorter, more searchable term ("Help" rather than "I need help").
+  // shorter term ("Help" rather than "I need help").
   for (const [localized, english] of getAacCorePairs(lang)) {
     const key = norm(localized);
     if (!key || key === norm(english)) continue;
@@ -64,5 +69,10 @@ function tableFor(lang: SupportedLanguage): Map<string, string> {
 /** English source for a localized word, or null when it is not vocabulary. */
 export function englishSourceFor(text: string, lang: SupportedLanguage): string | null {
   if (!text || lang === 'en') return null;
+  const aliases = spatialAliases[lang === 'zh' ? 'zh-Hans' : lang];
+  const key = norm(text).normalize('NFC');
+  if (aliases && Object.prototype.hasOwnProperty.call(aliases, key)) {
+    return englishByPhraseId.get(aliases[key]) ?? null;
+  }
   return tableFor(lang).get(norm(text)) ?? null;
 }

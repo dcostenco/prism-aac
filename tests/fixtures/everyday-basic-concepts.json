@@ -1,0 +1,374 @@
+[
+  {
+    "phraseId": "cw-i",
+    "english": "I"
+  },
+  {
+    "phraseId": "cw-you",
+    "english": "You"
+  },
+  {
+    "phraseId": "cw-more",
+    "english": "More"
+  },
+  {
+    "phraseId": "cw-want",
+    "english": "Want"
+  },
+  {
+    "phraseId": "cw-help",
+    "english": "Help"
+  },
+  {
+    "phraseId": "cw-go-core",
+    "english": "Go"
+  },
+  {
+    "phraseId": "cw-look",
+    "english": "Look"
+  },
+  {
+    "phraseId": "cw-make",
+    "english": "Make"
+  },
+  {
+    "phraseId": "cw-get-core",
+    "english": "Get"
+  },
+  {
+    "phraseId": "cw-put-core",
+    "english": "Put"
+  },
+  {
+    "phraseId": "cw-turn",
+    "english": "Turn"
+  },
+  {
+    "phraseId": "dw-good",
+    "english": "Good"
+  },
+  {
+    "phraseId": "cw-same-core",
+    "english": "Same"
+  },
+  {
+    "phraseId": "dw-different",
+    "english": "Different"
+  },
+  {
+    "phraseId": "cw-some",
+    "english": "Some"
+  },
+  {
+    "phraseId": "cw-open",
+    "english": "Open"
+  },
+  {
+    "phraseId": "cw-up",
+    "english": "Up"
+  },
+  {
+    "phraseId": "cw-in",
+    "english": "In"
+  },
+  {
+    "phraseId": "cw-on",
+    "english": "On"
+  },
+  {
+    "phraseId": "cw-he",
+    "english": "He"
+  },
+  {
+    "phraseId": "cw-she",
+    "english": "She"
+  },
+  {
+    "phraseId": "cw-it",
+    "english": "It"
+  },
+  {
+    "phraseId": "cw-that",
+    "english": "That"
+  },
+  {
+    "phraseId": "qu-who",
+    "english": "Who?"
+  },
+  {
+    "phraseId": "qu-what",
+    "english": "What?"
+  },
+  {
+    "phraseId": "qu-when",
+    "english": "When?"
+  },
+  {
+    "phraseId": "qu-where",
+    "english": "Where?"
+  },
+  {
+    "phraseId": "qu-why",
+    "english": "Why?"
+  },
+  {
+    "phraseId": "pp-girl",
+    "english": "Girl"
+  },
+  {
+    "phraseId": "pp-boy",
+    "english": "Boy"
+  },
+  {
+    "phraseId": "pp-kid",
+    "english": "Kid"
+  },
+  {
+    "phraseId": "cw-need",
+    "english": "Need"
+  },
+  {
+    "phraseId": "cw-do",
+    "english": "Do"
+  },
+  {
+    "phraseId": "cw-can",
+    "english": "Can"
+  },
+  {
+    "phraseId": "cw-stop",
+    "english": "Stop"
+  },
+  {
+    "phraseId": "cw-eat",
+    "english": "Eat"
+  },
+  {
+    "phraseId": "cw-drink",
+    "english": "Drink"
+  },
+  {
+    "phraseId": "cw-sleep",
+    "english": "Sleep"
+  },
+  {
+    "phraseId": "cw-yes-core",
+    "english": "Yes"
+  },
+  {
+    "phraseId": "cw-no-core",
+    "english": "No"
+  },
+  {
+    "phraseId": "cw-like",
+    "english": "Like"
+  },
+  {
+    "phraseId": "cw-here",
+    "english": "Here"
+  },
+  {
+    "phraseId": "cw-there",
+    "english": "There"
+  },
+  {
+    "phraseId": "cw-we",
+    "english": "We"
+  },
+  {
+    "phraseId": "cw-they",
+    "english": "They"
+  },
+  {
+    "phraseId": "cw-my",
+    "english": "My"
+  },
+  {
+    "phraseId": "cw-your",
+    "english": "Your"
+  },
+  {
+    "phraseId": "cw-have",
+    "english": "Have"
+  },
+  {
+    "phraseId": "cw-give",
+    "english": "Give"
+  },
+  {
+    "phraseId": "cw-take",
+    "english": "Take"
+  },
+  {
+    "phraseId": "pl-home",
+    "english": "Home"
+  },
+  {
+    "phraseId": "pl-school",
+    "english": "School"
+  },
+  {
+    "phraseId": "cw-work",
+    "english": "Work"
+  },
+  {
+    "phraseId": "ti-night",
+    "english": "Night"
+  },
+  {
+    "phraseId": "ti-morning",
+    "english": "Morning"
+  },
+  {
+    "phraseId": "tc-evening",
+    "english": "Evening"
+  },
+  {
+    "phraseId": "ti-today",
+    "english": "Today"
+  },
+  {
+    "phraseId": "ti-tomorrow",
+    "english": "Tomorrow"
+  },
+  {
+    "phraseId": "ti-yesterday",
+    "english": "Yesterday"
+  },
+  {
+    "phraseId": "fd-milk",
+    "english": "Milk"
+  },
+  {
+    "phraseId": "fd-bread",
+    "english": "Bread"
+  },
+  {
+    "phraseId": "sw-book",
+    "english": "Book"
+  },
+  {
+    "phraseId": "sw-chair",
+    "english": "Chair"
+  },
+  {
+    "phraseId": "sw-table",
+    "english": "Table"
+  },
+  {
+    "phraseId": "pp-family",
+    "english": "Family"
+  },
+  {
+    "phraseId": "pp-friend",
+    "english": "Friend"
+  },
+  {
+    "phraseId": "hb-head",
+    "english": "Head"
+  },
+  {
+    "phraseId": "hb-hand",
+    "english": "Hand"
+  },
+  {
+    "phraseId": "hb-eye",
+    "english": "Eye"
+  },
+  {
+    "phraseId": "hb-ear",
+    "english": "Ear"
+  },
+  {
+    "phraseId": "cw-know",
+    "english": "Know"
+  },
+  {
+    "phraseId": "cw-read",
+    "english": "Read"
+  },
+  {
+    "phraseId": "cw-write",
+    "english": "Write"
+  },
+  {
+    "phraseId": "cw-hear",
+    "english": "Hear"
+  },
+  {
+    "phraseId": "cw-listen",
+    "english": "Listen"
+  },
+  {
+    "phraseId": "fe-happy",
+    "english": "Happy"
+  },
+  {
+    "phraseId": "fe-sad",
+    "english": "Sad"
+  },
+  {
+    "phraseId": "fe-angry",
+    "english": "Angry"
+  },
+  {
+    "phraseId": "dw-fast",
+    "english": "Fast"
+  },
+  {
+    "phraseId": "dw-slow",
+    "english": "Slow"
+  },
+  {
+    "phraseId": "dw-bad",
+    "english": "Bad"
+  },
+  {
+    "phraseId": "dw-big",
+    "english": "Big"
+  },
+  {
+    "phraseId": "dw-small",
+    "english": "Small"
+  },
+  {
+    "phraseId": "cw-where-core",
+    "english": "Where"
+  },
+  {
+    "phraseId": "cw-when-core",
+    "english": "When"
+  },
+  {
+    "phraseId": "qt-please",
+    "english": "Please"
+  },
+  {
+    "phraseId": "qt-thank-you",
+    "english": "Thank you"
+  },
+  {
+    "phraseId": "qt-hello",
+    "english": "Hello"
+  },
+  {
+    "phraseId": "qt-goodbye",
+    "english": "Goodbye"
+  },
+  {
+    "phraseId": "qt-sorry",
+    "english": "Sorry"
+  },
+  {
+    "phraseId": "help-bathroom",
+    "english": "Bathroom"
+  },
+  {
+    "phraseId": "pl-outside",
+    "english": "Outside"
+  },
+  {
+    "phraseId": "pl-inside",
+    "english": "Inside"
+  }
+]

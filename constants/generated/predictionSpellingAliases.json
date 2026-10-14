@@ -1,0 +1,26 @@
+{
+  "ru": {
+    "идет": "идёт"
+  },
+  "ro": {
+    "esti": "ești",
+    "sunteti": "sunteți",
+    "stiu": "știu",
+    "stii": "știi",
+    "stim": "știm",
+    "stiti": "știți"
+  },
+  "fr": {
+    "etre": "être",
+    "ecouter": "écouter"
+  },
+  "de": {
+    "moechte": "möchte",
+    "koennen": "können",
+    "koennte": "könnte",
+    "weiss": "weiß"
+  },
+  "pl": {
+    "byc": "być"
+  }
+}

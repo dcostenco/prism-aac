@@ -457,11 +457,11 @@ describe('Bengali tile texts a full audit corrected', () => {
 
 describe('first corrections that were themselves wrong and were restored', () => {
   // Each was checked against the table after a second look.
-  // Vietnamese On "Bật" pairs with Off "Tắt" (Off is the device-off sense in every language), so changing it to "Trên"
-  // broke the pair; Pie is the dessert (Japanese パイ, Spanish Pay, Russian Пирог): 馅饼 is a savoury stuffed pie, 派 is
+  // On now labels the approved spatial relation picture. Pie is the dessert
+  // (Japanese パイ, Spanish Pay, Russian Пирог): 馅饼 is a savoury stuffed pie, 派 is
   // the pie word in Mainland and Taiwan Chinese and 批 in Hong Kong.
   it.each([
-    ['vi', 'cw-on', 'Bật'],
+    ['vi', 'cw-on', 'Trên'],
     ['vi', 'cw-above', 'Trên'],
     ['zh-Hans', 'fd-pie', '派'],
     ['zh-Hant', 'fd-pie', '派'],
@@ -790,5 +790,32 @@ describe('tile texts a final judgement pass corrected', () => {
     ['zh-HK', 'plm-urgent', '急症門診'],
   ] as [SupportedLanguage, string, string][])('%s %s is %s', (lang, id, text) => {
     expect(getPhraseText(id, lang, '')).toBe(text);
+  });
+});
+
+describe('ordering chips use the local word of the tile they repeat', () => {
+  // The Chipotle chips had only a Simplified text, so Hong Kong read 沙拉 / 玉米 / 塔可 and Taiwan 芝士玉米餅 while the Salad,
+  // Corn, Tacos and Quesadilla tiles had been corrected to 沙律 / 粟米 / 墨西哥夾餅 / 起司玉米餅.
+  it.each([
+    ['chip-b3', 'zh-HK', '墨西哥夾餅'], ['chip-b4', 'zh-Hant', '起司玉米餅'], ['chip-b5', 'zh-HK', '沙律'], ['chip-t8', 'zh-HK', '粟米'],
+  ] as const)('%s reads %s %s', (id, lang, text) => {
+    expect(getPhraseText(id, lang, '')).toBe(text);
+  });
+
+  it('every chip with the same English word as a tile reads like that tile in Taiwan and Hong Kong', async () => {
+    const { TEMPLATE_ORDERING_SEQUENCES } = await import('@/constants/orderingSequences');
+    const { DEFAULT_PHRASES } = await import('@/constants/phrases');
+    const tileFor = new Map(DEFAULT_PHRASES.map((p) => [p.text.toLowerCase(), p.id] as const).reverse());
+    const SHORTER_ON_PURPOSE = new Set(['chip-t2']); // Beans: 豆 on a chip, 豆子 on the tile
+    const differs: string[] = [];
+    for (const seq of TEMPLATE_ORDERING_SEQUENCES) for (const step of seq.steps) for (const o of step.options) {
+      const tile = tileFor.get(o.text.toLowerCase());
+      if (!tile || SHORTER_ON_PURPOSE.has(o.id)) continue;
+      for (const lang of ['zh-Hant', 'zh-HK'] as const) {
+        const chip = getPhraseText(o.id, lang, o.text), own = getPhraseText(tile, lang, o.text);
+        if (chip !== own) differs.push(`${o.id} ${lang}: ${chip} vs ${tile} ${own}`);
+      }
+    }
+    expect(differs).toEqual([]);
   });
 });

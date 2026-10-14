@@ -12,7 +12,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import PredictionBar from '@/components/PredictionBar';
+import PredictionBar, { mergeAdvisoryPredictions } from '@/components/PredictionBar';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -34,6 +34,7 @@ vi.mock('@/services/aacSpeak', () => ({
 vi.mock('@/services/pictogramService', () => ({
   getPictogramUrl: vi.fn(async () => null),
   pictureModeForProfile: vi.fn(() => 'none'),
+  typedWordPicturesEnabled: vi.fn(() => false),
 }));
 
 vi.mock('@/lib/datadog', () => ({
@@ -137,4 +138,50 @@ describe('PredictionBar selection feedback', () => {
     expect(speechMocks.aacSpeak).toHaveBeenCalledOnce();
     expect(speechMocks.aacSpeak).toHaveBeenCalledWith('I', 0.5, 0.8, undefined, true);
   });
+});
+
+describe('spelling-aware selection preserves the intended message', () => {
+  it.each([
+    ['ru', 'я иде', 'идёт', 'я идёт '],
+    ['ru', 'я «иде', 'идёт', 'я «идёт '],
+    ['ro', 'eu şco', 'școală', 'eu școală '],
+    ['ko', '저는 '+ '아'.normalize('NFD'), '아파요', '저는 아파요 '],
+  ] as const)('%s completion replaces the keyboard spelling instead of appending a duplicate', async (lang, text, word, expected) => {
+    await loadPredictionSeed(lang);
+    const updatePredictions = usePredictionStore.getState().updatePredictions;
+    act(() => {
+      useSettingsStore.setState({language:lang,outputLanguage:lang,speakSelectionFeedback:false} as never);
+      useMessageStore.setState({text} as never);
+      usePredictionStore.setState({predictions:[word], updatePredictions:vi.fn()});
+    });
+    try {
+      render(<PredictionBar />);
+      await act(async () => {fireEvent.click(await screen.findByRole('button',{name:'Predict: '+word}));});
+      expect(useMessageStore.getState().text).toBe(expected);
+      expect(speechMocks.speakWord).not.toHaveBeenCalled();
+      expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
+    } finally {
+      usePredictionStore.setState({updatePredictions});
+    }
+  });
+});
+
+it('merged advisory and corpus spellings leave room for another suggestion', () => {
+ expect(mergeAdvisoryPredictions(['идёт','иду','идём','идёшь'],['идет'],'ru'))
+  .toEqual(['идёт','иду','идём','идёшь']);
+});
+
+it('AI completion and stable slots use the same approved spelling identity', async () => {
+ await loadPredictionSeed('ru');
+ const updatePredictions=usePredictionStore.getState().updatePredictions;
+ act(()=>{
+  useSettingsStore.setState({language:'ru',outputLanguage:'ru',speakSelectionFeedback:false} as never);
+  useMessageStore.setState({text:'я ид'} as never);
+  usePredictionStore.setState({predictions:['идёт','иду','идём','идёшь'],aiCompletion:'идет',updatePredictions:vi.fn()});
+ });
+ try {
+  render(<PredictionBar/>);
+  expect(await screen.findAllByRole('button',{name:'Predict: идёт'})).toHaveLength(1);
+  expect(screen.queryByRole('button',{name:'Predict: идет'})).toBeNull();
+ } finally {usePredictionStore.setState({updatePredictions,aiCompletion:null});}
 });

@@ -1,11 +1,15 @@
 import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
-import { customizeWebpack } from './lib/webpackBuildConfig';
+import { customizeWebpack, MAX_STATIC_PRECACHE_FILE_BYTES } from './lib/webpackBuildConfig';
 import {
   PRISM_AAC_BASE_PATH,
   PRISM_AAC_PUBLIC_PRECACHE_PATTERNS,
   PRISM_AAC_SERVICE_WORKER_SCOPE,
+  PRISM_AAC_TERMS_PATH,
 } from './lib/appPaths';
+
+// Use one deploy revision for documents and their required static graph.
+const buildId = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 8) || `local-${Date.now()}`;
 
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
@@ -17,6 +21,14 @@ const withSerwist = withSerwistInit({
   // both the canonical document and its child routes.
   register: false,
   globPublicPatterns: PRISM_AAC_PUBLIC_PRECACHE_PATTERNS,
+  // The app's required vocabulary chunk exceeds the default two-MiB limit.
+  maximumFileSizeToCacheInBytes: MAX_STATIC_PRECACHE_FILE_BYTES,
+  // A transform preserves Serwist's default public-file discovery.
+  manifestTransforms: [async entries => ({
+    // Dynamic URL entries use Serwist's zero build-file-size convention.
+    manifest: [...entries, { url: PRISM_AAC_TERMS_PATH, revision: buildId, size: 0 }],
+    warnings: [],
+  })],
 });
 
 // basePath: '/prism-aac' makes Next.js emit asset URLs and route links
@@ -32,12 +44,12 @@ const withSerwist = withSerwistInit({
 // Auto-bump SW killswitch on every deploy.
 // Vercel sets VERCEL_GIT_COMMIT_SHA automatically; local builds fall back to
 // a timestamp so dev reloads still bust the cache.
-const buildId = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 8) || `local-${Date.now()}`;
 const proxyApiUrl = process.env.PROXY_API_URL || 'https://synalux.ai/api/v1';
 const proxyPortalOrigin = new URL(proxyApiUrl).origin;
 
 const nextConfig: NextConfig = {
   basePath: PRISM_AAC_BASE_PATH,
+  outputFileTracingIncludes: { '/terms': ['./TERMS.md'] },
   env: {
     // Expose basePath to client code so mediapipeRuntime can construct
     // correct self-hosted model URLs (public/ assets are at <basePath>/models/...).

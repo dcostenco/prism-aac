@@ -152,9 +152,22 @@ html, body {
   hyphens: none;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font-size: clamp(1.25rem, 2.8svh, 1.75rem);
+  font-size: calc(clamp(1.25rem, 2.8svh, 1.75rem) * var(--aac-label-scale, 1));
   font-weight: 700;
   line-height: 1.15;
+}
+
+/* A phrase with no picture is a text tile: the word alone, centred and larger,
+ * instead of a caption under an empty picture well. Every phrase-label size
+ * rule in this file multiplies by --aac-label-scale, so a text tile scales each
+ * layout's own label size rather than imposing one number on all of them. */
+.aac-phrase-tile[data-picture="text"] {
+  --aac-label-scale: 1.35;
+  justify-content: center;
+}
+
+.aac-phrase-tile[data-picture="text"] > .aac-text-tile-label {
+  -webkit-line-clamp: 3;
 }
 
 /* Prediction cards retain the established Fitzgerald semantic colour while
@@ -171,6 +184,9 @@ html, body {
   word-break: normal;
   hyphens: none;
   font-size: clamp(1.5rem, 3.2vmin, 2.25rem);
+  max-height: 50%;
+  min-height: 0;
+  flex-shrink: 1;
 }
 
 /* Pictograms support prediction recognition, but the predicted word remains
@@ -183,11 +199,40 @@ html, body {
   margin-block-start: clamp(0.25rem, 0.7vmin, 0.5rem);
   margin-inline: auto;
   border-radius: clamp(1rem, 2.25vmin, 1.5rem);
+  /* Wrapped translated captions must fit without squeezing away the picture. */
+  min-height: 36px;
+  flex-shrink: 0;
 }
 
 .aac-prediction-tile > .aac-tile-icon > img {
   max-width: 70%;
   max-height: 70%;
+}
+
+.aac-picture-choices {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+}
+
+.aac-picture-choices > img {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
+  height: 100%;
+  max-height: 100%;
+}
+
+.aac-prediction-tile[data-picture-choices] > .aac-tile-icon {
+  width: calc(100% - 4px);
+  border-radius: 0;
+}
+
+.aac-prediction-tile[data-picture="text"] .aac-prediction-label {
+  max-height: 100%;
 }
 
 .aac-phrase-label,
@@ -222,14 +267,6 @@ html, body {
     gap: 0;
     padding: 0;
   }
-}
-
-/* A tile with no picture gives its words the whole card: no empty picture
- * well and no divider. The label may use the card's full height, and
- * FittedTileLabel grows the words to the largest size that still fits. */
-[data-tile-picture="none"] > .aac-tile-label {
-  max-height: 100%;
-  -webkit-line-clamp: 3;
 }
 
 .aac-tile-icon {
@@ -333,16 +370,22 @@ html, body {
   }
 
   [data-testid="prediction-bar"] {
-    height: 48px !important;
+    /* Preserve the picture and its caption in compact landscape layouts. */
+    height: 96px !important;
   }
-  [data-testid="prediction-bar"] img {
-    display: none;
+  [data-testid="prediction-bar"] .aac-tile-icon > img {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  [data-testid="prediction-bar"] .aac-prediction-tile > .aac-tile-icon {
+    /* Keep the complete drawing when the picture well becomes a small square. */
+    border-radius: 0;
   }
   .aac-tile-label {
     display: block;
     padding-block: 0.1rem;
     white-space: nowrap;
-    font-size: clamp(1.25rem, 5.2svh, 1.375rem);
+    font-size: calc(clamp(1.25rem, 5.2svh, 1.375rem) * var(--aac-label-scale, 1));
   }
 
   .aac-prediction-label {
@@ -467,7 +510,7 @@ html, body {
     hyphens: none;
     -webkit-line-clamp: 3;
     padding: 0.15rem 0.2rem;
-    font-size: clamp(1.125rem, 4.8vw, 1.375rem);
+    font-size: calc(clamp(1.125rem, 4.8vw, 1.375rem) * var(--aac-label-scale, 1));
     line-height: 1.1;
   }
 
@@ -800,7 +843,7 @@ html, body {
   }
 
   .aac-tile-label {
-    font-size: clamp(1.875rem, 3.5vmin, 2.625rem);
+    font-size: calc(clamp(1.875rem, 3.5vmin, 2.625rem) * var(--aac-label-scale, 1));
     line-height: 1.05;
   }
 }
@@ -1024,7 +1067,7 @@ html, body {
     width: auto;
     min-width: 0;
     border-top: 0 !important;
-    font-size: 16px;
+    font-size: calc(16px * var(--aac-label-scale, 1));
     line-height: 18px;
   }
 
@@ -1048,7 +1091,7 @@ html, body {
 
   [data-aac-device-class="phone"] [data-aac-mode="picture"] .aac-phrase-label,
   [data-aac-device-class="phone"] [data-aac-mode="picture"] .aac-folder-label {
-    font-size: 16px;
+    font-size: calc(16px * var(--aac-label-scale, 1));
   }
 
   [data-aac-device-class="phone"] [data-testid="picture-board"] .aac-category-label {

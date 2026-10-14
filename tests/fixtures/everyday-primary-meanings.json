@@ -1,0 +1,444 @@
+{
+  "languages": {
+    "am": {
+      "ስማ": {
+        "file": "cw-hear.png",
+        "meaning": "Primary everyday Hear meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Hear",
+          "Listen"
+        ]
+      },
+      "ተናድጃለሁ": {
+        "file": "fe-angry.png",
+        "meaning": "Primary everyday Angry meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Angry",
+          "Annoyed"
+        ]
+      }
+    },
+    "ar": {
+      "مع السلامة": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye-bye",
+          "Goodbye"
+        ]
+      }
+    },
+    "bn": {
+      "মন খারাপ": {
+        "file": "fe-sad.png",
+        "meaning": "Primary everyday Sad meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Heavy heart",
+          "Sad"
+        ]
+      },
+      "যখন": {
+        "file": "qu-when.png",
+        "meaning": "Primary everyday When meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "When",
+          "While"
+        ]
+      }
+    },
+    "de": {
+      "morgen": {
+        "file": "w-time.png",
+        "meaning": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings.",
+        "concepts": [
+          "Morning",
+          "Tomorrow"
+        ]
+      },
+      "weiß": {
+        "file": "cw-know.png",
+        "meaning": "Primary everyday Know meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Know",
+          "White"
+        ]
+      },
+      "groß": {
+        "file": "dw-big.png",
+        "meaning": "Primary everyday Big meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Big",
+          "Tall"
+        ]
+      }
+    },
+    "es": {
+      "mañana": {
+        "file": "w-time.png",
+        "meaning": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings.",
+        "concepts": [
+          "Morning",
+          "Tomorrow"
+        ]
+      },
+      "tarde": {
+        "file": "w-time.png",
+        "meaning": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings.",
+        "concepts": [
+          "Afternoon",
+          "Evening",
+          "Late"
+        ]
+      }
+    },
+    "fr": {
+      "au revoir": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye",
+          "Bye-bye",
+          "Goodbye"
+        ]
+      }
+    },
+    "hi": {
+      "कल": {
+        "file": "w-time.png",
+        "meaning": "General temporal cue for an unmarked time/day homograph; precise phrase cards keep their distinct time meanings.",
+        "concepts": [
+          "Tomorrow",
+          "Yesterday"
+        ]
+      },
+      "बुरा": {
+        "file": "dw-bad.png",
+        "meaning": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bad",
+          "Mean"
+        ]
+      },
+      "अलविदा": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye",
+          "Goodbye"
+        ]
+      }
+    },
+    "id": {
+      "telinga": {
+        "file": "hb-ear.png",
+        "meaning": "Primary everyday Ear meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Ear",
+          "Ears"
+        ]
+      }
+    },
+    "it": {
+      "senti": {
+        "file": "cw-hear.png",
+        "meaning": "Primary everyday Hear meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Hear"
+        ]
+      },
+      "cattivo": {
+        "file": "dw-bad.png",
+        "meaning": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bad",
+          "Mean"
+        ]
+      }
+    },
+    "ja": {
+      "て": {
+        "file": "hb-hand.png",
+        "meaning": "Primary everyday Hand meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Hand"
+        ]
+      },
+      "かく": {
+        "file": "cw-write.png",
+        "meaning": "Primary everyday Write meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Draw",
+          "Write"
+        ]
+      },
+      "きいて": {
+        "file": "cw-listen.png",
+        "meaning": "Primary everyday Listen meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Listen",
+          "Listen to me"
+        ]
+      },
+      "遅い": {
+        "file": "dw-slow.png",
+        "meaning": "Primary everyday Slow meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Slow"
+        ]
+      }
+    },
+    "ko": {
+      "눈": {
+        "file": "hb-eye.png",
+        "meaning": "Primary everyday Eye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Eye",
+          "Eyes"
+        ]
+      },
+      "써요": {
+        "file": "cw-write.png",
+        "meaning": "Primary everyday Write meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bitter",
+          "Write"
+        ]
+      },
+      "나빠요": {
+        "file": "dw-bad.png",
+        "meaning": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bad",
+          "Mean"
+        ]
+      },
+      "안": {
+        "file": "pl-inside.png",
+        "meaning": "Primary everyday Inside meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Inside"
+        ]
+      }
+    },
+    "nl": {
+      "tot ziens": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Goodbye",
+          "See you"
+        ]
+      }
+    },
+    "ru": {
+      "пока": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye",
+          "Goodbye",
+          "While"
+        ]
+      }
+    },
+    "sw": {
+      "meza": {
+        "file": "sw-table.png",
+        "meaning": "Primary everyday Table meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Swallow",
+          "Table"
+        ]
+      },
+      "jua": {
+        "file": "cw-know.png",
+        "meaning": "Primary everyday Know meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Know"
+        ]
+      }
+    },
+    "tl": {
+      "bukas": {
+        "file": "ti-tomorrow.png",
+        "meaning": "Primary everyday Tomorrow meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Open",
+          "Tomorrow"
+        ]
+      },
+      "basa": {
+        "file": "cw-read.png",
+        "meaning": "Primary everyday Read meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Read",
+          "Wet"
+        ]
+      },
+      "sa labas": {
+        "file": "pl-outside.png",
+        "meaning": "Primary everyday Outside meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Out",
+          "Outside"
+        ]
+      }
+    },
+    "tr": {
+      "yaz": {
+        "file": "cw-write.png",
+        "meaning": "Primary everyday Write meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Summer",
+          "Write"
+        ]
+      },
+      "hoşça kal": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye-bye",
+          "Goodbye"
+        ]
+      },
+      "özür dilerim": {
+        "file": "qt-sorry.png",
+        "meaning": "Primary everyday Sorry meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Excuse me",
+          "Sorry"
+        ]
+      }
+    },
+    "uk": {
+      "будь ласка": {
+        "file": "qt-please.png",
+        "meaning": "Primary everyday Please meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Please",
+          "You're welcome"
+        ]
+      },
+      "бувай": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye",
+          "Goodbye"
+        ]
+      }
+    },
+    "vi": {
+      "bánh mì": {
+        "file": "fd-bread.png",
+        "meaning": "Primary everyday Bread meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bread",
+          "Sandwich"
+        ]
+      },
+      "đầu": {
+        "file": "hb-head.png",
+        "meaning": "Primary everyday Head meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Head"
+        ]
+      },
+      "to": {
+        "file": "dw-big.png",
+        "meaning": "Primary everyday Big meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Big",
+          "Loud"
+        ]
+      },
+      "cảm ơn": {
+        "file": "qt-thank-you.png",
+        "meaning": "Primary everyday Thank you meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Thank you",
+          "Thankful"
+        ]
+      },
+      "xin chào": {
+        "file": "qt-hello.png",
+        "meaning": "Primary everyday Hello meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Hello",
+          "Hi"
+        ]
+      },
+      "tạm biệt": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye",
+          "Goodbye"
+        ]
+      },
+      "xin lỗi": {
+        "file": "qt-sorry.png",
+        "meaning": "Primary everyday Sorry meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Excuse me",
+          "Sorry"
+        ]
+      }
+    },
+    "zh-HK": {
+      "開心": {
+        "file": "fe-happy.png",
+        "meaning": "Primary everyday Happy meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Cheerful",
+          "Happy"
+        ]
+      },
+      "壞": {
+        "file": "dw-bad.png",
+        "meaning": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bad",
+          "Mean"
+        ]
+      },
+      "再見": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye-bye",
+          "Goodbye",
+          "See you"
+        ]
+      }
+    },
+    "zh-Hant": {
+      "開心": {
+        "file": "fe-happy.png",
+        "meaning": "Primary everyday Happy meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Cheerful",
+          "Happy"
+        ]
+      },
+      "壞": {
+        "file": "dw-bad.png",
+        "meaning": "Primary everyday Bad meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bad",
+          "Mean"
+        ]
+      },
+      "再見": {
+        "file": "qt-goodbye.png",
+        "meaning": "Primary everyday Goodbye meaning; precise alternate phrase meanings retain their IDs.",
+        "concepts": [
+          "Bye-bye",
+          "Goodbye",
+          "See you"
+        ]
+      }
+    }
+  },
+  "temporalPolicy": "Bare morgen, mañana, tarde, and कल use a general time cue instead of choosing an unsupported date or time sense. Phrase-ID cards keep exact meanings."
+}

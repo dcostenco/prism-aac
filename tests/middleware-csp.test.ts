@@ -5,6 +5,17 @@ import { unstable_doesMiddlewareMatch } from 'next/dist/experimental/testing/ser
 import { config, middleware } from '@/middleware';
 
 describe('Prism AAC Content Security Policy', () => {
+  it('allows only the read-only Terms route inside its same-origin reader', () => {
+    const response = middleware(new NextRequest('https://synalux.ai/prism-aac/terms'));
+    expect(response.headers.get('x-frame-options')).toBe('SAMEORIGIN');
+    expect(response.headers.get('content-security-policy')).toContain("frame-ancestors 'self'");
+    expect(response.headers.get('content-security-policy')).toContain("frame-src 'self' https:");
+    for (const path of ['/prism-aac', '/prism-aac/docs', '/prism-aac/terms-other', '/prism-aac/terms/other']) {
+      const other = middleware(new NextRequest('https://synalux.ai' + path));
+      expect(other.headers.get('x-frame-options')).toBe('DENY');
+      expect(other.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
+    }
+  });
   it('allows the generated same-origin service worker and blob workers', () => {
     const response = middleware(
       new NextRequest('https://prism-aac.vercel.app/prism-aac'),
@@ -104,5 +115,31 @@ describe('CSP — WebAssembly', () => {
     expect(scriptSrc).toContain("'wasm-unsafe-eval'");
     expect(scriptSrc).not.toContain("'unsafe-eval'; ");
     expect(scriptSrc.replace("'wasm-unsafe-eval'", '')).not.toContain("'unsafe-eval'");
+  });
+});
+
+describe('CSP — picture symbols', () => {
+  // Built-in phrases use symbols bundled in public/symbols ('self'). The
+  // third-party symbol service the app used to search is gone, and the policy
+  // must not keep a door open to it.
+  const directive = (name: string) =>
+    (middleware(new NextRequest('https://prism-aac.vercel.app/prism-aac')).headers.get('content-security-policy') || '')
+      .split(';').map((d) => d.trim()).find((d) => d.startsWith(`${name} `)) || '';
+
+  it('serves symbols from this origin', () => {
+    expect(directive('img-src')).toContain("'self'");
+  });
+
+  it('no longer allows the third-party symbol hosts', () => {
+    expect(directive('connect-src')).not.toMatch(/arasaac/i);
+    expect(directive('img-src')).not.toMatch(/arasaac/i);
+  });
+
+  it('lets cached cloud PNG redirects load and their local blob bytes be reused', () => {
+    expect(directive('connect-src')).toContain('https://*.supabase.co');
+    expect(directive('connect-src').split(/\s+/)).toContain('blob:');
+    expect(directive('img-src')).toContain('https://*.supabase.co');
+    expect(directive('connect-src').split(/\s+/)).not.toContain('https:');
+    expect(directive('img-src').split(/\s+/)).not.toContain('https:');
   });
 });

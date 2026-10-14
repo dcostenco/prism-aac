@@ -7,11 +7,6 @@ interface Props {
   className: string;
   testId?: string;
   minFontSizePx?: number;
-  /**
-   * Start the words up to this many times their stylesheet size, then shrink
-   * until they fit. Tiles with no picture give the label the whole card.
-   */
-  growToFit?: number;
   style?: CSSProperties;
 }
 
@@ -25,7 +20,6 @@ export default function FittedTileLabel({
   className,
   testId,
   minFontSizePx = 12,
-  growToFit,
   style,
 }: Props) {
   const labelRef = useRef<HTMLSpanElement>(null);
@@ -42,10 +36,6 @@ export default function FittedTileLabel({
       delete label.dataset.fitStatus;
       let fontSize = Number.parseFloat(getComputedStyle(label).fontSize);
       if (!Number.isFinite(fontSize)) return;
-      if (growToFit && growToFit > 1) {
-        fontSize = Math.floor(fontSize * growToFit * 2) / 2;
-        label.style.fontSize = `${fontSize}px`;
-      }
 
       const preferredFloor = Math.max(1, minFontSizePx);
       for (let attempt = 0; attempt < 40; attempt += 1) {
@@ -97,6 +87,9 @@ export default function FittedTileLabel({
       : new ResizeObserver(scheduleFit);
     if (resizeObserver) {
       resizeObserver.observe(label.parentElement ?? label);
+      // A loaded picture can shrink the caption without resizing its tile.
+      // Refitting only the parent then silently clips the second word.
+      if (label.parentElement) resizeObserver.observe(label);
     } else {
       window.addEventListener('resize', scheduleFit);
       window.addEventListener('orientationchange', scheduleFit);
@@ -112,7 +105,7 @@ export default function FittedTileLabel({
         window.removeEventListener('orientationchange', scheduleFit);
       }
     };
-  }, [growToFit, minFontSizePx, text]);
+  }, [minFontSizePx, text]);
 
   return (
     <span ref={labelRef} data-testid={testId} className={className} style={style}>

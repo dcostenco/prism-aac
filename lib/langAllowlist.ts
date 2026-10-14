@@ -33,6 +33,30 @@
  * names, places, etc.
  */
 import { getCachedPredictionSeed, loadPredictionSeed, SUPPORTED_SEED_LANGS } from '@/constants/predictionSeeds';
+import { DEFAULT_PHRASES } from '@/constants/phrases';
+import { getPhraseText, hasPhraseTranslation } from '@/constants/phraseTranslations';
+import type { SupportedLanguage } from '@/engine/i18n';
+import { normalizePredictionSpelling } from '@/engine/predictionSpellings';
+import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
+
+/** The words of the app's own authored phrases for a language (its built-in tiles' translated text; a phrase with no
+ *  translation is skipped, so English fallbacks never count). Whole words only: "c'est" is one word here, never the
+ *  fragment "c". Built once per language. */
+const authoredCache = new Map<string, Set<string>>();
+function authoredVocabulary(lang: string): Set<string> {
+  let words = authoredCache.get(lang);
+  if (words) return words;
+  words = new Set(getReviewedBasicWords(lang, true));
+  for (const phrase of DEFAULT_PHRASES) {
+    if (!hasPhraseTranslation(phrase.id, lang as SupportedLanguage)) continue;
+    for (const raw of normalizePredictionSpelling(getPhraseText(phrase.id, lang as SupportedLanguage, phrase.text), lang).split(/\s+/u)) {
+      const word = raw.replace(/^[^\p{L}\p{M}]+|[^\p{L}\p{M}]+$/gu, '');
+      if (word) words.add(word);
+    }
+  }
+  authoredCache.set(lang, words);
+  return words;
+}
 
 /** Per-language diacritic regex — accepted as "looks like this lang"
  *  even when the word isn't in the curated corpus. EN has none (so
@@ -142,7 +166,7 @@ const LATIN_LANGS = ['en', 'ro', 'es', 'fr', 'de', 'pt', 'it', 'pl', 'nl', 'tr',
  */
 export function isAllowedInLang(word: string, lang: string): boolean {
   if (!word) return true;
-  const w = word.toLowerCase().trim();
+  const w = normalizePredictionSpelling(word, lang).trim();
   if (!w) return true;
 
   // n-gram path: split on `|` and check each component.
@@ -170,7 +194,14 @@ export function isAllowedInLang(word: string, lang: string): boolean {
 
   // Latin-script: diacritic = unambiguous accept for this lang.
   const accept = LANG_ACCEPT_REGEX[lang];
-  if (accept && accept.test(word)) return true;
+  if (accept && accept.test(w)) return true;
+
+  // A word of the app's own authored vocabulary for this language belongs to it, even when it is spelled the same in a
+  // language whose corpus counts more of it (Spanish que / con / para / un / en / tu against French, Vietnamese and
+  // Portuguese; English is / in / on / we / me against Italian, German and Spanish). The corpora's raw counts are not
+  // comparable across languages, so the dominance check below must only judge words nobody authored: the leaks the gate
+  // exists to stop (Romanian "eu" or "ce" in the English bar, "main" in the Romanian one) are not authored there.
+  if (authoredVocabulary(lang).has(w)) return true;
 
   const langCorpus = getCachedPredictionSeed(lang);
   const langFreq = langCorpus?.wordFreq[w]?.count ?? 0;

@@ -26,8 +26,8 @@ import WatchConnectivity
 ///   prismNative.memoryPressure()          → returns free MB
 ///   prismNative.requestReview()           → StoreKit review prompt (frequency-limited)
 ///
-/// Offline: WKWebView built-in HTTP cache + content-world localStorage.
-/// First load: fetches live. Subsequent loads: cache-first (works offline).
+/// Offline: the first-party service worker retains the app and its resources;
+/// the verified picture library is persisted separately in IndexedDB.
 
 struct ContentView: View {
     @EnvironmentObject var app: AppState
@@ -76,6 +76,9 @@ struct PrismWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
+        // WebKit enables service workers for app-bound views. Keep the main
+        // AAC page first-party; target-blank links retain the external handler.
+        config.limitsNavigationsToAppBoundDomains = true
 
         // Allow media playback without user gesture (needed for AAC TTS)
         config.allowsInlineMediaPlayback = true

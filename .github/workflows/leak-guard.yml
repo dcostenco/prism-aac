@@ -18,5 +18,10 @@ jobs:
           # Full history is not needed: the guard scans the tracked tree, and
           # scrubbing HEAD cannot remove what is already in public history.
           fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Exercise protected picture byte rejection
+        run: npm run test:picture-byte-guard
       - name: Scan tracked files for private references and secrets
         run: bash scripts/check-no-private-refs.sh

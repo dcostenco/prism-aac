@@ -45,6 +45,11 @@ function trailingSpokenWord(value: string): string {
  * their own; only the box needs to be told to stop reserving 72px.
  */
 export default function MessageBar({ compact = false }: { compact?: boolean } = {}) {
+  const memoryMounted = useRef(true);
+  useEffect(() => {
+    memoryMounted.current = true;
+    return () => { memoryMounted.current = false; };
+  }, []);
   const text = useMessageStore((s) => s.text);
   const activeTone = useMessageStore((s) => s.activeTone);
   const toneMode = useMessageStore((s) => s.toneMode);
@@ -364,9 +369,9 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
   const learnUtterance = useCallback((utterance: string) => {
     const words = utterance.trim().split(/\s+/).filter(Boolean);
     for (let i = 0; i < words.length; i++) {
-      const w = words[i].toLowerCase();
-      const prev = i > 0 ? words[i - 1].toLowerCase() : undefined;
-      const prevPrev = i > 1 ? words[i - 2].toLowerCase() : undefined;
+      const w = words[i];
+      const prev = i > 0 ? words[i - 1] : undefined;
+      const prevPrev = i > 1 ? words[i - 2] : undefined;
       learnWord(w, prev, prevPrev);
     }
   }, [learnWord]);
@@ -375,9 +380,16 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
   // memory. Merely displaying a correction or prediction never learns it.
   const recordConfirmedPhrase = useCallback((phrase: string) => {
     const predictionScope = getPredictionSessionScope(authenticatedProfile?.email);
+    const authGeneration = useAuthStore.getState().identityGeneration;
+    const stillCurrent = () => (
+      memoryMounted.current
+      && useAuthStore.getState().identityGeneration === authGeneration
+      && getPredictionSessionScope(useAuthStore.getState().profile?.email) === predictionScope
+    );
     try {
       import('../services/hrrContext').then(async ({ recordPhrase, initAacHrr }) => {
-        if (await initAacHrr(predictionScope)) {
+        if (!stillCurrent()) return;
+        if (await initAacHrr(predictionScope) && stillCurrent()) {
           const hour = new Date().getHours();
           recordPhrase(phrase, {
             language,

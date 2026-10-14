@@ -25,8 +25,10 @@ async function expectVisiblePictograms(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => {
     const loadedCount = (tileSelector: string) => [...document.querySelectorAll(tileSelector)]
       .filter((tile) => {
-        if (!tile.textContent?.trim()) return false;
-        const rect = tile.getBoundingClientRect();
+        if (tile.getAttribute('data-picture') === 'text') return true;
+        const image = tile.querySelector<HTMLImageElement>('img');
+        if (!image || !image.complete || image.naturalWidth <= 0) return false;
+        const rect = image.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
       }).length;
     return loadedCount('.aac-prediction-tile') >= 3
@@ -37,8 +39,10 @@ async function expectVisiblePictograms(page: Page): Promise<void> {
 async function expectVisiblePredictionPictograms(page: Page): Promise<void> {
   await expect.poll(async () => page.evaluate(() => [...document.querySelectorAll('.aac-prediction-tile')]
     .filter((tile) => {
-      if (!tile.textContent?.trim()) return false;
-      const rect = tile.getBoundingClientRect();
+      if (tile.getAttribute('data-picture') === 'text') return true;
+      const image = tile.querySelector<HTMLImageElement>('img');
+      if (!image || !image.complete || image.naturalWidth <= 0) return false;
+      const rect = image.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
     }).length), { timeout: 20_000 }).toBeGreaterThanOrEqual(3);
 }
@@ -58,8 +62,10 @@ async function expectVisiblePhrasePictograms(page: Page): Promise<void> {
       Math.abs(tile.getBoundingClientRect().top - firstRowTop) <= 2
     ));
     return firstRow.length >= 3 && firstRow.every((tile) => {
-      if (!tile.textContent?.trim()) return false;
-      const rect = tile.getBoundingClientRect();
+      if (tile.getAttribute('data-picture') === 'text') return true;
+      const image = tile.querySelector<HTMLImageElement>('img');
+      if (!image || !image.complete || image.naturalWidth <= 0) return false;
+      const rect = image.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     });
   }), { timeout: 20_000 }).toBe(true);
@@ -188,14 +194,16 @@ test('switches between complete Typing and Picture surfaces without losing predi
   await expect(predictionCards).toHaveCount(5);
   await expect(phraseCards.first()).toBeVisible();
 
+  // Compare cards that both carry a picture: a text tile has no picture well
+  // and shows its word larger by design.
   const prediction = await tileMetrics(
     page,
-    '.aac-prediction-tile:visible',
+    '.aac-prediction-tile[data-picture="symbol"]:visible',
     '[data-testid="prediction-label"]',
   );
   const phrase = await tileMetrics(
     page,
-    'button:has(> [data-testid="phrase-tile-label"]):visible',
+    'button[data-picture="symbol"]:has(> [data-testid="phrase-tile-label"]):visible',
     '[data-testid="phrase-tile-label"]',
   );
   const category = await tileMetrics(
