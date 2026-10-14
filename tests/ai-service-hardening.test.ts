@@ -197,17 +197,31 @@ describe('fetchSynaluxProfile — Prism AAC sign-in', () => {
 });
 
 describe('signOutOfPrismAac', () => {
-  it('ends the AAC sign-in with a credentialed keepalive DELETE', async () => {
+  it('ends the sign-in with one credentialed DELETE and says the device is signed out', async () => {
     fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
-    await signOutOfPrismAac();
+    await expect(signOutOfPrismAac()).resolves.toBe(true);
     const [[url, init]] = fetchMock.mock.calls as [string, RequestInit][];
     expect(url).toContain('/api/v1/prism-aac/session');
-    expect(init).toMatchObject({ method: 'DELETE', credentials: 'include', keepalive: true });
+    expect(init).toMatchObject({ method: 'DELETE', credentials: 'include' });
   });
 
-  it('never throws, even offline', async () => {
+  it('counts a 503 as signed out: the server clears the cookies even when its copy cannot be ended', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+    await expect(signOutOfPrismAac()).resolves.toBe(true);
+  });
+
+  it('says it did not sign out when refused or offline, and never throws', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 429 }));
+    await expect(signOutOfPrismAac()).resolves.toBe(false);
     fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-    await expect(signOutOfPrismAac()).resolves.toBeUndefined();
+    await expect(signOutOfPrismAac()).resolves.toBe(false);
+  });
+
+  it('forgets a stored access token', async () => {
+    sessionStorage.setItem('prism-aac-auth-token', 'old-token');
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    await signOutOfPrismAac();
+    expect(sessionStorage.getItem('prism-aac-auth-token')).toBeNull();
   });
 });
 

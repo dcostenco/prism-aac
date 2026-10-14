@@ -669,12 +669,18 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
                   <p className="text-primary font-semibold text-sm break-all">{profile.email || profile.name}</p>
                 </div>
                 <CloudSubscriptionSettings key={profile.email} />
-                {/* Prism AAC's own sign-in outlives the portal session, so end it here too. */}
-                <a href={synaluxSignOutUrl()} target="_blank" rel="noopener"
-                  onClick={() => { void signOutOfPrismAac(); clearProfile(); }}
-                  className="block text-center text-[#F44336] text-sm hover:underline pt-1">
+                {/* One click ends both sign-ins: the server clears the Synalux
+                    session with Prism AAC's own. Only if that request fails does
+                    the Synalux sign-out page (which asks to confirm) take over. */}
+                <button type="button"
+                  onClick={async () => {
+                    const signedOut = await signOutOfPrismAac();
+                    clearProfile();
+                    if (!signedOut) window.location.assign(synaluxSignOutUrl());
+                  }}
+                  className="block w-full text-center text-[#F44336] text-sm hover:underline pt-1">
                   {t('sign_out')}
-                </a>
+                </button>
               </div>
             ) : (
               <div>

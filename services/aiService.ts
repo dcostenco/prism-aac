@@ -226,13 +226,16 @@ async function fetchAacSession(): Promise<{ email: string; name: string } | 'sig
 }
 
 /**
- * Sign out of Prism AAC on this device: ends its sign-in on the server and clears
- * its cookies. keepalive, so it completes while the portal sign-out page opens;
- * never throws.
+ * Sign out of Prism AAC on this device. One request ends its sign-in and the
+ * Synalux sign-in it came from, and clears their cookies. True when the device
+ * is signed out (a 503 means the server copy could not be ended, but the cookies
+ * are cleared all the same); false when the request failed or was refused. Never
+ * throws.
  */
-export function signOutOfPrismAac(): Promise<void> {
-  return fetch(`${SYNALUX_API}/prism-aac/session`, { method: 'DELETE', credentials: 'include', keepalive: true })
-    .then(() => undefined, () => undefined);
+export function signOutOfPrismAac(): Promise<boolean> {
+  clearAuth();
+  return fetch(`${SYNALUX_API}/prism-aac/session`, { method: 'DELETE', credentials: 'include' })
+    .then(res => res.ok || res.status === 503, () => false);
 }
 
 export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
