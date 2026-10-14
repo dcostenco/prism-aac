@@ -226,13 +226,25 @@ async function fetchAacSession(): Promise<{ email: string; name: string } | 'sig
 }
 
 /**
- * Sign out of Prism AAC on this device: ends its sign-in on the server and clears
- * its cookies. keepalive, so it completes while the portal sign-out page opens;
- * never throws.
+ * Sign out of Prism AAC on this device. One request ends its sign-in and the
+ * Synalux sign-in it came from, and clears their cookies. True only when the
+ * portal says both ended (`portal_signed_out`), whatever the status: a 503 or
+ * 429 from the portal still clears the cookies. False for anything else (an
+ * older portal, a platform error page, offline, or no answer within 8 seconds),
+ * which sends the caller to the Synalux sign-out page. Never throws.
  */
-export function signOutOfPrismAac(): Promise<void> {
-  return fetch(`${SYNALUX_API}/prism-aac/session`, { method: 'DELETE', credentials: 'include', keepalive: true })
-    .then(() => undefined, () => undefined);
+export async function signOutOfPrismAac(): Promise<boolean> {
+  clearAuth();
+  const t = timeoutSignal(8000);
+  try {
+    const res = await fetch(`${SYNALUX_API}/prism-aac/session`, { method: 'DELETE', credentials: 'include', signal: t.signal });
+    const body = await res.json().catch(() => null) as { portal_signed_out?: unknown } | null;
+    return body?.portal_signed_out === true;
+  } catch {
+    return false;
+  } finally {
+    t.cancel();
+  }
 }
 
 export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {

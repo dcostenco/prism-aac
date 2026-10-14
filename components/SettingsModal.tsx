@@ -167,6 +167,7 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
   const [newPhraseCat, setNewPhraseCat] = useState('');
   const [newPhraseImage, setNewPhraseImage] = useState('');
   const [wordVisCat, setWordVisCat] = useState('');
+  const [signingOut, setSigningOut] = useState(false);
 
   const handlePhraseImageUpload = (file: File, setter: (url: string) => void) => {
     if (!file.type.startsWith('image/')) return;
@@ -669,12 +670,25 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
                   <p className="text-primary font-semibold text-sm break-all">{profile.email || profile.name}</p>
                 </div>
                 <CloudSubscriptionSettings key={profile.email} />
-                {/* Prism AAC's own sign-in outlives the portal session, so end it here too. */}
-                <a href={synaluxSignOutUrl()} target="_blank" rel="noopener"
-                  onClick={() => { void signOutOfPrismAac(); clearProfile(); }}
-                  className="block text-center text-[#F44336] text-sm hover:underline pt-1">
+                {/* One click ends both sign-ins: the server clears the Synalux
+                    session with Prism AAC's own. Only if that request fails does
+                    the Synalux sign-out page (which asks to confirm) take over. */}
+                <button type="button" disabled={signingOut}
+                  onClick={async () => {
+                    setSigningOut(true);
+                    try {
+                      // Cleared first, so the periodic re-check cannot start
+                      // (and sign the device back in) while the request runs.
+                      clearProfile();
+                      const signedOut = await signOutOfPrismAac();
+                      if (!signedOut) window.location.assign(synaluxSignOutUrl());
+                    } finally {
+                      setSigningOut(false);
+                    }
+                  }}
+                  className="block w-full text-center text-[#F44336] text-sm hover:underline pt-1 disabled:opacity-50">
                   {t('sign_out')}
-                </a>
+                </button>
               </div>
             ) : (
               <div>

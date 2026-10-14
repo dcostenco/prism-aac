@@ -8,8 +8,8 @@
  * loading/signed-in/signed-out states, high-contrast toggle, AI
  * autocorrect toggle, custom category add form, notifications toggle.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import SettingsModal from '@/components/SettingsModal';
 
@@ -83,7 +83,7 @@ const mocks = vi.hoisted(() => {
   );
 
   return { uiState, settingsState, categoryState, authState, useUIStore, useSettingsStore, useCategoryStore, useAuthStore,
-    billing: vi.fn(), signOutOfPrismAac: vi.fn(() => Promise.resolve()) };
+    billing: vi.fn(), signOutOfPrismAac: vi.fn(() => Promise.resolve(true)) };
 });
 
 // ── module mocks ──────────────────────────────────────────────────────────────
@@ -605,21 +605,55 @@ describe('SettingsModal — vocab set section', () => {
 });
 
 describe('SettingsModal — Sign out', () => {
-  it('ends Prism AAC\'s own sign-in and clears the profile, besides opening the portal sign-out', () => {
+  const realLocation = window.location;
+  const assign = vi.fn();
+  function openAccount() {
     mocks.uiState.showSettings = true;
     mocks.settingsState.caregiverPinHash = undefined as never;
     mocks.authState.profile = { email: 'caregiver@example.com', name: 'Caregiver', plan: 'free', isPlatformAdmin: false };
-    try {
-      render(<SettingsModal />);
-      fireEvent.click(screen.getByText('synalux_account')); // the Account section starts collapsed
-      const link = screen.getByText('sign_out').closest('a')!;
-      expect(link.getAttribute('href')).toBe('https://synalux.ai/sign-out');
-      fireEvent.click(link);
-      expect(mocks.signOutOfPrismAac).toHaveBeenCalledTimes(1);
-      expect(mocks.authState.clear).toHaveBeenCalledTimes(1);
-    } finally {
-      mocks.authState.profile = null;
-    }
+    Object.defineProperty(window, 'location', { configurable: true, value: { ...realLocation, assign } });
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByText('synalux_account')); // the Account section starts collapsed
+    return screen.getByRole('button', { name: 'sign_out' });
+  }
+  afterEach(() => {
+    mocks.authState.profile = null;
+    assign.mockReset();
+    mocks.signOutOfPrismAac.mockReset().mockResolvedValue(true);
+    Object.defineProperty(window, 'location', { configurable: true, value: realLocation });
+  });
+
+  // One click: the server ends the Synalux sign-in with Prism AAC's own, so no
+  // second sign-out (the Synalux confirmation page) is needed.
+  it('signs out in one click, without opening the Synalux sign-out page', async () => {
+    fireEvent.click(openAccount());
+    await waitFor(() => expect(mocks.authState.clear).toHaveBeenCalledTimes(1));
+    expect(mocks.signOutOfPrismAac).toHaveBeenCalledTimes(1);
+    expect(assign).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: 'sign_out' })).toBeNull();
+  });
+
+  // The profile is cleared before the request, so the periodic re-check cannot
+  // sign the device back in while it runs; a second click is ignored.
+  it('clears the profile before the request and ignores a second click', async () => {
+    let finish: (value: boolean) => void = () => {};
+    mocks.signOutOfPrismAac.mockImplementation(() => new Promise<boolean>(resolve => { finish = resolve; }));
+    const button = openAccount();
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toBeDisabled());
+    expect(mocks.authState.clear).toHaveBeenCalledTimes(1);
+    fireEvent.click(button);
+    expect(mocks.signOutOfPrismAac).toHaveBeenCalledTimes(1);
+    finish(true);
+    await waitFor(() => expect(button).not.toBeDisabled());
+    expect(mocks.authState.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to the Synalux sign-out page when the request fails', async () => {
+    mocks.signOutOfPrismAac.mockResolvedValue(false);
+    fireEvent.click(openAccount());
+    await waitFor(() => expect(assign).toHaveBeenCalledWith('https://synalux.ai/sign-out'));
+    expect(mocks.authState.clear).toHaveBeenCalledTimes(1);
   });
 });
 
