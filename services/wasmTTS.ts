@@ -478,9 +478,12 @@ async function speakWithBeeps(
   // resume it first. If resume fails, abort — never schedule nodes
   // against a frozen currentTime (causes all tones to blast simultaneously
   // when the device wakes, risking acoustic trauma for sensory-sensitive children).
-  if (ctx.state === 'suspended') {
-    try { await ctx.resume(); } catch { return; }
-    if (wasStopped() || (ctx.state as string) !== 'running') return;
+  if (ctx.state !== 'running') {
+    // Suspended or interrupted (a call, another app): thrown, not returned, so
+    // speakWasm reports that nothing played rather than claim tones were heard.
+    try { await ctx.resume(); } catch { throw new Error('audio could not resume; no tones played'); }
+    if (wasStopped()) return;
+    if ((ctx.state as string) !== 'running') throw new Error('audio is not running; no tones played');
   }
 
   const masterGain = ctx.createGain();

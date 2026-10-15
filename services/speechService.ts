@@ -12,6 +12,7 @@
  */
 
 import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
+import { CLOUD_SPEECH_MAX_CHARS, splitForCloudSpeech } from './speechChunks';
 import { autoSwitchTone, toneToAzureStyle, toneToRate } from './adaptiveEngine';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -135,6 +136,16 @@ let resolveActiveLocalSpeech: (() => void) | null = null;
 // speech. Stopping active nodes alone is insufficient: a pending cloud failure
 // could otherwise continue into Web Speech or WASM after Sound Off was tapped.
 let speechStopGeneration = 0;
+/** Bumped whenever an utterance takes over the speech channel: a message whose
+ *  generation is no longer current must not speak further parts or fall back. */
+let speakGeneration = 0;
+
+/** Take over the speech channel: older messages stop speaking further parts or
+ *  falling back, and last-resort audio still playing for them stops. */
+function takeOverSpeech(): number {
+  stopWasmSpeech();
+  return ++speakGeneration;
+}
 
 /**
  * Why the caller needs to tell these three apart:
@@ -267,6 +278,14 @@ export async function speak(
   }
   const startedBeforeStopGeneration = speechStopGeneration;
   const wasExplicitlyStopped = () => startedBeforeStopGeneration !== speechStopGeneration;
+  // An interrupting call (an explicit Speak, tap feedback) replaces whatever is
+  // speaking. A non-interrupting one takes over only once it actually reaches a
+  // tier that replaces audio (the device voice, the last-resort tier); in the
+  // cloud tier the player itself decides, and reports a clip it cut off.
+  let generation = interrupt ? takeOverSpeech() : speakGeneration;
+  // Stop, Sound Off, or a newer phrase: this message must not say anything more.
+  const halted = () => wasExplicitlyStopped() || generation !== speakGeneration
+    || useMessageStore.getState().soundEnabled === false;
 
   // Auto tone switch — when caller passes 'auto' (default for new code), the
   // adaptive engine detects emotional context from the text and routes the
@@ -293,6 +312,9 @@ export async function speak(
   // what the user attempted to say.
   const debugText = text.slice(0, 80);
   const triedTiers: TtsTier[] = [];
+  // What the lower tiers still have to say: all of it, unless the cloud voice
+  // already spoke the first chunks of a long message before failing.
+  let remaining = text;
 
   // Reuse saved cloud audio before checking connectivity. On an offline
   // cache miss speakAzure returns without a request, reaching local speech.
@@ -325,24 +347,47 @@ export async function speak(
     });
     const appLanguage = (useSettingsStore.getState().language || 'en') as SupportedLanguage;
     const telemetry = { surface: options.surface ?? 'message', builtIn: isBuiltInPhraseText(text, appLanguage) } as const;
-    const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt, !isOnline(), options.cloudTimeoutMs, telemetry);
-    if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
-    if (result?.cancelled) {
-      // A newer utterance or an explicit Stop owns the audio channel now.
-      // This is neither a portal success nor a provider failure, and must not
-      // leak the stale text into Web Speech fallback.
-      return;
+    // One cloud request takes at most CLOUD_SPEECH_MAX_CHARS characters, so a
+    // long message is spoken chunk by chunk, in order. Nothing is dropped: if a
+    // chunk fails, the device voice says the rest, never the part already heard.
+    const chunks = splitForCloudSpeech(text, CLOUD_SPEECH_MAX_CHARS);
+    let spoken = 0;
+    // Only the first part carries the caller's interrupt. A later part must not
+    // cancel device speech that started meanwhile (the emergency speaker).
+    let partInterrupts = interrupt;
+    for (const chunk of chunks) {
+      if (!chunk.trim()) { spoken += 1; continue; }
+      if (halted()) return;
+      const result = await speakAzure(chunk, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, partInterrupts, !isOnline(), options.cloudTimeoutMs, telemetry);
+      partInterrupts = false;
+      if (halted()) return;
+      if (result?.cancelled) {
+        // A newer utterance or an explicit Stop owns the audio channel now.
+        // This is neither a portal success nor a provider failure, and must not
+        // leak the stale text into Web Speech fallback.
+        return;
+      }
+      if (!(result && result.success)) break;
+      if (spoken === 0) {
+        console.log('[TTS] Portal TTS succeeded');
+        const now = Date.now();
+        emitTtsHealthEvent({
+          type: 'tts-success', tier: 'inworld', latencyMs: now - tier1Start,
+          durationMs: 0, timestamp: now,
+        });
+      }
+      // Success without a clip: acknowledged but not played by this call (a
+      // duplicate of what is already playing, or dropped to protect a phrase that
+      // just started). Whatever is playing owns the channel; going on to the next
+      // part would cut it off. A clip cut off by Stop or another phrase ends the
+      // message for the same reason.
+      if (!result.onEnded) return;
+      const ended = await result.onEnded;
+      if (ended === 'stopped' || halted()) return;
+      spoken += 1;
     }
-    if (result && result.success) {
-      console.log('[TTS] Portal TTS succeeded');
-      const now = Date.now();
-      emitTtsHealthEvent({
-        type: 'tts-success', tier: 'inworld', latencyMs: now - tier1Start,
-        durationMs: 0, timestamp: now,
-      });
-      if (result.onEnded) await result.onEnded;
-      return;
-    }
+    if (spoken === chunks.length) return;
+    remaining = chunks.slice(spoken).join('');
     console.warn('[TTS] Portal TTS failed (server tier-rejected, network, or timeout), falling through');
     // Decide next tier for the fallback event. Mirrors the actual control
     // flow below so the bus reflects what really happens next.
@@ -355,12 +400,21 @@ export async function speak(
 
   // Tier 2: Web Speech API (offline, all 12 langs on most devices)
   if (isSpeechSupported()) {
-    if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
+    if (halted()) return;
+    // speakLocal cancels any other device speech: this call now owns the channel.
+    generation = takeOverSpeech();
     triedTiers.push('web-speech');
     // speakLocal emits its own attempt + success/fallback via the
     // SpeechSynthesisUtterance lifecycle (onend / onerror).
-    await speakLocal(text, effectiveRate, volume, lang);
-    return;
+    const outcome = await speakLocal(remaining, effectiveRate, volume, lang);
+    // A device voice that errors (no voice installed for the language, a
+    // synthesis failure) must not end the chain: the last-resort tier below
+    // still makes a sound. 'cancelled' means a newer phrase or Stop owns the audio.
+    if (outcome !== 'failed' || halted()) return;
+    emitTtsHealthEvent({
+      type: 'tts-fallback', fromTier: 'web-speech', toTier: 'native-ios',
+      reason: 'device voice failed', timestamp: Date.now(),
+    });
   }
 
   // Tier 3: WASM TTS fallback (if Web Speech API unavailable)
@@ -370,11 +424,16 @@ export async function speak(
     type: 'tts-attempt', tier: 'native-ios', text: debugText, lang, timestamp: tier4Start,
   });
   try {
-    if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
+    if (halted()) return;
     const { speakWasm, isWasmTTSReady, initWasmTTS } = await import('./wasmTTS');
     if (!isWasmTTSReady()) await initWasmTTS();
-    if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
-    await speakWasm(text, lang, rate, volume);
+    if (halted()) return;
+    generation = takeOverSpeech();
+    // false: nothing could be played (or it was stopped) — not a success.
+    if (!(await speakWasm(remaining, lang, rate, volume))) {
+      if (halted()) return;
+      throw new Error('no speech engine or tones could play');
+    }
     const now = Date.now();
     emitTtsHealthEvent({
       type: 'tts-success', tier: 'native-ios', latencyMs: now - tier4Start,
@@ -475,7 +534,9 @@ export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string)
   }
 
   // speakLocal stops cloud audio, retires the prior utterance, cancels the
-  // browser queue, and owns one Safari resume timer at a time.
+  // browser queue, and owns one Safari resume timer at a time. Taking over first
+  // keeps an older message from resuming or falling back over this word.
+  takeOverSpeech();
   void speakLocal(toSpeak, rate, volume, actualLang).then((outcome) => {
     if (outcome === 'failed') escalate();
   });
@@ -550,6 +611,21 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): P
     });
   };
   u.onerror = (ev) => {
+    // 'interrupted' and 'canceled' are what Web Speech reports when something
+    // else cancelled this utterance (a newer phrase on another tier calls
+    // speechSynthesis.cancel() directly). That is a cancellation, and must never
+    // start a fallback that speaks the stale text over the newer phrase.
+    const errorCode = (ev as SpeechSynthesisErrorEvent | undefined)?.error;
+    // Something else cancelled it: a newer phrase, Stop, the emergency speaker,
+    // or the system (a phone call). It is reported, never re-spoken over whatever
+    // took over the audio.
+    if (errorCode === 'interrupted' || errorCode === 'canceled') {
+      finish('cancelled', () => emitTtsHealthEvent({
+        type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
+        reason: 'device voice ' + errorCode, timestamp: Date.now(),
+      }));
+      return;
+    }
     finish('failed', () => {
       // SpeechSynthesisErrorEvent.error is a string code (e.g. 'not-allowed',
       // 'language-unavailable', 'synthesis-failed'). Surface it so the

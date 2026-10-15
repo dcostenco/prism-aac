@@ -257,3 +257,22 @@ describe('decodeAndPlay — suspended context attempts playback (no fail-fast re
     fetchSpy.mockRestore();
   });
 });
+
+// A message spoken in parts needs to know whether a part played to its end or
+// was cut off by Stop or another phrase: only after 'ended' may it go on.
+describe('decodeAndPlay — how playback ended', () => {
+  it('reports ended for a clip that played out and stopped for one that was cut off', async () => {
+    const mod = await loadAzureTTS();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      new Response(new ArrayBuffer(64), { status: 200, headers: { 'content-length': '64' } }),
+    );
+    const natural = await mod.speakAzure('first part', 'en-US', 'friendly', 1, 1, '');
+    createdSources[0].onended?.();
+    await expect(natural.onEnded).resolves.toBe('ended');
+
+    const cutOff = await mod.speakAzure('second part', 'en-US', 'friendly', 1, 1, '', undefined, true);
+    mod.stopAzureAudio();
+    await expect(cutOff.onEnded).resolves.toBe('stopped');
+    fetchSpy.mockRestore();
+  });
+});
