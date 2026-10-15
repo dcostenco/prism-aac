@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Gói đăng ký đám mây đã sẵn sàng.",
   "cloud_no_active_subscription": "Đã kiểm tra giao dịch mua. Không có gói đám mây nào đang hoạt động để khôi phục.",
   "cloud_plan_unavailable": "Tạm thời không có thông tin gói đám mây. Vui lòng thử lại.",
+  "cloud_ai_subscription_required": "AI đám mây cần gói đăng ký. Bạn có thể đăng ký trong Cài đặt. Bảng và giọng nói của bạn vẫn hoạt động bình thường.",
+  "cloud_ai_allowance_used": "Hạn mức AI đám mây của tháng này đã dùng hết. Hạn mức sẽ đặt lại vào ngày 1 tháng sau. Bảng và giọng nói của bạn vẫn hoạt động bình thường.",
   "web_preview_notice": "Xem trước trên web: còn {seconds} giây. Cần đăng nhập sau đó và hoàn toàn miễn phí.",
   "web_signin_required": "Đăng nhập để tiếp tục dùng Prism AAC",
   "web_signin_explanation": "Đã hết 1 phút xem trước. Đăng nhập hoặc tạo tài khoản Synalux miễn phí để tiếp tục. Đăng nhập không làm phát sinh phí.",

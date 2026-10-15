@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Bulut aboneliğiniz hazır.",
   "cloud_no_active_subscription": "Satın alımınız kontrol edildi. Geri yüklenecek aktif bulut aboneliği yok.",
   "cloud_plan_unavailable": "Bulut planı detayları geçici olarak kullanılamıyor. Lütfen tekrar deneyin.",
+  "cloud_ai_subscription_required": "Bulut yapay zekası için abonelik gerekir. Ayarlar'dan abone olabilirsiniz. Panolarınız ve sesiniz çalışmaya devam eder.",
+  "cloud_ai_allowance_used": "Bu ayın bulut yapay zeka hakkı doldu. Gelecek ayın 1'inde yenilenir. Panolarınız ve sesiniz çalışmaya devam eder.",
   "web_preview_notice": "Web önizleme: Kalan süre {seconds} sn. Sonrasında ücretsiz giriş gereklidir.",
   "web_signin_required": "Prism AAC'yi kullanmaya devam etmek için giriş yapın",
   "web_signin_explanation": "Bir dakikalık web önizlemeniz bitti. Devam etmek için giriş yapın veya ücretsiz Synalux hesabı oluşturun. Giriş yapmak paralı abonelik başlatmaz.",

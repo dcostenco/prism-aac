@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Dein Cloud-Abo ist bereit.",
   "cloud_no_active_subscription": "Dein Kauf wurde geprüft. Es gibt kein aktives Cloud-Abo zum Wiederherstellen.",
   "cloud_plan_unavailable": "Details zum Cloud-Tarif sind vorübergehend nicht verfügbar. Bitte versuche es erneut.",
+  "cloud_ai_subscription_required": "Cloud-KI braucht ein Abo. Du kannst es in den Einstellungen abschließen. Deine Karten und deine Stimme funktionieren weiter.",
+  "cloud_ai_allowance_used": "Das Cloud-KI-Kontingent für diesen Monat ist aufgebraucht. Es wird am 1. des nächsten Monats erneuert. Deine Karten und deine Stimme funktionieren weiter.",
   "web_preview_notice": "Web-Vorschau: Noch {seconds} Sek. Danach ist eine kostenlose Anmeldung erforderlich.",
   "web_signin_required": "Anmelden, um Prism AAC weiter zu nutzen",
   "web_signin_explanation": "Deine einminütige Web-Vorschau ist abgelaufen. Melde dich an oder erstelle dein kostenloses Synalux-Konto. Die Anmeldung startet kein kostenpflichtiges Abo.",

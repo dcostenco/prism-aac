@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Langganan cloud Anda sudah siap.",
   "cloud_no_active_subscription": "Pembelian Anda telah diperiksa. Tidak ada langganan cloud aktif untuk dipulihkan.",
   "cloud_plan_unavailable": "Rincian paket cloud sementara tidak tersedia. Silakan coba lagi.",
+  "cloud_ai_subscription_required": "AI cloud memerlukan langganan. Anda bisa berlangganan di Pengaturan. Papan dan suara Anda tetap berfungsi.",
+  "cloud_ai_allowance_used": "Kuota AI cloud bulan ini sudah habis. Kuota direset tanggal 1 bulan depan. Papan dan suara Anda tetap berfungsi.",
   "web_preview_notice": "Pratinjau web: sisa {seconds} detik. Masuk akun diperlukan setelahnya dan gratis.",
   "web_signin_required": "Masuk untuk melanjutkan Prism AAC",
   "web_signin_explanation": "Pratinjau web satu menit Anda telah selesai. Masuk atau buat akun Synalux gratis untuk lanjut. Masuk akun tidak memulai langganan berbayar.",

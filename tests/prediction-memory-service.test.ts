@@ -23,6 +23,7 @@ vi.mock('@/lib/langAllowlist', () => ({
 
 const {
   clearPredictionMemoryCache,
+  resumeCloudPrediction,
   fetchMemoryPredictions,
   getPredictionSessionScope,
   rememberConfirmedPhrase,
@@ -219,5 +220,70 @@ describe('prediction memory transport and explicit learning', () => {
         },
       },
     }));
+  });
+});
+
+// With enforcement on, an account with no subscription (or a spent allowance) is
+// refused. Prediction already falls back to on-device words; it must not keep
+// spending a request on every keystroke.
+describe('a cloud refusal pauses cloud prediction', () => {
+  const scope = 'user:free@example.com';
+  const refused = { ok: false, status: 402, error: 'Cloud access requires a subscription.' };
+
+  it('stops asking after a 402 until the pause ends', async () => {
+    vi.useFakeTimers();
+    try {
+      portalFetchMock.mockResolvedValue(refused);
+      expect(await fetchMemoryPredictions('I want ', 'en', { sessionScope: scope })).toEqual([]);
+      expect(portalFetchMock).toHaveBeenCalledTimes(1);
+      expect(await fetchMemoryPredictions('I want to ', 'en', { sessionScope: scope })).toEqual([]);
+      expect(await fetchMemoryPredictions('I want to go ', 'en', { sessionScope: scope })).toEqual([]);
+      expect(portalFetchMock).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(15 * 60_000 + 1);
+      portalFetchMock.mockResolvedValue({ ok: true, status: 200, data: { words: ['home'] } });
+      expect(await fetchMemoryPredictions('I want to go ', 'en', { sessionScope: scope })).toEqual(['home']);
+      expect(portalFetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('other failures do not pause it', async () => {
+    portalFetchMock.mockResolvedValueOnce({ ok: false, status: 503, error: 'unavailable' });
+    await fetchMemoryPredictions('I want ', 'en', { sessionScope: scope });
+    portalFetchMock.mockResolvedValueOnce({ ok: true, status: 200, data: { words: ['water'] } });
+    expect(await fetchMemoryPredictions('I want to ', 'en', { sessionScope: scope })).toEqual(['water']);
+  });
+
+  it('pauses only the refused account', async () => {
+    portalFetchMock.mockResolvedValueOnce(refused);
+    await fetchMemoryPredictions('I want ', 'en', { sessionScope: scope });
+    portalFetchMock.mockResolvedValueOnce({ ok: true, status: 200, data: { words: ['water'] } });
+    expect(await fetchMemoryPredictions('I want ', 'en', { sessionScope: 'user:paid@example.com' })).toEqual(['water']);
+  });
+
+  it('a refusal for a request sent before the subscription started does not pause it again', async () => {
+    let answerLate!: (value: unknown) => void;
+    portalFetchMock.mockReturnValueOnce(new Promise((resolve) => { answerLate = resolve; }));
+    const pending = fetchMemoryPredictions('I want ', 'en', { sessionScope: scope });
+    await vi.waitFor(() => expect(portalFetchMock).toHaveBeenCalledTimes(1));
+    // The purchase completes while that request is still out.
+    resumeCloudPrediction();
+    answerLate(refused);
+    expect(await pending).toEqual([]);
+    portalFetchMock.mockResolvedValueOnce({ ok: true, status: 200, data: { words: ['water'] } });
+    expect(await fetchMemoryPredictions('I need ', 'en', { sessionScope: scope })).toEqual(['water']);
+  });
+
+  it('resumes at once when a subscription starts, or the account changes', async () => {
+    // A different phrase per pass, so the first pass's cached words are not reused.
+    for (const [resume, phrase] of [[resumeCloudPrediction, 'I want '], [clearPredictionMemoryCache, 'I need ']] as const) {
+      portalFetchMock.mockReset().mockResolvedValueOnce(refused);
+      await fetchMemoryPredictions(phrase, 'en', { sessionScope: scope });
+      expect(portalFetchMock).toHaveBeenCalledTimes(1);
+      resume();
+      portalFetchMock.mockResolvedValueOnce({ ok: true, status: 200, data: { words: ['water'] } });
+      expect(await fetchMemoryPredictions(phrase, 'en', { sessionScope: scope })).toEqual(['water']);
+    }
   });
 });

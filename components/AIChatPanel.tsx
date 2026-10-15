@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
-import { askAI, translateAI } from '@/services/aiService';
+import { askAI, translateAI, CloudAccessError } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { currentSpeechEpoch } from '@/services/speechService';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -578,7 +578,10 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
       // where the native Apple sign-in lives.
       const raw = e instanceof Error ? e.message : '';
       const needsSignIn = /sign in|expired/i.test(raw);
-      const msg = needsSignIn ? t('sign_in_ai_desc') : t('could_not_reach_ai');
+      // No subscription, or this month's allowance used: say so, never "could not reach".
+      const msg = e instanceof CloudAccessError
+        ? t(e.code === 'exhausted' ? 'cloud_ai_allowance_used' : 'cloud_ai_subscription_required')
+        : needsSignIn ? t('sign_in_ai_desc') : t('could_not_reach_ai');
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = { ...updated[updated.length - 1], role: 'ai', text: msg, lines: [msg] };

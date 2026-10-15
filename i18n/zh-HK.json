@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "你的雲端訂閱已準備就緒。",
   "cloud_no_active_subscription": "已檢查你的購買紀錄。沒有可還原的有效雲端訂閱。",
   "cloud_plan_unavailable": "暫時無法提供雲端計劃詳情。請再試一次。",
+  "cloud_ai_subscription_required": "雲端 AI 需要訂閱雲端服務。你可以在設置中訂閱。你的版面和語音仍可繼續使用。",
+  "cloud_ai_allowance_used": "本月的雲端 AI 額度已用完，會於下個月 1 號重置。你的版面和語音仍可繼續使用。",
   "web_preview_notice": "網頁預覽：剩餘 {seconds} 秒。隨後需要登入，登入為免費。",
   "web_signin_required": "請登入以繼續使用 Prism AAC",
   "web_signin_explanation": "一分鐘的網頁預覽已經結束。請登入或建立免費的 Synalux 帳戶以繼續。登入不會開始付費訂閱。",

@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Abonamentul tău Cloud este gata.",
   "cloud_no_active_subscription": "Achiziția a fost verificată. Nu există niciun abonament Cloud activ de restaurat.",
   "cloud_plan_unavailable": "Detaliile planului Cloud sunt temporar indisponibile. Încearcă din nou.",
+  "cloud_ai_subscription_required": "AI-ul din cloud necesită un abonament. Te poți abona din Setări. Panourile și vocea ta funcționează în continuare.",
+  "cloud_ai_allowance_used": "Limita de AI din cloud pentru luna aceasta s-a terminat. Se reînnoiește pe 1 luna viitoare. Panourile și vocea ta funcționează în continuare.",
   "web_preview_notice": "Apreciere web: au rămas {seconds}s. Autentificarea este necesară după aceea și este gratuită.",
   "web_signin_required": "Conectează-te pentru a continua să folosești Prism AAC",
   "web_signin_explanation": "Aprecierea web de un minut s-a încheiat. Conectează-te sau creează un cont gratuit Synalux pentru a continua. Conectarea nu inițiază un abonament plătit.",

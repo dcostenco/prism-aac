@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Votre abonnement cloud est prêt.",
   "cloud_no_active_subscription": "Aucun abonnement cloud actif trouvé.",
   "cloud_plan_unavailable": "Détails du forfait indisponibles. Veuillez réessayer.",
+  "cloud_ai_subscription_required": "L'IA dans le cloud nécessite un abonnement. Vous pouvez vous abonner dans Paramètres. Vos tableaux et votre voix continuent de fonctionner.",
+  "cloud_ai_allowance_used": "Le quota d'IA dans le cloud de ce mois est épuisé. Il se renouvelle le 1er du mois prochain. Vos tableaux et votre voix continuent de fonctionner.",
   "web_preview_notice": "Aperçu web : {seconds} s restantes. Connexion gratuite requise ensuite.",
   "web_signin_required": "Connectez-vous pour continuer à utiliser Prism AAC",
   "web_signin_explanation": "Votre minute d'essai est terminée. Connectez-vous ou créez un compte Synalux gratuit. C'est sans engagement.",
