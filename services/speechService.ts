@@ -140,10 +140,19 @@ let speechStopGeneration = 0;
  *  generation is no longer current must not speak further parts or fall back. */
 let speakGeneration = 0;
 
+/** Changes whenever speech is taken over or stopped. A caller pausing between
+ *  the parts of something it reads (the AI chat answer) checks it did not change
+ *  before resuming, so it never cuts off whoever spoke or pressed Stop meanwhile. */
+let speechEpoch = 0;
+export function currentSpeechEpoch(): number {
+  return speechEpoch;
+}
+
 /** Take over the speech channel: older messages stop speaking further parts or
  *  falling back, and last-resort audio still playing for them stops. */
 function takeOverSpeech(): number {
   stopWasmSpeech();
+  speechEpoch += 1;
   return ++speakGeneration;
 }
 
@@ -254,6 +263,12 @@ export interface SpeakOptions {
   surface?: 'feedback' | 'message';
 }
 
+/** How a speak() turn ended: 'finished' (spoken, or every tier tried), or
+ *  'halted' (Stop, Sound Off, or another phrase took over the speech). A caller
+ *  reading something in parts must stop after 'halted', not cut off whoever
+ *  took over. */
+export type SpeakOutcome = 'finished' | 'halted';
+
 export async function speak(
   text: string,
   rate = 0.5,
@@ -262,11 +277,11 @@ export async function speak(
   tone: ToneStyle | 'auto' = 'auto',
   interrupt = false,
   options: SpeakOptions = {},
-): Promise<void> {
-  if (!text.trim()) return;
+): Promise<SpeakOutcome> {
+  if (!text.trim()) return 'finished';
   // `speak` is also used directly by Voice Preview. Enforce the same global
   // mute contract here so bypassing aacSpeak cannot bypass Sound Off.
-  if (useMessageStore.getState().soundEnabled === false) return;
+  if (useMessageStore.getState().soundEnabled === false) return 'halted';
   // Volume=0 guard — catches mis-stored settings before a silent-success
   if (volume === 0) {
     console.warn('[TTS] volume=0 — audio will be silent. Check Settings → Voice → Volume slider.');
@@ -274,7 +289,7 @@ export async function speak(
       type: 'tts-give-up', lastTier: 'inworld', triedTiers: [],
       reason: 'volume=0 in settings — speech suppressed', timestamp: Date.now(),
     });
-    return;
+    return 'halted';
   }
   const startedBeforeStopGeneration = speechStopGeneration;
   const wasExplicitlyStopped = () => startedBeforeStopGeneration !== speechStopGeneration;
@@ -357,17 +372,20 @@ export async function speak(
     let partInterrupts = interrupt;
     for (const chunk of chunks) {
       if (!chunk.trim()) { spoken += 1; continue; }
-      if (halted()) return;
+      if (halted()) return 'halted';
       const result = await speakAzure(chunk, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, partInterrupts, !isOnline(), options.cloudTimeoutMs, telemetry);
       partInterrupts = false;
-      if (halted()) return;
+      if (halted()) return 'halted';
       if (result?.cancelled) {
         // A newer utterance or an explicit Stop owns the audio channel now.
         // This is neither a portal success nor a provider failure, and must not
         // leak the stale text into Web Speech fallback.
-        return;
+        return 'halted';
       }
       if (!(result && result.success)) break;
+      // A clip is playing: whoever was speaking before no longer owns the channel,
+      // even when this call did not interrupt (Voice Preview, for one).
+      if (result.onEnded) speechEpoch += 1;
       if (spoken === 0) {
         console.log('[TTS] Portal TTS succeeded');
         const now = Date.now();
@@ -381,12 +399,12 @@ export async function speak(
       // just started). Whatever is playing owns the channel; going on to the next
       // part would cut it off. A clip cut off by Stop or another phrase ends the
       // message for the same reason.
-      if (!result.onEnded) return;
+      if (!result.onEnded) return 'halted';
       const ended = await result.onEnded;
-      if (ended === 'stopped' || halted()) return;
+      if (ended === 'stopped' || halted()) return 'halted';
       spoken += 1;
     }
-    if (spoken === chunks.length) return;
+    if (spoken === chunks.length) return 'finished';
     remaining = chunks.slice(spoken).join('');
     console.warn('[TTS] Portal TTS failed (server tier-rejected, network, or timeout), falling through');
     // Decide next tier for the fallback event. Mirrors the actual control
@@ -400,7 +418,7 @@ export async function speak(
 
   // Tier 2: Web Speech API (offline, all 12 langs on most devices)
   if (isSpeechSupported()) {
-    if (halted()) return;
+    if (halted()) return 'halted';
     // speakLocal cancels any other device speech: this call now owns the channel.
     generation = takeOverSpeech();
     triedTiers.push('web-speech');
@@ -410,7 +428,8 @@ export async function speak(
     // A device voice that errors (no voice installed for the language, a
     // synthesis failure) must not end the chain: the last-resort tier below
     // still makes a sound. 'cancelled' means a newer phrase or Stop owns the audio.
-    if (outcome !== 'failed' || halted()) return;
+    if (outcome === 'ok') return 'finished';
+    if (outcome === 'cancelled' || halted()) return 'halted';
     emitTtsHealthEvent({
       type: 'tts-fallback', fromTier: 'web-speech', toTier: 'native-ios',
       reason: 'device voice failed', timestamp: Date.now(),
@@ -424,14 +443,14 @@ export async function speak(
     type: 'tts-attempt', tier: 'native-ios', text: debugText, lang, timestamp: tier4Start,
   });
   try {
-    if (halted()) return;
+    if (halted()) return 'halted';
     const { speakWasm, isWasmTTSReady, initWasmTTS } = await import('./wasmTTS');
     if (!isWasmTTSReady()) await initWasmTTS();
-    if (halted()) return;
+    if (halted()) return 'halted';
     generation = takeOverSpeech();
     // false: nothing could be played (or it was stopped) — not a success.
     if (!(await speakWasm(remaining, lang, rate, volume))) {
-      if (halted()) return;
+      if (halted()) return 'halted';
       throw new Error('no speech engine or tones could play');
     }
     const now = Date.now();
@@ -447,6 +466,7 @@ export async function speak(
       timestamp: Date.now(),
     });
   }
+  return 'finished';
 }
 
 /**
@@ -657,6 +677,7 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): P
 
 export function stopSpeech(): void {
   speechStopGeneration += 1;
+  speechEpoch += 1;
   stopAzureAudio();
   retireActiveLocalSpeech();
   if (isSpeechSupported()) window.speechSynthesis.cancel();

@@ -180,3 +180,14 @@ describe('aacSpeak — single-character padding', () => {
     expect(spokenText).toBe('hello');
   });
 });
+
+// A caller reading something in parts (the AI chat answer) needs to know whether
+// a sentence finished or something else took over the speech.
+describe('aacSpeak — how the speech ended', () => {
+  it('passes speak()\'s outcome through', async () => {
+    (speak as ReturnType<typeof vi.fn>).mockResolvedValueOnce('halted');
+    await expect(aacSpeak('I need water', 0.5, 1)).resolves.toBe('halted');
+    (speak as ReturnType<typeof vi.fn>).mockResolvedValueOnce('finished');
+    await expect(aacSpeak('I need water', 0.5, 1)).resolves.toBe('finished');
+  });
+});

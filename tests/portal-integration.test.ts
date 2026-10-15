@@ -656,7 +656,7 @@ describe('TTS Pipeline', () => {
 
   it('5.5 -- speak() does not throw on empty text (no speech initiated)', async () => {
     const { speak } = await import('@/services/speechService');
-    await expect(speak('', 0.5, 1.0, 'en-US')).resolves.toBeUndefined();
+    await expect(speak('', 0.5, 1.0, 'en-US')).resolves.toBe('finished');
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
   });
 

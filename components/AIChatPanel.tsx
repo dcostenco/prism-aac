@@ -5,6 +5,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
 import { askAI, translateAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
+import { currentSpeechEpoch } from '@/services/speechService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
@@ -60,6 +61,10 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const MAX_MESSAGES = 50;
   const [loading, setLoading] = useState(false);
+  // The answer is still being read aloud. It outlasts `loading` (the stream),
+  // and nothing may start listening while it lasts: the mic would hear the answer.
+  const [answerSpeaking, setAnswerSpeaking] = useState(false);
+  const speakingAskRef = useRef<AbortController | null>(null);
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
   const [micError, setMicError] = useState<string | null>(null);
@@ -259,7 +264,7 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
   // ("call 911", "988") is picked up by SpeechRecognition, re-triggers the crisis
   // filter, and creates an infinite crisis-response → mic-restart loop.
   useEffect(() => {
-    if (loading || !handsFreeModeActive || listening) return;
+    if (loading || answerSpeaking || !handsFreeModeActive || listening) return;
     if (Date.now() - lastCrisisAtRef.current < HANDS_FREE_CRISIS_SUPPRESS_MS) return;
     const timer = setTimeout(() => {
       if (
@@ -270,13 +275,13 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [loading, handsFreeModeActive, listening, HANDS_FREE_CRISIS_SUPPRESS_MS]);
+  }, [loading, answerSpeaking, handsFreeModeActive, listening, HANDS_FREE_CRISIS_SUPPRESS_MS]);
 
   // Wake word: run a background "Hey Prism" detector when idle.
   // Skipped when hands-free is on (auto-restart supersedes it) or
   // while the mic or AI is active (audio session conflict).
   useEffect(() => {
-    if (!wakeWordActive || handsFreeModeActive || listening || loading) {
+    if (!wakeWordActive || handsFreeModeActive || listening || loading || answerSpeaking) {
       wakeWordSessionRef.current?.stop();
       wakeWordSessionRef.current = null;
       return;
@@ -291,7 +296,7 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
       session?.stop();
       wakeWordSessionRef.current = null;
     };
-  }, [wakeWordActive, handsFreeModeActive, listening, loading, ttsCode]);
+  }, [wakeWordActive, handsFreeModeActive, listening, loading, answerSpeaking, ttsCode]);
 
   const handleAsk = useCallback(async () => {
     // Using getState() rather than reactive text to avoid stale closure — reads latest text at submit time.
@@ -367,22 +372,74 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
     let bufferIsCleanCrisisResponse = false;
     const queueTimers: ReturnType<typeof setTimeout>[] = [];
 
-    const drainQueue = () => {
-      if (cancelled) return;
-      // Read live values via getState() — not the closure-captured ones from
-      // callback creation time, which can be stale if the user mutes or
-      // changes rate while a streaming response is already playing.
-      const { soundEnabled: se } = useMessageStore.getState();
-      const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();
-      if (speaking || sentenceQueue.length === 0 || !se) return;
+    // The answer is read sentence by sentence as it streams in. Each sentence
+    // starts only once the previous one has finished playing (advancing on an
+    // estimate cut slow speech off), and never sooner than that estimate (on iOS
+    // the device voice reports finishing on a timer that ignores the rate). The
+    // queue keeps reading after the stream ends (it used to be dropped then, so a
+    // fast answer was read only in part). It stops on a crisis response, a new
+    // question or the panel closing (they abort askController or call
+    // stopQueue), and when someone else takes over the speech, such as the user
+    // tapping a line or pressing Stop: the rest of the answer must not cut them off.
+    let yielded = false;
+    // Speech epoch right after this answer's last sentence finished. If it moved
+    // before the next sentence starts (the pause after a sentence, or waiting for
+    // more of the stream), someone else spoke or pressed Stop: stop reading.
+    let epochAfterLastSentence: number | null = null;
+    let releaseWait: (() => void) | null = null;
+    const stopped = () => cancelled || yielded || askController.signal.aborted;
+    const stopQueue = () => { cancelled = true; queueTimers.forEach(clearTimeout); releaseWait?.(); };
+    // Settles with the work's value, 'timeout', or 'stopped'; always clears its
+    // timer and abort listener, so a cancelled answer leaves nothing waiting.
+    const waitFor = <T,>(work: Promise<T>, ms: number) => new Promise<T | 'timeout' | 'stopped'>((resolve) => {
+      let settled = false;
+      const finish = (value: T | 'timeout' | 'stopped') => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        askController.signal.removeEventListener('abort', release);
+        if (releaseWait === release) releaseWait = null;
+        resolve(value);
+      };
+      const release = () => finish('stopped');
+      const timer = setTimeout(() => finish('timeout'), ms);
+      askController.signal.addEventListener('abort', release, { once: true });
+      releaseWait = release;
+      work.then(finish, () => finish('timeout'));
+    });
+    const drainQueue = async () => {
+      if (speaking || stopped()) return;
       speaking = true;
-      const sentence = sentenceQueue.shift()!;
-      const dur = estimateSpeechDurationMs(sentence, Math.max(0.1, sr) * 0.6) + 300;
-      const timer = setTimeout(() => { if (!cancelled) { speaking = false; drainQueue(); } }, dur);
-      // Push BEFORE aacSpeak so any crisis handler that clears queueTimers
-      // synchronously during speech teardown always finds this timer in the array.
-      queueTimers.push(timer);
-      if (!cancelled) aacSpeak(sentence, sr, sv, undefined, true);
+      speakingAskRef.current = askController;
+      setAnswerSpeaking(true);
+      try {
+        while (sentenceQueue.length > 0 && !stopped()) {
+          // Read live values via getState() — not the closure-captured ones from
+          // callback creation time, which can be stale if the user mutes or
+          // changes rate while a streaming response is already playing.
+          if (!useMessageStore.getState().soundEnabled) break;
+          if (epochAfterLastSentence !== null && currentSpeechEpoch() !== epochAfterLastSentence) { yielded = true; break; }
+          const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();
+          const sentence = sentenceQueue.shift()!;
+          const paceMs = estimateSpeechDurationMs(sentence, Math.max(0.1, sr) * 0.6) + 300;
+          const startedAt = Date.now();
+          // The watchdog keeps a speech path that never settles from stalling the answer.
+          const outcome = await waitFor(Promise.resolve(aacSpeak(sentence, sr, sv, undefined, true)), paceMs * 3 + 10_000);
+          if (outcome === 'halted') { yielded = true; break; }
+          if (outcome === 'stopped' || stopped()) break;
+          epochAfterLastSentence = currentSpeechEpoch();
+          const rest = paceMs - (Date.now() - startedAt);
+          if (rest > 0 && (await waitFor(new Promise<never>(() => {}), rest)) === 'stopped') break;
+        }
+      } finally {
+        speaking = false;
+        // Cleared even when the panel is closed: it stays mounted, and a stale
+        // flag would keep hands-free and the wake word off after reopening.
+        if (speakingAskRef.current === askController) {
+          speakingAskRef.current = null;
+          setAnswerSpeaking(false);
+        }
+      }
     };
 
     const enqueueSentence = (sentence: string) => {
@@ -394,8 +451,7 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
       // check in flush() fires. Check here to intercept at enqueue time.
       const sentenceSafety = checkModelOutputSafety(sentence);
       if (!sentenceSafety.safe) {
-        cancelled = true;
-        queueTimers.forEach(clearTimeout);
+        stopQueue();
         buffer = sentenceSafety.response;
         bufferIsCleanCrisisResponse = true;
         // flush() reads askController.signal.aborted — call it BEFORE abort()
@@ -412,7 +468,7 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
         return;
       }
       sentenceQueue.push(sentence.trim());
-      drainQueue();
+      drainQueue().catch((e: unknown) => console.warn('[ai-chat] reading the answer failed:', e instanceof Error ? e.message : e));
     };
 
     const checkNewSentences = () => {
@@ -456,8 +512,7 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
       // the stream, speak audio immediately, and suppress hands-free restart.
       if (!safeguard.safe && !bufferIsCleanCrisisResponse) {
         bufferIsCleanCrisisResponse = true;
-        cancelled = true;
-        queueTimers.forEach(clearTimeout);
+        stopQueue();
         lastCrisisAtRef.current = Date.now();
         setIsCrisisAnnouncement(true);
         if (useMessageStore.getState().soundEnabled) {
@@ -508,8 +563,7 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
         if (tail) enqueueSentence(tail);
       }
     } catch (e: unknown) {
-      cancelled = true;
-      queueTimers.forEach(clearTimeout);
+      stopQueue();
       if (askController.signal.aborted) {
         isLoadingRef.current = false;
         setLoading(false);
@@ -534,22 +588,20 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
     // If the request was superseded (new ask started) or panel closed while
     // the fetch was still running, stop TTS and bail without updating state.
     if (askController.signal.aborted) {
-      cancelled = true;
-      queueTimers.forEach(clearTimeout);
+      stopQueue();
       isLoadingRef.current = false;
       setLoading(false);
       return;
     }
-    if (askAbortRef.current === askController) askAbortRef.current = null;
+    // askAbortRef keeps this controller after the stream completes: the queue may
+    // still be reading the answer, and a new question or closing the panel stops
+    // it by aborting the controller.
     if (!activeRef.current) {
-      cancelled = true;
-      queueTimers.forEach(clearTimeout);
+      stopQueue();
       isLoadingRef.current = false;
       setLoading(false);
       return;
     }
-    cancelled = true;
-    queueTimers.forEach(clearTimeout);
     isLoadingRef.current = false;
     setLoading(false);
   // loading removed from deps — guard uses isLoadingRef (synchronous, no stale closure).
@@ -574,6 +626,8 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
     if (sidePanel !== 'ai-chat') {
       askAbortRef.current?.abort();
       askAbortRef.current = null;
+      speakingAskRef.current = null;
+      setAnswerSpeaking(false);
       wakeWordSessionRef.current?.stop();
       wakeWordSessionRef.current = null;
       if (micErrorTimerRef.current) { clearTimeout(micErrorTimerRef.current); micErrorTimerRef.current = null; }

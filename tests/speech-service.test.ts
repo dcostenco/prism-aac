@@ -167,9 +167,10 @@ describe('SpeechService — Core', () => {
     const second = speak('second', 0.5, 1, 'en-US');
     await vi.waitFor(() => expect(utterances).toHaveLength(2));
 
-    await expect(first).resolves.toBeUndefined();
+    // The first was replaced by the second: halted. The second played out: finished.
+    await expect(first).resolves.toBe('halted');
     utterances[1].onend?.();
-    await expect(second).resolves.toBeUndefined();
+    await expect(second).resolves.toBe('finished');
   });
 
   it('cleans up the resume timer when speechSynthesis.speak throws', () => {

@@ -151,4 +151,10 @@ describe('speak — long messages and the cloud voice', () => {
     expect(interrupts[0]).toBe(true);
     expect(interrupts.slice(1).every(i => i === false)).toBe(true);
   });
+
+  it('reports finished when it spoke the message, and halted when something else took over', async () => {
+    await expect(speak(message, 0.5, 1, 'en-US')).resolves.toBe('finished');
+    cloud.mockImplementationOnce(async () => ({ success: true, onEnded: Promise.resolve('stopped') }));
+    await expect(speak(message, 0.5, 1, 'en-US')).resolves.toBe('halted');
+  });
 });

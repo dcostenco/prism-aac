@@ -51,7 +51,7 @@ vi.mock('@/services/aiService', () => ({
     return 'traduction';
   }),
 }));
-vi.mock('@/services/speechService', () => ({ speak: vi.fn(async () => {}) }));
+vi.mock('@/services/speechService', () => ({ speak: vi.fn(async () => {}), currentSpeechEpoch: () => 0 }));
 vi.mock('@/engine/i18n', () => ({
   getTTSCode: (lang: string) => `${lang}-XX`,
   canonicalizeLang: (lang: string) => lang,
@@ -68,7 +68,7 @@ vi.mock('@/services/voiceInputService', () => ({
   startVoiceInput: () => null,
 }));
 vi.mock('@/services/textCorrectService', () => ({ correctText: vi.fn(async (t: string) => t) }));
-vi.mock('@/services/ttsHighlightBus', () => ({ subscribeTtsHighlight: () => () => {} }));
+vi.mock('@/services/ttsHighlightBus', () => ({ subscribeTtsHighlight: () => () => {}, estimateSpeechDurationMs: () => 200 }));
 
 beforeEach(() => {
   // jsdom doesn't implement scroll APIs — stub them so useEffect doesn't throw.

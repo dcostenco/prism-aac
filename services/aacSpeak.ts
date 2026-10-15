@@ -11,7 +11,7 @@
  * cannot communicate. Every error path must be handled gracefully.
  */
 import { SupportedLanguage, getTTSCode } from '@/engine/i18n';
-import { speak, type SpeakOptions } from './speechService';
+import { speak, type SpeakOptions, type SpeakOutcome } from './speechService';
 import { translateTextSync, looksLikeTargetLang } from './translateService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
@@ -43,12 +43,12 @@ function prepareTranslatedUtterance(text: string, lang: SupportedLanguage): stri
 // reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
 // adaptive engine picks the tone from the text; in 'manual' mode the user's
 // last picked tone is forced for every utterance.
-export async function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, spokenLang?: SupportedLanguage, options?: SpeakOptions): Promise<void> {
-  if (!text?.trim()) return;
+export async function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, spokenLang?: SupportedLanguage, options?: SpeakOptions): Promise<SpeakOutcome> {
+  if (!text?.trim()) return 'finished';
   // Central master-mute gate. Most UI callers avoid invoking aacSpeak while
   // muted, but async completions (AI hints, evaluation, delayed translation)
   // must also fail closed when they arrive after Sound Off was selected.
-  if (!useMessageStore.getState().soundEnabled) return;
+  if (!useMessageStore.getState().soundEnabled) return 'halted';
 
   try {
     const { language, outputLanguage } = useSettingsStore.getState();
@@ -129,15 +129,16 @@ export async function aacSpeak(text: string, rate: number, volume: number, tone?
     const effectiveRate = rate;
     // Options are passed only when given, so every existing caller keeps the
     // same speak() call.
-    if (options) await speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt, options);
-    else await speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
+    if (options) return await speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt, options);
+    return await speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
   } catch {
     // Last resort: speak original text using the user's configured language,
     // NOT hardcoded en-US (which would mangle non-Latin text).
     const fallbackLang = useSettingsStore.getState().language || 'en';
     // Mute may have changed while the primary backend was awaiting a fetch.
     // Never let the last-resort path restart speech after an explicit stop.
-    if (!useMessageStore.getState().soundEnabled) return;
+    if (!useMessageStore.getState().soundEnabled) return 'halted';
     try { speak(text, rate, volume, getTTSCode(fallbackLang as SupportedLanguage)); } catch { /* truly fatal */ }
+    return 'finished';
   }
 }

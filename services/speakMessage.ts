@@ -22,10 +22,10 @@ export async function speakComposedMessage(
   const { addToHistory, activeTone } = useMessageStore.getState();
   const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore.getState();
   // Options are passed only when given, so the Speak key's calls are unchanged.
-  const say = (spoken: string, spokenLang?: SupportedLanguage): Promise<void> => {
-    if (options) return aacSpeak(spoken, speechRate, speechVolume, activeTone, true, spokenLang, options);
-    if (spokenLang) return aacSpeak(spoken, speechRate, speechVolume, activeTone, true, spokenLang);
-    return aacSpeak(spoken, speechRate, speechVolume, activeTone, true);
+  const say = async (spoken: string, spokenLang?: SupportedLanguage): Promise<void> => {
+    if (options) await aacSpeak(spoken, speechRate, speechVolume, activeTone, true, spokenLang, options);
+    else if (spokenLang) await aacSpeak(spoken, speechRate, speechVolume, activeTone, true, spokenLang);
+    else await aacSpeak(spoken, speechRate, speechVolume, activeTone, true);
   };
   addToHistory(text);
   if (language !== outputLanguage) {
