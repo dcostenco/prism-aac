@@ -1,4 +1,5 @@
 'use client';
+import { CLOUD_SPEECH_MAX_CHARS } from './speechChunks';
 import { SYNALUX_API } from '@/lib/portalConfig';
 import { speechAudioCache, type SpeechAudioIdentity } from './speechAudioCache';
 import { useAuthStore } from '@/store/authStore';
@@ -36,9 +37,14 @@ export type ToneStyle =
   | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
   | 'hopeful' | 'empathetic' | 'sad' | 'angry';
 
+/** How a clip stopped: played to its end, or cut off by Stop or another phrase. */
+export type PlaybackEnd = 'ended' | 'stopped';
+
 export interface TtsPlaybackResult {
   success: boolean;
-  onEnded?: Promise<void>;
+  /** Settles when the clip stops playing. A caller speaking a message in parts
+   *  must not go on to the next part after 'stopped'. */
+  onEnded?: Promise<PlaybackEnd | void>;
   /** The request was intentionally replaced/stopped; never start a fallback. */
   cancelled?: boolean;
 }
@@ -191,6 +197,8 @@ export function isAudioContextRunning(): boolean {
 // subsequent speak (or panic stop) can silence them — rapid Speak presses on
 // AAC are common and we never want overlapping voices.
 const activeSources = new Set<AudioBufferSourceNode>();
+/** Sources cut off by stopAzurePlayback(), so their end reads as 'stopped'. */
+const stoppedSources = new WeakSet<AudioBufferSourceNode>();
 let currentAudio: HTMLAudioElement | null = null; // legacy back-compat reference
 const activeAudioElements = new Set<HTMLAudioElement>();
 const liveBlobUrls = new Set<string>();
@@ -333,6 +341,7 @@ export function markSpeakInterrupt(): void {
  */
 function stopAzurePlayback(): void {
   for (const src of activeSources) {
+    stoppedSources.add(src);
     try { src.stop(); } catch { /* already finished */ }
     try { src.disconnect(); } catch { /* */ }
   }
@@ -445,8 +454,8 @@ async function decodeAndPlay(
     return intentionalCancellation(controller) ?? { success: false };
   }
 
-  let resolveEnded: () => void;
-  const onEnded = new Promise<void>(res => resolveEnded = res);
+  let resolveEnded: (how: PlaybackEnd) => void;
+  const onEnded = new Promise<PlaybackEnd>(res => resolveEnded = res);
   const source = ctx.createBufferSource();
   source.buffer = decoded;
   if (playbackRate !== 1.0) source.playbackRate.value = playbackRate;
@@ -508,7 +517,7 @@ async function decodeAndPlay(
     if (activeSources.size === 0) lastSourceStartedAt = 0; // no more active sources
     try { source.disconnect(); } catch { /* */ }
     try { gain.disconnect(); } catch { /* */ }
-    resolveEnded();
+    resolveEnded(stoppedSources.has(source) ? 'stopped' : 'ended');
   };
 
   try {
@@ -703,7 +712,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     // saved clip is right at any volume (and the Azure voice no longer gets the
     // volume twice, once in SSML and again as gain).
     const reqBody: Record<string, unknown> = {
-      text: text.slice(0, 500),
+      text: text.slice(0, CLOUD_SPEECH_MAX_CHARS),
       lang,
       rate: normalizedRate,
       volume: 1,
@@ -801,7 +810,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
         const result = await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt, 1.0, controller);
         const degraded = res.headers.get('X-TTS-Inworld-Failed') || res.headers.get('X-TTS-Degraded')
           || res.headers.get('X-TTS-Lang-Fallback') || res.headers.get('X-TTS-Gender-Fallback');
-        if (result.success && !result.cancelled && !degraded && text.length <= 500
+        if (result.success && !result.cancelled && !degraded && text.length <= CLOUD_SPEECH_MAX_CHARS
           && cacheEpoch === speechAudioCache.generation()) {
           _ttsCacheSet(cacheKey, audioBytes);
           const identity = responseCacheIdentity(res);

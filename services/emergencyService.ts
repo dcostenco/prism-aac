@@ -29,6 +29,7 @@ import { useAuthStore } from '@/store/authStore';
 import { getAuthToken } from '@/services/aiService';
 import { useEmergencyStore } from '@/store/emergencyStore';
 import { useMessageStore } from '@/store/messageStore';
+import { stopSpeech } from '@/services/speechService';
 
 /** Cap on best-effort 3rd-party response bodies (Nominatim reverse
  *  geocode). Hostile/poisoned DNS pointing at a server that streams
@@ -827,7 +828,8 @@ export function buildEmergencyScript(phrase: string, config: EmergencyConfig, lo
  *   - Apple Watch (phone in range): delegates to iPhone via WatchConnectivity
  *   - Android: all 5 levels
  */
-async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<boolean> {
+/** Exported for tests. */
+export async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<boolean> {
   if (isSendInFlight) {
     console.warn('[EMERGENCY] sendAlert: previous dispatch still in flight, dropping duplicate');
     return false;
@@ -907,9 +909,19 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
         body: JSON.stringify(dispatchPayload),
         signal: t.signal,
       }) : null;
-      if (res?.ok) {
-        alert.sent = true;
-        return true;
+      // Sent only if the server reached someone. Older servers answered OK with
+      // success:false when they texted and called no one (always so for the
+      // minimal payload, which carries no contacts), and stopping here skipped
+      // every fallback below. The server now answers 422/502 for that, so a JSON
+      // 2xx whose body cannot be read still means someone was reached; texting and
+      // calling again would duplicate the alert. A 2xx that is not JSON is not the
+      // server (a Wi-Fi sign-in page answers 200 to everything): fall through.
+      if (res?.ok && /application\/json/i.test(res.headers?.get('content-type') ?? '')) {
+        const result = await res.json().catch(() => undefined) as { success?: unknown } | null | undefined;
+        if (result === undefined || result?.success === true) {
+          alert.sent = true;
+          return true;
+        }
       }
     } catch {
       // Synalux unreachable — fall through
@@ -1077,6 +1089,9 @@ function speakEmergencyOnSpeaker(script: string, language: string = 'en'): void 
     window.speechSynthesis.speak(u);
   };
 
+  // The announcement takes over: ordinary speech (a long message mid-way, the
+  // last-resort tones) stops and will not resume over it.
+  try { stopSpeech(); } catch { /* the announcement must still play */ }
   speak();
   speakerRepeatInterval = setInterval(speak, 15000);
 }
@@ -1373,7 +1388,9 @@ async function _flushQueuedAlerts(): Promise<number> {
         continue;
       }
       const ok = await sendAlert(dispatchAlert, staleCriticalConfig);
-      if (ok) sent++;
+      // dispatchAlert is a copy: mark the queued alert itself, or the re-drain
+      // loop in flushQueuedAlerts sends the same alert again on every pass.
+      if (ok) { alert.sent = true; sent++; }
     } else if (isDelayed && onDelayedAlertCallback) {
       // Alert >60s old: require caregiver re-verification before dispatch.
       // 10-second timeout: if UI fails to render (app backgrounded, crash),
@@ -1410,7 +1427,24 @@ async function _flushQueuedAlerts(): Promise<number> {
     }
   }
 
-  saveQueuedAlerts(queue.filter((a) => !a.sent && (!isExpired(a) || isCritical(a))));
+  // Reconcile with the queue as it is now, not the snapshot read before the
+  // dispatches: an alert queued while this flush awaited the network (a second
+  // press of the emergency button) must survive. Outcomes apply by alert ID.
+  // IDs are counted, not collapsed: two entries sharing an ID each keep their
+  // own outcome. A snapshot entry whose ID left the queue meanwhile was removed
+  // by someone else and stays removed.
+  const current = getQueuedAlerts();
+  const snapshotCount = new Map<string, number>();
+  for (const a of queue) snapshotCount.set(a.id, (snapshotCount.get(a.id) ?? 0) + 1);
+  const currentIds = new Set(current.map((a) => a.id));
+  const seen = new Map<string, number>();
+  const arrivals = current.filter((a) => {
+    const n = (seen.get(a.id) ?? 0) + 1;
+    seen.set(a.id, n);
+    return n > (snapshotCount.get(a.id) ?? 0);
+  });
+  const kept = queue.filter((a) => currentIds.has(a.id));
+  saveQueuedAlerts([...kept, ...arrivals].filter((a) => !a.sent && (!isExpired(a) || isCritical(a))));
   return sent;
 }
 

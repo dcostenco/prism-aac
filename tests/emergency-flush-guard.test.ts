@@ -1,7 +1,7 @@
 /**
  * emergencyService::flushQueuedAlerts — empty-queue guard path
  *
- * When the alert queue is empty (localStorage has no prism_queued_alerts),
+ * When the alert queue is empty (localStorage has no prism-aac-emergency-queue),
  * flushQueuedAlerts resolves immediately to 0 without making any network
  * calls. This is the only path testable without mocking the Synalux API.
  *
@@ -13,7 +13,7 @@ import { flushQueuedAlerts } from '@/services/emergencyService';
 
 beforeEach(() => {
   // Ensure clean queue state
-  localStorage.removeItem('prism_queued_alerts');
+  localStorage.removeItem('prism-aac-emergency-queue');
 });
 
 describe('flushQueuedAlerts', () => {
