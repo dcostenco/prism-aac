@@ -708,7 +708,12 @@ const CRISIS_INPUT_CLIENT = [
     /cut(?:ting)?\s+(?:my)?self/i,
     /(?:hang|hanging)\s+(?:my)?self/i,
     /jump(?:ing)?\s+off/i,
-    /how\s+(?:many|much|to).*(?:pills|overdose|die)/i,
+    // "die", "dies", "died" and "dieing" as whole words: "how much is a diet
+    // coke" matched (2026-10-15). "starve myself to death" is named because
+    // "diet" no longer stands in for it. The server copy also exempts the "it
+    // is to die for" idiom, but needs lookbehind, which iOS 16.0 cannot parse;
+    // here the idiom still matches.
+    /how\s+(?:many|much|to).*(?:pills|overdose|starv\w*\s+(?:my)?self\s+to\s+death|\bdie(?:[sd]|ing)?\b)/i,
     // Spanish — block only known hyperbole nouns
     /quiero\s+morir(?!\s+de\s+(?:risa|la\s+risa|vergüenza|ganas|envidia|aburrimiento)\b)/i,
     /(?:voy\s+a\s+)?matarme(?!\s+(?:estudiando|trabajando|riendo|de\s+(?:risa|la\s+risa))\b)/i,
