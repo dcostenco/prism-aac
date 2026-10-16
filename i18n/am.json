@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "የክላውድ ደንበኝነትዎ ዝግጁ ነው።",
   "cloud_no_active_subscription": "ግዢዎ ተፈትሿል። የሚመልስ ንቁ ደንበኝነት የለም።",
   "cloud_plan_unavailable": "የዕቅዱ ዝርዝር በጊዜው አይገኝም። እባክዎ እንደገና ይሞክሩ።",
+  "cloud_ai_subscription_required": "የደመና AI የደመና ምዝገባ ያስፈልገዋል። በማስተካከያዎች ውስጥ መመዝገብ ይችላሉ። ሰሌዳዎችዎ እና ድምፅዎ መስራታቸውን ይቀጥላሉ።",
+  "cloud_ai_allowance_used": "የዚህ ወር የደመና AI ገደብ አልቋል። በሚቀጥለው ወር የመጀመሪያ ቀን ይታደሳል። ሰሌዳዎችዎ እና ድምፅዎ መስራታቸውን ይቀጥላሉ።",
   "web_preview_notice": "የዌብ ቅድመ-እይታ፦ {seconds} ሰከንድ ቀርቷል። ከዚያ በኋላ መግባት ያስፈልጋል፣ ነፃ ነው።",
   "web_signin_required": "Prism AAC መጠቀም ለመቀጠል ይግቡ",
   "web_signin_explanation": "የአንድ ደቂቃ ቅድመ-እይታ አልቋል። ለመቀጠል ይግቡ ወይም ነፃ Synalux አካውንት ይክፈቱ። መግባት ክፍያ አያስጀምርም።",

@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Twoja subskrypcja w chmurze jest gotowa.",
   "cloud_no_active_subscription": "Zakup sprawdzony. Brak aktywnej subskrypcji w chmurze do przywrócenia.",
   "cloud_plan_unavailable": "Szczegóły planu są chwilowo niedostępne. Spróbuj ponownie.",
+  "cloud_ai_subscription_required": "Chmurowa AI wymaga subskrypcji. Możesz ją wykupić w Ustawieniach. Twoje tablice i głos nadal działają.",
+  "cloud_ai_allowance_used": "Limit chmurowej AI na ten miesiąc się wyczerpał. Odnowi się 1. dnia następnego miesiąca. Twoje tablice i głos nadal działają.",
   "web_preview_notice": "Podgląd: zostało {seconds} s. Potem wymagane jest darmowe logowanie.",
   "web_signin_required": "Zaloguj się, aby używać Prism AAC",
   "web_signin_explanation": "Minuta podglądu minęła. Zaloguj się lub utwórz darmowe konto Synalux, aby kontynuować. Logowanie nie uruchamia płatnej subskrypcji.",

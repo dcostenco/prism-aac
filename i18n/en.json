@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Your cloud subscription is ready.",
   "cloud_no_active_subscription": "Your purchase was checked. There is no active cloud subscription to restore.",
   "cloud_plan_unavailable": "Cloud plan details are temporarily unavailable. Please try again.",
+  "cloud_ai_subscription_required": "Cloud AI needs a cloud subscription. You can subscribe in Settings. Your boards and voice keep working.",
+  "cloud_ai_allowance_used": "This month's cloud AI allowance is used up. It renews on the 1st of next month. Your boards and voice keep working.",
   "web_preview_notice": "Web preview: {seconds}s remaining. Sign-in is required afterward and is free.",
   "web_signin_required": "Sign in to continue using Prism AAC",
   "web_signin_explanation": "Your one-minute web preview has ended. Sign in or create your free Synalux account to continue. Signing in does not start a paid subscription.",

@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Handa na ang iyong cloud subscription.",
   "cloud_no_active_subscription": "Nai-check na ang binili mo. Walang aktibong cloud subscription na maibabalik.",
   "cloud_plan_unavailable": "Pansamantalang hindi available ang mga detalye ng cloud plan. Pakisubukan ulit.",
+  "cloud_ai_subscription_required": "Kailangan ng cloud subscription para sa cloud AI. Puwede kang mag-subscribe sa Settings. Gumagana pa rin ang iyong mga board at boses.",
+  "cloud_ai_allowance_used": "Naubos na ang cloud AI allowance para sa buwang ito. Magre-reset ito sa ika-1 ng susunod na buwan. Gumagana pa rin ang iyong mga board at boses.",
   "web_preview_notice": "Web preview: {seconds}s na lang. Kailangan mag-sign in pagkatapos at libre ito.",
   "web_signin_required": "Mag-sign in para magpatuloy sa paggamit ng Prism AAC",
   "web_signin_explanation": "Tapos na ang isang minutong web preview mo. Mag-sign in o gumawa ng libreng Synalux account para magpatuloy. Hindi magsisimula ng may bayad na subscription ang pag-sign in.",

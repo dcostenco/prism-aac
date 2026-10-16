@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Tu suscripción en la nube está lista.",
   "cloud_no_active_subscription": "Se revisó tu compra. No hay una suscripción activa en la nube para restaurar.",
   "cloud_plan_unavailable": "Los detalles del plan en la nube no están disponibles. Inténtalo de nuevo.",
+  "cloud_ai_subscription_required": "La IA en la nube necesita una suscripción. Puedes suscribirte en Ajustes. Tus tableros y tu voz siguen funcionando.",
+  "cloud_ai_allowance_used": "Ya usaste el cupo de IA en la nube de este mes. Se renueva el día 1 del próximo mes. Tus tableros y tu voz siguen funcionando.",
   "web_preview_notice": "Vista previa web: quedan {seconds} s. Después se requiere iniciar sesión (es gratis).",
   "web_signin_required": "Inicia sesión para seguir usando Prism AAC",
   "web_signin_explanation": "Tu vista previa de un minuto terminó. Inicia sesión o crea tu cuenta gratis de Synalux para continuar. Esto no inicia una suscripción de pago.",

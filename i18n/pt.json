@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Sua assinatura da nuvem está pronta.",
   "cloud_no_active_subscription": "Sua compra foi verificada. Não há assinatura ativa da nuvem para restaurar.",
   "cloud_plan_unavailable": "Detalhes do plano da nuvem estao temporariamente indisponíveis. Tente de novo.",
+  "cloud_ai_subscription_required": "A IA na nuvem precisa de uma assinatura. Você pode assinar em Configurações. Suas pranchas e sua voz continuam funcionando.",
+  "cloud_ai_allowance_used": "O limite de IA na nuvem deste mês acabou. Ele renova no dia 1º do próximo mês. Suas pranchas e sua voz continuam funcionando.",
   "web_preview_notice": "Prévia na web: restam {seconds}s. Depois é preciso entrar na conta (é grátis).",
   "web_signin_required": "Entre na conta para continuar usando o Prism AAC",
   "web_signin_explanation": "Sua prévia de um minuto acabou. Entre ou crie sua conta grátis na Synalux para continuar. Entrar não inicia uma assinatura paga.",

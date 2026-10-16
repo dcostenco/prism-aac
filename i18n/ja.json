@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "クラウドサブスクリプションの準備ができました。",
   "cloud_no_active_subscription": "購入履歴を確認しました。復元できる有効なクラウドサブスクリプションはありません。",
   "cloud_plan_unavailable": "クラウドプランの詳細を一時的に取得できません。もう一度お試しください。",
+  "cloud_ai_subscription_required": "クラウドAIを使うにはクラウドのサブスクリプションが必要です。設定から登録できます。ボードと音声はそのまま使えます。",
+  "cloud_ai_allowance_used": "今月のクラウドAIの利用枠を使い切りました。来月1日に更新されます。ボードと音声はそのまま使えます。",
   "web_preview_notice": "Webプレビュー: 残り {seconds} 秒。終了後は無料のサインインが必要です。",
   "web_signin_required": "Prism AACを続けるにはサインインしてください",
   "web_signin_explanation": "1分間のWebプレビューが終了しました。続けるにはサインインするか、無料のSynaluxアカウントを作成してください。サインインしても有料登録にはなりません。",

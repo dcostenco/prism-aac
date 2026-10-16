@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "你的云端订阅已就绪。",
   "cloud_no_active_subscription": "已检查你的购买记录。没有可恢复的有效云端订阅。",
   "cloud_plan_unavailable": "暂无法获取云端套餐详情。请重试。",
+  "cloud_ai_subscription_required": "云端 AI 需要订阅云服务。你可以在设置中订阅。你的面板和语音仍可继续使用。",
+  "cloud_ai_allowance_used": "本月的云端 AI 额度已用完，将于下月 1 日重置。你的面板和语音仍可继续使用。",
   "web_preview_notice": "网页预览：还剩 {seconds} 秒。之后需要登录，登录是免费的。",
   "web_signin_required": "请登录以继续使用 Prism AAC",
   "web_signin_explanation": "一分钟网页预览已结束。请登录或创建免费的 Synalux 账号以继续。登录不会开启付费订阅。",

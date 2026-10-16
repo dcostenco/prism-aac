@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Je cloudabonnement is klaar voor gebruik.",
   "cloud_no_active_subscription": "Je aankoop is gecontroleerd. Er is geen actief cloudabonnement om te herstellen.",
   "cloud_plan_unavailable": "Details van het cloudplan zijn tijdelijk niet beschikbaar. Probeer het opnieuw.",
+  "cloud_ai_subscription_required": "Cloud-AI vereist een abonnement. Je kunt je abonneren via Instellingen. Je kaarten en stem blijven werken.",
+  "cloud_ai_allowance_used": "Het cloud-AI-tegoed van deze maand is op. Het wordt op de 1e van volgende maand vernieuwd. Je kaarten en stem blijven werken.",
   "web_preview_notice": "Webvoorbeeld: nog {seconds}s. Daarna is inloggen verplicht en gratis.",
   "web_signin_required": "Meld je aan om Prism AAC te blijven gebruiken",
   "web_signin_explanation": "Je webvoorbeeld van één minuut is afgelopen. Meld je aan of maak een gratis Synalux-account om door te gaan. Aanmelden start geen betaald abonnement.",

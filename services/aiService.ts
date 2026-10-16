@@ -401,6 +401,18 @@ function composeSignals(s1: AbortSignal, s2: AbortSignal): AbortSignal {
   return ctrl.signal;
 }
 
+/**
+ * The portal refused cloud AI for this account: no cloud subscription
+ * (payment_required) or this month's allowance used up (exhausted). It is not a
+ * network problem, so it must never be reported as one ("check your internet").
+ */
+export class CloudAccessError extends Error {
+  constructor(readonly code: 'payment_required' | 'exhausted', message: string) {
+    super(message);
+    this.name = 'CloudAccessError';
+  }
+}
+
 async function callSynalux(
   messages: Array<{ role: string; content: string }>,
   options?: { webSearch?: boolean; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate' | 'structured'; signal?: AbortSignal },
@@ -468,6 +480,12 @@ async function callSynalux(
                                : 'Sign in to use cloud speech and AI');
   }
   if (res.status === 429) { t.cancel(); throw new Error('Rate limit reached — try again in a moment'); }
+  if (res.status === 402) {
+    const refusal = await res.json().catch(() => null) as { code?: unknown; error?: unknown } | null;
+    t.cancel();
+    throw new CloudAccessError(refusal?.code === 'exhausted' ? 'exhausted' : 'payment_required',
+      typeof refusal?.error === 'string' ? refusal.error : 'Cloud access requires a subscription');
+  }
   if (!res.ok) { t.cancel(); throw new Error(`Synalux API ${res.status}`); }
 
   const contentType = res.headers.get('content-type') || '';
@@ -881,6 +899,8 @@ async function route(
     // whether to clear the spinner. If we replace AbortError with the generic
     // "No AI available" below, that check never fires.
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
+    // A subscription or allowance refusal is the answer, not a connection problem.
+    if (err instanceof CloudAccessError) throw err;
     const msg = err instanceof Error ? err.message : '';
     // Auth and rate-limit failures must reach the caller. Anything else falls
     // through to the generic "No AI available", which tells the user to check an

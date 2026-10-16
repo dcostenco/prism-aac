@@ -27,6 +27,14 @@ interface PredictionCacheEntry {
 const predictionCache = new Map<string, PredictionCacheEntry>();
 const inFlight = new Map<string, Promise<string[]>>();
 const cloudRequestTimes = new Map<string, number[]>();
+// After the portal refuses cloud prediction for an account (no subscription, or
+// the month's allowance used), stop asking for a while: prediction already falls
+// back to on-device words, and every keystroke would otherwise spend a request.
+const CLOUD_REFUSAL_PAUSE_MS = 15 * 60_000;
+const cloudRefusedUntil = new Map<string, number>();
+// Bumped when a subscription starts: a refusal for a request sent before then
+// arrives late and must not pause the account again.
+let refusalGeneration = 0;
 let cacheEpoch = 0;
 
 function createAnonymousScope(): string {
@@ -90,6 +98,7 @@ function rememberCacheEntry(key: string, words: string[]): void {
 }
 
 function consumeCloudBudget(sessionScope: string): boolean {
+  if ((cloudRefusedUntil.get(sessionScope) ?? 0) > Date.now()) return false;
   const now = Date.now();
   const active = (cloudRequestTimes.get(sessionScope) ?? [])
     .filter((timestamp) => now - timestamp < CLOUD_BUDGET_WINDOW_MS);
@@ -171,6 +180,7 @@ export async function fetchMemoryPredictions(
   }
   if (!consumeCloudBudget(options.sessionScope)) return [];
 
+  const sentInGeneration = refusalGeneration;
   const request: Promise<string[]> = portalFetch<{ words?: unknown }>({
     path: '/prism-aac/predict',
     method: 'POST',
@@ -181,6 +191,9 @@ export async function fetchMemoryPredictions(
     timeoutMs: 6_000,
     signal: options.signal,
   }).then((result) => {
+    if (!result.ok && result.status === 402 && requestEpoch === cacheEpoch && sentInGeneration === refusalGeneration) {
+      cloudRefusedUntil.set(options.sessionScope, Date.now() + CLOUD_REFUSAL_PAUSE_MS);
+    }
     if (!result.ok || options.signal?.aborted || requestEpoch !== cacheEpoch) return [];
     const words = validateMemoryPredictionWords(result.data?.words, language);
     // Empty/invalid model output is commonly transient. Do not pin it in the
@@ -235,4 +248,12 @@ export function clearPredictionMemoryCache(): void {
   predictionCache.clear();
   inFlight.clear();
   cloudRequestTimes.clear();
+  cloudRefusedUntil.clear();
+}
+
+/** A cloud subscription became active: ask the cloud again right away instead
+ *  of waiting out the pause a refusal started. */
+export function resumeCloudPrediction(): void {
+  refusalGeneration += 1;
+  cloudRefusedUntil.clear();
 }

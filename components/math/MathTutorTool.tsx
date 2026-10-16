@@ -30,7 +30,7 @@ import {
 import { useMathGridStore, domainForCategory, type MathDomain } from '@/store/mathGridStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
-import { askAI, LANG_NAMES } from '@/services/aiService';
+import { askAI, LANG_NAMES, CloudAccessError } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { evaluateExpression } from '@/services/exprEval';
@@ -185,6 +185,12 @@ function serializeAsExpression(cells: Map<CellKey, Cell>): string {
  *  available — check internet…"). We translate so the AAC user sees
  *  one of three categorical states with an actionable next step. */
 function friendlyError(err: unknown): { kind: 'auth' | 'network' | 'timeout' | 'other'; msg: string } {
+  // A subscription or allowance refusal is not a connection problem.
+  if (err instanceof CloudAccessError) {
+    return { kind: 'other', msg: err.code === 'exhausted'
+      ? "This month's cloud AI allowance is used up. It renews on the 1st."
+      : 'The AI tutor needs a cloud subscription. You can subscribe in Settings.' };
+  }
   const raw = err instanceof Error ? err.message : '';
   if (raw === '__tutor_timeout__') return { kind: 'timeout', msg: 'The AI tutor is taking too long. Tap retry to try again.' };
   if (/expired|sign in/i.test(raw)) return { kind: 'auth', msg: 'Sign in to Synalux at synalux.ai/auth to use the tutor.' };
@@ -720,7 +726,13 @@ export default function MathTutorTool() {
                           setResponse(finalBuf);
                           speakTutorText(finalBuf, speechRate, speechVolume);
                         }
-                      } catch { if (mySeq === requestSeqRef.current) setResponse('⚠️ Could not get a response.'); }
+                      } catch (e) {
+                        if (mySeq !== requestSeqRef.current) return;
+                        // A subscription or allowance refusal says so here too.
+                        setResponse(e instanceof CloudAccessError ? `⚠️ ${friendlyError(e).msg}` : '⚠️ Could not get a response.');
+                        setLoading(false);
+                        return;
+                      }
                       if (mySeq === requestSeqRef.current) setLoading(false);
                     }}
                     className="aac-btn rounded-xl px-4 py-2 bg-[#4CAF50] text-white font-bold text-sm"

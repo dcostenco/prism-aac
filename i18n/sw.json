@@ -471,6 +471,8 @@
   "cloud_purchase_complete": "Usajili wako wa mtandaoni uko tayari.",
   "cloud_no_active_subscription": "Manunuzi yakaguliwa. Hakuna usajili wa mtandaoni unaofanya kazi wa kurudisha.",
   "cloud_plan_unavailable": "Maelezo ya usajili hayapatikani kwa sasa. Jaribu tena.",
+  "cloud_ai_subscription_required": "AI ya mtandaoni inahitaji usajili. Unaweza kujisajili kwenye Mipangilio. Mbao zako na sauti yako vinaendelea kufanya kazi.",
+  "cloud_ai_allowance_used": "Kiwango cha mwezi huu cha AI ya mtandaoni kimekwisha. Kitajazwa tena tarehe mosi ya mwezi ujao. Mbao zako na sauti yako vinaendelea kufanya kazi.",
   "web_preview_notice": "Majaribio ya wavuti: Baki sekunde {seconds}. Kuingia kunahitajika baada ya hapo na ni bure.",
   "web_signin_required": "Ingia ili kuendelea kutumia Prism AAC",
   "web_signin_explanation": "Majaribio yako ya dakika moja yameisha. Ingia au fungua akaunti ya bure ya Synalux ili kuendelea. Kuingia hakuanzishi usajili wa kulipia.",

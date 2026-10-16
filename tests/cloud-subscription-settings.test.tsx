@@ -3,12 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 const state = vi.hoisted(() => ({ native: false, nativePurchases: false,
   profile: { email: 'tester@example.com', plan: 'free', isPlatformAdmin: false }, fetch: vi.fn(), product: vi.fn(), apple: vi.fn(),
-  stripe: vi.fn(), restore: vi.fn(), manage: vi.fn(), ddAction: vi.fn() }));
+  stripe: vi.fn(), restore: vi.fn(), manage: vi.fn(), ddAction: vi.fn(), refresh: vi.fn(), resume: vi.fn() }));
 vi.mock('@/services/aiService', () => ({ isNativeiOS: () => state.native }));
+vi.mock('@/services/predictionMemoryService', () => ({ resumeCloudPrediction: state.resume }));
 vi.mock('@/lib/datadog', () => ({ ddAction: state.ddAction }));
 type ProfileSlice = { profile: typeof state.profile };
 vi.mock('@/store/authStore', () => ({ useAuthStore: Object.assign((selector: (s: ProfileSlice) => unknown) => selector({ profile: state.profile }),
-  { getState: () => ({ profile: state.profile }) }) }));
+  { getState: () => ({ profile: state.profile, refresh: state.refresh }) }) }));
 vi.mock('@/services/aacBillingService', () => ({
   AAC_BILLING_UPDATED: 'prismAacBillingUpdated',
   fetchAacBillingStatus: state.fetch, hasNativePurchases: () => state.nativePurchases,
@@ -454,4 +455,56 @@ describe('cloud plan funnel telemetry', () => {
     expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
   });
 
+});
+
+// The plan the rest of the app reads (paid features such as generated pictures)
+// comes from the account profile, refreshed only when Settings opens or every 30
+// minutes. A purchase, a restore or a subscription bought on another device must
+// update it as soon as billing shows it.
+describe('the account profile follows the subscription', () => {
+  it.each(['apple', 'stripe'])('refreshes a Free profile once a %s subscription is active', async channel => {
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: [channel], manageChannel: channel });
+    render(<CloudSubscriptionSettings />);
+    await waitFor(() => expect(state.refresh).toHaveBeenCalled());
+  });
+  it('after an App Store purchase completes', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'purchased',
+      billing: { ...free, hasCloudAccess: true, channels: ['apple'], manageChannel: 'apple' } });
+    render(<CloudSubscriptionSettings />);
+    await subscribeWithAppleOnceShown();
+    await waitFor(() => expect(state.refresh).toHaveBeenCalled());
+  });
+  it('not when the profile already shows the plan', async () => {
+    state.profile = { ...state.profile, plan: 'standard' };
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: ['apple'], manageChannel: 'apple' });
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByText('Cloud subscription · Active')).toBeVisible();
+    expect(state.refresh).not.toHaveBeenCalled();
+  });
+  // A subscription that lapsed and was renewed: the cached profile still says
+  // Standard, but a refusal during the lapse paused cloud prediction.
+  it('resumes cloud prediction for an active subscription even when the profile already shows the plan', async () => {
+    state.profile = { ...state.profile, plan: 'standard' };
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' });
+    render(<CloudSubscriptionSettings />);
+    await waitFor(() => expect(state.resume).toHaveBeenCalled());
+  });
+  it('does not resume cloud prediction without a paid subscription', async () => {
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, betaExempt: true });
+    render(<CloudSubscriptionSettings />);
+    await waitFor(() => expect(state.fetch).toHaveBeenCalled());
+    await act(async () => { await Promise.resolve(); });
+    expect(state.resume).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['no subscription', { ...free }],
+    ['beta access, which is not a purchase', { ...free, hasCloudAccess: true, betaExempt: true }],
+  ])('not for %s', async (_name, billing) => {
+    state.fetch.mockResolvedValue(billing);
+    render(<CloudSubscriptionSettings />);
+    await waitFor(() => expect(state.fetch).toHaveBeenCalled());
+    await act(async () => { await Promise.resolve(); });
+    expect(state.refresh).not.toHaveBeenCalled();
+  });
 });

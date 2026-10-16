@@ -7,6 +7,7 @@ import { isNativeiOS, type SynaluxProfile } from '@/services/aiService';
 import { fetchAacBillingStatus, hasNativePurchases, manageAacSubscription, nativeSubscription,
   purchaseAacWithApple, purchaseAacWithStripe, restoreAacApplePurchases, AAC_BILLING_UPDATED, type AacBillingStatus } from '@/services/aacBillingService';
 import { firstOfferImpression, offerImpressionKey, reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
+import { resumeCloudPrediction } from '@/services/predictionMemoryService';
 import { APPLE_STANDARD_EULA_URL } from '@/lib/appPaths';
 import TermsLink from '@/components/TermsLink';
 
@@ -20,8 +21,20 @@ export default function CloudSubscriptionSettings() {
   // against another.
   const [loaded, setLoaded] = useState<{ account?: string; value: AacBillingStatus } | null>(null);
   const billing = loaded && loaded.account === account ? loaded.value : null;
-  const setBilling = (value: AacBillingStatus) =>
-    setLoaded({ account: useAuthStore.getState().profile?.email, value });
+  const setBilling = (value: AacBillingStatus) => {
+    const current = useAuthStore.getState().profile;
+    setLoaded({ account: current?.email, value });
+    // The plan the rest of the app reads (paid features such as generated
+    // pictures) comes from the profile, refreshed only when Settings opens or
+    // every 30 minutes. A purchase, a restore, or a subscription bought on
+    // another device would otherwise stay invisible until then.
+    if (current && value.hasCloudAccess && value.channels.length > 0) {
+      // A refusal from before this subscription (new, restored or renewed after a
+      // lapse) must not keep cloud prediction paused, whatever the cached plan says.
+      resumeCloudPrediction();
+      if (current.plan === 'free') void useAuthStore.getState().refresh();
+    }
+  };
   const [price, setPrice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
