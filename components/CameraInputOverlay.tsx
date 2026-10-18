@@ -114,7 +114,7 @@ export default function CameraInputOverlay() {
   const statusRef = useRef<Status>('stopped');
 
   const animateDwell = useCallback(function animate() {
-    if (!selectionReadyRef.current || !dwellElementRef.current || dwellStartRef.current === 0 ||
+    if (lockedElementRef.current || !selectionReadyRef.current || !dwellElementRef.current || dwellStartRef.current === 0 ||
         resolveDwellTarget(dwellElementRef.current) !== dwellElementRef.current) {
       dwellElementRef.current = null;
       dwellStartRef.current = 0;
@@ -204,7 +204,7 @@ export default function CameraInputOverlay() {
           setKeyBubble(prev => ({ ...prev, visible: false }));
         }
 
-        if (selectionReadyRef.current && interactive && interactive !== lockedElementRef.current) {
+        if (selectionReadyRef.current && interactive && !lockedElementRef.current) {
           if (interactive !== dwellElementRef.current) {
             dwellElementRef.current = interactive;
             dwellStartRef.current = Date.now();
@@ -221,6 +221,10 @@ export default function CameraInputOverlay() {
       onDwellLockChange(element) {
         if (!mounted) return;
         lockedElementRef.current = element; setSelectionLocked(element !== null);
+        if (element) {
+          cancelAnimationFrame(rafRef.current);
+          dwellElementRef.current = null; dwellStartRef.current = 0; setDwellProgress(0);
+        }
       },
       onDwell() {
         if (!mounted) return;

@@ -95,6 +95,24 @@ it('feedback stays locked after selection until an observed departure, including
   expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
 });
 
+it.each(WATCHDOG_DRIFTS)('a completed lock clears progress and prevents a ring on a replacement target, drift=%s', drift => {
+  const advance = feedbackClock(), target = feedbackTarget(LIVE_BUTTON_TARGET);
+  const view = render(<CameraInputOverlay />), options = tracker.options.at(-1)!;
+  act(() => { options.onStatusChange('tracking'); readyMove(options, 32 + drift, 24 + drift); advance(); });
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
+  act(() => options.onDwellLockChange?.(target));
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  target.remove();
+  const replacement = feedbackTarget(LIVE_BUTTON_TARGET), clicked = vi.fn();
+  replacement.addEventListener('click', clicked);
+  act(() => { readyMove(options, 32 + drift, 24 + drift); advance(); });
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  expect(view.getByTestId('camera-input-overlay')).toHaveAttribute('data-selection-ready', 'false');
+  fireEvent.click(replacement); expect(clicked).toHaveBeenCalledOnce();
+  act(() => { options.onDwellLockChange?.(null); readyMove(options, 32 + drift, 24 + drift); advance(); });
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(1);
+});
+
 it.each([0, 0.003, 0.015])('clears lost-camera dwell feedback without moving the cursor, drift=%s', drift => {
   const advance = feedbackClock(), target = feedbackTarget(LIVE_BUTTON_TARGET);
   useSettingsStore.setState({ headTrackingDwellMs: 1200 });

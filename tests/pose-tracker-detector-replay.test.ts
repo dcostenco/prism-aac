@@ -488,6 +488,46 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
     step(FRESH_SELECTION_FRAMES); expect(onDwell).not.toHaveBeenCalled();
     step(); expect(onDwell).toHaveBeenCalledOnce();
   });
+  it.each(['replacement', 'layout shift'] as const)('a stationary completed hold cannot chain-select after DOM %s', async change => {
+    const { onMove, onDwell, onDwellLockChange } = await startControlledWrist();
+    pose(16, 0.5); detector.poses[0][0] = { ...VERIFIED_WRIST_HEAD }; step(80);
+    const [x, y] = onMove.mock.calls.at(-1)!;
+    const rect = new DOMRect(x - 48, y - 48, 96, 96);
+    const original = document.createElement('button');
+    const next = document.createElement('button');
+    const originalClick = vi.fn(), nextClick = vi.fn();
+    original.addEventListener('click', originalClick); next.addEventListener('click', nextClick);
+    document.body.append(original);
+    const originalBounds = vi.spyOn(original, 'getBoundingClientRect').mockReturnValue(rect);
+    vi.spyOn(next, 'getBoundingClientRect').mockReturnValue(rect);
+    let current = original;
+    vi.mocked(document.elementFromPoint).mockImplementation((cx, cy) =>
+      cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom ? current : null);
+    step(16); expect(originalClick).toHaveBeenCalledOnce();
+
+    if (change === 'replacement') original.replaceWith(next);
+    else {
+      originalBounds.mockReturnValue(new DOMRect(rect.x + 200, rect.y, rect.width, rect.height));
+      document.body.append(next);
+    }
+    current = next; // A folder/panel changed under the cursor, not the child's wrist.
+    step(60);
+    expect(nextClick).not.toHaveBeenCalled();
+    expect(onDwell).toHaveBeenCalledOnce();
+    expect(onDwellLockChange.mock.calls.map(([element]) => element)).toEqual([original]);
+
+    // Real observed departure, even before readiness, must still permit the
+    // child to return and select the newly displayed symbol after a fresh hold.
+    for (let i = 1; i <= 8; i++) {
+      pose(16, 0.5 + i * 0.01); detector.poses[0][0] = { ...VERIFIED_WRIST_HEAD }; step();
+    }
+    for (let i = 7; i >= 0; i--) {
+      pose(16, 0.5 + i * 0.01); detector.poses[0][0] = { ...VERIFIED_WRIST_HEAD }; step();
+    }
+    expect(nextClick).not.toHaveBeenCalled(); step(60);
+    expect(nextClick).toHaveBeenCalledOnce();
+    expect(onDwellLockChange.mock.calls.map(([element]) => element)).toEqual([original, null, next]);
+  });
   it('observed cursor departure during non-ready motion rearms the same symbol after a fresh hold', async () => {
     const { onMove, onDwell, onMotionStateChange, onDwellLockChange } = await startControlledWrist();
     pose(16, 0.5); detector.poses[0][0] = { x: 0.5, y: 0.3, visibility: 0.9 }; step(80);
@@ -836,6 +876,15 @@ describe.each([0, 0.003, 0.015])('real pose tracker — detector replay, drift=%
     expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0); // A held/rejected frame didn't release the service lock.
     vi.mocked(document.elementFromPoint).mockReturnValue(null); act(() => step());
     vi.mocked(document.elementFromPoint).mockReturnValue(button); act(() => step(14));
+    expect(clicks).toHaveBeenCalledTimes(1); // DOM hit-testing alone is not a physical departure.
+    vi.mocked(document.elementFromPoint).mockReturnValue(null);
+    for (let i = 1; i <= 8; i++) {
+      pose(16, 0.5 + i * 0.01); detector.poses[0][0] = { ...VERIFIED_WRIST_HEAD }; act(() => step());
+    }
+    for (let i = 7; i >= 0; i--) {
+      pose(16, 0.5 + i * 0.01); detector.poses[0][0] = { ...VERIFIED_WRIST_HEAD }; act(() => step());
+    }
+    vi.mocked(document.elementFromPoint).mockReturnValue(button); act(() => step(60));
     expect(clicks).toHaveBeenCalledTimes(2);
     view.unmount(); vi.restoreAllMocks();
   });

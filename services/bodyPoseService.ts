@@ -795,9 +795,15 @@ export function startPoseTracker(
   let dwellElement: Element | null = null;
   let dwellStart = 0;
   let dwellTriggered = false;
+  let dwellLockBounds: Pick<DOMRect, 'left' | 'right' | 'top' | 'bottom'> | null = null;
   const setDwellTriggered = (triggered: boolean) => {
     if (dwellTriggered === triggered) return;
     dwellTriggered = triggered;
+    const rect = triggered ? dwellElement?.getBoundingClientRect() : null;
+    // Freeze the selected region before its click can replace/reflow the UI.
+    // A non-layout target still needs actual cursor movement to rearm.
+    dwellLockBounds = triggered ? rect && rect.width > 0 && rect.height > 0
+      ? rect : { left: sx, right: sx, top: sy, bottom: sy } : null;
     opts.onDwellLockChange?.(triggered ? dwellElement : null);
   };
   let selectionEpoch = readCameraSelectionState().epoch;
@@ -1635,13 +1641,19 @@ export function startPoseTracker(
           const interactiveEl = resolveDwellTarget(elementUnder);
           const selection = readCameraSelectionState();
           if (selection.epoch !== selectionEpoch) { pauseDwell(); selectionEpoch = selection.epoch; }
-          // Departure can occur during movement, before a new pause qualifies.
-          // Ownership/epoch transitions must not masquerade as that departure.
-          if (dwellTriggered && !selection.blocked && canActivateCameraSelection(frameEpoch) && interactiveEl !== dwellElement) {
+          // Departure needs observed movement outside the region selected at
+          // click time, not a different DOM node appearing under a still wrist.
+          // It can happen before a new pause qualifies, but never on loss or an
+          // ownership/epoch transition. Allow the existing wrist jitter budget.
+          const departureTolerance = projection?.tolerancePx ?? 0;
+          const departed = dwellLockBounds && (sx < dwellLockBounds.left - departureTolerance ||
+            sx > dwellLockBounds.right + departureTolerance || sy < dwellLockBounds.top - departureTolerance ||
+            sy > dwellLockBounds.bottom + departureTolerance);
+          if (dwellTriggered && departed && !selection.blocked && canActivateCameraSelection(frameEpoch) && interactiveEl !== dwellElement) {
             dwellElement = null; dwellStart = 0; setDwellTriggered(false);
           }
 
-          if (!selectionReady || suppressForEgoMotion || selection.blocked || !canActivateCameraSelection(frameEpoch)) {
+          if (dwellTriggered || !selectionReady || suppressForEgoMotion || selection.blocked || !canActivateCameraSelection(frameEpoch)) {
             pauseDwell();
           } else if (interactiveEl && interactiveEl === dwellElement) {
             if (!dwellTriggered && Date.now() - dwellStart >= (wristMotion ? wristSelectionDwellMs(opts.dwellMs) : opts.dwellMs)) {

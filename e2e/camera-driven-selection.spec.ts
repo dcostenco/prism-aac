@@ -109,6 +109,34 @@ for (const drift of DRIFTS) test(`camera movement and a pause select one letter 
       expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="camera-input-overlay"]'],
       criticalSelectors: ['[data-testid="message-text"]', `button[data-key="${EXPECTED_KEY}"]`], occluderSelectors: [],
     });
+    // A real visible mode change replaces the selected H with a different
+    // control at the same fixed camera command. DOM replacement is not wrist
+    // departure; it must not speak/type another symbol from the completed hold.
+    await page.getByRole('button', { name: 'Switch keyboard mode', exact: true }).click();
+    await expect(target).toHaveCount(0);
+    const replacement = page.locator('button[data-key="("]');
+    const replacementBounds = await replacement.boundingBox();
+    expect(replacementBounds).not.toBeNull();
+    expect(command.expectedX).toBeGreaterThan(replacementBounds!.x);
+    expect(command.expectedX).toBeLessThan(replacementBounds!.x + replacementBounds!.width);
+    expect(command.expectedY).toBeGreaterThan(replacementBounds!.y);
+    expect(command.expectedY).toBeLessThan(replacementBounds!.y + replacementBounds!.height);
+    const replacementUntil = await page.evaluate(hold => performance.now() + hold, REPEAT_OBSERVATION_MS);
+    await expect.poll(async () => {
+      expect((await page.evaluate(() => (window as TestWindow).cameraSelectionClicks)).map(click => click.key)).toEqual([EXPECTED_KEY]);
+      await expect(page.getByTestId('message-text')).toHaveText('h');
+      await expect(overlay).toHaveAttribute('data-status', 'tracking');
+      await expect(overlay).toHaveAttribute('data-selection-ready', 'false');
+      await expect(overlay.locator('circle[stroke-dasharray]')).toHaveCount(0);
+      return await page.evaluate(until => performance.now() >= until, replacementUntil);
+    }, { timeout: REPEAT_OBSERVATION_MS + 2000, intervals: [200] }).toBe(true);
+    await safeScreenshot(page, info.outputPath('camera-replacement-stays-locked.png'), {
+      expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="camera-input-overlay"]'],
+      criticalSelectors: ['[data-testid="message-text"]', 'button[data-key="("]'], occluderSelectors: [],
+    });
+    await replacement.click(); // Manual communication remains independent of the camera re-arm lock.
+    await expect(page.getByTestId('message-text')).toHaveText('h(');
+    expect((await page.evaluate(() => (window as TestWindow).cameraSelectionClicks)).map(click => click.key)).toEqual([EXPECTED_KEY]);
     expect(errors).toEqual([]);
     completed = true;
   } finally {
