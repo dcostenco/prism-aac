@@ -528,7 +528,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -754,6 +755,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -1283,7 +1288,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -1509,6 +1515,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -2038,7 +2048,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -2264,6 +2275,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -2375,7 +2390,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -2601,6 +2617,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -2712,7 +2732,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -2938,6 +2959,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -3049,7 +3074,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -3275,6 +3301,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -3386,7 +3416,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -3612,6 +3643,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -3723,7 +3758,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -3949,6 +3985,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -4060,7 +4100,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -4286,6 +4327,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -4397,7 +4442,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -4623,6 +4669,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -4734,7 +4784,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -4960,6 +5011,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -5071,7 +5126,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -5297,6 +5353,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -5408,7 +5468,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -5634,6 +5695,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -5745,7 +5810,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -5971,6 +6037,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -6082,7 +6152,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -6308,6 +6379,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -6419,7 +6494,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -6645,6 +6721,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -6756,7 +6836,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -6982,6 +7063,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -7093,7 +7178,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -7319,6 +7405,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -7430,7 +7520,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -7656,6 +7747,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -7767,7 +7862,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -7993,6 +8089,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -8104,7 +8204,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -8330,6 +8431,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -8441,7 +8546,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -8667,6 +8773,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -8778,7 +8888,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -9004,6 +9115,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -9115,7 +9230,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -9341,6 +9457,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -9452,7 +9572,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -9678,6 +9799,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -9789,7 +9914,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -10015,6 +10141,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       },
@@ -10078,7 +10208,8 @@
           "tracking_setup_exit_help",
           "tracking_setup_manual_capture",
           "tracking_setup_skip_calibration",
-          "tracking_setup_skip_notice"
+          "tracking_setup_skip_notice",
+          "tracking_setup_frame_guide"
         ],
         "generatorById": {
           "scan_active": {
@@ -10304,6 +10435,10 @@
           "tracking_setup_skip_notice": {
             "generator": "gemini-3.6-flash",
             "generatedAt": "2026-10-13T15:05:30.841Z"
+          },
+          "tracking_setup_frame_guide": {
+            "generator": "host-ai-draft",
+            "generatedAt": "2026-10-18T12:16:07.549Z"
           }
         }
       }

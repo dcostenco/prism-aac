@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Încheietura mâinii este prea aproape de marginea imaginii camerei. Reglați camera astfel încât fața și încheietura în repaus să rămână vizibile, cu spațiu în jur, apoi capturați din nou. Calibrarea salvată nu s-a modificat.",
   "camera_loss_head": "Fața nu e verificată. Ține toată fața în cadru și luminează mai bine. Selectarea e întreruptă.",
   "camera_loss_wrist": "Încheietura aleasă nu se vede. Ține-o în cadru; altă parte a corpului nu o va înlocui.",
   "camera_loss_frame": "Imaginile camerei s-au oprit. Reîncearcă accesul la cameră; selectarea e întreruptă.",

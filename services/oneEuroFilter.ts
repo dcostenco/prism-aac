@@ -84,6 +84,7 @@ export class OneEuroFilter {
   private readonly xFilt = new LowPass();
   private readonly dxFilt = new LowPass();
   private lastTimeMs = 0;
+  private valueScale = 1;
 
   constructor(opts: OneEuroFilterOptions = {}) {
     this.freq = opts.freq ?? 30;
@@ -107,6 +108,11 @@ export class OneEuroFilter {
   }
   setBeta(v: number): void {
     if (Number.isFinite(v) && v >= 0) this.beta = v;
+  }
+  /** Input units per reference unit. Calibration gain is not physical speed.
+   * The default preserves every existing non-camera caller. */
+  setValueScale(v: number): void {
+    if (Number.isFinite(v) && v > 0) this.valueScale = v;
   }
 
   /** Run a measurement update.
@@ -132,7 +138,7 @@ export class OneEuroFilter {
 
     // Speed-adaptive cutoff: faster motion → higher cutoff →
     // less smoothing → less lag during deliberate motion.
-    const cutoff = this.mincutoff + this.beta * Math.abs(edvalue);
+    const cutoff = this.mincutoff + this.beta * Math.abs(edvalue) / this.valueScale;
     return this.xFilt.filter(value, this.alpha(cutoff, freq));
   }
 
@@ -210,6 +216,7 @@ export class ConfidenceAwareOneEuro {
 
   snapTo(value: number): void { this.filter.snapTo(value); }
   reset(): void { this.filter.reset(); }
+  setValueScale(valueScale: number): void { this.filter.setValueScale(valueScale); }
   get value(): number { return this.filter.value; }
 
   /**

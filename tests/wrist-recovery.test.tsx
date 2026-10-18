@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import TrackingSetupWizard from '@/components/TrackingSetupWizard';
-import { DEFAULT_CALIBRATION, hasPoseCalibrationForTarget, loadPoseCalibration, stopPoseTracker } from '@/services/bodyPoseService';
+import { DEFAULT_CALIBRATION, hasPoseCalibrationForTarget, loadPoseCalibration as readCalibration, stopPoseTracker } from '@/services/bodyPoseService';
+import { CAMERA_WRIST_SOURCE } from '@/services/cameraTrackingTargets';
+import { handForPose } from './helpers/hand-landmark-boundary';
+const loadPoseCalibration = () => readCalibration(CAMERA_WRIST_SOURCE);
 import { BaselineTracker } from '@/services/recalibration';
 import { WristMotion } from '@/services/wristMotion';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -14,6 +17,10 @@ const io = vi.hoisted(() => ({ poses: [] as Array<Array<{ x: number; y: number; 
 vi.mock('@mediapipe/tasks-vision', () => ({
   FilesetResolver: { forVisionTasks: vi.fn(async () => ({})) },
   PoseLandmarker: { createFromOptions: vi.fn(async () => ({ detectForVideo: io.detect })) },
+  HandLandmarker: { createFromOptions: vi.fn(async () => ({ detectForVideo: (input: HTMLCanvasElement) => {
+    const crop = io.crops.get(input)!;
+    return handForPose(io.poses[0], 320, 240, { x: crop.x, y: crop.y, side: crop.width });
+  } })) },
   FaceLandmarker: { createFromOptions: vi.fn(async () => ({ close: vi.fn(), detect: (input: HTMLCanvasElement) => {
     const crop = io.crops.get(input)!;
     return { faceLandmarks: [Array.from({ length: 468 }, () => ({ x: (160 - crop.x) / crop.width, y: (72 - crop.y) / crop.height }))] };
@@ -36,6 +43,7 @@ const WRISTS = [['right_wrist', 16], ['left_wrist', 15]] as const;
 const JITTER_AMPLITUDE = 0.03;
 const DRIFT_RAMP_MS = 20_000;
 const CALIBRATION_KEYS = ['prism-pose-calibration-landscape', 'prism-pose-calibration-portrait', 'prism-pose-calibration', 'prism_pose_wizard_completed'];
+const HAND_LANDSCAPE_KEY = `prism-${CAMERA_WRIST_SOURCE}-calibration-landscape`;
 const SKIP_PHASES = ['tracking-calibrate-skip', 'tracking-corners-skip'] as const;
 const previousSettings = { ...useSettingsStore.getState() };
 let frames: Map<number, FrameRequestCallback>, now: number, id: number, driftLevel: number;
@@ -82,8 +90,29 @@ async function step(index: number, x: number, y: number) {
 }
 describe.each(DRIFT_LEVELS)('wrist setup recovery at drift=%s', drift => {
   beforeEach(() => { driftLevel = drift; });
+  it.each(WRISTS)('%s keeps setup open at an edge and recovers when the camera framing changes', async (target, index) => {
+    const profile = { ...DEFAULT_CALIBRATION, wizardCompleted: true, trackingTarget: target, orientation: 'landscape' };
+    localStorage.setItem(CALIBRATION_KEYS[0], JSON.stringify(profile));
+    const original = CALIBRATION_KEYS.map(key => localStorage.getItem(key));
+    useSettingsStore.setState({ ...previousSettings, cameraInputEnabled: false, cameraTrackingTarget: target });
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    for (let i = 0; i < 70; i++) await step(index, 0.56, 0.968);
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'calibrate-center');
+    expect(screen.getByTestId('tracking-center-status')).toHaveTextContent('edge of the camera view');
+    expect(CALIBRATION_KEYS.map(key => localStorage.getItem(key))).toEqual(original);
+    for (let i = 0; i < 60; i++) await step(index, 0.5, 0.55);
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'calibrate-corners');
+    expect(CALIBRATION_KEYS.map(key => localStorage.getItem(key))).toEqual(original);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
+    expect(CALIBRATION_KEYS.map(key => localStorage.getItem(key))).toEqual(original);
+  });
   it.each(SKIP_PHASES)('%s preserves a saved wrist profile through Save & Done', async skip => {
-    const profile = { ...DEFAULT_CALIBRATION, wizardCompleted: true, trackingTarget: 'right_wrist', orientation: 'landscape' };
+    const profile = { ...DEFAULT_CALIBRATION, wizardCompleted: true, trackingTarget: 'right_wrist', orientation: 'landscape', coordinateSource: CAMERA_WRIST_SOURCE };
+    localStorage.setItem(HAND_LANDSCAPE_KEY, JSON.stringify(profile));
     localStorage.setItem(CALIBRATION_KEYS[0], JSON.stringify(profile));
     localStorage.setItem(CALIBRATION_KEYS[1], JSON.stringify({ ...profile, orientation: 'portrait' }));
     localStorage.setItem(CALIBRATION_KEYS[2], JSON.stringify(DEFAULT_CALIBRATION));
@@ -104,6 +133,7 @@ describe.each(DRIFT_LEVELS)('wrist setup recovery at drift=%s', drift => {
     expect(completed).toHaveBeenCalledOnce(); view.unmount();
     expect(CALIBRATION_KEYS.map(key => localStorage.getItem(key))).toEqual(original);
     expect(hasPoseCalibrationForTarget('right_wrist')).toBe(true);
+    expect(localStorage.getItem(HAND_LANDSCAPE_KEY)).toBe(JSON.stringify(profile));
     expect(useSettingsStore.getState().cameraInputEnabled).toBe(true);
   });
   it.each(SKIP_PHASES)('%s with no saved wrist profile preserves empty storage and keeps camera control off', async skip => {

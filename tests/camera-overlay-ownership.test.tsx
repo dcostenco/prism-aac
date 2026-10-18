@@ -11,6 +11,9 @@ const tracker = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn(), options: [] a
 const releases: (() => void)[] = [];
 const LIVE_BUTTON_TARGET = { kind: 'button', tag: 'button', eligible: true } as const;
 const PINNED_DISABLED_TARGET = { ...LIVE_BUTTON_TARGET, kind: 'disabled', attribute: 'disabled', eligible: false } as const;
+const WATCHDOG_DRIFTS = [0, 0.003, 0.015];
+const WATCHDOG_FRAME_MS = 100;
+const WATCHDOG_OBSERVATION_MS = 60_000;
 vi.mock('@/services/bodyPoseService', () => ({
   isPoseTrackingSupported: () => true,
   startPoseTracker: (options: PoseTrackerOptions) => {
@@ -238,6 +241,104 @@ it.each([0, 0.003, 0.015])('a fresh measured rest is not treated as a pinned or 
   expect(useSettingsStore.getState().cameraInputEnabled).toBe(true);
   expect(view.queryByTestId('camera-input-stuck-toast')).toBeNull();
   expect(tracker.stop).not.toHaveBeenCalled();
+});
+
+it.each(WATCHDOG_DRIFTS)('a pause between watchdog ticks keeps uncertain small-motion input available without selecting, drift=%s', drift => {
+  vi.useFakeTimers();
+  const target = feedbackTarget(LIVE_BUTTON_TARGET), clicked = vi.fn(); target.addEventListener('click', clicked);
+  const view = render(<CameraInputOverlay />), options = tracker.options.at(-1)!;
+  act(() => options.onStatusChange('tracking'));
+  // Each 1 Hz watchdog tick sees a moving frame. The preceding measured
+  // pauses are still fresh: polling phase must not turn them into a failure.
+  for (let i = 0; i < WATCHDOG_OBSERVATION_MS / WATCHDOG_FRAME_MS; i++) {
+    act(() => {
+      const paused = i % 10 !== 9;
+      const bias = drift * Math.min(i * WATCHDOG_FRAME_MS / WATCHDOG_OBSERVATION_MS, 1);
+      options.onMotionStateChange?.({ paused, selectionReady: false, held: paused, rejected: false, noise: drift,
+        point: { x: 0.5 + bias, y: 0.5 + bias / 2 } });
+      options.onMove(32 + bias * 1280, 24 + bias * 720);
+      vi.advanceTimersByTime(WATCHDOG_FRAME_MS);
+    });
+  }
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(true);
+  expect(view.queryByTestId('camera-input-stuck-toast')).toBeNull();
+  expect(tracker.stop).not.toHaveBeenCalled();
+  expect(view.getByTestId('camera-input-overlay')).toHaveAttribute('data-selection-ready', 'false');
+  expect(view.container.querySelectorAll('circle[stroke-dasharray]')).toHaveLength(0);
+  expect(clicked).not.toHaveBeenCalled();
+  fireEvent.click(target); expect(clicked).toHaveBeenCalledOnce();
+});
+
+it.each(WATCHDOG_DRIFTS)('expired pause evidence cannot suppress a genuinely pinned watchdog, drift=%s', drift => {
+  vi.useFakeTimers();
+  feedbackTarget(PINNED_DISABLED_TARGET);
+  const view = render(<CameraInputOverlay />), options = tracker.options.at(-1)!;
+  act(() => {
+    options.onStatusChange('tracking');
+    options.onMotionStateChange?.({ paused: true, selectionReady: false, held: true, rejected: false, noise: drift,
+      point: { x: 0.5, y: 0.5 } });
+  });
+  for (let i = 0; i < 210 && useSettingsStore.getState().cameraInputEnabled; i++) {
+    act(() => {
+      options.onMotionStateChange?.({ paused: false, selectionReady: false, held: false, rejected: false, noise: drift,
+        point: { x: 0.5 + drift, y: 0.5 } });
+      options.onMove(32, 24); vi.advanceTimersByTime(WATCHDOG_FRAME_MS);
+    });
+  }
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(false);
+  expect(view.getByTestId('camera-input-stuck-toast')).toHaveTextContent('small area');
+});
+
+it.each(WATCHDOG_DRIFTS)('tracking loss clears a recent between-tick pause before recovery, drift=%s', drift => {
+  vi.useFakeTimers();
+  feedbackTarget(PINNED_DISABLED_TARGET);
+  const view = render(<CameraInputOverlay />), options = tracker.options.at(-1)!;
+  act(() => options.onStatusChange('tracking'));
+  for (let i = 0; i < 200 && useSettingsStore.getState().cameraInputEnabled; i++) {
+    act(() => {
+      if (i === 199) {
+        options.onMotionStateChange?.({ paused: true, selectionReady: false, held: true, rejected: false, noise: drift,
+          point: { x: 0.5, y: 0.5 } });
+        options.onTrackingLoss?.('wrist-missing');
+        options.onStatusChange('lost');
+        options.onStatusChange('tracking');
+      }
+      options.onMotionStateChange?.({ paused: false, selectionReady: false, held: false, rejected: false, noise: drift,
+        point: { x: 0.5 + drift, y: 0.5 } });
+      options.onMove(32, 24); vi.advanceTimersByTime(WATCHDOG_FRAME_MS);
+    });
+  }
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(false);
+  expect(view.getByTestId('camera-input-stuck-toast')).toHaveTextContent('small area');
+});
+
+it.each(WATCHDOG_DRIFTS)('a pause before the initial grace deadline gets the same bounded recovery time, drift=%s', drift => {
+  vi.useFakeTimers();
+  feedbackTarget(PINNED_DISABLED_TARGET);
+  const view = render(<CameraInputOverlay />), options = tracker.options.at(-1)!;
+  act(() => options.onStatusChange('tracking'));
+  // The real SDK report paused around 18.5 s, then moved again before the
+  // first 20 s watchdog check. That was not twenty seconds of pinned input.
+  for (let i = 0; i < 210; i++) {
+    act(() => {
+      const paused = i === 185;
+      options.onMotionStateChange?.({ paused, selectionReady: false, held: paused, rejected: false, noise: drift,
+        point: { x: 0.5 + drift, y: 0.5 } });
+      options.onMove(32, 24); vi.advanceTimersByTime(WATCHDOG_FRAME_MS);
+    });
+  }
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(true);
+  for (let i = 210; i < 390 && useSettingsStore.getState().cameraInputEnabled; i++) {
+    act(() => {
+      options.onMotionStateChange?.({ paused: false, selectionReady: false, held: false, rejected: false, noise: drift,
+        point: { x: 0.5 + drift, y: 0.5 } });
+      options.onMove(32, 24); vi.advanceTimersByTime(WATCHDOG_FRAME_MS);
+    });
+  }
+  // The one old pause is activity, not permanent permission: the genuinely
+  // pinned stream still disables after the existing grace interval expires.
+  expect(useSettingsStore.getState().cameraInputEnabled).toBe(false);
+  expect(view.getByTestId('camera-input-stuck-toast')).toHaveTextContent('small area');
 });
 
 it('dismissing a stuck warning does not silently re-enable camera input', () => {

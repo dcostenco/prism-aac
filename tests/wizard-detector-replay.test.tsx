@@ -2,9 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import TrackingSetupWizard from '@/components/TrackingSetupWizard';
 import CameraInputOverlay from '@/components/CameraInputOverlay';
-import { DEFAULT_CALIBRATION, loadPoseCalibration, stopPoseTracker } from '@/services/bodyPoseService';
+import { DEFAULT_CALIBRATION, loadPoseCalibration as readCalibration, stopPoseTracker } from '@/services/bodyPoseService';
+import { CAMERA_WRIST_SOURCE } from '@/services/cameraTrackingTargets';
+import { handForPose } from './helpers/hand-landmark-boundary';
+const loadPoseCalibration = () => readCalibration(CAMERA_WRIST_SOURCE);
 import { useSettingsStore } from '@/store/settingsStore';
 import { readCameraSelectionState } from '@/services/cameraSelection';
+import { aacSpeak } from '@/services/aacSpeak';
+import english from '../i18n/en.json';
 
 // Real wizard, settings, calibration, tracker and filters. Only camera,
 // detector and audio IO are replaced; no synthetic pose events/callbacks.
@@ -18,6 +23,8 @@ const io = vi.hoisted(() => ({
 vi.mock('@mediapipe/tasks-vision', () => ({
   FilesetResolver: { forVisionTasks: vi.fn(async () => ({})) },
   PoseLandmarker: { createFromOptions: vi.fn(async () => ({ detectForVideo: io.detect })) },
+  HandLandmarker: { createFromOptions: vi.fn(async () => ({ detectForVideo: () =>
+    handForPose(io.poses[0], 640, 480, io.verificationCrop, drift(), drift() / 2) })) },
   // Head presence and verification: the same detector boundary the runtime
   // requires before any wrist sample may calibrate or select.
   FaceDetector: { createFromOptions: vi.fn(async () => ({ detectForVideo: io.presenceDetect, close: vi.fn() })) },
@@ -31,7 +38,8 @@ let frames: Map<number, FrameRequestCallback>;
 let id: number;
 let now: number;
 let driftLevel: number;
-const drift = () => driftLevel * Math.min(now / 20_000, 1);
+const CAMERA_DRIFT_RAMP_MS = 20_000;
+const drift = () => driftLevel * Math.min(now / CAMERA_DRIFT_RAMP_MS, 1);
 const originalSettings = { ...useSettingsStore.getState() };
 const ORIGINAL_PROFILE_VALUES = {
   'prism-pose-calibration-landscape': JSON.stringify({ leftX: 0.7, rightX: 0.38,
@@ -203,6 +211,102 @@ const wizardPhase = () => screen.getByTestId('tracking-setup-wizard').getAttribu
 
 describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s frame units', level => {
   beforeEach(() => { driftLevel = level; });
+  it('shows and speaks the missing wrist, not a missing person, then recovers without stale guidance', async () => {
+    vi.mocked(aacSpeak).mockClear();
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(NEUTRAL_X, 0.5);
+    io.poses[0][RIGHT_WRIST].visibility = 0;
+    await step(55);
+    expect(screen.getByTestId('tracking-wizard-status')).toHaveTextContent(english.camera_loss_wrist);
+    expect(screen.getByTestId('tracking-detection-status')).toHaveTextContent(english.camera_loss_wrist);
+    expect(screen.queryByText('No body parts detected. Try moving closer.')).not.toBeInTheDocument();
+    expect(vi.mocked(aacSpeak).mock.calls.filter(([text]) => text === english.camera_loss_wrist)).toHaveLength(1);
+    expect(vi.mocked(aacSpeak).mock.calls.some(([text]) => text === 'I cannot see you. Please move closer to the camera.')).toBe(false);
+    await step(10); // Repeated missing frames must not repeat the spoken instruction.
+    expect(vi.mocked(aacSpeak).mock.calls.filter(([text]) => text === english.camera_loss_wrist)).toHaveLength(1);
+    pose(NEUTRAL_X, 0.5); await step(10);
+    expect(screen.getByTestId('tracking-detection-status')).not.toHaveTextContent(english.camera_loss_wrist);
+    await step(30);
+    expect(wizardPhase()).toBe('calibrate-center');
+    expect(screen.getByTestId('tracking-capture-center')).toBeEnabled();
+  });
+  it.each(['head', 'camera'] as const)('reports the %s failure without inventing wrist samples and keeps Cancel available', async failure => {
+    vi.mocked(aacSpeak).mockClear();
+    const cancel = vi.fn();
+    if (failure === 'camera') io.acquire.mockRejectedValueOnce(new DOMException('Permission denied', 'NotAllowedError'));
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={cancel} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    await step(55);
+    const message = failure === 'head' ? english.camera_loss_head : english.camera_loss_unavailable;
+    expect(screen.getByTestId('tracking-detection-status')).toHaveTextContent(message);
+    expect(screen.getByTestId('tracking-wizard-status')).toHaveTextContent(message);
+    expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-pose-sample-count', '0');
+    expect(screen.queryByTestId('tracking-capture-center')).not.toBeInTheDocument();
+    expect(vi.mocked(aacSpeak).mock.calls.filter(([text]) => text === message)).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+  it('does not announce or advance from old wrist detections after current tracking is lost', async () => {
+    vi.mocked(aacSpeak).mockClear();
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(NEUTRAL_X, 0.5); await step(20);
+    io.poses[0][RIGHT_WRIST].visibility = 0;
+    await step(50);
+    expect(wizardPhase()).toBe('detecting');
+    expect(screen.getByTestId('tracking-detection-status')).toHaveTextContent(english.camera_loss_wrist);
+    expect(vi.mocked(aacSpeak).mock.calls.some(([text]) => text.startsWith('I can see your'))).toBe(false);
+    pose(NEUTRAL_X, 0.5); await step(35);
+    expect(wizardPhase()).toBe('calibrate-center');
+    expect(screen.getByTestId('tracking-capture-center')).toBeEnabled();
+  });
+  it('rechecks current tracking before the delayed detection advance executes', async () => {
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(NEUTRAL_X, 0.5); await step(55); // Matched, but the 1.5s advance is pending.
+    expect(wizardPhase()).toBe('detecting');
+    io.poses[0][RIGHT_WRIST].visibility = 0;
+    await step(20);
+    expect(wizardPhase()).toBe('detecting');
+    expect(screen.getByTestId('tracking-detection-status')).toHaveTextContent(english.camera_loss_wrist);
+    pose(NEUTRAL_X, 0.5); await step(35);
+    expect(wizardPhase()).toBe('calibrate-center');
+  });
+  it.each([20, 55])('does not advance when camera callbacks stop after %s frames, even without a loss callback', async sampleCount => {
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(NEUTRAL_X, 0.5); await step(sampleCount);
+    await suspendCamera(5000);
+    expect(wizardPhase()).toBe('detecting');
+    await step(35);
+    expect(wizardPhase()).toBe('calibrate-center');
+  });
+  it('keeps rendered capture state aligned with the live buffer on capture, refill and loss', async () => {
+    render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    await act(async () => { await Promise.resolve(); });
+    pose(NEUTRAL_X, 0.5); await step(106);
+    const wizard = screen.getByTestId('tracking-setup-wizard');
+    expect(Number(wizard.getAttribute('data-pose-sample-count'))).toBeGreaterThan(0);
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+    expect(wizard).toHaveAttribute('data-pose-sample-count', '0');
+    expect(screen.getByTestId('tracking-capture-corner')).toBeDisabled();
+    expect(screen.getByTestId('tracking-save-center-only')).toBeVisible();
+    await step(5);
+    expect(Number(wizard.getAttribute('data-pose-sample-count'))).toBeGreaterThan(0);
+    expect(screen.getByTestId('tracking-capture-corner')).toBeEnabled();
+    io.poses[0][RIGHT_WRIST].visibility = 0; await step(3);
+    expect(wizard).toHaveAttribute('data-pose-sample-count', '0');
+    expect(wizard).toHaveAttribute('data-physical-pause', 'false');
+    expect(wizard).toHaveAttribute('data-selection-ready', 'false');
+    expect(screen.getByTestId('tracking-capture-corner')).toBeDisabled();
+  });
   it('Cancel restores both orientation profiles and the original target after a manual wrist choice', async () => {
     seedPreviousProfiles();
     useSettingsStore.setState({ cameraInputEnabled: true, cameraTrackingTarget: 'right_wrist' });
@@ -253,14 +357,14 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     const view = await calibratedWizard();
     fireEvent.click(screen.getByTestId('tracking-test-skip'));
     const concurrent = ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait'];
-    localStorage.setItem('prism-pose-calibration-landscape', concurrent);
+    localStorage.setItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-landscape`, concurrent);
     fireEvent.click(screen.getByTestId('tracking-confirm'));
     expect(screen.getByRole('alert')).toHaveTextContent('Saved calibration changed during setup');
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-phase', 'complete');
-    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(concurrent);
+    expect(localStorage.getItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-landscape`)).toBe(concurrent);
     expect(localStorage.getItem('prism_pose_wizard_completed')).toBe('false');
     view.unmount();
-    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(concurrent);
+    expect(localStorage.getItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-landscape`)).toBe(concurrent);
   });
 
   it('only explicit Save and Done replaces the durable calibration and survives unmount', async () => {
@@ -272,7 +376,8 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(screen.getByTestId('tracking-confirm')).toHaveTextContent('Save & Done');
     fireEvent.click(screen.getByTestId('tracking-confirm'));
     view.unmount();
-    expect(JSON.parse(localStorage.getItem('prism-pose-calibration-landscape')!)).toEqual(preview);
+    expect(JSON.parse(localStorage.getItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-landscape`)!)).toEqual(preview);
+    expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-landscape']);
     expect(loadPoseCalibration()).toEqual(preview);
     expect(localStorage.getItem('prism-pose-calibration-portrait')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']);
   });
@@ -299,7 +404,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
       innerHeight: { configurable: true, value: 720 } });
     fireEvent.click(screen.getByTestId('tracking-confirm'));
     expect(complete).toHaveBeenCalledOnce();
-    expect(JSON.parse(localStorage.getItem('prism-pose-calibration-landscape')!).wizardCompleted).toBe(true);
+    expect(JSON.parse(localStorage.getItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-landscape`)!).wizardCompleted).toBe(true);
     expect(localStorage.getItem('prism-pose-calibration-portrait')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-portrait']);
     view.unmount();
   });
@@ -318,7 +423,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     fireEvent.click(screen.getByTestId('tracking-test-skip'));
     fireEvent.click(screen.getByTestId('tracking-confirm'));
     view.unmount();
-    expect(JSON.parse(localStorage.getItem('prism-pose-calibration-portrait')!)).toEqual(preview);
+    expect(JSON.parse(localStorage.getItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-portrait`)!)).toEqual(preview);
     expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-landscape']);
   });
   it('retains wizard tracker ownership when a manual mode change rerenders the live overlay', async () => {
@@ -434,6 +539,10 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     expect(screen.queryByTestId('tracking-setup-wizard')).toBeNull();
   });
   it('never auto-captures a corner from readiness that went stale while camera callbacks stopped', async () => {
+    // This test needs a genuine qualified rest before freezing callbacks.
+    // Keep the chosen bias present, but let its finite motion finish before
+    // setup; continuous mapped movement is not permission to assume readiness.
+    now = CAMERA_DRIFT_RAMP_MS; vi.advanceTimersByTime(CAMERA_DRIFT_RAMP_MS);
     await cornersWizard();
     await step(28);
     expect(screen.getByTestId('tracking-setup-wizard')).toHaveAttribute('data-selection-ready', 'true');
@@ -494,7 +603,7 @@ describe.each([0, 0.003, 0.015])('wizard → production tracker replay, drift=%s
     fireEvent.click(screen.getByTestId('tracking-test-skip'));
     fireEvent.click(screen.getByTestId('tracking-confirm'));
     expect(complete).toHaveBeenCalledOnce();
-    expect(JSON.parse(localStorage.getItem('prism-pose-calibration-portrait')!)).toMatchObject({ orientation: 'portrait', trackingTarget: 'right_wrist', wizardCompleted: true });
+    expect(JSON.parse(localStorage.getItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-portrait`)!)).toMatchObject({ orientation: 'portrait', trackingTarget: 'right_wrist', wizardCompleted: true, coordinateSource: CAMERA_WRIST_SOURCE });
     expect(localStorage.getItem('prism-pose-calibration-landscape')).toBe(ORIGINAL_PROFILE_VALUES['prism-pose-calibration-landscape']);
     view.unmount();
   });

@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Bileğiniz kamera görüntüsünün kenarına çok yakın. Kamerayı, yüzünüz ve dinlenme halindeki bileğiniz etraflarında boşluk kalacak şekilde görüntüde kalacak biçimde ayarlayın, ardından yeniden yakalayın. Kaydedilen kalibrasyon değişmedi.",
   "camera_loss_head": "Yüz doğrulanamadı. Yüzünüzü tam gösterin ve ışığı artırın. Seçim duraklatıldı.",
   "camera_loss_wrist": "Seçilen bilek görünmüyor. Görüş alanında tutun; başka uzuv kullanılmaz.",
   "camera_loss_frame": "Kamera karesi durdu. Yeniden deneyin; seçim duraklatıldı.",

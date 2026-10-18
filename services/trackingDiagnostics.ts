@@ -1,4 +1,4 @@
-import { CAMERA_TRACKING_TARGETS } from './cameraTrackingTargets';
+import { CAMERA_TRACKING_TARGETS, CAMERA_WRIST_SOURCE } from './cameraTrackingTargets';
 
 export const DIAGNOSTIC_FRAME_LIMIT = 6000;
 export const DIAGNOSTIC_DURATION_MS = 120_000;
@@ -28,6 +28,9 @@ export interface DiagnosticFrame {
   screenSize: Point;
   detectionAgeMs?: number | null;
   processingMs?: number | null;
+  /** Exact media time supplied to motion qualification, not inference completion. */
+  motionTimeMs?: number | null;
+  coordinateSource?: typeof CAMERA_WRIST_SOURCE | null;
   cursorHeld?: boolean;
   calibrationFallback?: boolean;
   headConfidence?: number | null;
@@ -40,7 +43,7 @@ let active = false;
 let started = 0;
 let startedAt = '';
 let limitReached = false;
-let frames: Array<DiagnosticFrame & { elapsedMs: number }> = [];
+const frames: Array<DiagnosticFrame & { elapsedMs: number }> = [];
 const states: Array<{ elapsedMs: number; pipeline: 'pose' | 'head'; status: DiagnosticStatus; reason?: TrackingLossReason; headConfidence?: number | null }> = [];
 const lastState = new Map<string, string>();
 let statusEventsDropped = 0;
@@ -80,6 +83,8 @@ export function recordTrackingDiagnosticFrame(frame: DiagnosticFrame) {
     sensitivity: finite(frame.sensitivity), cameraIndex: finite(frame.cameraIndex),
     videoSize: point(frame.videoSize), screenSize: point(frame.screenSize),
     detectionAgeMs: finite(frame.detectionAgeMs), processingMs: finite(frame.processingMs),
+    motionTimeMs: finite(frame.motionTimeMs),
+    coordinateSource: frame.coordinateSource === CAMERA_WRIST_SOURCE ? CAMERA_WRIST_SOURCE : null,
     cursorHeld: frame.cursorHeld === true,
     calibrationFallback: frame.calibrationFallback === true,
     headConfidence: finite(frame.headConfidence),

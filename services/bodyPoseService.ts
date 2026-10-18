@@ -47,8 +47,11 @@ import { BaselineTracker } from './recalibration';
 import { emitTrackingEvent } from './trackingTelemetry';
 import { isTrackingDiagnosticsActive, recordTrackingDiagnosticFrame, recordTrackingDiagnosticState, type TrackingLossReason } from './trackingDiagnostics';
 import { startHeadPresence, poseBelongsToHead, type HeadPresenceHandle, type HeadPresence } from './headPresence';
+import { startWristPresence, type WristPresenceHandle } from './wristPresence';
+import { CAMERA_WRIST_SOURCE, isCameraCursorTarget } from './cameraTrackingTargets';
+import { CAMERA_FRAME_STALE_MS } from './cameraFrameTiming';
 import { acquireFaceDetector } from './sharedFaceDetector';
-import { WristMotion, limitWristCursorStep, wristCursorSettled, wristSelectionDwellMs, type WristMotionResult } from './wristMotion';
+import { WristMotion, limitWristCursorStep, wristCursorSettled, wristCursorTolerance, wristSelectionDwellMs, WRIST_MOTION_REFERENCE_SIZE, type WristMotionResult } from './wristMotion';
 import { readCameraSelectionState, canActivateCameraSelection } from './cameraSelection';
 import { resolveDwellTarget } from './dwellTarget';
 
@@ -313,6 +316,7 @@ export interface PoseCalibrationData {
   wizardCompleted?: boolean;
   trackingTarget?: TrackingTarget;
   orientation?: 'landscape' | 'portrait';
+  coordinateSource?: typeof CAMERA_WRIST_SOURCE;
 }
 
 // After X-mirroring (1-normX): mirroredX maps user's physical position to screen.
@@ -348,7 +352,7 @@ export function mapPoseToScreen(
   sensitivityScale: number,
   screenW: number,
   screenH: number,
-): { x: number; y: number; rangeOK: boolean } {
+): { x: number; y: number; rangeOK: boolean; gain: { x: number; y: number } } {
   const mirroredX = 1.0 - normX;
   const rangeX = calibration.leftX - calibration.rightX;
   const rangeY = calibration.bottomY - calibration.topY;
@@ -369,7 +373,8 @@ export function mapPoseToScreen(
   rawY = centerY + (rawY - centerY) * sensitivityScale;
   rawX = Math.max(0, Math.min(screenW, rawX));
   rawY = Math.max(0, Math.min(screenH, rawY));
-  return { x: rawX, y: rawY, rangeOK };
+  return { x: rawX, y: rawY, rangeOK,
+    gain: { x: screenW * sensitivityScale / rX, y: screenH * sensitivityScale / rY } };
 }
 
 /** Pure calibration computation: 4 corner pose samples (in the order
@@ -476,17 +481,16 @@ function getOrientation(): 'landscape' | 'portrait' {
   return window.innerWidth >= window.innerHeight ? 'landscape' : 'portrait';
 }
 
-function calibrationKey(orientation?: 'landscape' | 'portrait'): string {
-  return `prism-pose-calibration-${orientation || getOrientation()}`;
+function calibrationKey(orientation?: 'landscape' | 'portrait', source?: typeof CAMERA_WRIST_SOURCE): string {
+  return `prism-${source ?? 'pose'}-calibration-${orientation || getOrientation()}`;
 }
 
 const POSE_WIZARD_COMPLETION_KEY = 'prism_pose_wizard_completed';
-const POSE_CALIBRATION_DRAFT_KEYS = [calibrationKey('portrait'), calibrationKey('landscape'), POSE_WIZARD_COMPLETION_KEY];
 const CALIBRATION_DRAFT_BUSY = 'Calibration is already in progress.';
 const CALIBRATION_DRAFT_CONFLICT = 'Saved calibration changed during setup. Cancel and reopen setup.';
 const CALIBRATION_ORIENTATION_CONFLICT = 'Screen orientation changed. Rotate back or cancel and reopen setup.';
 const CALIBRATION_DRAFT_INCOMPLETE = 'Complete calibration for the chosen wrist and orientation before saving.';
-let calibrationDraft: { original: Map<string, string | null>; pending: Map<string, string> } | null = null;
+let calibrationDraft: { original: Map<string, string | null>; pending: Map<string, string>; source?: typeof CAMERA_WRIST_SOURCE } | null = null;
 
 export interface PoseCalibrationDraft {
   commit(expectedOrientation?: 'landscape' | 'portrait', expectedTarget?: TrackingTarget): void;
@@ -495,10 +499,11 @@ export interface PoseCalibrationDraft {
 
 /** Keep preview writes in memory until setup is confirmed. Cancel, unmount
  * and reload leave the previously usable saved profiles untouched. */
-export function beginPoseCalibrationDraft(): PoseCalibrationDraft {
+export function beginPoseCalibrationDraft(source?: typeof CAMERA_WRIST_SOURCE): PoseCalibrationDraft {
   if (calibrationDraft) throw new Error(CALIBRATION_DRAFT_BUSY);
-  const draft = { original: new Map<string, string | null>(POSE_CALIBRATION_DRAFT_KEYS.map(key => [key, localStorage.getItem(key)])),
-    pending: new Map<string, string>() };
+  const keys = [calibrationKey('portrait', source), calibrationKey('landscape', source), POSE_WIZARD_COMPLETION_KEY];
+  const draft = { original: new Map<string, string | null>(keys.map(key => [key, localStorage.getItem(key)])),
+    pending: new Map<string, string>(), source };
   calibrationDraft = draft;
   return {
     rollback() { if (calibrationDraft === draft) calibrationDraft = null; },
@@ -511,14 +516,14 @@ export function beginPoseCalibrationDraft(): PoseCalibrationDraft {
       // only the current orientation, never overwrite the other saved
       // orientation with an unfinished preview from earlier in the run.
       const pending = [...draft.pending].filter(([key]) =>
-        key === calibrationKey() || key === POSE_WIZARD_COMPLETION_KEY);
+        key === calibrationKey(undefined, draft.source) || key === POSE_WIZARD_COMPLETION_KEY);
       for (const [key] of pending) {
         if (localStorage.getItem(key) !== draft.original.get(key)) throw new Error(CALIBRATION_DRAFT_CONFLICT);
       }
       if (expectedTarget) {
         // Check the exact pending record, not load() falling back to an
         // older valid profile which could mask an unfinished preview write.
-        const value = draft.pending.get(calibrationKey());
+        const value = draft.pending.get(calibrationKey(undefined, draft.source));
         let complete = false;
         try { complete = !!value && isPoseCalibrationForTarget(JSON.parse(value), expectedTarget); } catch { /* invalid draft */ }
         if (!complete) throw new Error(CALIBRATION_DRAFT_INCOMPLETE);
@@ -570,7 +575,7 @@ function isUsableCornerCalibration(c: unknown): c is PoseCalibrationData {
   return _isCalibrationUsable(c as PoseCalibrationData);
 }
 
-export function loadPoseCalibration(): PoseCalibrationData {
+export function loadPoseCalibration(source: typeof CAMERA_WRIST_SOURCE | undefined = calibrationDraft?.source): PoseCalibrationData {
   if (typeof window === 'undefined') return DEFAULT_CALIBRATION;
   // Shared NaN-defense (isValidCornerCalibration) PLUS narrow-range
   // defense (isUsableCornerCalibration). A previously-saved
@@ -581,11 +586,17 @@ export function loadPoseCalibration(): PoseCalibrationData {
   // cursor by default, and the wizard's online learner will adapt
   // from there.
   try {
-    const raw = readPoseCalibrationValue(calibrationKey());
+    const raw = readPoseCalibrationValue(calibrationKey(undefined, source));
     if (raw) {
       const parsed = JSON.parse(raw);
       if (isUsableCornerCalibration(parsed)) return parsed;
       console.warn('[PoseTracker] saved cal rejected — too narrow / invalid; using defaults');
+    }
+    // Legacy maps remain readable for inspection/other modes, but the wrist
+    // control binding below refuses them. Never reinterpret pose as hand data.
+    if (source) {
+      const old = readPoseCalibrationValue(calibrationKey());
+      if (old) { const parsed = JSON.parse(old); if (isUsableCornerCalibration(parsed)) return parsed; }
     }
     // Try legacy key
     const legacy = localStorage.getItem('prism-pose-calibration');
@@ -598,15 +609,16 @@ export function loadPoseCalibration(): PoseCalibrationData {
 }
 
 export function savePoseCalibration(data: PoseCalibrationData): void {
-  try { writePoseCalibrationValue(calibrationKey(), JSON.stringify(data)); } catch { /* */ }
+  try { writePoseCalibrationValue(calibrationKey(undefined, data.coordinateSource ?? calibrationDraft?.source), JSON.stringify(data)); } catch { /* */ }
 }
 
 function isPoseCalibrationForTarget(cal: PoseCalibrationData, target: TrackingTarget): boolean {
   return isUsableCornerCalibration(cal) && cal.wizardCompleted === true &&
-    cal.trackingTarget === target && cal.orientation === getOrientation();
+    cal.trackingTarget === target && cal.orientation === getOrientation() &&
+    (!isCameraCursorTarget(target) || cal.coordinateSource === CAMERA_WRIST_SOURCE);
 }
 export function hasPoseCalibrationForTarget(target: TrackingTarget): boolean {
-  return isPoseCalibrationForTarget(loadPoseCalibration(), target);
+  return isPoseCalibrationForTarget(loadPoseCalibration(isCameraCursorTarget(target) ? CAMERA_WRIST_SOURCE : undefined), target);
 }
 
 export function hasCalibration(orientation?: 'landscape' | 'portrait'): boolean {
@@ -751,6 +763,7 @@ export function startPoseTracker(
   let video: HTMLVideoElement | null = null;
   let cameraLease: CameraLease | null = null; // Set if we acquired via cameraStream
   let headPresence: HeadPresenceHandle | null = null;
+  let wristPresence: WristPresenceHandle | null = null;
   const wristMotion = opts.selectedTargetOnly && (opts.trackingTarget === 'left_wrist' || opts.trackingTarget === 'right_wrist') ? new WristMotion() : null;
   let lastCursorTime: number | null = null;
   let explicitCalibrationPending = false;
@@ -793,7 +806,7 @@ export function startPoseTracker(
   };
   let lastFrameTime = 0;
 
-  const loadedCal = loadPoseCalibration();
+  const loadedCal = loadPoseCalibration(wristMotion ? CAMERA_WRIST_SOURCE : undefined);
   const controlCalibrationReady = opts.calibrationMode !== 'control' || isPoseCalibrationForTarget(loadedCal, opts.trackingTarget);
   // T-2 FIX (v2) + T-5 FIX (v3): wizard flag is now stored IN the
   // calibration data (per-user on shared devices). Falls back to the
@@ -820,6 +833,7 @@ export function startPoseTracker(
   if (opts.calibrationMode === 'setup') {
     calibration.trackingTarget = opts.trackingTarget;
     calibration.orientation = getOrientation();
+    if (wristMotion) calibration.coordinateSource = CAMERA_WRIST_SOURCE;
   }
   if (isCorruptNarrow) {
     try { savePoseCalibration(calibration); } catch { /* */ }
@@ -989,6 +1003,20 @@ export function startPoseTracker(
       if (stopped) { headPresence.close(); headPresence = null; return; }
     }
 
+    if (wristMotion) {
+      try {
+        const presence = await startWristPresence();
+        if (stopped) { presence.close(); return; }
+        wristPresence = presence;
+      } catch {
+        opts.onTrackingLoss?.('detector-error');
+        recordTrackingDiagnosticState('pose', 'stopped', { reason: 'detector-error' }); opts.onStatusChange('stopped');
+        headPresence?.close(); headPresence = null;
+        cameraLease?.release(); cameraLease = null;
+        return;
+      }
+    }
+
     // Step 2: Initialize MediaPipe Pose Landmarker (and optionally FaceLandmarker for iris/gaze)
     if (opts.useEyeGaze && !opts.selectedTargetOnly) {
       // Fire-and-forget — iris blend will start as soon as it's ready;
@@ -1001,6 +1029,7 @@ export function startPoseTracker(
       console.error('[PoseTracker] Model failed to load — cursor will use pointer fallback');
       recordTrackingDiagnosticState('pose', 'stopped'); opts.onStatusChange('stopped');
       headPresence?.close(); headPresence = null;
+      wristPresence?.close(); wristPresence = null;
       cameraLease?.release(); cameraLease = null;
       return;
     }
@@ -1035,7 +1064,8 @@ export function startPoseTracker(
       let failure: TrackingLossReason = 'head-detector-error';
       let observedHead: HeadPresence | null = null;
       try {
-        const diagnosticFrameStart = isTrackingDiagnosticsActive() ? performance.now() : null;
+        const frameStartedAt = performance.now();
+        const diagnosticFrameStart = isTrackingDiagnosticsActive() ? frameStartedAt : null;
         if (opts.requireHeadPresence) {
           observedHead = headPresence!.detect(video, performance.now());
           if (observedHead.pending) return; // No inference or selection from duplicate polls.
@@ -1051,9 +1081,9 @@ export function startPoseTracker(
           if (observedHead.discontinuity) { wristMotion?.interrupt(); pauseDwell(); }
         }
         failure = 'detector-error';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         // Head and wrist must describe the SAME captured pixels. A slow head
         // verification must not authorize a later live-video pose frame.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const results = (poseLandmarker as any).detectForVideo(opts.requireHeadPresence ? headPresence!.capturedFrame : video, performance.now());
 
         let normX: number | null = null;
@@ -1213,6 +1243,18 @@ export function startPoseTracker(
           normX = null;
           normY = null;
         }
+        if (wristPresence && normX !== null && normY !== null) {
+          // The selected pose wrist can be inferred even when it is hidden.
+          // Confirm local hand pixels before publishing cursor/calibration
+          // samples. Never reuse a previous positive hand or a later live frame.
+          const measured = wristPresence.measure(opts.requireHeadPresence ? headPresence!.capturedFrame : video,
+            { x: normX, y: normY }, performance.now());
+          const stale = performance.now() - frameStartedAt >= CAMERA_FRAME_STALE_MS;
+          if (!measured || stale) {
+            lossReason = stale ? 'camera-frame-stale' : 'wrist-missing';
+            normX = null; normY = null;
+          } else { normX = measured.x; normY = measured.y; }
+        }
 
         // Eye/iris gaze blend — when useEyeGaze is requested and
         // FaceLandmarker has iris data, blend iris position with pose.
@@ -1267,8 +1309,13 @@ export function startPoseTracker(
 
         if (normX !== null && normY !== null) {
 
+          const projection = wristMotion ? {
+            gain: mapPoseToScreen(normX, normY, calibration, sensitivityScale, window.innerWidth, window.innerHeight).gain,
+            tolerancePx: wristCursorTolerance(window.innerWidth, window.innerHeight),
+          } : undefined;
+          const motionTimeMs = opts.requireHeadPresence ? headPresence!.frameTimeMs : Date.now();
           const motion = wristMotion?.update({ x: normX, y: normY },
-            opts.requireHeadPresence ? headPresence!.frameTimeMs : Date.now(), Math.max(video.videoWidth, video.videoHeight)) ?? null;
+            motionTimeMs, Math.max(video.videoWidth, video.videoHeight), projection) ?? null;
           if (motion?.rejected) {
             pauseDwell();
             opts.onMotionStateChange?.(motion);
@@ -1282,6 +1329,7 @@ export function startPoseTracker(
               calibration: [calibration.leftX, calibration.rightX, calibration.topY, calibration.bottomY], sensitivity: sensitivityScale,
               cameraIndex: 0, videoSize: [video.videoWidth, video.videoHeight], screenSize: [window.innerWidth, window.innerHeight],
               cursorHeld: true, measurementRejected: true, motionPaused: false, selectionReady: false, headConfidence: observedHead?.confidence,
+              motionTimeMs, coordinateSource: CAMERA_WRIST_SOURCE,
             });
             return; // Do not calibrate or select from an unconfirmed discontinuity.
           }
@@ -1479,6 +1527,14 @@ export function startPoseTracker(
           // visibility, so low-confidence frames smooth harder.
           const measurementConfidence = Math.max(0.05, Math.min(1, frameChosenVis));
           const previousCursor = { x: sx, y: sy };
+          if (motion && projection) {
+            // Reference camera pixels keep adaptive speed independent of the
+            // viewport, sensitivity and the user's calibrated movement range.
+            oneEuroX.setValueScale(projection.gain.x / WRIST_MOTION_REFERENCE_SIZE);
+            oneEuroY.setValueScale(projection.gain.y / WRIST_MOTION_REFERENCE_SIZE);
+            oneEuroX.setNoiseFloor(motion.noise);
+            oneEuroY.setNoiseFloor(motion.noise);
+          }
           if (!oneEuroInitialized) {
             oneEuroX.snapTo(rawX);
             oneEuroY.snapTo(rawY);
@@ -1508,8 +1564,7 @@ export function startPoseTracker(
             // half-life, so it's slow-moving and won't flap with single
             // bad frames.
             const noise = motion?.noise ?? baselineTracker.getNoiseFloor();
-            oneEuroX.setNoiseFloor(noise);
-            oneEuroY.setNoiseFloor(noise);
+            if (!motion) { oneEuroX.setNoiseFloor(noise); oneEuroY.setNoiseFloor(noise); }
 
             const now = Date.now();
             if (now - lastBaselineApplyTime > 5000) {
@@ -1554,6 +1609,7 @@ export function startPoseTracker(
               calibration: diagnosticCalibration, sensitivity: sensitivityScale, cameraIndex: 0,
               videoSize: [video.videoWidth, video.videoHeight], screenSize: [window.innerWidth, window.innerHeight],
               processingMs: diagnosticFrameStart === null ? null : performance.now() - diagnosticFrameStart,
+              motionTimeMs: motion ? motionTimeMs : null, coordinateSource: motion ? CAMERA_WRIST_SOURCE : null,
               calibrationFallback: !mapped.rangeOK,
               headConfidence: observedHead?.confidence ?? null,
               cursorHeld: motion?.held ?? false, motionPaused: cursorPaused, selectionReady, measurementRejected: false,
@@ -1637,6 +1693,7 @@ export function startPoseTracker(
       abortController.abort();
       cancelAnimationFrame(rafId);
       headPresence?.close(); headPresence = null;
+      wristPresence?.close(); wristPresence = null;
 
       // Refcounted release — only stops the stream if we were the last
       // consumer. If head-tracker is still using the same camera, the
@@ -1667,8 +1724,7 @@ export function startPoseTracker(
         throw new Error(CALIBRATION_DRAFT_CONFLICT);
       }
       if (opts.calibrationMode === 'control' &&
-          (!isUsableCornerCalibration(data) || data.wizardCompleted !== true ||
-           data.trackingTarget !== opts.trackingTarget || data.orientation !== getOrientation())) {
+          !isPoseCalibrationForTarget(data, opts.trackingTarget)) {
         throw new Error(CALIBRATION_DRAFT_CONFLICT);
       }
       const mappingChanged = data.leftX !== calibration.leftX || data.rightX !== calibration.rightX ||
@@ -1694,6 +1750,7 @@ export function startPoseTracker(
       if (opts.calibrationMode) {
         calibration.trackingTarget = opts.trackingTarget;
         calibration.orientation = getOrientation();
+        if (wristMotion) calibration.coordinateSource = CAMERA_WRIST_SOURCE;
       }
       // Wizard completion changes the running learner too, not just the
       // persisted flag. Accuracy-test neutral frames cannot shrink its range.

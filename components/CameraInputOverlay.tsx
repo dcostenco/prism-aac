@@ -59,8 +59,7 @@ export default function CameraInputOverlay() {
   const [selectionLocked, setSelectionLocked] = useState(false);
   const lockedElementRef = useRef<Element | null>(null);
   const selectionReadyRef = useRef(false);
-  const motionPausedRef = useRef(true);
-  const motionObservedAtRef = useRef(0);
+  const pauseObservedAtRef = useRef(0);
   const [activeTarget, setActiveTarget] = useState(target);
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [dwellProgress, setDwellProgress] = useState(0);
@@ -148,14 +147,13 @@ export default function CameraInputOverlay() {
       cursorSmoothing: 0.12,
       onTrackingLoss(reason) {
         if (!mounted) return;
-        setLossReason(reason); motionPausedRef.current = false; setMotionPaused(false);
+        setLossReason(reason); pauseObservedAtRef.current = 0; setMotionPaused(false);
         selectionReadyRef.current = false; setSelectionReady(false);
       },
       onMotionStateChange(motion) {
         if (!mounted) return;
-        motionPausedRef.current = motion.paused;
         selectionReadyRef.current = motion.selectionReady === true;
-        motionObservedAtRef.current = Date.now();
+        if (motion.paused && !motion.rejected) pauseObservedAtRef.current = Date.now();
         if (mounted) setMotionPaused(motion.paused);
         setSelectionReady(selectionReadyRef.current);
         if (!selectionReadyRef.current) {
@@ -233,6 +231,7 @@ export default function CameraInputOverlay() {
         if (s === 'starting' || s === 'tracking') setLossReason(null);
         if (detectedTarget) setActiveTarget(detectedTarget);
         if (s !== 'tracking') {
+          pauseObservedAtRef.current = 0;
           selectionReadyRef.current = false; setSelectionReady(false);
           if (s === 'starting' || s === 'stopped') { lockedElementRef.current = null; setSelectionLocked(false); }
           cancelAnimationFrame(rafRef.current);
@@ -250,17 +249,17 @@ export default function CameraInputOverlay() {
     enabledAtRef.current = Date.now();
     lastDwellTsRef.current = 0;
     cursorWindowRef.current = [];
-    motionObservedAtRef.current = 0;
+    pauseObservedAtRef.current = 0;
 
     // Stuck-cursor / no-interaction watchdog. Runs at 1 Hz. Two
     // failure modes auto-disable tracking + show a recovery toast:
-    //   1. NO INTERACTION — tracker has been 'tracking' for ≥ 25s
+    //   1. NO INTERACTION — tracker reached NO_INTERACTION_MS
     //      without a single onDwell. The cursor isn't reaching
     //      anything interactive (degenerate calibration, cursor
     //      mapped off-screen, calibration anchored on wrong body
     //      part). Better to disable than leave the user trapped.
-    //   2. PINNED CURSOR — every cursor sample in the last 10s
-    //      stayed within a 100×100 px box. Calibration range
+    //   2. PINNED CURSOR — samples in PIN_WINDOW_MS stayed
+    //      inside PIN_BOX_PX. Calibration range
     //      collapsed; cursor barely responds to pose movement.
     //
     // The watchdog is the CameraInput equivalent of the drift
@@ -271,28 +270,21 @@ export default function CameraInputOverlay() {
     const PIN_WINDOW_MS = 15_000;       // raised from 10s — user may sit still briefly
     const PIN_BOX_PX = 80;
     const GRACE_PERIOD_MS = 20_000;     // don't fire for 20s after tracker start — calibration just set
-    const FRESH_MOTION_MS = 1000;
     const watchdog = setInterval(() => {
       if (!mounted || readCameraSelectionState().blocked) return;
       const now = Date.now();
       // Only judge once tracker is actually tracking (not 'starting' /
       // 'lost' / 'stopped') — those have their own UX.
       if (statusRef.current !== 'tracking') return;
-      // Grace period after start — calibration was just set, cursor may
-      // appear stable while user adjusts posture. Don't fire during this window.
-      if (now - enabledAtRef.current < GRACE_PERIOD_MS) return;
+      // Observed pauses reset the same bounded grace interval, even before
+      // its first check. Polling phase must not erase legitimate rest.
+      const lastPause = pauseObservedAtRef.current <= now ? pauseObservedAtRef.current : 0;
+      const activityAt = Math.max(enabledAtRef.current, lastPause);
+      if (now - activityAt < GRACE_PERIOD_MS) return;
       // Don't fire while tutorial wizard is running (UI is captive).
       if (document.querySelector('[data-testid="tracking-setup-wizard"]')) return;
-      // A fresh measured pause intentionally holds the cursor still. It is
-      // not a collapsed calibration or evidence that the user is trapped.
-      if (motionPausedRef.current && motionObservedAtRef.current > 0 && now - motionObservedAtRef.current <= FRESH_MOTION_MS) {
-        enabledAtRef.current = now;
-        cursorWindowRef.current = [];
-        return;
-      }
-
       // 1. No interaction window
-      const sinceDwell = now - Math.max(enabledAtRef.current, lastDwellTsRef.current);
+      const sinceDwell = now - Math.max(activityAt, lastDwellTsRef.current);
       if (sinceDwell > NO_INTERACTION_MS) {
         console.warn('[camera-input] no successful interaction for ' + Math.round(sinceDwell / 1000) + 's — auto-disabling, calibration likely degenerate');
         setStuckReason('no-interaction'); setStuckToast(true);

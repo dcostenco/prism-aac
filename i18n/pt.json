@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Seu pulso está muito perto da borda da imagem da câmera. Ajuste a câmera para manter seu rosto e seu pulso em repouso visíveis, com espaço ao redor, e capture novamente. A calibração salva não foi alterada.",
   "camera_loss_head": "Rosto não verificado. Mantenha todo o rosto visível e melhore a iluminação. Seleção pausada.",
   "camera_loss_wrist": "O pulso escolhido não está visível. Mantenha-o na tela. Outra parte do corpo não será usada.",
   "camera_loss_frame": "A câmera parou de responder. Tente novamente; seleção pausada.",

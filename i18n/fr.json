@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Votre poignet est trop près du bord de l’image de la caméra. Ajustez la caméra pour que votre visage et votre poignet au repos restent visibles avec de l’espace autour, puis refaites la capture. La calibration enregistrée n’a pas changé.",
   "camera_loss_head": "Visage non vérifié. Gardez tout votre visage visible et améliorez l'éclairage. Sélection en pause.",
   "camera_loss_wrist": "Le poignet choisi n'est pas visible. Gardez-le en vue ; aucune autre partie du corps ne prendra le relais.",
   "camera_loss_frame": "Le flux de la caméra s'est arrêté. Réessayez l'accès à la caméra ; la sélection est en pause.",

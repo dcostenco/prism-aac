@@ -1040,6 +1040,8 @@ Optional camera input for users who can't reliably tap. Choose your left or righ
 
 - **One explicit wrist**: the cursor follows only the wrist you chose. If it leaves the view, the cursor pauses; another body part never takes over.
 - **Face in view**: your whole face must stay visible. When it cannot be verified, movement and selection pause.
+- **Hand in view**: the pose locates the selected wrist's region; the existing hand model measures the wrist coordinates used by the cursor and calibration. Pose-only guesses of a hidden wrist cannot move the cursor. A missed detection pauses input and resumes from fresh evidence, without repeating an already selected key. This does not enable finger/gesture control.
+- **Versioned wrist calibration**: hand-coordinate profiles are saved separately as `hand-wrist-v1`. Earlier pose profiles are retained, but camera control needs explicit setup for the new coordinate system; old coordinates are never silently reused. Cancel leaves saved profiles unchanged.
 - **Fresh, steady readings only**: selection needs a held, low-noise wrist reading from current camera frames. Stopped frames, abrupt jumps or noisy readings pause selection instead of guessing.
 - **One selection per visit**: after a key is selected, move off it before it can be selected again. The camera hold is never shorter than 1.2 s.
 - **Setup per wrist and orientation**: calibration is saved for the chosen wrist and the current screen orientation. If the screen turns after the center capture, setup asks for a fresh center before saving.
@@ -1151,6 +1153,20 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 - **Notifications** — alarm + cross-tab notification on incoming AAC chat messages.
 - **Camera input** — wrist cursor switch; it turns on only after setup for the chosen wrist in the current orientation.
 - **Camera tracking target** — Left Wrist or Right Wrist.
+
+Camera control is experimental. Narrow movement ranges and high sensitivity
+also amplify tracking noise. Automatic selection pauses when the observed
+noise is too large for the current screen mapping; a held cursor alone is not
+selection permission. After tracking loss, a far wrist position needs fresh
+confirmation. Touch, keyboard and switch input remain available. These guards
+do not establish physical-camera accuracy or compensate for every camera or
+posture movement.
+
+If neutral capture reports that your wrist is near the camera edge, adjust
+the camera framing and capture again. Setup stays open and saved calibration
+is unchanged. Center-only setup requires room around the resting wrist so
+the default movement range is not clipped or amplified. Saving a profile or
+skipping the accuracy targets does not establish camera selection accuracy.
 
 </details>
 

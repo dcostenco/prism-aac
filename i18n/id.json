@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Pergelangan tangan Anda terlalu dekat dengan tepi gambar kamera. Atur kamera agar wajah dan pergelangan tangan yang sedang beristirahat tetap terlihat dengan ruang di sekelilingnya, lalu ambil ulang. Kalibrasi tersimpan tidak berubah.",
   "camera_loss_head": "Wajah tidak terverifikasi. Arahkan seluruh wajah ke kamera dan perbaiki pencahayaan. Seleksi dijeda.",
   "camera_loss_wrist": "Pergelangan tangan tidak terlihat. Tetap arahkan ke kamera; anggota tubuh lain tidak akan menggantikan.",
   "camera_loss_frame": "Bingkai kamera terhenti. Coba lagi akses kamera; seleksi dijeda.",

@@ -9,6 +9,7 @@ import WebSignInGate from "@/components/WebSignInGate";
 import ApplePurchaseRecovery from "@/components/ApplePurchaseRecovery";
 import { PRISM_AAC_MANIFEST_PATH } from "@/lib/appPaths";
 import { buildServiceWorkerKillswitchScript } from "@/lib/serviceWorkerKillswitch";
+import { CAMERA_WRIST_SOURCE } from "@/services/cameraTrackingTargets";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 
@@ -75,6 +76,7 @@ const trackingResetScript = `
         var k = window.localStorage.key(i);
         if (k && (k === 'prism-head-calibration' ||
                   k === 'prism-pose-calibration' ||
+                  k.indexOf('prism-${CAMERA_WRIST_SOURCE}-calibration-') === 0 ||
                   k.indexOf('prism-pose-calibration-') === 0)) {
           keysToRemove.push(k);
         }

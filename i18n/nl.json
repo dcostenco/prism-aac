@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Uw pols is te dicht bij de rand van het camerabeeld. Stel de camera zo in dat uw gezicht en rustende pols zichtbaar blijven met ruimte eromheen en leg opnieuw vast. De opgeslagen kalibratie is niet gewijzigd.",
   "camera_loss_head": "Gezicht niet herkend. Houd uw hele gezicht in beeld en verbeter het licht. Selecteren is gepauzeerd.",
   "camera_loss_wrist": "Gekozen pols niet zichtbaar. Blijf in beeld; een ander lichaamsdeel neemt het niet over.",
   "camera_loss_frame": "Camerabeeld gestopt. Probeer opnieuw; selecteren is gepauzeerd.",

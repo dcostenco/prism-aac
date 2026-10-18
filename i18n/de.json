@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Ihr Handgelenk ist zu nah am Rand des Kamerabilds. Richten Sie die Kamera so aus, dass Ihr Gesicht und das ruhende Handgelenk mit Platz ringsum sichtbar bleiben, und erfassen Sie erneut. Die gespeicherte Kalibrierung wurde nicht geändert.",
   "camera_loss_head": "Gesicht nicht erkannt. Ganzes Gesicht im Bild halten und Licht verbessern. Auswahl pausiert.",
   "camera_loss_wrist": "Gewähltes Handgelenk nicht sichtbar. Im Bild halten; andere Körperteile übernehmen nicht.",
   "camera_loss_frame": "Kamerabild gestoppt. Zugriff erneut versuchen; Auswahl pausiert.",

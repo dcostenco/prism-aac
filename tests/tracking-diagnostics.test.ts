@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DiagnosticFrame } from '@/services/trackingDiagnostics';
+import { CAMERA_WRIST_SOURCE } from '@/services/cameraTrackingTargets';
 
 let recorder: typeof import('@/services/trackingDiagnostics');
 const FRAME: DiagnosticFrame = {
@@ -45,6 +46,14 @@ describe('opt-in local tracking evidence', () => {
     expect(report).not.toContain('secret');
     expect(JSON.parse(report).frames[0].target).toBe('unknown');
   });
+  it('identifies the versioned hand coordinate source without accepting arbitrary labels', () => {
+    recorder.startTrackingDiagnostics();
+    recorder.recordTrackingDiagnosticFrame({ ...FRAME, coordinateSource: CAMERA_WRIST_SOURCE });
+    recorder.recordTrackingDiagnosticFrame({ ...FRAME, coordinateSource: 'private arbitrary text' } as unknown as DiagnosticFrame);
+    const report = recorder.trackingDiagnosticReport();
+    expect(JSON.parse(report).frames.map((f: DiagnosticFrame) => f.coordinateSource)).toEqual([CAMERA_WRIST_SOURCE, null]);
+    expect(report).not.toContain('private arbitrary text');
+  });
   it('snapshots values and encodes invalid numbers explicitly as null', () => {
     recorder.startTrackingDiagnostics();
     const frame = { ...FRAME, rawNorm: [NaN, Infinity] as const, calibration: [...FRAME.calibration] };
@@ -53,6 +62,15 @@ describe('opt-in local tracking evidence', () => {
     const captured = JSON.parse(recorder.trackingDiagnosticReport()).frames[0];
     expect(captured.rawNorm).toEqual([null, null]);
     expect(captured.calibration[0]).toBe(0.6);
+  });
+  it('retains only finite captured-media timestamps, independently of inference time', () => {
+    recorder.recordTrackingDiagnosticFrame({ ...FRAME, motionTimeMs: 1000 });
+    expect(recorder.trackingDiagnosticStatus().frames).toBe(0);
+    recorder.startTrackingDiagnostics();
+    for (const motionTimeMs of [1000, NaN, Infinity]) recorder.recordTrackingDiagnosticFrame({ ...FRAME, motionTimeMs, processingMs: 190 });
+    const frames = JSON.parse(recorder.trackingDiagnosticReport()).frames;
+    expect(frames.map((f: { motionTimeMs: number | null }) => f.motionTimeMs)).toEqual([1000, null, null]);
+    expect(frames.every((f: { processingMs: number }) => f.processingMs === 190)).toBe(true);
   });
   it('retains a failed tracking session with no points and rejects arbitrary status text', () => {
     recorder.startTrackingDiagnostics();

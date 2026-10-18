@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Nadgarstek znajduje się zbyt blisko krawędzi obrazu z kamery. Ustaw kamerę tak, aby twarz i nadgarstek w spoczynku pozostawały widoczne z wolną przestrzenią wokół, a następnie wykonaj przechwycenie ponownie. Zapisana kalibracja nie została zmieniona.",
   "camera_loss_head": "Brak weryfikacji twarzy. Pokaż całą twarz i popraw oświetlenie. Wybór wstrzymany.",
   "camera_loss_wrist": "Nie widać wybranego nadgarstka. Trzymaj go w kadrze. Inna część ciała go nie zastąpi.",
   "camera_loss_frame": "Obraz z kamery zatrzymał się. Spróbuj ponownie. Wybór wstrzymany.",

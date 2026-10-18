@@ -12,11 +12,80 @@ const NOISE_CASES = SEEDS.flatMap(seed => [4.5, 6, 15].flatMap(fps => [0.003, 0.
   [0, 0.6].map(correlation => ({ seed, fps, sigma, correlation })))));
 const DEFAULT_DWELL_MS = 1200;
 const OBSERVATION_MS = 20_000;
+const RECOVERY_JUMP = 0.12;
+const RECOVERY_INTERRUPTS = ['explicit loss', 'stale gap'] as const;
+const SCREEN_GAINS = [1280 / 0.7, 1280 / 0.1, 1280 / 0.02];
+const SCREEN_TOLERANCE_PX = Math.hypot(1280, 720) * 0.004;
+const SLOW_SCREEN_SPEED_PX_PER_SECOND = 8;
+const SCREEN_TEST_FPS = [4.5, 15];
+const REAL_PROFILE_GAINS = [0.05, 0.1, 0.7].flatMap(range => [0.2, 2].map(scale => 1280 * scale / range));
+const NOISY_TRAVEL_CASES = REAL_PROFILE_GAINS.flatMap(gain => SCREEN_TEST_FPS.flatMap(fps =>
+  [0, 0.6].flatMap(correlation => SEEDS.map(seed => ({ gain, fps, correlation, seed })))));
+const NOISE_BOUNDARY_FRACTIONS = [0.3, 0.5, 0.6, 0.7, 0.9];
 function point(i: number, drift: number, jitter = 0) {
   return { x: 0.5 + drift * i * FRAME_MS / DRIFT_DURATION + (i % 2 ? jitter : -jitter),
     y: 0.5 + (i % 2 ? jitter : -jitter) };
 }
 describe.each(DRIFTS)('wrist motion at drift=%s', drift => {
+  it.each(NOISY_TRAVEL_CASES)('cannot complete a selectable pause during noisy slow screen travel: %j', ({ gain, fps, correlation, seed }) => {
+    // Include modest noise and the formerly unsafe near-limit boundary.
+    for (const fraction of NOISE_BOUNDARY_FRACTIONS) {
+      const gate = new WristMotion(); let readyStart: number | null = null, longest = 0;
+      const sigma = fraction * Math.min(WRIST_SELECTION_NOISE_CEILING, SCREEN_TOLERANCE_PX / gain);
+      const travel = SLOW_SCREEN_SPEED_PX_PER_SECOND * DRIFT_DURATION / 1000 / gain;
+      const next = wristNoise(seed, fps, sigma, correlation, travel);
+      for (let sample = next(); sample.time < OBSERVATION_MS; sample = next()) {
+        const result = gate.update({ x: sample.point.x + drift, y: sample.point.y }, sample.time, CAMERA_WIDTH,
+          { gain: { x: gain, y: gain }, tolerancePx: SCREEN_TOLERANCE_PX });
+        if (result.selectionReady) { readyStart ??= sample.time; longest = Math.max(longest, sample.time - readyStart); }
+        else readyStart = null;
+      }
+      expect(longest, `noise budget fraction ${fraction}`).toBeLessThan(DEFAULT_DWELL_MS);
+    }
+  });
+  it.each(SCREEN_GAINS.flatMap(gain => SCREEN_TEST_FPS.map(fps => ({ gain, fps }))))('does not call continuing slow screen travel a selectable pause: %j', ({ gain, fps }) => {
+    const gate = new WristMotion(); let readyStart: number | null = null, longest = 0;
+    for (let i = 0; i < fps * 10; i++) {
+      const time = (i + 1) * 1000 / fps;
+      const result = gate.update({ x: 0.5 + drift + SLOW_SCREEN_SPEED_PX_PER_SECOND * time / 1000 / gain, y: 0.5 }, time, CAMERA_WIDTH,
+        { gain: { x: gain, y: gain }, tolerancePx: SCREEN_TOLERANCE_PX });
+      if (result.selectionReady) { readyStart ??= time; longest = Math.max(longest, time - readyStart); }
+      else readyStart = null;
+    }
+    expect(longest).toBeLessThan(DEFAULT_DWELL_MS); // Cannot finish an automatic selection while deliberately moving.
+  });
+  it.each(SCREEN_GAINS)('allows selection when projected camera noise is within the pixel budget, gain=%s', gain => {
+    const sigma = Math.min(0.003, 1 / gain);
+    const gate = new WristMotion(), next = wristNoise(SEEDS[0], 15, sigma, 0.6, 0);
+    let selected = 0;
+    for (let sample = next(); sample.time < OBSERVATION_MS; sample = next()) {
+      const result = gate.update({ x: sample.point.x + drift, y: sample.point.y }, sample.time, CAMERA_WIDTH,
+        { gain: { x: gain, y: gain }, tolerancePx: SCREEN_TOLERANCE_PX });
+      if (result.selectionReady) selected++;
+    }
+    expect(selected).toBeGreaterThan(0); // Precision-qualified input remains selectable at every mapping.
+  });
+  it.each(SCREEN_GAINS)('withholds automatic selection across the above-budget noise band, gain=%s', gain => {
+    for (const factor of [1.1, 1.5, 3]) {
+      const gate = new WristMotion(), next = wristNoise(SEEDS[0], 15, factor * SCREEN_TOLERANCE_PX / gain, 0.6, 0);
+      let aboveBudgetFrames = 0;
+      const noiseLimit = Math.min(WRIST_SELECTION_NOISE_CEILING, SCREEN_TOLERANCE_PX / gain);
+      const observed: Array<{ time: number; noise: number }> = [];
+      for (let sample = next(); sample.time < OBSERVATION_MS; sample = next()) {
+        const result = gate.update({ x: sample.point.x + drift, y: sample.point.y }, sample.time, CAMERA_WIDTH,
+          { gain: { x: gain, y: gain }, tolerancePx: SCREEN_TOLERANCE_PX });
+        observed.push({ time: sample.time, noise: result.noise });
+        const recentNoise = observed.filter(p => sample.time - p.time <= 2000).slice(-40);
+        // Seeded distribution sigma is not an oracle for every finite window.
+        // The contract concerns the noise actually measured in that window.
+        if (recentNoise.some(p => p.noise > noiseLimit)) {
+          aboveBudgetFrames++;
+          expect(result.selectionReady).toBe(false);
+        }
+      }
+      expect(aboveBudgetFrames).toBeGreaterThan(20);
+    }
+  });
   it.each(NOISE_CASES)('withholds automatic selection during departure from an established rested cursor: %j', ({ seed, fps, sigma, correlation }) => {
     const gate = new WristMotion(), next = wristNoise(seed, fps, sigma, correlation, drift);
     let latchAt: number | null = null, released = false;
@@ -120,6 +189,31 @@ describe.each(DRIFTS)('wrist motion at drift=%s', drift => {
     expect(Math.hypot(jump.point.x - last!.point.x, jump.point.y - last!.point.y)).toBeLessThan(0.001);
     const next = gate.update(point(21, drift), 21 * FRAME_MS, CAMERA_WIDTH);
     expect(next.rejected).toBe(false); expect(next.noise).toBeLessThan(0.001);
+  });
+  it.each(RECOVERY_INTERRUPTS)('does not promote an isolated recovery outlier to the trusted position after %s', interruption => {
+    const gate = new WristMotion(); let last;
+    const resting = { x: 0.5 + drift, y: 0.5 };
+    for (let i = 0; i < 30; i++) last = gate.update(resting, i * FRAME_MS, CAMERA_WIDTH);
+    if (interruption === 'explicit loss') gate.interrupt();
+    const recoveryTime = 30 * FRAME_MS + (interruption === 'stale gap' ? 600 : 0);
+    const outlier = gate.update({ x: resting.x + RECOVERY_JUMP, y: resting.y }, recoveryTime, CAMERA_WIDTH);
+    expect(outlier.rejected).toBe(true);
+    expect(outlier.point.x).toBeCloseTo(last!.point.x);
+    const recovered = gate.update(resting, recoveryTime + FRAME_MS, CAMERA_WIDTH);
+    expect(recovered.rejected).toBe(false);
+    expect(recovered.point.x).toBeCloseTo(resting.x);
+    expect(recovered.selectionReady).toBe(false); // Lost time never counts toward a new selection.
+  });
+  it('can reacquire a genuinely moved wrist after loss once two fresh observations agree', () => {
+    const gate = new WristMotion();
+    for (let i = 0; i < 30; i++) gate.update({ x: 0.5 + drift, y: 0.5 }, i * FRAME_MS, CAMERA_WIDTH);
+    gate.interrupt();
+    const moved = { x: 0.5 + drift + RECOVERY_JUMP, y: 0.5 };
+    expect(gate.update(moved, 30 * FRAME_MS, CAMERA_WIDTH).rejected).toBe(true);
+    const confirmed = gate.update(moved, 31 * FRAME_MS, CAMERA_WIDTH);
+    expect(confirmed.rejected).toBe(false);
+    expect(confirmed.point.x).toBeCloseTo(moved.x);
+    expect(confirmed.selectionReady).toBe(false);
   });
   it('lets a confirmed large deliberate step through within two frames', () => {
     const gate = new WristMotion();

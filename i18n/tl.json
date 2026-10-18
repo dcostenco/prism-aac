@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Masyadong malapit ang iyong pulsuhan sa gilid ng kuha ng kamera. Ayusin ang kamera upang manatiling nakikita ang mukha at nakapahingang pulsuhan, na may puwang sa paligid, at kumuha muli. Hindi nagbago ang naka-save na pagkakalibrate.",
   "camera_loss_head": "Hindi makita ang mukha. Iharap ang buong mukha at liwanagan ang paligid. Naka-pause ang pagpili.",
   "camera_loss_wrist": "Hindi nakikita ang napiling pulso. Ipakita ito sa camera; hindi ito papalitan ng ibang bahagi ng katawan.",
   "camera_loss_frame": "Huminto ang camera. Subukang muli; naka-pause ang pagpili.",

@@ -2,11 +2,12 @@ import { expect, test } from '@playwright/test';
 import { installPhotographicCamera } from './helpers/photographic-camera-fixture';
 import { safeScreenshot } from './helpers/screenshot-validation';
 
+const FRAMED_SUBJECT_SCALE = 0.65;
 test.use({ serviceWorkers: 'block', browserName: 'chromium' });
 test.afterEach(async ({ page, context }) => { await page.close(); await context.close(); });
 test('ordinary wrist setup and head-loss recovery use real models with a photographic camera source', async ({ page, baseURL }, info) => {
   test.setTimeout(120_000);
-  await installPhotographicCamera(page, baseURL, info);
+  await installPhotographicCamera(page, baseURL, info, { initialScale: FRAMED_SUBJECT_SCALE });
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/prism-aac');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();

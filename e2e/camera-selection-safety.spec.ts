@@ -3,11 +3,13 @@ import { installPhotographicCamera } from './helpers/photographic-camera-fixture
 import { safeScreenshot } from './helpers/screenshot-validation';
 
 const JITTER_PX = 24;
+const FRAMED_SUBJECT_SCALE = 0.65;
+const DRIFT = 0.015;
 test.use({ serviceWorkers: 'block', browserName: 'chromium' });
 test.afterEach(async ({ page, context }) => { await page.close(); await context.close(); });
 test('uncertain real-model camera readings keep manual communication available', async ({ page, baseURL }, info) => {
   test.setTimeout(120_000);
-  await installPhotographicCamera(page, baseURL, info);
+  await installPhotographicCamera(page, baseURL, info, { initialScale: FRAMED_SUBJECT_SCALE, drift: DRIFT, subject: 'wrist' });
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/prism-aac');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
@@ -22,8 +24,25 @@ test('uncertain real-model camera readings keep manual communication available',
   await page.getByTestId('tracking-confirm').click();
   await page.getByRole('button', { name: 'Close settings', exact: true }).click();
   await page.reload();
+  // Keep numerical evidence from the actual SDK/control path when readiness
+  // fails. Opt in through the same trusted UI action as a person would use.
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
+  await page.getByTestId('tracking-diagnostics').locator('summary').click();
+  await page.getByTestId('tracking-diagnostics-start').click();
+  await page.getByRole('button', { name: 'Close settings', exact: true }).click();
   const overlay = page.getByTestId('camera-input-overlay');
-  await expect(overlay).toHaveAttribute('data-selection-ready', 'true', { timeout: 30_000 });
+  try {
+    await expect(overlay).toHaveAttribute('data-selection-ready', 'true', { timeout: 30_000 });
+  } catch (error) {
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();
+    await page.getByTestId('tracking-diagnostics').locator('summary').click();
+    const pending = page.waitForEvent('download');
+    await page.getByTestId('tracking-diagnostics-save').click();
+    await (await pending).saveAs(info.outputPath('selection-readiness-diagnostic.json'));
+    throw error;
+  }
   await expect(page.getByTestId('camera-input-status')).toContainText('1.2 seconds');
   await page.evaluate(jitterPx => { (window as unknown as { cameraMvpPhoto: { jitterPx: number } }).cameraMvpPhoto.jitterPx = jitterPx; }, JITTER_PX);
   await expect(overlay).toHaveAttribute('data-selection-ready', 'false', { timeout: 15_000 });

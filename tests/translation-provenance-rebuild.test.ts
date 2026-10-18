@@ -115,6 +115,17 @@ describe('rebuilding the translation provenance', () => {
     expect(JSON.parse(fs.readFileSync(TRACKED, 'utf-8')).surfaces).toEqual(before);
   });
 
+  it('keeps framing guidance attributed to an unreviewed host draft in every translated locale', () => {
+    const key = 'tracking_setup_frame_guide';
+    const matrix = JSON.parse(fs.readFileSync(path.join(ROOT, 'i18n', 'translations.json'), 'utf-8'));
+    for (const lang of Object.keys(matrix[key]).filter(lang => lang !== 'en')) {
+      expect(before.ui[lang].generatorById?.[key]?.generator).toBe('host-ai-draft');
+      expect(after.ui[lang].generatorById?.[key]).toEqual(before.ui[lang].generatorById?.[key]);
+      expect(after.ui[lang].unreviewed).toContain(key);
+      expect(after.ui[lang].reviewed).not.toContain(key);
+    }
+  });
+
   it('retains accuracy-status draft origins and placeholders without certifying translations', () => {
     const matrix = JSON.parse(fs.readFileSync(path.join(ROOT, 'i18n', 'translations.json'), 'utf-8'));
     for (const lang of Object.keys(matrix.tracking_accuracy_unverified).filter(lang => lang !== 'en')) {

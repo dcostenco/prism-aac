@@ -22,6 +22,8 @@ export const CAMERA_TRACKING_TARGETS: Array<{
 // Product scope, not a hardware capability claim. Finger control remains
 // unavailable until the dedicated hand detector is wired and qualified.
 export const HEAD_CURSOR_AVAILABLE = false;
+// Coordinate-system binding, not a model accuracy or release claim.
+export const CAMERA_WRIST_SOURCE = 'hand-wrist-v1' as const;
 const WRIST_CURSOR_TARGETS = new Set(['left_wrist', 'right_wrist']);
 export function isCameraCursorTarget(target: string): boolean {
   return WRIST_CURSOR_TARGETS.has(target);

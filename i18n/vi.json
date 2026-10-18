@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Cổ tay của bạn quá gần mép hình ảnh camera. Hãy điều chỉnh camera để khuôn mặt và cổ tay đang thả lỏng luôn nằm trong hình với khoảng trống xung quanh, rồi chụp lại. Hiệu chỉnh đã lưu không thay đổi.",
   "camera_loss_head": "Không xác minh được khuôn mặt. Giữ toàn bộ khuôn mặt trong khung hình và tăng ánh sáng. Đã tạm dừng chọn.",
   "camera_loss_wrist": "Không thấy cổ tay đã chọn. Hãy giữ cổ tay trong khung hình; bộ phận khác sẽ không thay thế.",
   "camera_loss_frame": "Máy ảnh ngừng phản hồi. Thử lại máy ảnh; đã tạm dừng chọn.",

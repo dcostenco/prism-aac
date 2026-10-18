@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Tu muñeca está demasiado cerca del borde de la imagen de la cámara. Ajusta la cámara para que tu cara y tu muñeca en reposo permanezcan visibles con espacio alrededor y vuelve a capturar. La calibración guardada no ha cambiado.",
   "camera_loss_head": "Rostro no verificado. Mantén toda la cara a la vista y mejora la luz. Selección pausada.",
   "camera_loss_wrist": "La muñeca elegida no se ve. Mantenla a la vista; otra parte del cuerpo no la sustituirá.",
   "camera_loss_frame": "Cámara detenida. Reintenta el acceso; selección pausada.",

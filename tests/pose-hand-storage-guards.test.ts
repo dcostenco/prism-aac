@@ -12,6 +12,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   hasCalibration,
+  loadPoseCalibration,
   beginPoseCalibrationDraft,
   hasPoseCalibrationForTarget,
   markPoseWizardCompleted,
@@ -22,6 +23,7 @@ import {
   subscribePoseSamples,
 } from '@/services/bodyPoseService';
 import { saveProfiles, loadProfiles } from '@/services/handProfileService';
+import { CAMERA_WRIST_SOURCE } from '@/services/cameraTrackingTargets';
 
 const PORTRAIT_KEY = 'prism-pose-calibration-portrait';
 const LANDSCAPE_KEY = 'prism-pose-calibration-landscape';
@@ -154,11 +156,12 @@ describe('pose calibration draft', () => {
   it('commits a completed matching binding and keeps the other orientation unchanged', () => {
     const other = JSON.stringify(PROFILE);
     localStorage.setItem(LANDSCAPE_KEY, other);
-    const finished = { ...PROFILE, wizardCompleted: true, trackingTarget: 'right_wrist' as const, orientation: 'portrait' as const };
-    const draft = beginPoseCalibrationDraft();
+    const finished = { ...PROFILE, wizardCompleted: true, trackingTarget: 'right_wrist' as const, orientation: 'portrait' as const, coordinateSource: CAMERA_WRIST_SOURCE };
+    const draft = beginPoseCalibrationDraft(CAMERA_WRIST_SOURCE);
     savePoseCalibration(finished);
     draft.commit('portrait', 'right_wrist');
-    expect(localStorage.getItem(PORTRAIT_KEY)).toBe(JSON.stringify(finished));
+    expect(localStorage.getItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-portrait`)).toBe(JSON.stringify(finished));
+    expect(localStorage.getItem(PORTRAIT_KEY)).toBeNull();
     expect(localStorage.getItem(LANDSCAPE_KEY)).toBe(other);
     expect(hasPoseCalibrationForTarget('right_wrist')).toBe(true);
   });
@@ -168,7 +171,7 @@ describe('pose calibration draft', () => {
     localStorage.setItem(LEGACY_KEY, previous);
     const draft = beginPoseCalibrationDraft();
     savePoseCalibration({ ...PROFILE, leftX: 0.201 });
-    expect(hasPoseCalibrationForTarget('right_wrist')).toBe(true); // load() falls back, not the record being committed.
+    expect(hasPoseCalibrationForTarget('right_wrist')).toBe(false); // A legacy pose record cannot authorize hand coordinates.
     try {
       expect(() => draft.commit('portrait', 'right_wrist')).toThrow(/Complete calibration/);
       expect(localStorage.getItem(PORTRAIT_KEY)).toBeNull();
@@ -254,6 +257,30 @@ describe('pose calibration draft', () => {
     old.rollback();
     newer.commit();
     expect(JSON.parse(localStorage.getItem(PORTRAIT_KEY)!)).toEqual(PROFILE);
+  });
+});
+
+describe.each([0, 0.003, 0.015])('hand coordinate calibration binding, offset=%s', offset => {
+  it('keeps old pose bytes, rejects their control binding, and commits only the explicit hand draft', () => {
+    localStorage.clear(); setPortrait();
+    const legacy = { ...PROFILE, leftX: PROFILE.leftX + offset, rightX: PROFILE.rightX + offset,
+      wizardCompleted: true, trackingTarget: 'right_wrist' as const, orientation: 'portrait' as const };
+    const bytes = JSON.stringify(legacy); localStorage.setItem(PORTRAIT_KEY, bytes);
+    expect(hasPoseCalibrationForTarget('right_wrist')).toBe(false);
+    expect(loadPoseCalibration(CAMERA_WRIST_SOURCE)).toEqual(legacy); // Inspection only, never usable control.
+    expect(localStorage.getItem(PORTRAIT_KEY)).toBe(bytes);
+    const draft = beginPoseCalibrationDraft(CAMERA_WRIST_SOURCE);
+    const hand = { ...legacy, coordinateSource: CAMERA_WRIST_SOURCE };
+    savePoseCalibration(hand);
+    expect(localStorage.getItem(`prism-${CAMERA_WRIST_SOURCE}-calibration-portrait`)).toBeNull();
+    draft.commit('portrait', 'right_wrist');
+    expect(hasPoseCalibrationForTarget('right_wrist')).toBe(true);
+    expect(loadPoseCalibration(CAMERA_WRIST_SOURCE)).toEqual(hand);
+    expect(localStorage.getItem(PORTRAIT_KEY)).toBe(bytes);
+    const canceled = beginPoseCalibrationDraft(CAMERA_WRIST_SOURCE);
+    savePoseCalibration({ ...hand, leftX: hand.leftX + 0.01 }); canceled.rollback();
+    expect(loadPoseCalibration(CAMERA_WRIST_SOURCE)).toEqual(hand);
+    expect(localStorage.getItem(PORTRAIT_KEY)).toBe(bytes);
   });
 });
 

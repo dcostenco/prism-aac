@@ -2,6 +2,7 @@
  * intention or a diagnosis. It never changes calibration or tracking source. */
 import { CAMERA_FRAME_STALE_MS } from './cameraFrameTiming';
 export interface WristPoint { x: number; y: number }
+export interface WristProjection { gain: WristPoint; tolerancePx: number }
 interface Sample extends WristPoint { time: number }
 export interface WristMotionResult {
   point: WristPoint;
@@ -30,7 +31,7 @@ const AXES = ['x', 'y'] as const;
 const CONFIRM_NOISE_MULTIPLIER = 2;
 const CONFIRM_FLOOR = 0.008;
 const PIXEL_FRACTION = 0.5;
-const NOISE_REFERENCE_SIZE = 320;
+export const WRIST_MOTION_REFERENCE_SIZE = 320;
 const PAUSE_ESCAPE_NOISE_MULTIPLIER = 3;
 const NORMAL_IQR = 1.349;
 const DIFFERENCE_IQR_TO_SIGMA = 1 / (NORMAL_IQR * Math.SQRT2);
@@ -58,8 +59,11 @@ export function limitWristCursorStep(previous: WristPoint, next: WristPoint, ela
   return { x: previous.x + (next.x - previous.x) * limit / amount,
     y: previous.y + (next.y - previous.y) * limit / amount, limited: true };
 }
+export function wristCursorTolerance(width: number, height: number): number {
+  return Math.max(2, Math.hypot(width, height) * CURSOR_SETTLE_DIAGONAL_FRACTION);
+}
 export function wristCursorSettled(cursor: WristPoint, target: WristPoint, width: number, height: number): boolean {
-  return distance(cursor, target) <= Math.max(2, Math.hypot(width, height) * CURSOR_SETTLE_DIAGONAL_FRACTION);
+  return distance(cursor, target) <= wristCursorTolerance(width, height);
 }
 
 function quantile(values: number[], fraction: number): number {
@@ -69,6 +73,8 @@ function quantile(values: number[], fraction: number): number {
   return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
 }
 const distance = (a: WristPoint, b: WristPoint) => Math.hypot(a.x - b.x, a.y - b.y);
+const projectedDistance = (a: WristPoint, b: WristPoint, projection: WristProjection) =>
+  Math.hypot((a.x - b.x) * projection.gain.x, (a.y - b.y) * projection.gain.y);
 const center = (samples: Sample[]): WristPoint => ({
   x: (quantile(samples.map(p => p.x), 0.25) + quantile(samples.map(p => p.x), 0.75)) / 2,
   y: (quantile(samples.map(p => p.y), 0.25) + quantile(samples.map(p => p.y), 0.75)) / 2,
@@ -102,16 +108,21 @@ export class WristMotion {
   private quality: Array<{ time: number; noise: number }> = [];
 
   /** Break pause continuity on any lost/unobserved frame. Retain the measured
-   * noise history; losing tracking is not evidence that tremor disappeared. */
+   * noise history and last accepted position. Losing tracking is neither
+   * evidence that tremor disappeared nor permission to trust a far first
+   * recovery sample. A genuine displacement can still confirm in two frames. */
   interrupt(): void {
-    this.accepted = []; this.previous = null; this.candidate = null; this.latch = null;
+    this.accepted = []; this.candidate = null; this.latch = null;
     this.lastTime = null;
   }
 
-  update(point: WristPoint, time: number, cameraLongSide: number): WristMotionResult {
+  update(point: WristPoint, time: number, cameraLongSide: number, projection?: WristProjection): WristMotionResult {
     const empty = (): WristMotionResult => ({ point: this.previous ?? point, noise: this.noise,
       paused: false, selectionReady: false, held: true, rejected: true });
     if (![point.x, point.y, time].every(Number.isFinite) || point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) {
+      const result = empty(); this.interrupt(); return result;
+    }
+    if (projection && ![projection.gain.x, projection.gain.y, projection.tolerancePx].every(value => Number.isFinite(value) && value > 0)) {
       const result = empty(); this.interrupt(); return result;
     }
     if (this.lastTime !== null && time <= this.lastTime) { const result = empty(); this.interrupt(); return result; }
@@ -122,7 +133,7 @@ export class WristMotion {
     this.raw.push(sample);
     this.raw = this.raw.filter(p => time - p.time <= HISTORY_MS).slice(-MAX_SAMPLES);
     this.measureNoise();
-    const pixelFloor = PIXEL_FRACTION / Math.max(1, Math.min(NOISE_REFERENCE_SIZE, cameraLongSide));
+    const pixelFloor = PIXEL_FRACTION / Math.max(1, Math.min(WRIST_MOTION_REFERENCE_SIZE, cameraLongSide));
     const jumpLimit = Math.min(JUMP_CEILING, Math.max(JUMP_FLOOR, JUMP_SPEED * dt / 1000, this.noise * NOISE_JUMP_MULTIPLIER));
     if (this.previous && distance(sample, this.previous) > jumpLimit) {
       const consistent = this.candidate && distance(sample, this.candidate) <= Math.max(CONFIRM_FLOOR, this.noise * CONFIRM_NOISE_MULTIPLIER);
@@ -159,8 +170,12 @@ export class WristMotion {
     this.quality = this.quality.map(p => p.time > time ? { ...p, time } : p)
       .filter(p => time - p.time <= HISTORY_MS).slice(-MAX_SAMPLES);
     const intervals = this.accepted.slice(1).map((p, i) => p.time - this.accepted[i].time);
+    // A quiet camera-space reading can still be many screen pixels at high
+    // calibration gain. Such input is cursor feedback, not selection proof.
+    const noiseLimit = projection ? Math.min(WRIST_SELECTION_NOISE_CEILING,
+      projection.tolerancePx / Math.max(projection.gain.x, projection.gain.y)) : WRIST_SELECTION_NOISE_CEILING;
     const trustedMeasurement = time - this.accepted[0].time >= MIN_WRIST_SELECTION_MS &&
-      this.quality.every(p => p.noise <= WRIST_SELECTION_NOISE_CEILING) &&
+      this.quality.every(p => p.noise <= noiseLimit) &&
       quantile(intervals, 0.5) <= MAX_SELECTION_MEDIAN_INTERVAL_MS;
     // Enter cautiously; once resting, do not reset dwell on an ordinary
     // noise excursion or a shrinking estimate. Directed travel still escapes
@@ -168,15 +183,16 @@ export class WristMotion {
     const pauseNoise = Math.max(this.noise, this.latch ? this.latchNoise : 0);
     const noiseMultiplier = this.latch ? PAUSE_EXIT_NOISE_MULTIPLIER : PAUSE_ENTER_NOISE_MULTIPLIER;
     let paused = ready && travel <= Math.max(pixelFloor * span / PAUSE_WINDOW_MS, pauseNoise * noiseMultiplier);
-    if (paused && this.directedTravel(pixelFloor)) paused = false;
+    if (paused && this.directedTravel(pixelFloor, projection)) paused = false;
     // A small coherent movement must eventually escape the rest latch even
     // when each individual step is below the measured jitter envelope.
     if (paused && this.latch && distance(center(recent), this.latch) > Math.max(pixelFloor * 4, pauseNoise * PAUSE_ESCAPE_NOISE_MULTIPLIER)) paused = false;
     // A noisy motion can latch an intermediate point. Once a whole fresh
     // low-noise window settles elsewhere, that old wide envelope cannot keep
     // authorizing the stale anchor. Release it without selecting this frame.
-    if (paused && this.latch && trustedMeasurement &&
-        distance(center(recent), this.latch) > Math.max(pixelFloor * 4, this.noise * PAUSE_ESCAPE_NOISE_MULTIPLIER)) paused = false;
+    if (paused && this.latch && trustedMeasurement && (projection
+      ? projectedDistance(center(recent), this.latch, projection) > projection.tolerancePx
+      : distance(center(recent), this.latch) > Math.max(pixelFloor * 4, this.noise * PAUSE_ESCAPE_NOISE_MULTIPLIER))) paused = false;
     if (paused && !this.latch) { this.latch = center(recent); this.latchNoise = this.noise; }
     if (!paused) this.latch = null;
     const stable = this.latch ?? (this.accepted.length >= 3 ? {
@@ -185,7 +201,15 @@ export class WristMotion {
     } : point);
     // Fail closed outside the supported low-noise envelope. Do not infer
     // intent from a rest latch, or from a momentarily shrinking noise estimate.
-    const selectionReady = paused && trustedMeasurement;
+    // Noise raises the statistical escape threshold above slow purposeful
+    // travel. Do not let that authorize a click: the measured trend itself
+    // must stay within the screen tolerance over a complete target hold.
+    // Keep this separate from the physical rest latch so ordinary tremor
+    // does not force the displayed cursor to chase each noisy observation.
+    const selectionTravel = projection && trustedMeasurement ? Math.hypot(...AXES.map(axis =>
+      fitAxis(this.accepted, axis).slope * projection.gain[axis])) * MIN_WRIST_SELECTION_MS : 0;
+    const selectionReady = paused && trustedMeasurement && (!projection ||
+      selectionTravel <= projection.tolerancePx && projectedDistance(center(recent), stable, projection) <= projection.tolerancePx);
     return { point: stable, noise: this.noise, paused, selectionReady, held: paused, rejected: false };
   }
 
@@ -206,12 +230,13 @@ export class WristMotion {
     this.noise = Math.hypot(nx, ny) / Math.SQRT2;
   }
 
-  private directedTravel(pixelFloor: number): boolean {
+  private directedTravel(pixelFloor: number, projection?: WristProjection): boolean {
     const span = this.accepted[this.accepted.length - 1].time - this.accepted[0].time;
     const multiplier = this.latch ? TREND_EXIT_ERROR_MULTIPLIER : TREND_ENTER_ERROR_MULTIPLIER;
     return AXES.some(axis => {
       const fit = fitAxis(this.accepted, axis);
-      return Math.abs(fit.slope) * span > Math.max(pixelFloor * 4, fit.error * span * multiplier);
+      const floor = projection ? Math.min(pixelFloor * 4, projection.tolerancePx / projection.gain[axis]) : pixelFloor * 4;
+      return Math.abs(fit.slope) * span > Math.max(floor, fit.error * span * multiplier);
     });
   }
 

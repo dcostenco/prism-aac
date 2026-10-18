@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Il polso è troppo vicino al bordo dell’immagine della fotocamera. Regola la fotocamera in modo che il viso e il polso a riposo rimangano visibili con spazio intorno, poi acquisisci di nuovo. La calibrazione salvata non è cambiata.",
   "camera_loss_head": "Viso non riconosciuto. Inquadra tutto il viso e aumenta la luce. Selezione in pausa.",
   "camera_loss_wrist": "Polso scelto non visibile. Tienilo inquadrato; non verranno usate altre parti del corpo.",
   "camera_loss_frame": "Fotogrammi fotocamera interrotti. Riprova l'accesso; selezione in pausa.",

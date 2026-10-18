@@ -147,6 +147,7 @@ function rootEl(): HTMLElement {
 beforeEach(() => {
   trackers.length = 0;
   sampleListeners.clear();
+  vi.mocked(loadPoseCalibration).mockReset().mockReturnValue(null);
   vi.useFakeTimers();
   // Settings — speech rate / volume must exist for aacSpeak's destructure.
   useSettingsStore.setState({
@@ -180,7 +181,7 @@ it.each(RANGE_DIAGNOSTIC_CASES)('diagnostics agree with actual mapping for $name
   const calibration = { leftX: baseline + item.x / 2, rightX: baseline - item.x / 2,
     topY: baseline - item.y / 2, bottomY: baseline + item.y / 2 };
   expect(mapPoseToScreen(0.5, 0.5, calibration, 1, 1280, 720).rangeOK).toBe(item.accepted);
-  vi.mocked(loadPoseCalibration).mockReturnValueOnce(calibration).mockReturnValueOnce(calibration);
+  vi.mocked(loadPoseCalibration).mockReturnValue(calibration);
   render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
   fireEvent.click(screen.getByTestId('tracking-setup-start'));
   expect(screen.getByTestId('tracking-wizard-diag')).toHaveTextContent(
@@ -189,6 +190,31 @@ it.each(RANGE_DIAGNOSTIC_CASES)('diagnostics agree with actual mapping for $name
 
 describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners → test)', () => {
   describe.each(WIZARD_DRIFT_LEVELS)('selected input mode at drift %s', drift => {
+    it('does not certify an old burst of samples, then recovers when frames resume', () => {
+      render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+      fireEvent.click(screen.getByTestId('tracking-setup-start'));
+      act(() => {
+        for (let frame = 0; frame < 8; frame++) dispatchPoseSample('right_wrist', 0.5 + drift, 0.5);
+        vi.advanceTimersByTime(6500);
+      });
+      expect(rootEl()).toHaveAttribute('data-phase', 'detecting');
+      expect(trackers).toHaveLength(1);
+      holdStill(2600, 'right_wrist', 0.5 + drift, 0.5);
+      expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
+    });
+
+    it('withdraws pending auto-advance when frames stop after detection', () => {
+      render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
+      fireEvent.click(screen.getByTestId('tracking-setup-start'));
+      holdStill(5000, 'right_wrist', 0.5 + drift, 0.5);
+      expect(rootEl()).toHaveAttribute('data-phase', 'detecting');
+      act(() => vi.advanceTimersByTime(1500));
+      expect(rootEl()).toHaveAttribute('data-phase', 'detecting');
+      expect(trackers).toHaveLength(1);
+      holdStill(2600, 'right_wrist', 0.5 + drift, 0.5);
+      expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
+    });
+
     it.each(SELECTED_TARGET_CASES)('preserves $requested when detecting $observed', ({ requested, observed }) => {
       useSettingsStore.setState({ cameraTrackingTarget: requested });
       render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
@@ -210,9 +236,8 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
           for (let i = 0; i < 32; i++) dispatchPoseSample('nose', 0.5 + drift, 0.5);
         }
         for (let i = 0; i < 8; i++) dispatchPoseSample(observed, 0.5 + drift, 0.5);
-        vi.advanceTimersByTime(5000);
       });
-      act(() => vi.advanceTimersByTime(1500));
+      holdStill(6500, observed, 0.5 + drift, 0.5);
       expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
       expect(latestTracker().opts.trackingTarget).toBe(requested);
       expect(useSettingsStore.getState().cameraTrackingTarget).toBe(requested);
@@ -247,8 +272,8 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
           dispatchPoseSample('left_wrist', 0.5 + drift, 0.5);
           dispatchPoseSample('right_wrist', 0.5 + drift, 0.5);
         }
-        vi.advanceTimersByTime(5000);
       });
+      holdStill(5000, 'left_wrist', 0.5 + drift, 0.5);
       fireEvent.click(screen.getByRole('button', { name: /Right Wrist/ }));
       act(() => vi.advanceTimersByTime(2000));
       expect(rootEl()).toHaveAttribute('data-phase', 'detecting');
@@ -268,9 +293,8 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
       fireEvent.click(screen.getByTestId('tracking-setup-start'));
       act(() => {
         for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5 + drift, 0.5);
-        vi.advanceTimersByTime(5000);
       });
-      act(() => vi.advanceTimersByTime(1500));
+      holdStill(6500, 'right_wrist', 0.5 + drift, 0.5);
       act(() => {
         for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5 + drift, 0.5);
         vi.advanceTimersByTime(150);
@@ -316,9 +340,8 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
     act(() => {
       for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5 + drift, 0.5);
-      vi.advanceTimersByTime(5000);
     });
-    act(() => vi.advanceTimersByTime(1500));
+    holdStill(6500, 'right_wrist', 0.5 + drift, 0.5);
     act(() => {
       for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5 + drift, 0.5);
     });
@@ -345,9 +368,8 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
     act(() => {
       for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5 + drift, 0.5);
-      vi.advanceTimersByTime(5000);
     });
-    act(() => vi.advanceTimersByTime(1500));
+    holdStill(6500, 'right_wrist', 0.5 + drift, 0.5);
     act(() => {
       for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5 + drift, 0.5);
     });
@@ -381,10 +403,10 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
     expect(latestTracker().opts.useEyeGaze).not.toBe(true);
     act(() => {
       for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(5000);
     });
-    // Let React commit the chosen part before the later auto-advance timer.
-    act(() => vi.advanceTimersByTime(1500));
+    // Keep observations current through both deadlines, committing the
+    // chosen part before the later auto-advance timer.
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
     expect(latestTracker().opts.trackingTarget).toBe('right_wrist');
     expect(latestTracker().opts.sensitivity).toBe(sensitivity);
     expect(latestTracker().opts.useEyeGaze).not.toBe(true);
@@ -403,21 +425,13 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
     expect(latestTracker().opts.trackingTarget).toBe('right_wrist');
   });
 
-  it('detection of a body part > 5 frames + 5s elapses + 1.5s advance → calibrate-center', () => {
+  it('fresh wrist detection across the 5s window and 1.5s advance enters calibrate-center', () => {
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
 
-    // Six frames where the user's right_index is detected; counts > 5
-    // is the detection threshold inside startDetection.
-    act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-    });
-    // 5s detection window elapses → setSelectedPart fires.
-    act(() => { vi.advanceTimersByTime(5000); });
-    // 1.5s advance → startCenterCalibration runs → phase=calibrate-center.
-    // Inside startCenterCalibration the wizard restartTrackerForPart fires
-    // a NEW tracker, which is the second captured tracker.
-    act(() => { vi.advanceTimersByTime(1500); });
+    // A stopped camera cannot certify detection. Deliver observations
+    // throughout both deadlines as a real camera does while holding still.
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
 
     expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
     // Restart fired with the chosen part, NOT a hardcoded 'nose'.
@@ -428,10 +442,7 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
   it('step 1: Capture is disabled with empty buffer, enables once events flow', () => {
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
-    act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(5000 + 1500);
-    });
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
 
     // Just-entered calibrate-center → buffer was reset to [] → button disabled.
     const captureBtn = screen.getByTestId('tracking-capture-center') as HTMLButtonElement;
@@ -440,8 +451,7 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
     // Drive a few synthetic events through the NEW (selected-part) tracker.
     act(() => {
       for (let i = 0; i < 5; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      // The 100ms progress interval triggers a re-render that picks up
-      // the new buffer length — advance past one tick.
+      // Also exercise the existing visual-progress interval.
       vi.advanceTimersByTime(150);
     });
     expect(captureBtn).not.toBeDisabled();
@@ -450,9 +460,8 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
   it('step 1: Capture with non-empty buffer advances to calibrate-corners', () => {
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
     act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(5000 + 1500);
       for (let i = 0; i < 5; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
       vi.advanceTimersByTime(150);
     });
@@ -466,9 +475,8 @@ describe('TrackingSetupWizard — Setup flow (detection → step 1 → corners �
     (savePoseCalibration as ReturnType<typeof vi.fn>).mockClear();
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
     act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(5000 + 1500);
       for (let i = 0; i < 5; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
       vi.advanceTimersByTime(150);
     });
@@ -515,10 +523,7 @@ describe('TrackingSetupWizard — accuracy evidence', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
     render(<TrackingSetupWizard onComplete={vi.fn()} onCancel={vi.fn()} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
-    act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(6500);
-    });
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
     fireEvent.click(screen.getByTestId('tracking-calibrate-skip'));
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       return this.dataset.testid?.startsWith('tracking-test-target-') ? TARGET_BOUNDS : EMPTY_BOUNDS;
@@ -651,10 +656,7 @@ describe('TrackingSetupWizard — out-of-view scenarios', () => {
   it('finger out of camera view: status flips to lost, no false-advance from step 1', () => {
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
-    act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(5000 + 1500);
-    });
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
     expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
 
     // User moves finger out of frame — tracker reports lost, no events.
@@ -726,11 +728,7 @@ describe('TrackingSetupWizard — StrictMode-safe lifecycle (regression)', () =>
       </StrictMode>
     );
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
-    act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(5000);
-    });
-    act(() => { vi.advanceTimersByTime(1500); });
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
 
     expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
   });
@@ -752,11 +750,7 @@ describe('TrackingSetupWizard — narrow-range fallback (head-tracking accessibi
     (savePoseCalibration as ReturnType<typeof vi.fn>).mockClear();
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
-    act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(5000);
-    });
-    act(() => { vi.advanceTimersByTime(1500); });
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
 
     // Step 1 — center capture.
     act(() => {
@@ -896,10 +890,7 @@ describe('TrackingSetupWizard — Skip + Cancel paths', () => {
   it('Skip in calibrate-center jumps the user past calibration into the test', () => {
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
     fireEvent.click(screen.getByTestId('tracking-setup-start'));
-    act(() => {
-      for (let i = 0; i < 8; i++) dispatchPoseSample('right_wrist', 0.5, 0.5);
-      vi.advanceTimersByTime(5000 + 1500);
-    });
+    holdStill(6500, 'right_wrist', 0.5, 0.5);
 
     fireEvent.click(screen.getByTestId('tracking-calibrate-skip'));
     expect(rootEl()).toHaveAttribute('data-phase', 'accuracy-test');

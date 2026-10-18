@@ -1,4 +1,5 @@
 {
+  "tracking_setup_frame_guide": "Your wrist is too close to the edge of the camera view. Adjust the camera so your face and resting wrist stay in view with space around them, then capture again. Saved calibration has not changed.",
   "camera_loss_head": "Face not verified. Keep your whole face in view and improve the lighting. Selection is paused.",
   "camera_loss_wrist": "The chosen wrist is not visible. Keep it in view; another body part will not take over.",
   "camera_loss_frame": "Camera frames stopped. Retry camera access; selection is paused.",
