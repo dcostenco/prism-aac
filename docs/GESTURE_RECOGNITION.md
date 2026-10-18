@@ -1,14 +1,16 @@
 # Gesture Recognition System — Design Document
 
-> **TL;DR** — head-pose dwell click + per-user hand-pose gesture profiles. Runs on FaceLandmarker + MediaPipe Hands locally, no video leaves the device. Configurable per-child via the calibration UI.
+> **Status — not in this release.** This is the design record for head-pose dwell and gesture input. The camera input that ships is the experimental wrist cursor described in the [README](../README.md#-hands-free-camera-cursor-experimental): one chosen wrist, with your face kept in view. Head cursor, eye-gaze weighting, finger tracking and gestures are disabled in Settings.
 
-## At a glance
+> **Design summary** — head-pose dwell click + per-user hand-pose gesture profiles, running on FaceLandmarker + MediaPipe Hands locally, so no video leaves the device.
 
-- ✅ **Head-pose tracking** — dwell-click on any AAC tile or keyboard key
-- ✅ **Hand-pose gestures** — per-child custom mappings (open palm = enter, fist = backspace, etc.)
-- ✅ **Drift safety stack** — auto-disable + recalibration prompt
-- ✅ **Esc escape hatch** — instantly disable tracking and return to qwerty without losing the message bar
-- ✅ Camera-stream singleton — head + hand tracker share one stream
+## At a glance (designed, not enabled)
+
+- **Head-pose tracking** — dwell-click on any AAC tile or keyboard key
+- **Hand-pose gestures** — per-child custom mappings (open palm = enter, fist = backspace, etc.)
+- **Drift safety stack** — auto-disable + recalibration prompt
+- **Esc escape hatch** — instantly disable tracking and return to qwerty without losing the message bar
+- Camera-stream singleton — head + hand tracker share one stream
 
 <details>
 <summary><strong>📐 Full design doc — landmarks, smoothing, calibration, drift</strong></summary>

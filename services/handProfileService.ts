@@ -365,7 +365,7 @@ export async function initHandDetector(): Promise<boolean> {
 }
 
 export function detectHand(
-  video: HTMLVideoElement,
+  video: HTMLVideoElement | HTMLCanvasElement,
   timestampMs: number,
 ): HandLandmarks[] | null {
   if (!handLandmarkerInstance) return null;

@@ -11,6 +11,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import HeadTrackingSettings from '@/components/HeadTrackingSettings';
 import { listCameras as listCamerasFn } from '@/services/headTracker';
+// Legacy tuning regression only, not an assertion of product availability.
+vi.mock('@/services/cameraTrackingTargets', () => ({ HEAD_CURSOR_AVAILABLE: true }));
 
 // ── mocks ──────────────────────────────────────────────────────────────────────
 

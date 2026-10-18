@@ -2,6 +2,8 @@ import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FittedTileLabel from '@/components/FittedTileLabel';
 
+const NARROW_PREDICTION = { width: 69, height: 28, overflowPx: 1, fittingFontSize: 18 };
+
 describe('FittedTileLabel', () => {
   let queuedFrames: FrameRequestCallback[];
 
@@ -51,6 +53,24 @@ describe('FittedTileLabel', () => {
     expect(label).toHaveTextContent("I don't understand");
   });
 
+  it.each(['width', 'height'] as const)('does not call a one-pixel %s overflow fit and clip communication', axis => {
+    render(<FittedTileLabel text="hungry" testId="fitted-label" className="test-fitted-label" minFontSizePx={16} />);
+    const label = screen.getByTestId('fitted-label');
+    const overflow = () => Number.parseFloat(label.style.fontSize || '20') > NARROW_PREDICTION.fittingFontSize
+      ? NARROW_PREDICTION.overflowPx : 0;
+    Object.defineProperties(label, {
+      clientWidth: { configurable: true, value: NARROW_PREDICTION.width },
+      clientHeight: { configurable: true, value: NARROW_PREDICTION.height },
+      scrollWidth: { configurable: true, get: () => NARROW_PREDICTION.width + (axis === 'width' ? overflow() : 0) },
+      scrollHeight: { configurable: true, get: () => NARROW_PREDICTION.height + (axis === 'height' ? overflow() : 0) },
+    });
+    act(() => { queuedFrames.shift()?.(0); });
+    expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth);
+    expect(label.scrollHeight).toBeLessThanOrEqual(label.clientHeight);
+    expect(label).toHaveAttribute('data-fit-status', 'fit');
+    expect(label).toHaveTextContent('hungry');
+  });
+
   it.each([
     'Donaudampfschifffahrtsgesellschaftskapitän',
     'epäjärjestelmällistyttämättömyydelläänsäkäänköhän',
@@ -83,7 +103,7 @@ describe('FittedTileLabel', () => {
     });
 
     expect(Number.parseFloat(label.style.fontSize)).toBeLessThan(12);
-    expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth + 1);
+    expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth);
     expect(label).toHaveAttribute('data-fit-status', 'fit-below-min');
     expect(label).toHaveTextContent(text);
   });
@@ -133,7 +153,7 @@ describe('FittedTileLabel', () => {
     });
 
     expect(Number.parseFloat(label.style.fontSize)).toBeLessThan(20);
-    expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth + 1);
+    expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth);
   });
 
   it('keeps the whole translated caption when a loaded picture takes space inside an unchanged tile', () => {
@@ -160,7 +180,7 @@ describe('FittedTileLabel', () => {
       if (observed.has(label)) resized?.([], {} as ResizeObserver);
       queuedFrames.shift()?.(0);
     });
-    expect(label.scrollHeight).toBeLessThanOrEqual(label.clientHeight + 1);
+    expect(label.scrollHeight).toBeLessThanOrEqual(label.clientHeight);
     expect(label).toHaveTextContent('Mai mult');
     expect(label).toHaveAttribute('data-fit-status', 'fit');
   });

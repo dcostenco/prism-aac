@@ -42,6 +42,10 @@ export const WIZARD_PRACTICAL_MIN_RANGE = 0.10;
  */
 export const WIZARD_FALLBACK_RANGE_X = 0.30;
 export const WIZARD_FALLBACK_RANGE_Y = 0.24;
+const CALIBRATION_FRAME_MIN = 0.05;
+const CALIBRATION_FRAME_MAX = 0.95;
+const CALIBRATION_BOUND_EPSILON = Number.EPSILON * 4;
+export const CALIBRATION_CENTER_OUT_OF_FRAME = 'CALIBRATION_CENTER_OUT_OF_FRAME';
 
 /** ── Types ────────────────────────────────────────────────────────────── */
 
@@ -127,19 +131,31 @@ export function computeWizardCalibration(
   return { cal, usedFallbackRange, rangeX: cal.leftX - cal.rightX, rangeY: cal.bottomY - cal.topY };
 }
 
-/**
- * Compute a temporary "preview" calibration anchored on a center sample
- * and using DEFAULT-width range. Used immediately after captureCenter so
- * the Step-2 (corners) cursor preview is correctly centered on the user's
- * neutral, not on DEFAULT_CALIBRATION's generic (0.4, 0.5) midpoint.
- */
+/** Whether the neutral can retain the full preview span without edge clipping. */
+export function isCenterPreviewInFrame(center: CenterSample): boolean {
+  const mirroredX = 1 - center.normX;
+  return [
+    mirroredX - WIZARD_FALLBACK_RANGE_X / 2,
+    mirroredX + WIZARD_FALLBACK_RANGE_X / 2,
+    center.normY - WIZARD_FALLBACK_RANGE_Y / 2,
+    center.normY + WIZARD_FALLBACK_RANGE_Y / 2,
+  ].every(value => Number.isFinite(value) &&
+    value >= CALIBRATION_FRAME_MIN - CALIBRATION_BOUND_EPSILON &&
+    value <= CALIBRATION_FRAME_MAX + CALIBRATION_BOUND_EPSILON);
+}
+
+/** Center the default-width preview on captured neutral. A frame-edge neutral
+ * needs camera repositioning, not a clipped, higher-gain calibration. */
 export function computeCenterPreviewCalibration(center: CenterSample): PoseCalibrationData {
+  // Clipping each end independently moves neutral away from screen center
+  // and increases gain. Ask for camera framing instead of saving that map.
+  if (!isCenterPreviewInFrame(center)) throw new RangeError(CALIBRATION_CENTER_OUT_OF_FRAME);
   const anchorMirX = 1 - center.normX;
   return {
-    leftX:   Math.min(0.95, anchorMirX + WIZARD_FALLBACK_RANGE_X / 2),
-    rightX:  Math.max(0.05, anchorMirX - WIZARD_FALLBACK_RANGE_X / 2),
-    topY:    Math.max(0.05, center.normY - WIZARD_FALLBACK_RANGE_Y / 2),
-    bottomY: Math.min(0.95, center.normY + WIZARD_FALLBACK_RANGE_Y / 2),
+    leftX:   Math.min(CALIBRATION_FRAME_MAX, anchorMirX + WIZARD_FALLBACK_RANGE_X / 2),
+    rightX:  Math.max(CALIBRATION_FRAME_MIN, anchorMirX - WIZARD_FALLBACK_RANGE_X / 2),
+    topY:    Math.max(CALIBRATION_FRAME_MIN, center.normY - WIZARD_FALLBACK_RANGE_Y / 2),
+    bottomY: Math.min(CALIBRATION_FRAME_MAX, center.normY + WIZARD_FALLBACK_RANGE_Y / 2),
   };
 }
 

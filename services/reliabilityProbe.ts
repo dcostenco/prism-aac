@@ -23,6 +23,7 @@
 
 import { ReliabilityProbe } from './headTrackerStability';
 import { emitTrackingEvent } from './trackingTelemetry';
+import { acquireFaceDetector, type FaceDetectorLease } from './sharedFaceDetector';
 
 export interface ReliabilityProbeHandle {
     stop: () => void;
@@ -72,7 +73,7 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
     const probe = new ReliabilityProbe({ recoverFrames, stableConfidenceFloor });
     let stream: MediaStream | null = null;
     let video: HTMLVideoElement | null = null;
-    let detector: { detectForVideo: (v: HTMLVideoElement, ts: number) => { detections: Array<{ categories?: { score: number }[] }> } } | null = null;
+    let detector: FaceDetectorLease | null = null;
     let intervalId: number | null = null;
     let stopped = false;
     let recovered = false;
@@ -90,6 +91,7 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
         }
         if (video?.parentNode) video.remove();
         video = null;
+        detector?.close(); detector = null;
         // Emit probe-stop only when the consumer tore down WITHOUT
         // recovering — recovered teardowns emit probe-recover instead.
         if (!recovered) {
@@ -133,19 +135,8 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
             if (stopped) { teardown(); return; }
 
             // Lazy-import MediaPipe (same module the head tracker uses).
-            const vision = await import('@mediapipe/tasks-vision');
-            const { FaceDetector, FilesetResolver } = vision;
-            const { MEDIAPIPE_WASM_URL, FACE_DETECTOR_URL } = await import('./mediapipeRuntime');
-            const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
-            detector = await FaceDetector.createFromOptions(fileset, {
-                baseOptions: {
-                    modelAssetPath: FACE_DETECTOR_URL,
-                    delegate: 'GPU',
-                },
-                runningMode: 'VIDEO',
-                minDetectionConfidence: 0.5,
-            }) as typeof detector;
-            if (stopped) { teardown(); return; }
+            detector = await acquireFaceDetector();
+            if (stopped) { detector.close(); detector = null; return; }
 
             // Telemetry: probe-start fires once at first interval tick.
             emitTrackingEvent({ type: 'probe-start', progress: 0, timestamp: Date.now() });

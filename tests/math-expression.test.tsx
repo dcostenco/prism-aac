@@ -70,7 +70,7 @@ describe('MathExpression — non-empty expression', () => {
       expect(katexRenderMock).toHaveBeenCalledWith(
         '\\text{5 + 3}',
         expect.any(HTMLElement),
-        expect.objectContaining({ throwOnError: false }),
+        expect.objectContaining({ throwOnError: false, trust: false }),
       );
     });
   });

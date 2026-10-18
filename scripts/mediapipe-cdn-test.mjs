@@ -9,6 +9,8 @@
  *   5. Warm latency — simulated second request (If-None-Match / ETag)
  *   6. CORS headers — Cross-Origin-Resource-Policy present
  *   7. Total first-load budget — sum of all model download times
+ *   8. Provenance — every served file matches its recorded SHA-256
+ *      (scripts/mediapipe-model-manifest.json)
  *
  * Run against localhost:
  *   URL=http://localhost:3030/prism-aac node scripts/mediapipe-cdn-test.mjs
@@ -16,6 +18,12 @@
  * Run against prod:
  *   URL=https://prism-aac.vercel.app/prism-aac node scripts/mediapipe-cdn-test.mjs
  */
+
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+
+const MANIFEST = new Map(JSON.parse(readFileSync(new URL('./mediapipe-model-manifest.json', import.meta.url), 'utf8'))
+  .files.map(file => [file.file, file]));
 
 // Assets are served WITH basePath prefix: /prism-aac/models/mediapipe/
 const APP_URL = process.env.URL || 'http://localhost:3030/prism-aac';
@@ -32,7 +40,15 @@ const ASSETS = [
   { path: '/models/mediapipe/face_landmarker.task',              expectMime: null,                name: 'FaceLandmarker',   critical: true },
   { path: '/models/mediapipe/hand_landmarker.task',              expectMime: null,                name: 'HandLandmarker',   critical: true },
   { path: '/models/mediapipe/blaze_face_short_range.tflite',     expectMime: null,                name: 'FaceDetector',     critical: false },
+  // Required before any camera wrist selection: head presence verification.
+  { path: '/models/mediapipe/blaze_face_full_range.tflite',      expectMime: null,                name: 'HeadPresence',     critical: true },
 ];
+
+// Every other recorded file is served and digest-checked too, as non-critical.
+for (const file of MANIFEST.keys()) {
+  const path = `/models/mediapipe/${file}`;
+  if (!ASSETS.some(asset => asset.path === path)) ASSETS.push({ path, expectMime: file.endsWith('.wasm') ? 'application/wasm' : null, name: file, critical: false });
+}
 
 const results = [];
 let totalFirstLoadMs = 0;
@@ -66,6 +82,12 @@ for (const asset of ASSETS) {
 
   // ── HTTP status ─────────────────────────────────────────────────
   if (res.status !== 200) issues.push(`HTTP ${res.status} (expected 200)`);
+
+  // ── Provenance ──────────────────────────────────────────────────
+  const record = MANIFEST.get(asset.path.replace('/models/mediapipe/', ''));
+  const digest = createHash('sha256').update(Buffer.from(buf)).digest('hex');
+  if (!record) issues.push('no provenance record in scripts/mediapipe-model-manifest.json');
+  else if (digest !== record.sha256) issues.push(`SHA-256 ${digest} does not match the recorded ${record.sha256}`);
 
   // ── MIME type ───────────────────────────────────────────────────
   const ct = res.headers.get('content-type') || '';
@@ -125,6 +147,6 @@ if (failures.length) {
   failures.forEach(f => f.issues.forEach(i => console.log(`  ${f.asset}: ${i}`)));
   process.exit(1);
 } else {
-  console.log('\n✓ All assets available, correct MIME types, cache headers present.');
+  console.log('\n✓ All assets available, correct MIME types, cache headers present, digests match their sources.');
   console.log('✓ MediaPipe self-hosted CDN test PASSED.');
 }

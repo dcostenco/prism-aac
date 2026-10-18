@@ -59,6 +59,11 @@ export const FACE_LANDMARKER_URL =
 export const FACE_DETECTOR_URL =
   `${MEDIAPIPE_BASE}/blaze_face_short_range.tflite`;
 
+// Official float16/1 asset; sha256 3698b18f063835bc609069ef052228fbe86d9c9a6dc8dcb7c7c2d69aed2b181b.
+// Dedicated presence verification does not change dormant head/gesture modes.
+export const HEAD_PRESENCE_DETECTOR_URL =
+  `${MEDIAPIPE_BASE}/blaze_face_full_range.tflite`;
+
 export const HAND_LANDMARKER_URL =
   `${MEDIAPIPE_BASE}/hand_landmarker.task`;
 

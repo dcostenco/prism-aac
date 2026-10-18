@@ -19,6 +19,8 @@ import {
   WIZARD_FALLBACK_RANGE_Y,
   type CenterSample,
   type CornerSample,
+  isCenterPreviewInFrame,
+  CALIBRATION_CENTER_OUT_OF_FRAME,
 } from '@/services/wizardCalibration';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -36,6 +38,19 @@ function symmetricCorners(): CornerSample[] {
 }
 
 const CENTER_NEUTRAL: CenterSample = { normX: 0.5, normY: 0.5 };
+const EDGE_NEUTRALS: CenterSample[] = [
+  { normX: 0.56, normY: 0.968 }, // Actual photographic SDK report: lower wrist cropped by the frame.
+  { normX: 0.56, normY: 0.032 },
+  { normX: 0.032, normY: 0.5 },
+  { normX: 0.968, normY: 0.5 },
+];
+
+describe.each([0, 0.003, 0.015])('neutral frame coverage at drift=%s', drift => {
+  it.each(EDGE_NEUTRALS)('does not create a clipped default-width profile from edge neutral %j', center => {
+    expect(() => computeCenterPreviewCalibration({ normX: center.normX + drift, normY: center.normY + drift / 2 }))
+      .toThrow(CALIBRATION_CENTER_OUT_OF_FRAME);
+  });
+});
 
 // ── computeWizardCalibration — basic contract ─────────────────────────────────
 
@@ -213,6 +228,18 @@ describe('computeWizardCalibration — boundary clamping', () => {
 // ── computeCenterPreviewCalibration ──────────────────────────────────────────
 
 describe('computeCenterPreviewCalibration', () => {
+  it.each([0.2, 0.8].flatMap(normX => [0.17, 0.83].map(normY => ({ normX, normY }))))('retains the full range at a just-fitting neutral %j', center => {
+    expect(isCenterPreviewInFrame(center)).toBe(true);
+    const cal = computeCenterPreviewCalibration(center);
+    expect(cal.leftX - cal.rightX).toBeCloseTo(WIZARD_FALLBACK_RANGE_X, 12);
+    expect(cal.bottomY - cal.topY).toBeCloseTo(WIZARD_FALLBACK_RANGE_Y, 12);
+    expect((cal.leftX + cal.rightX) / 2).toBeCloseTo(1 - center.normX, 12);
+    expect((cal.topY + cal.bottomY) / 2).toBeCloseTo(center.normY, 12);
+  });
+  it.each([NaN, Infinity, -1, 2])('does not accept an invalid neutral coordinate %s', invalid => {
+    expect(isCenterPreviewInFrame({ normX: invalid, normY: 0.5 })).toBe(false);
+    expect(isCenterPreviewInFrame({ normX: 0.5, normY: invalid })).toBe(false);
+  });
   it('returns a calibration with fallback ranges', () => {
     const cal = computeCenterPreviewCalibration({ normX: 0.5, normY: 0.5 });
     expect(cal.leftX - cal.rightX).toBeCloseTo(WIZARD_FALLBACK_RANGE_X, 5);

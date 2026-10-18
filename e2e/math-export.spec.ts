@@ -2,7 +2,9 @@ import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 import { safeScreenshot } from './helpers/screenshot-validation';
 
-test.use({ viewport: { width: 1264, height: 590 } });
+const OFFLINE_RESPONSE = { status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Offline math-export regression' }) };
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+test.use({ viewport: { width: 1264, height: 590 }, serviceWorkers: 'block' });
 
 test.afterEach(async ({ page, context }) => {
   try { await page.close(); } catch { /* fixture may already be closed */ }
@@ -15,7 +17,17 @@ async function openMath(page: Page) {
   await expect(page.getByTestId('math-grid-svg')).toBeVisible();
 }
 
-test('exports an image and PDF, then restores a saved math file through visible controls', async ({ page }, testInfo) => {
+test('exports an image and PDF, then restores a saved math file through visible controls', async ({ page, baseURL }, testInfo) => {
+  const app = new URL(baseURL!);
+  if (LOOPBACK_HOSTS.has(app.hostname)) {
+    await page.route('**/*', route => {
+      const request = route.request(), url = new URL(request.url());
+      const remoteData = url.origin !== app.origin && ['fetch', 'xhr'].includes(request.resourceType());
+      if (url.pathname.includes('/api/') || remoteData) return route.fulfill({ ...OFFLINE_RESPONSE,
+        headers: { 'access-control-allow-origin': app.origin, 'access-control-allow-credentials': 'true' } });
+      return route.continue();
+    });
+  }
   const pdfPath = testInfo.outputPath('math-export.pdf');
   await page.exposeFunction('__captureMathPdf', async (base64: string) => {
     await writeFile(pdfPath, Buffer.from(base64, 'base64'));
@@ -68,6 +80,7 @@ test('exports an image and PDF, then restores a saved math file through visible 
   });
 
   await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: 'Sound on', exact: true }).click();
   await expect(page.getByRole('button', { name: /^(Math|Matemat)/i }).first()).toBeVisible({ timeout: 30_000 });
   await openMath(page);
   await page.getByTestId('math-key-1').click();
