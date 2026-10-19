@@ -148,7 +148,6 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
   const showUnreviewedVocabulary = useSettingsStore(s => s.showUnreviewedVocabulary);
   const mathHoldTimeMs = useSettingsStore(s => s.mathHoldTimeMs);
   const mathTwoHitMagnify = useSettingsStore(s => s.mathTwoHitMagnify);
-  const showHandCalibration = useSettingsStore(s => s.showHandCalibration);
   const { t } = useT();
   const [pinVerified, setPinVerified] = useState(false);
   const pinJustSet = useRef(false);
@@ -242,6 +241,64 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
 
         {/* Scrollable sections */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
+
+          {/* ── INPUT MODES ── */}
+          <Section icon="♿" title={`${t('accessibility')} & Input Modes`}>
+            <InputModesSettings cameraOptions={<HeadTrackingSettings showTimingControls={false} />} touchOptions={<HandProfileSection />} />
+            <label className="flex items-center justify-between py-1.5">
+              <span className="text-primary text-sm">{t('high_contrast')}</span>
+              <Toggle on={highContrast} label={t('high_contrast')}
+                onToggle={() => update({ highContrast: !highContrast })} />
+            </label>
+            {/* Auditory feedback. Off by default: the MESSAGE is spoken only
+                when the user presses Speak, and this confirms each SELECTION
+                by saying the item just chosen. Scanning and low-literacy
+                users rely on that confirmation; broadcasting the growing
+                message instead is the user's public utterance being made
+                without them choosing to make it. */}
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm">{t('speak_selection_feedback')}</span>
+                <p className="text-muted text-[10px]">{t('speak_selection_feedback_desc')}</p>
+              </div>
+              <Toggle on={speechMode === 'word'} label={t('speak_selection_feedback')}
+                onToggle={() => update(speechFeedbackFlags(speechMode === 'word' ? 'off' : 'word'))} />
+            </label>
+            {/* Speak-after-each-sentence. This is MESSAGE speech made without
+                pressing Speak, so it stays strictly opt-in — but AAC feature
+                matching expects the device to offer it, and users who lose
+                track of what they typed by the period rely on it. Selecting it
+                clears word feedback, mirroring the Echo control's cycle. */}
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm">{t('speak_sentence_feedback')}</span>
+                <p className="text-muted text-[10px]">{t('speak_sentence_feedback_desc')}</p>
+              </div>
+              <Toggle on={speechMode === 'sentence'} label={t('speak_sentence_feedback')}
+                onToggle={() => update(speechFeedbackFlags(speechMode === 'sentence' ? 'off' : 'sentence'))} />
+            </label>
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm">AI Autocorrect</span>
+                <p className="text-muted text-[10px]">Suggests corrections while typing</p>
+              </div>
+              <Toggle on={aiAutocorrectEnabled} label="AI Autocorrect"
+                onToggle={() => update({ aiAutocorrectEnabled: !aiAutocorrectEnabled })} />
+            </label>
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm">{t('cloud_memory_predictions')}</span>
+                <p className="text-muted text-[10px]">
+                  {t('cloud_memory_predictions_desc')}
+                </p>
+              </div>
+              <Toggle
+                on={profile !== null && cloudPredictionEnabled}
+                disabled={profile === null}
+                label={t('cloud_memory_predictions')}
+                onToggle={() => update({ cloudPredictionEnabled: !cloudPredictionEnabled })} />
+            </label>
+          </Section>
 
           {/* ── CATEGORIES (top, expanded — user said "can't find it") ── */}
           <Section icon="📂" title="Categories" defaultOpen>
@@ -434,69 +491,6 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
             <ToolbarCustomization />
           </Section>
 
-          {/* ── INPUT MODES ── */}
-          <Section icon="♿" title={`${t('accessibility')} & Input Modes`}>
-            <label className="flex items-center justify-between py-1.5">
-              <span className="text-primary text-sm">{t('high_contrast')}</span>
-              <Toggle on={highContrast} label={t('high_contrast')}
-                onToggle={() => update({ highContrast: !highContrast })} />
-            </label>
-            {/* Auditory feedback. Off by default: the MESSAGE is spoken only
-                when the user presses Speak, and this confirms each SELECTION
-                by saying the item just chosen. Scanning and low-literacy
-                users rely on that confirmation; broadcasting the growing
-                message instead is the user's public utterance being made
-                without them choosing to make it. */}
-            <label className="flex items-center justify-between py-1.5">
-              <div>
-                <span className="text-primary text-sm">{t('speak_selection_feedback')}</span>
-                <p className="text-muted text-[10px]">{t('speak_selection_feedback_desc')}</p>
-              </div>
-              <Toggle on={speechMode === 'word'} label={t('speak_selection_feedback')}
-                onToggle={() => update(speechFeedbackFlags(speechMode === 'word' ? 'off' : 'word'))} />
-            </label>
-            {/* Speak-after-each-sentence. This is MESSAGE speech made without
-                pressing Speak, so it stays strictly opt-in — but AAC feature
-                matching expects the device to offer it, and users who lose
-                track of what they typed by the period rely on it. Selecting it
-                clears word feedback, mirroring the Echo control's cycle. */}
-            <label className="flex items-center justify-between py-1.5">
-              <div>
-                <span className="text-primary text-sm">{t('speak_sentence_feedback')}</span>
-                <p className="text-muted text-[10px]">{t('speak_sentence_feedback_desc')}</p>
-              </div>
-              <Toggle on={speechMode === 'sentence'} label={t('speak_sentence_feedback')}
-                onToggle={() => update(speechFeedbackFlags(speechMode === 'sentence' ? 'off' : 'sentence'))} />
-            </label>
-            <label className="flex items-center justify-between py-1.5">
-              <div>
-                <span className="text-primary text-sm">AI Autocorrect</span>
-                <p className="text-muted text-[10px]">Suggests corrections while typing</p>
-              </div>
-              <Toggle on={aiAutocorrectEnabled} label="AI Autocorrect"
-                onToggle={() => update({ aiAutocorrectEnabled: !aiAutocorrectEnabled })} />
-            </label>
-            <label className="flex items-center justify-between py-1.5">
-              <div>
-                <span className="text-primary text-sm">{t('cloud_memory_predictions')}</span>
-                <p className="text-muted text-[10px]">
-                  {t('cloud_memory_predictions_desc')}
-                </p>
-              </div>
-              <Toggle
-                on={profile !== null && cloudPredictionEnabled}
-                disabled={profile === null}
-                label={t('cloud_memory_predictions')}
-                onToggle={() => update({ cloudPredictionEnabled: !cloudPredictionEnabled })} />
-            </label>
-            <div className="border-t border-theme pt-3 mt-1">
-              <InputModesSettings />
-            </div>
-            <div className="border-t border-theme pt-3 mt-1">
-              <HeadTrackingSettings />
-            </div>
-          </Section>
-
           {/* ── MATH ── */}
           <Section icon="🧮" title="Math">
             <label className="block">
@@ -519,12 +513,6 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
             </label>
           </Section>
 
-          {/* ── HAND CALIBRATION ── */}
-          {showHandCalibration && (
-            <Section icon="🤚" title="Hand Calibration">
-              <HandProfileSection />
-            </Section>
-          )}
 
           {/* ── CUSTOM CONTENT ── */}
           <Section icon="✏️" title="Custom Categories & Phrases">

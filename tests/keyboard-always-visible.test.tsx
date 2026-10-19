@@ -26,11 +26,21 @@ import PrismApp from '@/components/PrismApp';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { readCameraSelectionState } from '@/services/cameraSelection';
+import { loadConfig as loadSwitchConfig } from '@/services/switchScanService';
 import type { SidePanelView } from '@/types';
 
 const integrationMocks = vi.hoisted(() => ({
   broadcastIntegrationEvent: vi.fn(),
   prewarmHeadTracker: vi.fn(),
+  watchPicturePack: vi.fn(),
+  stopWatchingPictures: vi.fn(),
+}));
+const SWITCH_CONFIG_STORAGE_KEY = 'prism-switch-scan';
+
+vi.mock('@/services/bundledPicturePack', async () => ({
+  ...await import('./mocks/bundled-picture-pack'),
+  watchPicturePack: integrationMocks.watchPicturePack,
 }));
 
 // Big mock surface: PrismApp wires many services we don't care about for
@@ -103,10 +113,15 @@ vi.mock('@/components/HeadTrackingOverlay', () => ({ default: () => <div data-te
 vi.mock('@/components/TrackingDebugOverlay', () => ({ default: () => <div data-testid="panel-tracking-debug" /> }));
 vi.mock('@/components/TtsDebugOverlay', () => ({ default: () => <div data-testid="panel-tts-debug" /> }));
 vi.mock('@/components/CameraInputOverlay', () => ({ default: () => <div data-testid="panel-camera-input" /> }));
+// Keep the lazy scanner deferred so startup must fence camera activation
+// before that controller can acquire its own real ownership lease.
+vi.mock('@/components/SwitchScanningController', () => ({ default: () => null }));
 vi.mock('@/components/GreetingBanner', () => ({ default: () => <div data-testid="panel-greeting" /> }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.removeItem(SWITCH_CONFIG_STORAGE_KEY);
+  integrationMocks.watchPicturePack.mockReset().mockReturnValue(integrationMocks.stopWatchingPictures);
   window.history.replaceState({}, '', '/prism-aac');
   useAuthStore.setState({ profile: null, loaded: true, loading: false });
   useSettingsStore.setState({
@@ -118,6 +133,27 @@ beforeEach(() => {
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
 });
 
+describe('App startup integration', () => {
+  it.each([false, true])('restores switch ownership before watching pictures, StrictMode=%s', async strict => {
+    // Reproduce app launch with a saved switch mode, not saveConfig(), which
+    // would create the staging fence before PrismApp had a chance to do it.
+    localStorage.setItem(SWITCH_CONFIG_STORAGE_KEY, JSON.stringify({ ...loadSwitchConfig(), enabled: true }));
+    const blockedDuringWatch: boolean[] = [];
+    integrationMocks.watchPicturePack.mockImplementation(() => {
+      blockedDuringWatch.push(readCameraSelectionState().blocked);
+      return integrationMocks.stopWatchingPictures;
+    });
+    const view = render(strict ? <StrictMode><PrismApp /></StrictMode> : <PrismApp />);
+    await screen.findByTestId('panel-toolbar');
+    expect(blockedDuringWatch.length).toBeGreaterThan(0);
+    expect(blockedDuringWatch.every(Boolean)).toBe(true);
+    expect(readCameraSelectionState().blocked).toBe(true);
+    view.unmount();
+    expect(readCameraSelectionState().blocked).toBe(false);
+    expect(integrationMocks.stopWatchingPictures).toHaveBeenCalledTimes(blockedDuringWatch.length);
+  });
+});
+
 describe('Head-tracking runtime lifecycle', () => {
   it('does not load MediaPipe while head tracking is disabled', async () => {
     render(<PrismApp />);
@@ -127,11 +163,13 @@ describe('Head-tracking runtime lifecycle', () => {
     expect(integrationMocks.prewarmHeadTracker).not.toHaveBeenCalled();
   });
 
-  it('pre-warms MediaPipe after the user enables head tracking', async () => {
+  it('does not pre-warm MediaPipe from a saved unsupported head-tracking flag', async () => {
     useSettingsStore.setState({ headTrackingEnabled: true });
     render(<PrismApp />);
 
-    await waitFor(() => expect(integrationMocks.prewarmHeadTracker).toHaveBeenCalledOnce());
+    await screen.findByTestId('panel-toolbar');
+    await Promise.resolve();
+    expect(integrationMocks.prewarmHeadTracker).not.toHaveBeenCalled();
   });
 });
 

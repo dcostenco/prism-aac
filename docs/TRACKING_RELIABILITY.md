@@ -30,11 +30,16 @@ separate device-validation work.
 
 The persistence smoke completes the wizard, checks Camera input remains on,
 explicitly closes Settings, and verifies the setting before and after reload.
-Neutral dwell with Settings left open remains a separate unresolved interaction:
-a synthetic camera dwell on the Camera input label can forward a browser-trusted
-click to its toggle. This was observed before reload, not caused by storage loss.
-Returning to the board in the persistence test does not fix or validate that
-open-Settings interaction.
+Calibration previews remain drafts until **Save & Done**. Cancel and unfinished
+setup leave the previous saved profiles unchanged. Rotating after calibration
+finishes requires returning to that orientation before confirmation, or
+cancelling and reopening setup in the new orientation.
+
+The current dwell resolver does not forward the Camera input label or caption
+to the toggle; the button itself remains eligible. Returning to the board in
+the persistence smoke does not establish Settings-open camera-dwell safety.
+That interaction needs separate camera-driven checks; synthetic checks are
+not physical-device acceptance.
 
 Run the browser smoke through `scripts/playwright-watchdog.sh` with
 `e2e/camera-calibration-reliability.spec.ts`, one worker, and `BASE_URL` pointing

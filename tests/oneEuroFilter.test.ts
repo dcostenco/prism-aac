@@ -20,6 +20,35 @@
 import { describe, it, expect } from 'vitest';
 import { OneEuroFilter, ConfidenceAwareOneEuro } from '@/services/oneEuroFilter';
 
+const CALIBRATED_VALUE_SCALES = [1, 10, 100];
+const INVALID_VALUE_SCALES = [0, -1, NaN, Infinity];
+const SCALE_TEST_FRAMES = 120;
+const SCALE_TEST_INTERVAL_MS = 1000 / 15;
+
+describe('calibrated cursor units', () => {
+  it.each(CALIBRATED_VALUE_SCALES)('does not treat map gain %s as faster underlying movement', scale => {
+    const reference = new ConfidenceAwareOneEuro();
+    const projected = new ConfidenceAwareOneEuro();
+    projected.setValueScale(scale);
+    reference.setNoiseFloor(0.01); projected.setNoiseFloor(0.01);
+    for (let i = 0; i < SCALE_TEST_FRAMES; i++) {
+      const sample = 100 + Math.sin(i * 1.7) * 4 + i / 10;
+      const time = (i + 1) * SCALE_TEST_INTERVAL_MS;
+      const expected = reference.update(sample, 0.95, time);
+      expect(projected.update(sample * scale, 0.95, time) / scale).toBeCloseTo(expected, 8);
+    }
+  });
+  it.each(INVALID_VALUE_SCALES)('retains its last valid unit scale after invalid scale %s', invalid => {
+    const reference = new ConfidenceAwareOneEuro();
+    const projected = new ConfidenceAwareOneEuro();
+    reference.setValueScale(10); projected.setValueScale(10); projected.setValueScale(invalid);
+    for (let i = 0; i < SCALE_TEST_FRAMES; i++) {
+      const sample = 100 + Math.sin(i * 1.7) * 4;
+      expect(projected.update(sample, 0.95, i * SCALE_TEST_INTERVAL_MS)).toBe(reference.update(sample, 0.95, i * SCALE_TEST_INTERVAL_MS));
+    }
+  });
+});
+
 describe('OneEuroFilter — basics', () => {
   it('passes a slow constant signal through without distortion', () => {
     const f = new OneEuroFilter({ freq: 30 });

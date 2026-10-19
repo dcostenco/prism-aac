@@ -1,6 +1,7 @@
 'use client';
 
 import { clampInt, clampNumber, isSafeCssColor } from '@/lib/safeValidation';
+import { stageSwitchScanOwnership, finishSwitchScanOwnershipStaging } from './cameraSelection';
 
 /* ─────────────────────────────────────────────────────────────────────────────
  *  Switch Scanning Accessibility Service for PrismAAC
@@ -62,7 +63,11 @@ export interface SwitchScanCallbacks {
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'prism-switch-scan';
+export const SWITCH_SCAN_CONFIG_EVENT = 'prism-switch-scan-config';
 const HIGHLIGHT_CLASS = 'switch-scan-active';
+const SELECT_KEYS = new Set([' ', 'Enter']);
+const KEYBOARD_KEYS = new Set([...SELECT_KEYS, 'Tab']);
+const physicalKeys = new Set<string>();
 
 const INTERACTIVE_SELECTOR =
   'button, [role="button"], a, [data-dwell-target], .aac-btn, .aac-key';
@@ -110,13 +115,55 @@ export function loadConfig(): SwitchScanConfig {
 
 export function saveConfig(config: SwitchScanConfig): void {
   if (typeof window === 'undefined') return;
+  const next = sanitizeConfig(config);
+  stageSwitchScanOwnership(next.enabled);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   } catch { /* localStorage quota or disabled */ }
+  window.dispatchEvent(new CustomEvent(SWITCH_SCAN_CONFIG_EVENT, { detail: next }));
 }
 
 export function getDefaultConfig(): SwitchScanConfig {
   return { ...DEFAULT_CONFIG };
+}
+
+/** App-lifetime press observation; an admitted idle-restart callback may
+ * consume a switch key only while its configured scanner remains enabled.
+ * Starting/enabling a scanner can occur inside a native key activation;
+ * that already-held press must not become a second scanner selection. */
+export function observeKeyboardPresses(onIdleSwitch?: (freshPress: boolean) => boolean): () => void {
+  const down = (event: KeyboardEvent) => {
+    if (!KEYBOARD_KEYS.has(event.key)) return;
+    const fresh = !event.repeat && !physicalKeys.has(event.key) && !heldKeys.has(event.key);
+    physicalKeys.add(event.key);
+    if (state.phase === 'idle' && SELECT_KEYS.has(event.key) && onIdleSwitch?.(fresh)) {
+      // The restart press belongs to the scanner, not the focused native
+      // button, nor a selection listener installed during this same event.
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  };
+  const up = (event: KeyboardEvent) => { physicalKeys.delete(event.key); };
+  const blur = () => physicalKeys.clear();
+  document.addEventListener('keydown', down, true);
+  document.addEventListener('keyup', up, true);
+  window.addEventListener('blur', blur);
+  return () => {
+    document.removeEventListener('keydown', down, true);
+    document.removeEventListener('keyup', up, true);
+    window.removeEventListener('blur', blur);
+    physicalKeys.clear();
+  };
+}
+
+/** Enabled app owners retain hardware edges through finite/Panic idle. A
+ * restart edge is consumed here, never replayed as a scanner selection. */
+export function observeHardwarePresses(onIdleSwitch: () => boolean): () => void {
+  idleHardwareObservers.add(onIdleSwitch);
+  return () => {
+    idleHardwareObservers.delete(onIdleSwitch);
+    if (!hardwareInputNeeded()) { stopGamepadPolling(); disconnectHIDDevices(); }
+  };
 }
 
 // ── Feature Detection ───────────────────────────────────────────────────────
@@ -174,9 +221,22 @@ interface NavigatorWithHID extends Navigator {
  * Returns all visible interactive elements on the page in DOM order,
  * filtered to only those that are visible and not disabled.
  */
+function scanRoot(): Element {
+  const dialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"], [data-testid="tracking-setup-wizard"]');
+  let root: Element = document.body, highest = -Infinity;
+  for (const dialog of dialogs) {
+    if (dialog.closest('[hidden], [aria-hidden="true"]')) continue;
+    const style = getComputedStyle(dialog);
+    if (style.display === 'none' || style.visibility === 'hidden') continue;
+    const z = parseInt(style.zIndex) || 0;
+    if (z >= highest) { root = dialog; highest = z; }
+  }
+  return root;
+}
+
 function discoverElements(): Element[] {
   if (typeof document === 'undefined') return [];
-  const raw = document.querySelectorAll(INTERACTIVE_SELECTOR);
+  const raw = scanRoot().querySelectorAll(INTERACTIVE_SELECTOR);
   const elements: Element[] = [];
 
   for (let i = 0; i < raw.length; i++) {
@@ -184,8 +244,13 @@ function discoverElements(): Element[] {
     if (el instanceof HTMLElement) {
       // Skip hidden/disabled elements
       if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') continue;
-      if (el.hasAttribute('disabled')) continue;
-      if (el.getAttribute('aria-hidden') === 'true') continue;
+      if (!el.isConnected || el.matches(':disabled') || el.closest('[hidden], [aria-hidden="true"], [aria-disabled="true"], [inert]')) continue;
+      let hidden = false;
+      for (let node: HTMLElement | null = el; node; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse' || style.opacity === '0') { hidden = true; break; }
+      }
+      if (hidden) continue;
       if (el.tabIndex === -1) continue;
       elements.push(el);
     }
@@ -307,6 +372,14 @@ function injectHighlightStyle(color: string): void {
       z-index: 9000 !important;
       position: relative;
     }
+    .${HIGHLIGHT_CLASS}[${GROUP_ATTR}="keyboard"] {
+      /* The keyboard shell clips overflow. Keep its group cue inside the
+         frame without changing individual-key or other-group feedback. */
+      outline-offset: -4px !important;
+      outline-color: ${safeColor} !important;
+      box-shadow: inset 0 0 0 4px ${safeColor} !important;
+      animation: none !important;
+    }
   `;
   styleInjected = true;
 }
@@ -323,8 +396,15 @@ function removeHighlightStyle(): void {
 
 let scanTimer: ReturnType<typeof setInterval> | null = null;
 let gamepadRafId: number | null = null;
+let gamepadEpoch = 0;
 let activeHIDDevices: HIDDevice[] = [];
+const idleHardwareObservers = new Set<() => boolean>();
+const pendingHIDDevices = new Set<HIDDevice>();
+const closingHIDDevices = new Map<HIDDevice, Promise<void>>();
+let hidEpoch = 0;
+let releaseHIDConnections: (() => void) | null = null;
 let domObserver: MutationObserver | null = null;
+let rescanDebounce: ReturnType<typeof setTimeout> | null = null;
 
 // State
 let state: SwitchScanState = {
@@ -337,6 +417,8 @@ let state: SwitchScanState = {
 
 let activeConfig: SwitchScanConfig = { ...DEFAULT_CONFIG };
 let activeCallbacks: SwitchScanCallbacks = {};
+let scanEpoch = 0;
+const heldKeys = new Set<string>();
 
 // Cached element structures (refreshed on each scan cycle)
 let flatElements: Element[] = [];
@@ -345,8 +427,22 @@ let groupedElements: Element[][] = [];
 /** Refresh element lists from the current DOM state. */
 function refreshElements(): void {
   flatElements = discoverElements();
+  const highlighted = currentHighlighted;
   if (activeConfig.groupScan) {
     groupedElements = discoverGroups();
+    // Rows can appear before the current group without changing its native
+    // identity. Navigation must step from that identity, not its old index.
+    if (!highlighted) return;
+    const groupIndex = groupedElements.findIndex(group => state.phase === 'groups'
+      ? highlighted === (group[0]?.closest(`[${GROUP_ATTR}]`) || group[0])
+      : group.includes(highlighted));
+    if (groupIndex >= 0) {
+      state.groupIndex = groupIndex;
+      if (state.phase === 'items') state.itemIndex = groupedElements[groupIndex].indexOf(highlighted);
+    }
+  } else if (highlighted) {
+    const itemIndex = flatElements.indexOf(highlighted);
+    if (itemIndex >= 0) state.itemIndex = itemIndex;
   }
 }
 
@@ -489,6 +585,13 @@ function selectCurrent(): void {
 
   // Group scanning: selecting a group enters item-scan within that group
   if (activeConfig.groupScan && state.phase === 'groups') {
+    const root = scanRoot();
+    if (!currentHighlighted?.isConnected || !root.contains(currentHighlighted)) { rescanElements(); return; }
+    const groups = discoverGroups();
+    const selected = groups.findIndex(group => currentHighlighted === (group[0]?.closest(`[${GROUP_ATTR}]`) || group[0]));
+    if (selected < 0) { rescanElements(); return; }
+    groupedElements = groups;
+    state.groupIndex = selected;
     state.phase = 'items';
     state.itemIndex = -1; // will advance to 0 on next tick
     clearHighlight();
@@ -499,15 +602,13 @@ function selectCurrent(): void {
   }
 
   // Item-level selection: click the highlighted element
-  const items = activeConfig.groupScan && state.phase === 'items'
-    ? groupedElements[state.groupIndex] || []
-    : flatElements;
-
-  if (state.itemIndex < 0 || state.itemIndex >= items.length) return;
-
-  const target = items[state.itemIndex];
+  // Select the visible highlighted identity, not a possibly shifted DOM slot.
+  const target = currentHighlighted;
+  if (!target || !discoverElements().includes(target)) { rescanElements(); return; }
+  const epoch = scanEpoch;
   if (target instanceof HTMLElement) {
     target.click();
+    if (epoch !== scanEpoch) return;
     activeCallbacks.onSelect?.(target);
   }
 
@@ -561,7 +662,12 @@ function isInputFocused(): boolean {
 }
 
 function onKeyDown(e: KeyboardEvent): void {
-  if (state.phase === 'idle') return;
+  if (state.phase === 'idle') {
+    // A retired scanner must still consume the tail of its physical press,
+    // not let that held key activate a newly focused ordinary control.
+    if (heldKeys.has(e.key)) { e.preventDefault(); e.stopPropagation(); }
+    return;
+  }
 
   // If an input is focused and the user presses Escape, blur it to
   // return scanner control. Don't let the input trap the switch user.
@@ -580,11 +686,15 @@ function onKeyDown(e: KeyboardEvent): void {
     case 'Enter':
       e.preventDefault();
       e.stopPropagation();
+      if (e.repeat || heldKeys.has(e.key)) return;
+      heldKeys.add(e.key);
       selectCurrent();
       break;
     case 'Tab':
       e.preventDefault();
       e.stopPropagation();
+      if (e.repeat || heldKeys.has(e.key)) return;
+      heldKeys.add(e.key);
       if (e.shiftKey) {
         advancePrevious();
       } else {
@@ -604,9 +714,33 @@ function onKeyDown(e: KeyboardEvent): void {
   }
 }
 
+function onKeyUp(e: KeyboardEvent): void {
+  if (heldKeys.delete(e.key)) { e.preventDefault(); e.stopPropagation(); }
+  if (state.phase === 'idle' && !heldKeys.size) detachKeyboard();
+}
+function detachKeyboard(): void {
+  if (typeof document === 'undefined') return;
+  document.removeEventListener('keydown', onKeyDown, true);
+  document.removeEventListener('keyup', onKeyUp, true);
+  window.removeEventListener('blur', releaseKeyboard);
+}
+function releaseKeyboard(): void {
+  heldKeys.clear();
+  if (state.phase === 'idle') detachKeyboard();
+}
+
 // ── Gamepad Input ───────────────────────────────────────────────────────────
 
 let prevGamepadButtonStates: boolean[][] = [];
+
+function hardwareInputNeeded(): boolean {
+  return state.phase !== 'idle' || idleHardwareObservers.size > 0;
+}
+
+function onHardwarePress(): void {
+  if (state.phase !== 'idle') { selectCurrent(); return; }
+  for (const restart of idleHardwareObservers) if (restart()) return;
+}
 
 function pollGamepads(): void {
   if (!isGamepadSupported()) return;
@@ -624,36 +758,41 @@ function pollGamepads(): void {
       continue;
     }
 
+    const previous = prevGamepadButtonStates[gi];
+    // Publish release/hold state before a selection can stop or restart us.
+    prevGamepadButtonStates[gi] = gp.buttons.map((b) => b.pressed);
+
     for (let bi = 0; bi < gp.buttons.length; bi++) {
-      const wasPressed = prevGamepadButtonStates[gi][bi] || false;
+      const wasPressed = previous[bi] || false;
       const isPressed = gp.buttons[bi].pressed;
 
       // Trigger on button-down edge (not held)
       if (isPressed && !wasPressed) {
-        selectCurrent();
+        onHardwarePress();
         // Only process one button per frame
         break;
       }
     }
-
-    prevGamepadButtonStates[gi] = gp.buttons.map((b) => b.pressed);
   }
 }
 
 function startGamepadPolling(): void {
-  if (!isGamepadSupported()) return;
+  if (!isGamepadSupported() || gamepadRafId !== null) return;
   prevGamepadButtonStates = [];
+  const epoch = ++gamepadEpoch;
 
   function loop() {
-    if (state.phase === 'idle') return;
+    if (epoch !== gamepadEpoch) return;
+    if (!hardwareInputNeeded()) { stopGamepadPolling(); return; }
     pollGamepads();
-    gamepadRafId = requestAnimationFrame(loop);
+    if (epoch === gamepadEpoch && hardwareInputNeeded()) gamepadRafId = requestAnimationFrame(loop);
   }
 
   gamepadRafId = requestAnimationFrame(loop);
 }
 
 function stopGamepadPolling(): void {
+  gamepadEpoch++;
   if (gamepadRafId !== null) {
     cancelAnimationFrame(gamepadRafId);
     gamepadRafId = null;
@@ -678,59 +817,96 @@ function onHIDInputReport(event: HIDInputReportEvent): void {
     currentState |= data.getUint8(i);
   }
   const now = performance.now();
+  const fresh = currentState !== 0 && lastHIDState === 0;
+  // A synchronous stop/restart must observe this report as already held.
+  lastHIDState = currentState;
 
   // Edge detection: fire only on 0→1 transition + 200ms debounce
-  if (currentState !== 0 && lastHIDState === 0 && (now - lastHIDTime > HID_DEBOUNCE_MS)) {
+  if (fresh && (now - lastHIDTime > HID_DEBOUNCE_MS)) {
     lastHIDTime = now;
-    selectCurrent();
+    onHardwarePress();
   }
-  lastHIDState = currentState;
 }
 
 async function connectHIDDevices(): Promise<void> {
-  if (!isWebHIDSupported()) return;
+  if (!isWebHIDSupported() || releaseHIDConnections) return;
   const hid = (navigator as NavigatorWithHID).hid!;
+  const epoch = ++hidEpoch;
+  const connect = (event: { device: HIDDevice }) => {
+    if (epoch === hidEpoch) void openHIDDevice(event.device, epoch);
+  };
+  const disconnect = (event: { device: HIDDevice }) => {
+    event.device.removeEventListener('inputreport', onHIDInputReport);
+    activeHIDDevices = activeHIDDevices.filter(device => device !== event.device);
+    lastHIDState = 0;
+  };
+  releaseHIDConnections = () => {
+    hid.removeEventListener('connect', connect);
+    hid.removeEventListener('disconnect', disconnect);
+  };
 
   try {
+    hid.addEventListener('connect', connect);
+    hid.addEventListener('disconnect', disconnect);
     // Check for already-paired devices first
     const paired = await hid.getDevices();
+    if (epoch !== hidEpoch) return;
     for (const device of paired) {
-      await openHIDDevice(device);
+      await openHIDDevice(device, epoch);
     }
-
-    // Listen for new device connections
-    hid.addEventListener('connect', async (event: { device: HIDDevice }) => {
-      await openHIDDevice(event.device);
-    });
-
-    hid.addEventListener('disconnect', (event: { device: HIDDevice }) => {
-      activeHIDDevices = activeHIDDevices.filter((d) => d !== event.device);
-    });
   } catch {
     // WebHID not available or permission denied — degrade gracefully
   }
 }
 
-async function openHIDDevice(device: HIDDevice): Promise<void> {
+async function openHIDDevice(device: HIDDevice, epoch = hidEpoch): Promise<void> {
+  if (epoch !== hidEpoch || activeHIDDevices.includes(device) || pendingHIDDevices.has(device)) return;
+  pendingHIDDevices.add(device);
   try {
+    const closing = closingHIDDevices.get(device);
+    if (closing) await closing;
+    if (epoch !== hidEpoch) return;
     if (!device.opened) {
       await device.open();
+    }
+    if (epoch !== hidEpoch) {
+      await closeHIDDevice(device);
+      return;
     }
     device.addEventListener('inputreport', onHIDInputReport);
     activeHIDDevices.push(device);
   } catch {
     // Device open failed — skip this device
+  } finally {
+    pendingHIDDevices.delete(device);
+    // A new enabled owner may have arrived while the retired open finished.
+    if (epoch !== hidEpoch && releaseHIDConnections && hardwareInputNeeded()) void openHIDDevice(device);
   }
 }
 
+function closeHIDDevice(device: HIDDevice): Promise<void> {
+  const pending = closingHIDDevices.get(device);
+  if (pending) return pending;
+  const closing = device.close().catch(() => {}).finally(() => {
+    if (closingHIDDevices.get(device) === closing) closingHIDDevices.delete(device);
+  });
+  closingHIDDevices.set(device, closing);
+  return closing;
+}
+
 function disconnectHIDDevices(): void {
+  hidEpoch++;
+  releaseHIDConnections?.();
+  releaseHIDConnections = null;
   for (const device of activeHIDDevices) {
     try {
       device.removeEventListener('inputreport', onHIDInputReport);
-      device.close().catch(() => {});
+      void closeHIDDevice(device);
     } catch { /* best effort cleanup */ }
   }
   activeHIDDevices = [];
+  lastHIDState = 0;
+  lastHIDTime = 0;
 }
 
 /**
@@ -741,6 +917,7 @@ function disconnectHIDDevices(): void {
 export async function requestHIDDevice(): Promise<boolean> {
   if (!isWebHIDSupported()) return false;
   const hid = (navigator as NavigatorWithHID).hid!;
+  const epoch = hidEpoch;
 
   try {
     const devices = await hid.requestDevice({
@@ -753,10 +930,11 @@ export async function requestHIDDevice(): Promise<boolean> {
         { usagePage: 0x09 },
       ],
     });
+    if (epoch !== hidEpoch) return false;
     for (const device of devices) {
-      await openHIDDevice(device);
+      await openHIDDevice(device, epoch);
     }
-    return devices.length > 0;
+    return epoch === hidEpoch && devices.length > 0;
   } catch {
     return false;
   }
@@ -773,6 +951,7 @@ export function startScan(
   config?: Partial<SwitchScanConfig>,
   callbacks?: SwitchScanCallbacks,
 ): void {
+  scanEpoch++;
   // Stop any existing scan first
   if (state.phase !== 'idle') {
     stopScan();
@@ -795,6 +974,9 @@ export function startScan(
     : flatElements.length > 0;
 
   if (!hasElements) return;
+  // Only an admitted scanner owns a press/release latch. An empty startup
+  // installs no keyboard listener to retire a seeded latch on keyup.
+  for (const key of physicalKeys) heldKeys.add(key);
 
   // Initialize state
   state = {
@@ -815,6 +997,8 @@ export function startScan(
 
   // Keyboard listener (capture phase so we intercept before app handlers)
   document.addEventListener('keydown', onKeyDown, true);
+  document.addEventListener('keyup', onKeyUp, true);
+  window.addEventListener('blur', releaseKeyboard);
 
   // Start auto-timer if in auto mode
   if (activeConfig.mode === 'auto') {
@@ -830,7 +1014,7 @@ export function startScan(
   // Auto-refresh on DOM changes. Must observe 'class' to detect Tailwind
   // visibility toggles (hidden, opacity-0) — but must ignore our own
   // switch-scan-active class to prevent infinite loops.
-  let rescanDebounce: ReturnType<typeof setTimeout> | null = null;
+  const observerEpoch = scanEpoch;
   if (typeof MutationObserver !== 'undefined') {
     domObserver = new MutationObserver((mutations) => {
       // Ignore mutations that ONLY add/remove our highlight class
@@ -847,7 +1031,13 @@ export function startScan(
 
       if (rescanDebounce) clearTimeout(rescanDebounce);
       rescanDebounce = setTimeout(() => {
-        if (state.phase !== 'idle' && !state.paused) refreshElements();
+        rescanDebounce = null;
+        if (observerEpoch !== scanEpoch || state.phase === 'idle' || state.paused) return;
+        refreshElements();
+        const present = state.phase === 'groups'
+          ? groupedElements.some(group => currentHighlighted === (group[0]?.closest(`[${GROUP_ATTR}]`) || group[0]))
+          : !!currentHighlighted && flatElements.includes(currentHighlighted);
+        if (!present) rescanElements();
       }, 150);
     });
     domObserver.observe(document.body, {
@@ -863,19 +1053,20 @@ export function startScan(
 }
 
 /**
- * Stop switch scanning entirely. Cleans up all listeners and timers.
+ * Stop scanning and its timers. An already-held press retains only its
+ * release guard until keyup/blur, including across configuration restarts.
  */
 export function stopScan(): void {
+  scanEpoch++;
+  finishSwitchScanOwnershipStaging();
   stopAutoTimer();
-  stopGamepadPolling();
-  disconnectHIDDevices();
+  if (idleHardwareObservers.size === 0) { stopGamepadPolling(); disconnectHIDDevices(); }
   clearHighlight();
 
   if (domObserver) { domObserver.disconnect(); domObserver = null; }
+  if (rescanDebounce) { clearTimeout(rescanDebounce); rescanDebounce = null; }
 
-  if (typeof document !== 'undefined') {
-    document.removeEventListener('keydown', onKeyDown, true);
-  }
+  if (!heldKeys.size) detachKeyboard();
 
   removeHighlightStyle();
 

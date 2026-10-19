@@ -272,7 +272,10 @@ export class BaselineTracker {
      */
     getNoiseFloor(): number {
         if (this.samples < 30) return 0;
-        return Math.sqrt(this.varX * this.varX + this.varY * this.varY);
+        // varX/Y are squared normalized distances. The smoother's
+        // thresholds use normalized distances, so take the RMS axis
+        // standard deviation, not the magnitude of the variances.
+        return Math.sqrt((this.varX + this.varY) / 2);
     }
 }
 

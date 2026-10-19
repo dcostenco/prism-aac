@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { safeScreenshot } from './helpers/screenshot-validation';
 import { installLocalCameraAccess } from './helpers/camera-access-fixture';
 test.beforeEach(async ({ page, baseURL }, info) => installLocalCameraAccess(page, baseURL, info));
+test.use({ serviceWorkers: 'block' });
 
 test.afterEach(async ({ page, context }) => {
   try { await page.close(); } catch { /* fixture may already be closed */ }
@@ -48,9 +49,10 @@ test('bundled hand model opens the real scanning phase instead of default-profil
   await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole('button', { name: 'Settings' }).click();
-  const calibrationSection = page.getByRole('button', { name: /Hand Calibration/ });
+  const calibrationSection = page.getByRole('button', { name: /Accessibility & Input Modes/ });
   await calibrationSection.scrollIntoViewIfNeeded();
   await calibrationSection.click();
+  await page.getByText('Touchscreen Accuracy & Hand Profiles', { exact: true }).click();
   const openCalibration = page.getByRole('button', { name: /^(Scan Hand & Calibrate|Re-Calibrate)$/ });
   await openCalibration.scrollIntoViewIfNeeded();
   await openCalibration.click();

@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react';
+import { subscribeCameraSelection, readCameraSelectionState } from '@/services/cameraSelection';
+import { resolveDwellTarget } from '@/services/dwellTarget';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
   startPoseTracker,
@@ -9,6 +11,12 @@ import {
   type TrackingTarget,
 } from '@/services/bodyPoseService';
 import { tapFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
+import { trackingLossKey } from '@/services/trackingFeedback';
+import type { TrackingLossReason } from '@/services/trackingDiagnostics';
+import TrackingSelectionNotice from './TrackingSelectionNotice';
+import { isCameraCursorTarget } from '@/services/cameraTrackingTargets';
+import { wristSelectionDwellMs } from '@/services/wristMotion';
 
 /**
  * Camera Input Overlay — opt-in camera-based finger/arm tracking.
@@ -26,20 +34,38 @@ import { tapFeedback } from '@/services/feedback';
  */
 
 type Status = 'starting' | 'tracking' | 'lost' | 'stopped';
+const NO_INTERACTION_MS = 45_000;
+const CAMERA_KEY_SELECTOR = 'button[data-key], button[data-action]';
+function cameraKeyTarget(target: Element | null): HTMLElement | null {
+  return target instanceof HTMLElement && target.matches(CAMERA_KEY_SELECTOR) ? target : null;
+}
 
 export default function CameraInputOverlay() {
-  const enabled = useSettingsStore(s => s.cameraInputEnabled);
+  const { t } = useT();
+  const enabled = useSettingsStore(s => s.cameraInputEnabled && isCameraCursorTarget(s.cameraTrackingTarget));
+  const ownershipEpoch = useSyncExternalStore(subscribeCameraSelection,
+    () => readCameraSelectionState().epoch, () => 0);
+  const selectionBlocked = readCameraSelectionState().blocked;
   const calGeneration = useSettingsStore(s => s.poseCalibrationGeneration);
   const target = useSettingsStore(s => s.cameraTrackingTarget) as TrackingTarget;
-  const dwellMs = useSettingsStore(s => s.headTrackingDwellMs);
+  const configuredDwellMs = useSettingsStore(s => s.headTrackingDwellMs);
+  const dwellMs = wristSelectionDwellMs(configuredDwellMs);
   const sensitivity = useSettingsStore(s => s.headTrackingSensitivity);
 
   const [status, setStatus] = useState<Status>('stopped');
+  const [lossReason, setLossReason] = useState<TrackingLossReason | null>(null);
+  const [motionPaused, setMotionPaused] = useState(false);
+  const [selectionReady, setSelectionReady] = useState(false);
+  const [selectionLocked, setSelectionLocked] = useState(false);
+  const lockedElementRef = useRef<Element | null>(null);
+  const selectionReadyRef = useRef(false);
+  const pauseObservedAtRef = useRef(0);
   const [activeTarget, setActiveTarget] = useState(target);
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [dwellProgress, setDwellProgress] = useState(0);
 
   const handleRef = useRef<PoseTrackerHandle | null>(null);
+  const [resumeGeneration, setResumeGeneration] = useState(0);
   const dwellStartRef = useRef(0);
   const dwellElementRef = useRef<Element | null>(null);
   const rafRef = useRef(0);
@@ -71,6 +97,7 @@ export default function CameraInputOverlay() {
   const enabledAtRef = useRef(0);
   const cursorWindowRef = useRef<Array<{ x: number; y: number; t: number }>>([]);
   const [stuckToast, setStuckToast] = useState(false);
+  const [stuckReason, setStuckReason] = useState<'no-interaction' | 'pinned'>('no-interaction');
   const [recalToast, setRecalToast] = useState(false);
   useEffect(() => {
     const handler = () => {
@@ -87,7 +114,10 @@ export default function CameraInputOverlay() {
   const statusRef = useRef<Status>('stopped');
 
   const animateDwell = useCallback(function animate() {
-    if (!dwellElementRef.current || dwellStartRef.current === 0) {
+    if (lockedElementRef.current || !selectionReadyRef.current || !dwellElementRef.current || dwellStartRef.current === 0 ||
+        resolveDwellTarget(dwellElementRef.current) !== dwellElementRef.current) {
+      dwellElementRef.current = null;
+      dwellStartRef.current = 0;
       setDwellProgress(0);
       return;
     }
@@ -98,12 +128,13 @@ export default function CameraInputOverlay() {
 
   useEffect(() => {
     let mounted = true;
-    if (!enabled || !isPoseTrackingSupported()) {
+    let staleFrameLoss = false;
+    if (!enabled || readCameraSelectionState().blocked || !isPoseTrackingSupported()) {
       if (handleRef.current) { handleRef.current.stop(); handleRef.current = null; }
       queueMicrotask(() => {
         if (mounted) setStatus('stopped');
       });
-      return;
+      return () => { mounted = false; };
     }
 
     const handle = startPoseTracker({
@@ -111,9 +142,36 @@ export default function CameraInputOverlay() {
       sensitivity,
       smoothing: 0.15,
       trackingTarget: target,
+      selectedTargetOnly: true,
+      requireHeadPresence: true,
+      calibrationMode: 'control',
       cursorSmoothing: 0.12,
+      onTrackingLoss(reason) {
+        if (!mounted) return;
+        setLossReason(reason);
+        // A stale frame cancels selection, but cannot erase a previously
+        // measured rest from the watchdog's bounded activity history.
+        // Actual target/head loss still discards that history immediately.
+        staleFrameLoss = reason === 'camera-frame-stale';
+        if (!staleFrameLoss) pauseObservedAtRef.current = 0;
+        setMotionPaused(false);
+        selectionReadyRef.current = false; setSelectionReady(false);
+      },
+      onMotionStateChange(motion) {
+        if (!mounted) return;
+        selectionReadyRef.current = motion.selectionReady === true;
+        if (motion.paused && !motion.rejected) pauseObservedAtRef.current = Date.now();
+        if (mounted) setMotionPaused(motion.paused);
+        setSelectionReady(selectionReadyRef.current);
+        if (!selectionReadyRef.current) {
+          cancelAnimationFrame(rafRef.current); dwellElementRef.current = null; dwellStartRef.current = 0;
+          if (mounted) setDwellProgress(0);
+        }
+      },
       onMove(x, y) {
+        if (!mounted) return;
         setCursorPos({ x, y });
+        if (readCameraSelectionState().blocked) return;
         // Watchdog window — only keep the most recent 100 samples to
         // bound memory; the watchdog filters by timestamp anyway.
         cursorWindowRef.current.push({ x, y, t: Date.now() });
@@ -125,9 +183,9 @@ export default function CameraInputOverlay() {
         // finger width data alongside cursor position.
 
         const el = document.elementFromPoint(x, y);
-        const interactive = el?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? null;
+        const interactive = resolveDwellTarget(el);
 
-        const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
+        const keyBtn = cameraKeyTarget(interactive);
         if (keyBtn && keyBtn !== highlightedKeyRef.current) {
           highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
           highlightedKeyRef.current = keyBtn;
@@ -146,7 +204,7 @@ export default function CameraInputOverlay() {
           setKeyBubble(prev => ({ ...prev, visible: false }));
         }
 
-        if (interactive) {
+        if (selectionReadyRef.current && interactive && !lockedElementRef.current) {
           if (interactive !== dwellElementRef.current) {
             dwellElementRef.current = interactive;
             dwellStartRef.current = Date.now();
@@ -160,17 +218,42 @@ export default function CameraInputOverlay() {
           cancelAnimationFrame(rafRef.current);
         }
       },
+      onDwellLockChange(element) {
+        if (!mounted) return;
+        lockedElementRef.current = element; setSelectionLocked(element !== null);
+        if (element) {
+          cancelAnimationFrame(rafRef.current);
+          dwellElementRef.current = null; dwellStartRef.current = 0; setDwellProgress(0);
+        }
+      },
       onDwell() {
+        if (!mounted) return;
         tapFeedback();
         setDwellProgress(0);
         dwellElementRef.current = null;
         dwellStartRef.current = 0;
+        cancelAnimationFrame(rafRef.current);
         // Successful interaction — reset the no-interaction timer.
         lastDwellTsRef.current = Date.now();
       },
       onStatusChange(s, detectedTarget) {
+        if (!mounted) return;
+        if (s !== 'lost') staleFrameLoss = false;
         setStatus(s);
+        if (s === 'starting' || s === 'tracking') setLossReason(null);
         if (detectedTarget) setActiveTarget(detectedTarget);
+        if (s !== 'tracking') {
+          if (s !== 'lost' || !staleFrameLoss) pauseObservedAtRef.current = 0;
+          selectionReadyRef.current = false; setSelectionReady(false);
+          if (s === 'starting' || s === 'stopped') { lockedElementRef.current = null; setSelectionLocked(false); }
+          cancelAnimationFrame(rafRef.current);
+          dwellElementRef.current = null;
+          dwellStartRef.current = 0;
+          setDwellProgress(0);
+          highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
+          highlightedKeyRef.current = null;
+          setKeyBubble(previous => ({ ...previous, visible: false }));
+        }
       },
     });
 
@@ -178,16 +261,17 @@ export default function CameraInputOverlay() {
     enabledAtRef.current = Date.now();
     lastDwellTsRef.current = 0;
     cursorWindowRef.current = [];
+    pauseObservedAtRef.current = 0;
 
     // Stuck-cursor / no-interaction watchdog. Runs at 1 Hz. Two
     // failure modes auto-disable tracking + show a recovery toast:
-    //   1. NO INTERACTION — tracker has been 'tracking' for ≥ 25s
+    //   1. NO INTERACTION — tracker reached NO_INTERACTION_MS
     //      without a single onDwell. The cursor isn't reaching
     //      anything interactive (degenerate calibration, cursor
     //      mapped off-screen, calibration anchored on wrong body
     //      part). Better to disable than leave the user trapped.
-    //   2. PINNED CURSOR — every cursor sample in the last 10s
-    //      stayed within a 100×100 px box. Calibration range
+    //   2. PINNED CURSOR — samples in PIN_WINDOW_MS stayed
+    //      inside PIN_BOX_PX. Calibration range
     //      collapsed; cursor barely responds to pose movement.
     //
     // The watchdog is the CameraInput equivalent of the drift
@@ -195,30 +279,27 @@ export default function CameraInputOverlay() {
     // Couldn't reuse that primitive directly because it requires
     // landmark confidence which CameraInputOverlay doesn't get from
     // the tracker — we only have cursor x/y here.
-    const NO_INTERACTION_MS = 45_000;   // raised from 25s — new calibration needs time to settle
     const PIN_WINDOW_MS = 15_000;       // raised from 10s — user may sit still briefly
     const PIN_BOX_PX = 80;
     const GRACE_PERIOD_MS = 20_000;     // don't fire for 20s after tracker start — calibration just set
     const watchdog = setInterval(() => {
-      if (!mounted) return;
+      if (!mounted || readCameraSelectionState().blocked) return;
       const now = Date.now();
       // Only judge once tracker is actually tracking (not 'starting' /
       // 'lost' / 'stopped') — those have their own UX.
       if (statusRef.current !== 'tracking') return;
-      // Grace period after start — calibration was just set, cursor may
-      // appear stable while user adjusts posture. Don't fire during this window.
-      if (now - enabledAtRef.current < GRACE_PERIOD_MS) return;
+      // Observed pauses reset the same bounded grace interval, even before
+      // its first check. Polling phase must not erase legitimate rest.
+      const lastPause = pauseObservedAtRef.current <= now ? pauseObservedAtRef.current : 0;
+      const activityAt = Math.max(enabledAtRef.current, lastPause);
+      if (now - activityAt < GRACE_PERIOD_MS) return;
       // Don't fire while tutorial wizard is running (UI is captive).
       if (document.querySelector('[data-testid="tracking-setup-wizard"]')) return;
-
       // 1. No interaction window
-      const enabledFor = now - enabledAtRef.current;
-      const sinceDwell = lastDwellTsRef.current === 0
-        ? enabledFor
-        : now - lastDwellTsRef.current;
+      const sinceDwell = now - Math.max(activityAt, lastDwellTsRef.current);
       if (sinceDwell > NO_INTERACTION_MS) {
         console.warn('[camera-input] no successful interaction for ' + Math.round(sinceDwell / 1000) + 's — auto-disabling, calibration likely degenerate');
-        setStuckToast(true);
+        setStuckReason('no-interaction'); setStuckToast(true);
         setSettings({ cameraInputEnabled: false });
         return;
       }
@@ -236,7 +317,7 @@ export default function CameraInputOverlay() {
         }
         if (maxX - minX < PIN_BOX_PX && maxY - minY < PIN_BOX_PX) {
           console.warn('[camera-input] cursor pinned to ' + Math.round(maxX - minX) + 'x' + Math.round(maxY - minY) + ' px box for ' + (PIN_WINDOW_MS / 1000) + 's — auto-disabling, calibration likely too narrow');
-          setStuckToast(true);
+          setStuckReason('pinned'); setStuckToast(true);
           setSettings({ cameraInputEnabled: false });
           return;
         }
@@ -255,7 +336,25 @@ export default function CameraInputOverlay() {
   // calGeneration increments each time the wizard saves a new calibration.
   // Adding it to deps forces the tracker to restart and reload the new cal
   // from localStorage — otherwise the running tracker's in-memory cal is stale.
-  }, [enabled, target, dwellMs, sensitivity, animateDwell, setSettings, calGeneration]);
+  }, [enabled, resumeGeneration, target, dwellMs, sensitivity, animateDwell, setSettings, calGeneration]);
+
+  // Ownership pauses selection inside the service, not the tracker lifetime:
+  // a completed same-control hold must survive scanning and require departure.
+  useEffect(() => {
+    cancelAnimationFrame(rafRef.current);
+    dwellElementRef.current = null;
+    dwellStartRef.current = 0;
+    setDwellProgress(0);
+    highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
+    highlightedKeyRef.current = null;
+    setKeyBubble(prev => ({ ...prev, visible: false }));
+    enabledAtRef.current = Date.now();
+    lastDwellTsRef.current = 0;
+    cursorWindowRef.current = [];
+    if (enabled && !readCameraSelectionState().blocked && !handleRef.current) {
+      setResumeGeneration(generation => generation + 1);
+    }
+  }, [ownershipEpoch, enabled]);
 
   // Pointer fallback: when camera is on but can't detect the target
   // (MacBook — hands below FOV), use mouse movement for cursor + highlights.
@@ -272,7 +371,7 @@ export default function CameraInputOverlay() {
       setCursorPos({ x: e.clientX, y: e.clientY });
 
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
+      const keyBtn = cameraKeyTarget(resolveDwellTarget(el));
       if (keyBtn && keyBtn !== highlightedKeyRef.current) {
         highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
         highlightedKeyRef.current = keyBtn;
@@ -294,27 +393,27 @@ export default function CameraInputOverlay() {
     if (!stuckToast) return null;
     return (
       <div
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] bg-[#1f1f1f] text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/10 max-w-md pointer-events-auto"
+        className="camera-recovery-warning bg-[#1f1f1f] text-white border border-white/10 pointer-events-auto"
         data-testid="camera-input-stuck-toast"
         role="alert"
       >
-        <p className="font-semibold text-sm">Camera tracking auto-disabled</p>
+        <p className="font-semibold text-sm">{t('camera_watchdog_disabled')}</p>
         <p className="text-xs text-white/70 mt-1">
-          Cursor wasn&apos;t reaching anything for 25 s — calibration looks off.
-          Re-run setup from Settings, or close this and use touch.
+          {stuckReason === 'pinned' ? t('camera_watchdog_pinned') :
+            t('camera_watchdog_no_interaction').replace('{seconds}', String(NO_INTERACTION_MS / 1000))}
         </p>
         <div className="flex gap-2 mt-3 justify-end">
           <button
             onClick={() => setStuckToast(false)}
             className="text-xs px-3 py-1.5 rounded bg-white/10 hover:bg-white/20"
-          >Dismiss</button>
+          >{t('camera_watchdog_dismiss')}</button>
           <button
             onClick={() => {
               setStuckToast(false);
               setSettings({ cameraInputEnabled: true });
             }}
             className="text-xs px-3 py-1.5 rounded bg-[#4CAF50] hover:bg-[#43a047] font-semibold"
-          >Re-enable</button>
+          >{t('camera_watchdog_reenable')}</button>
         </div>
       </div>
     );
@@ -324,7 +423,7 @@ export default function CameraInputOverlay() {
 
   const recalToastEl = recalToast ? (
     <div
-      className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[10000] bg-[#1a1a2e] text-white px-4 py-3 rounded-2xl shadow-2xl border border-[#FF9800]/40 max-w-sm pointer-events-auto"
+      className="camera-recovery-warning bg-[#1a1a2e] text-white border border-[#FF9800]/40 pointer-events-auto"
       data-testid="camera-input-recal-toast"
       role="alert"
     >
@@ -341,17 +440,40 @@ export default function CameraInputOverlay() {
   ) : null;
   const bubbleY = keyBubble.visible ? Math.max(5, keyBubble.y - 55) : 0;
   const bubbleX = keyBubble.visible ? Math.max(25, Math.min(typeof window !== 'undefined' ? window.innerWidth - 25 : 9999, keyBubble.x)) : 0;
+  // The status remains visible, but reserves space instead of covering keys.
+  const statusBadge = <div data-testid="camera-input-status" role="status"
+    className="shrink-0 surface-bar px-3 py-1 items-center gap-1 text-primary text-xs font-semibold"
+    style={{ position: 'static', display: selectionBlocked || status === 'stopped' ? 'none' : 'flex' }}>
+    <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: statusColor, display: 'inline-block' }} />
+    {status === 'tracking' ? (selectionLocked ? t('camera_selection_locked') : motionPaused ? (selectionReady
+      ? t('camera_motion_paused').replace('{seconds}', String(dwellMs / 1000))
+      : t('camera_selection_uncertain')) : t('camera_motion_moving')) : status}
+  </div>;
 
   return (
     <>
+    <div className={`camera-recovery-rows${recalToast && (selectionBlocked || status === 'stopped' || status === 'lost') ? ' camera-recovery-rows-paired' : ''}`}>
+    {(selectionBlocked || status === 'stopped' || status === 'lost') && <TrackingSelectionNotice
+      title={t('camera_required')} message={!selectionBlocked && lossReason ? t(trackingLossKey(lossReason)) : undefined}
+      testId="camera-input-notice" paused={selectionBlocked}
+      onRetry={() => {
+        if (!useSettingsStore.getState().cameraInputEnabled || readCameraSelectionState().blocked) return;
+        tapFeedback();
+        setResumeGeneration(generation => generation + 1);
+      }}
+    />}
     {recalToastEl}
+    </div>
+    {statusBadge}
     <div
       className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 9998 }}
+      style={{ zIndex: 9998, display: selectionBlocked || status === 'stopped' ? 'none' : undefined }}
       aria-hidden="true"
       data-testid="camera-input-overlay"
-      data-status={status}
+      data-status={selectionBlocked ? 'paused' : status}
       data-target={activeTarget}
+      data-motion-paused={motionPaused ? 'true' : 'false'}
+      data-selection-ready={!selectionBlocked && selectionReady && !selectionLocked ? 'true' : 'false'}
     >
       {/* Precision bubble on keyboard key */}
       {keyBubble.visible && (
@@ -405,27 +527,6 @@ export default function CameraInputOverlay() {
         );
       })()}
 
-      {/* Status badge */}
-      <div
-        data-testid="camera-input-status"
-        style={{
-          position: 'absolute',
-          bottom: 8,
-          left: 8,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 5,
-          background: 'rgba(0,0,0,0.5)',
-          color: 'white',
-          padding: '3px 10px',
-          borderRadius: 16,
-          fontSize: 11,
-          fontWeight: 600,
-        }}
-      >
-        <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: statusColor, display: 'inline-block' }} />
-        {status === 'tracking' ? `Tracking ${activeTarget.replace('_', ' ')}` : status}
-      </div>
     </div>
     </>
   );

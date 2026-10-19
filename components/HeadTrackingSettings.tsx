@@ -7,6 +7,7 @@ import { isHeadTrackingSupported, listCameras, saveCalibration, type Calibration
 import { isSafeMode, clearDriftHistory } from '@/services/safeMode';
 import { useT } from '@/engine/useT';
 import { tapFeedback } from '@/services/feedback';
+import { HEAD_CURSOR_AVAILABLE } from '@/services/cameraTrackingTargets';
 
 /* ─────────────────────────────────────────────────────────────────────────────
  *  HeadTrackingSettings
@@ -32,7 +33,7 @@ const CAL_POSITIONS = [
   { label: 'Bottom-Left', x: '10%', y: '90%' },
 ];
 
-export default function HeadTrackingSettings() {
+export default function HeadTrackingSettings({ showTimingControls = true }: { showTimingControls?: boolean } = {}) {
   const { t } = useT();
   const settings = useSettingsStore();
   const [cameras, setCameras] = useState<{ deviceId: string; label: string }[]>([]);
@@ -43,6 +44,7 @@ export default function HeadTrackingSettings() {
 
   // Enumerate cameras on mount
   useEffect(() => {
+    if (!HEAD_CURSOR_AVAILABLE) return;
     listCameras().then((cams) => {
       setCameras(cams);
       if (cams.length > 0) setSelectedCamera((prev) => prev || cams[0].deviceId);
@@ -85,6 +87,8 @@ export default function HeadTrackingSettings() {
     });
   }, []);
 
+  if (!HEAD_CURSOR_AVAILABLE) return <p className="text-muted text-sm">{t('camera_controls_disabled')}</p>;
+
   if (!supported) {
     return (
       <div>
@@ -110,6 +114,7 @@ export default function HeadTrackingSettings() {
       {settings.headTrackingEnabled && (
         <div className="space-y-4 mt-3">
           {/* Dwell Time Slider */}
+          {showTimingControls && <>
           <div>
             <label className="flex items-center justify-between mb-2">
               <span className="text-primary text-base">{t('dwell_time')}</span>
@@ -155,6 +160,7 @@ export default function HeadTrackingSettings() {
             </div>
           </div>
 
+          </>}
           {/* Eye / Gaze tracking toggle */}
           <div className="flex items-center justify-between py-2 border-t border-theme">
             <div>

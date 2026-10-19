@@ -1,0 +1,77 @@
+{
+  "description": "Exact sources and digests of the redistributed MediaPipe files in public/models/mediapipe (Apache License 2.0, see NOTICE). Each model was compared byte for byte with its source; each wasm file equals the named npm package file.",
+  "files": [
+    {
+      "file": "blaze_face_full_range.tflite",
+      "sha256": "3698b18f063835bc609069ef052228fbe86d9c9a6dc8dcb7c7c2d69aed2b181b",
+      "bytes": 1083786,
+      "source": "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_full_range/float16/1/blaze_face_full_range.tflite"
+    },
+    {
+      "file": "blaze_face_short_range.tflite",
+      "sha256": "b4578f35940bf5a1a655214a1cce5cab13eba73c1297cd78e1a04c2380b0152f",
+      "bytes": 229746,
+      "source": "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite"
+    },
+    {
+      "file": "efficientdet_lite0_int8.tflite",
+      "sha256": "0720bf247bd76e6594ea28fa9c6f7c5242be774818997dbbeffc4da460c723bb",
+      "bytes": 4602795,
+      "source": "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite"
+    },
+    {
+      "file": "face_landmarker.task",
+      "sha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+      "bytes": 3758596,
+      "source": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+    },
+    {
+      "file": "hand_landmarker.task",
+      "sha256": "fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1",
+      "bytes": 7819105,
+      "source": "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+    },
+    {
+      "file": "pose_landmarker_lite.task",
+      "sha256": "59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a",
+      "bytes": 5777746,
+      "source": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+    },
+    {
+      "file": "wasm/vision_wasm_internal.js",
+      "sha256": "e7fd9858e8e8f221d9b96eddc11f8e077f263e0b7bbd79d3cbe882b134274f8c",
+      "bytes": 322044,
+      "source": "npm:@mediapipe/tasks-vision@0.10.35/wasm/vision_wasm_internal.js"
+    },
+    {
+      "file": "wasm/vision_wasm_internal.wasm",
+      "sha256": "6a5c64584c2ab61c763b6e204afbdbc7ce1caf7f5216187322bca8df94f646bc",
+      "bytes": 11153617,
+      "source": "npm:@mediapipe/tasks-vision@0.10.35/wasm/vision_wasm_internal.wasm"
+    },
+    {
+      "file": "wasm/vision_wasm_module_internal.js",
+      "sha256": "1f1d6215324a1fe62f6742d49a3db911170987ca18ad8c1b75f1a1c82acf2b44",
+      "bytes": 322082,
+      "source": "npm:@mediapipe/tasks-vision@0.10.35/wasm/vision_wasm_module_internal.js"
+    },
+    {
+      "file": "wasm/vision_wasm_module_internal.wasm",
+      "sha256": "617b8e0248dbd27e9d7ece4218004eae4cefb499196d1bb4fa0e3fef21708756",
+      "bytes": 11153641,
+      "source": "npm:@mediapipe/tasks-vision@0.10.35/wasm/vision_wasm_module_internal.wasm"
+    },
+    {
+      "file": "wasm/vision_wasm_nosimd_internal.js",
+      "sha256": "438d1fe8ff7f4d946025bc211c291543c037d8a3785ed4eee60f1f521b236296",
+      "bytes": 321847,
+      "source": "npm:@mediapipe/tasks-vision@0.10.35/wasm/vision_wasm_nosimd_internal.js"
+    },
+    {
+      "file": "wasm/vision_wasm_nosimd_internal.wasm",
+      "sha256": "8a3092d34c79d3f57e6ba8592105e8a90f6b07c27891ffecd14cca428bfd3e31",
+      "bytes": 10481398,
+      "source": "npm:@mediapipe/tasks-vision@0.10.35/wasm/vision_wasm_nosimd_internal.wasm"
+    }
+  ]
+}

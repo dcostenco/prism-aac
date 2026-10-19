@@ -17,5 +17,8 @@
     "esbuild": "^0.28.0",
     "typescript": "^5",
     "vitest": "^5"
+  },
+  "overrides": {
+    "source-map-js": "^1.2.2"
   }
 }

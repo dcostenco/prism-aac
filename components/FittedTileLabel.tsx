@@ -39,8 +39,10 @@ export default function FittedTileLabel({
 
       const preferredFloor = Math.max(1, minFontSizePx);
       for (let attempt = 0; attempt < 40; attempt += 1) {
-        const widthOverflow = label.scrollWidth > label.clientWidth + 1;
-        const heightOverflow = label.scrollHeight > label.clientHeight + 1;
+        // A single reported pixel can already clip the final glyph on
+        // narrow WebKit tiles; do not mark that communication as fitted.
+        const widthOverflow = label.scrollWidth > label.clientWidth;
+        const heightOverflow = label.scrollHeight > label.clientHeight;
         if (!widthOverflow && !heightOverflow) {
           label.dataset.fitStatus = fontSize < preferredFloor ? 'fit-below-min' : 'fit';
           return;
@@ -68,8 +70,8 @@ export default function FittedTileLabel({
         label.style.fontSize = `${fontSize}px`;
       }
 
-      const stillOverflowing = label.scrollWidth > label.clientWidth + 1
-        || label.scrollHeight > label.clientHeight + 1;
+      const stillOverflowing = label.scrollWidth > label.clientWidth
+        || label.scrollHeight > label.clientHeight;
       label.dataset.fitStatus = stillOverflowing
         ? 'overflow'
         : fontSize < preferredFloor ? 'fit-below-min' : 'fit';
