@@ -73,7 +73,6 @@ const AUTH_DRIFT_PATTERNS = [
 ];
 
 const VALIDATION_RETRY_ATTEMPTS = 5;
-const VALIDATION_RETRY_DELAY_MS = 250;
 const RETRYABLE_VALIDATION_REASONS = new Set([
   "missing_selector",
   "blank_canvas",
@@ -192,7 +191,6 @@ export async function checkCriticalOcclusion(
   if (critical.length === 0) return [];
   const result = await page.evaluate(
     ([criticalSelectors, occluderSelectors]) => {
-      const INSET = 2;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const rectOf = (el: Element) => {
@@ -240,12 +238,15 @@ export async function checkCriticalOcclusion(
             failures.push({ selector: sel, reason: "occluded_by", detail: `${o.sel} covers ${JSON.stringify(r)}` });
           }
         }
+        const inset = Math.min(r.width, r.height) / 4;
         const probes: Array<[string, number, number]> = [
           ["center", r.left + r.width / 2, r.top + r.height / 2],
-          ["top-left", r.left + INSET, r.top + INSET],
-          ["top-right", r.right - INSET, r.top + INSET],
-          ["bottom-left", r.left + INSET, r.bottom - INSET],
-          ["bottom-right", r.right - INSET, r.bottom - INSET],
+          // Interior quarter-points test the target surface. A fixed two-pixel
+          // inset lands outside rounded key corners and reports false overlays.
+          ["top-left", r.left + inset, r.top + inset],
+          ["top-right", r.right - inset, r.top + inset],
+          ["bottom-left", r.left + inset, r.bottom - inset],
+          ["bottom-right", r.right - inset, r.bottom - inset],
         ];
         for (const [name, x, y] of probes) {
           if (x < 0 || y < 0 || x > vw || y > vh) continue;

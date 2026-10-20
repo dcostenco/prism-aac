@@ -36,10 +36,39 @@ final class AACSubscriptionStore {
         }
     }
 
-    func product() async throws -> [String: Any] {
+    func product(accountToken: UUID? = nil) async throws -> [String: Any] {
         let product = try await loadProduct()
-        return ["id": product.id, "displayName": product.displayName,
-                "displayPrice": product.displayPrice]
+        guard let subscription = product.subscription,
+              subscription.subscriptionPeriod.unit == .month,
+              subscription.subscriptionPeriod.value == 1 else { throw PurchaseError.unavailable }
+        let offer = subscription.introductoryOffer
+        let eligible = await subscription.isEligibleForIntroOffer
+        var days = 0
+        if let offer, offer.paymentMode == .freeTrial {
+            switch offer.period.unit {
+            case .day: days = offer.period.value * offer.periodCount
+            case .week: days = offer.period.value * offer.periodCount * 7
+            default: break // Never approximate calendar months as days.
+            }
+        }
+        var result: [String: Any] = ["id": product.id, "displayName": product.displayName,
+            "displayPrice": product.displayPrice, "introductoryOfferEligible": eligible,
+            "introductoryTrialDays": days]
+        // Transaction dates are display-only. The private service still verifies
+        // and owns access. Never display another AAC account's trial on a shared device.
+        if let accountToken {
+            for await verification in Transaction.currentEntitlements {
+                guard case .verified(let transaction) = verification,
+                      transaction.productID == product.id, transaction.appAccountToken == accountToken,
+                      transaction.revocationDate == nil, let expires = transaction.expirationDate,
+                      expires > .now else { continue }
+                if #available(iOS 17.2, *), transaction.offer?.type == .introductory,
+                   transaction.offer?.paymentMode == .freeTrial {
+                    result["trialEndsAt"] = ISO8601DateFormatter().string(from: expires)
+                }
+            }
+        }
+        return result
     }
 
     private func loadProduct() async throws -> Product {

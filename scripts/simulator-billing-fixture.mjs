@@ -6,7 +6,9 @@
 import http from 'node:http';
 
 const account = '11111111-1111-4111-8111-111111111111';
-let state = { active: false, prepares: 0, reconciliations: 0 };
+const initialState = () => ({ run: process.env.AAC_NATIVE_RUN_ID || 'manual-simulator-fixture',
+  account, active: false, prepares: 0, reconciliations: 0, transactions: [] });
+let state = initialState();
 const offer = { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly',
   monthlySpeechCharacters: 50000, monthlyAiRequests: 100, version: 'simulator-fixture-only', allowanceReset: 'utc_calendar_month' };
 const billing = () => ({ userId: account, hasCloudAccess: state.active, betaExempt: false,
@@ -20,7 +22,7 @@ http.createServer(async (req, res) => {
     res.end(JSON.stringify(data));
   };
   if (url.pathname === '/__simulator__/reset' && req.method === 'POST') {
-    state = { active: false, prepares: 0, reconciliations: 0 };
+    state = initialState();
     return send(state);
   }
   if (url.pathname === '/__simulator__/state') return send(state);
@@ -47,6 +49,13 @@ http.createServer(async (req, res) => {
           // or production database is ever written by this fixture.
           const payload = JSON.parse(Buffer.from(body.jws.split('.')[1], 'base64url').toString());
           if (payload.productId !== offer.appleProductId) return send({ error: 'Wrong fixture product' }, 400);
+          if (payload.environment !== 'Xcode' || payload.appAccountToken?.toLowerCase() !== account) {
+            return send({ error: 'Wrong local StoreKit environment or fixture account' }, 400);
+          }
+          state.transactions.push({ id: String(payload.transactionId), originalId: String(payload.originalTransactionId),
+            accountToken: payload.appAccountToken, environment: payload.environment,
+            purchaseDate: payload.purchaseDate, expiresDate: payload.expiresDate, productId: payload.productId,
+            acknowledgedAt: Date.now() });
           state.active = true; state.reconciliations++;
           return send({ status: 'reconciled', transactionId: String(payload.transactionId) });
         }

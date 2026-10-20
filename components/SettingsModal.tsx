@@ -20,7 +20,7 @@ import { tapFeedback } from '@/services/feedback';
 import HeadTrackingSettings from './HeadTrackingSettings';
 import LocalAISettings from './LocalAISettings';
 import { SYMBOL_BASE_PATH } from '@/lib/pictogramSources';
-import { APPLE_STANDARD_EULA_URL } from '@/lib/appPaths';
+import { APPLE_STANDARD_EULA_URL, PRISM_AAC_SOURCE_URL } from '@/lib/appPaths';
 import TermsLink from '@/components/TermsLink';
 import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
@@ -658,7 +658,7 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
 
           {/* ── ACCOUNT ── */}
           <Section icon="👤" title={t('synalux_account')}>
-            {!profileLoaded || profileLoading ? (
+            {!profileLoaded || (profileLoading && !profile) ? (
               <p className="text-muted text-sm">{t('checking_sign_in')}</p>
             ) : profile ? (
               <div className="space-y-2">
@@ -715,6 +715,7 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
                 <p className="text-xs text-muted" data-testid="aac-guest-legal-links">
                   <TermsLink className="underline">{t('cloud_terms')}</TermsLink>
                   {' · '}<a href={APPLE_STANDARD_EULA_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">{t('cloud_terms')} (Apple)</a>
+                  {' · '}<a href={PRISM_AAC_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">{t('cloud_source_code')}</a>
                 </p>
               </div>
             )}

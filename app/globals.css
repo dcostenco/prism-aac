@@ -781,6 +781,21 @@ html, body {
 
 }
 
+/* Fixed control minimums can consume the whole narrow keyboard, collapsing
+   Space beneath its label. Keep every control and reserve wider word keys. */
+@media (max-width: 479px) {
+  [data-scan-group="keyboard"] [data-key-row="controls"] > button {
+    min-width: 0;
+    padding-inline: 0;
+    flex: 1 1 0%;
+  }
+
+  [data-scan-group="keyboard"] [data-key-row="controls"] > button[data-action="space"],
+  [data-scan-group="keyboard"] [data-key-row="controls"] > button:last-child {
+    flex-grow: 2;
+  }
+}
+
 .aac-composer-empty-prompt {
   display: flex;
   min-width: 0;

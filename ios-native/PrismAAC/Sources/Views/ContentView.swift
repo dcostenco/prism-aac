@@ -433,7 +433,9 @@ struct PrismWebView: UIViewRepresentable {
                     do {
                         let store = AACSubscriptionStore.shared
                         switch operation {
-                        case "product": response["result"] = try await store.product()
+                        case "product":
+                            let token = (request["accountToken"] as? String).flatMap(UUID.init(uuidString:))
+                            response["result"] = try await store.product(accountToken: token)
                         case "purchase":
                             guard let rawToken = request["accountToken"] as? String,
                                   let token = UUID(uuidString: rawToken) else {
