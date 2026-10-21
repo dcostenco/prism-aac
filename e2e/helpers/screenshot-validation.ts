@@ -241,6 +241,12 @@ export async function checkCriticalOcclusion(
         }
         const probes: Array<[string, number, number]> = [
           ["center", r.left + r.width / 2, r.top + r.height / 2],
+          // Edge midpoints stay on a rounded control's painted surface while
+          // detecting undeclared ribbons outside the quarter-point probes.
+          ["top-edge", r.left + r.width / 2, r.top + Math.min(2, r.height / 4)],
+          ["bottom-edge", r.left + r.width / 2, r.bottom - Math.min(2, r.height / 4)],
+          ["left-edge", r.left + Math.min(2, r.width / 4), r.top + r.height / 2],
+          ["right-edge", r.right - Math.min(2, r.width / 4), r.top + r.height / 2],
           // Test the painted surface, not transparent rounded corners.
           ["top-left", r.left + r.width / 4, r.top + r.height / 4],
           ["top-right", r.right - r.width / 4, r.top + r.height / 4],

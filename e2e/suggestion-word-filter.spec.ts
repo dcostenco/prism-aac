@@ -26,8 +26,30 @@ const CASES = [
   { language: 'zh-Hans', input: '他想自', completion: '他想自杀', blocked: true },
   { language: 'uk', input: 'Я тебе вб', completion: "Я тебе вб'ю", blocked: true },
   { language: 'ja', input: '死にた', completion: '死にたい', blocked: true },
+  { language: 'en', input: "f'", completion: "f'uck", blocked: true },
+  { language: 'uk', input: 'Я тебе вб', completion: 'Я тебе вб`ю', blocked: true },
+  { language: 'uk', input: 'Я тебе вб', completion: 'Я тебе вб´ю', blocked: true },
+  { language: 'ja', input: 'f.u', completion: 'f.u.c.k', blocked: true },
+  { language: 'zh-Hans', input: 'f.u', completion: 'f.u.c.k', blocked: true },
+  { language: 'ja', input: "That's the killer's ca", completion: "That's the killer's car", blocked: true },
+  { language: 'en', input: 'He´ll be hom', completion: 'He´ll be home', blocked: false },
+  { language: 'en', input: 'He‘ll be hom', completion: 'He‘ll be home', blocked: false },
+  { language: 'en', input: 'He`ll be hom', completion: 'He`ll be home', blocked: false },
+  { language: 'zh-Hans', input: '我想操', completion: '我想操控', blocked: false },
+  { language: 'zh-Hant', input: '幹細', completion: '幹細胞', blocked: false },
+  { language: 'ja', input: '今日は暑いし', completion: '今日は暑いしね', blocked: false },
+  { language: 'ja', input: '大丈夫ですし', completion: '大丈夫ですしね', blocked: false },
+  { language: 'ja', input: '楽しいし', completion: '楽しいしね', blocked: false },
+  { language: 'zh-Hans', input: '哎呀我', completion: '哎呀我操', blocked: true },
+  { language: 'zh-Hans', input: '我草', completion: '我操', blocked: true },
+  { language: 'zh-Hans', input: '我操控轮', completion: '我操控轮椅', blocked: false },
+  { language: 'zh-Hant', input: '被我操', completion: '被我操控', blocked: false },
+  { language: 'zh-HK', input: '我操', completion: '我操控', blocked: false },
+  { language: 'zh-Hans', input: '操控', completion: '操控操', blocked: true },
+  { language: 'zh-Hans', input: '我操操', completion: '我操操控', blocked: true },
 ] as const;
 const BLOCKED_TILE = /^(?:kill(?:s|ed|ing|ings|er|ers)?|die[sd]?|dying)$/i;
+const ORDINARY_TILE_CONTROLS = new Set(['diet', 'kilometers', 'Je suis en retard', 'Die Jacke ist zu dick']);
 
 test.afterEach(async ({ page, context }) => {
   try { await page.close(); } finally { await context.close(); }
@@ -43,7 +65,7 @@ async function typeOnKeyboard(page: Page, text: string) {
 }
 
 for (const scenario of CASES) {
-  test(`${scenario.input} -> ${scenario.completion}: ${scenario.blocked ? 'withheld' : 'offered'}`, async ({ page, baseURL }, testInfo) => {
+  test(`${scenario.language}: ${scenario.input} -> ${scenario.completion}: ${scenario.blocked ? 'withheld' : 'offered'}`, async ({ page, baseURL }, testInfo) => {
     if (!baseURL || !['127.0.0.1', 'localhost'].includes(new URL(baseURL).hostname)) {
       throw new Error('This provider-fixture test requires a loopback BASE_URL');
     }
@@ -99,7 +121,11 @@ for (const scenario of CASES) {
     if (scenario.blocked) {
       await expect(suggestion).toHaveCount(0);
     } else {
-      await expect(suggestion).toHaveText(new RegExp(scenario.completion, 'i'));
+      await expect(suggestion).toContainText(scenario.completion);
+      if (ORDINARY_TILE_CONTROLS.has(scenario.completion)) {
+        const word = scenario.completion.split(/\s+/).at(-1)!;
+        await expect(page.getByTestId('prediction-tile').filter({ hasText: new RegExp(`^${word}$`, 'i') })).toBeVisible();
+      }
     }
     const tiles = await page.getByTestId('prediction-bar').getByRole('button').allTextContents();
     if (scenario.blocked) {
@@ -112,10 +138,14 @@ for (const scenario of CASES) {
     await expect(page.getByTestId('message-text')).toHaveText(new RegExp(`^${scenario.input}$`, 'i'));
 
     if ((scenario.input === 'kil' && scenario.completion === 'kill') || scenario.completion === 'diet') {
+      const predictionSelectors = (await page.getByTestId('prediction-tile').evaluateAll((nodes) =>
+        nodes.map((node) => node.getAttribute('aria-label')))).map((label) =>
+        `[data-testid="prediction-tile"][aria-label=${JSON.stringify(label)}]`);
       await safeScreenshot(page, testInfo.outputPath(`${scenario.input}-${scenario.completion}.png`), {
         expectedPath: '/prism-aac',
         requiredSelectors: ['[data-testid="message-text"]', '[data-testid="prediction-bar"]'],
-        criticalSelectors: ['[data-testid="message-text"]', '[data-scan-group="message-bar"] button.aac-speak'],
+        criticalSelectors: ['[data-testid="message-text"]', '[data-scan-group="message-bar"] button.aac-speak',
+          ...predictionSelectors, ...predictionSelectors.map((selector) => `${selector} [data-testid="prediction-label"]`)],
       });
     }
     if (!scenario.blocked) {
@@ -129,6 +159,14 @@ for (const scenario of CASES) {
       return [...requestedSpeech, ...local].some((text) => text.trim().replace(/[.!?]+$/, '').toLowerCase() === authored.toLowerCase());
     }, { timeout: 10_000 }).toBe(true);
     // This proves speech dispatch, not audible provider/device delivery.
+    // Recheck after a later user event: an initially absent suggestion must
+    // not publish late while the user is speaking their original draft.
+    if (scenario.blocked) {
+      await expect(suggestion).toHaveCount(0);
+      const withheldWord = scenario.completion.split(/\s+/).at(-1)!.toLowerCase();
+      const laterTiles = await page.getByTestId('prediction-bar').getByRole('button').allTextContents();
+      expect(laterTiles.map((word) => word.trim().toLowerCase())).not.toContain(withheldWord);
+    }
     expect(errors).toEqual([]);
   });
 }

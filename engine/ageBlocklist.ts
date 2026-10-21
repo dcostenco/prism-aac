@@ -1,4 +1,5 @@
 import byLang from './ageBlocklistByLang.json';
+import compoundExceptions from './suggestionCompoundExceptions.json';
 import { foldPictureWordCase } from '../lib/wordCase';
 
 export const PROFANITY = new Set([
@@ -42,7 +43,13 @@ function listsFor(lang?: string) {
   return lang ? BY_LANG.get(lang.startsWith('zh') ? 'zh' : lang) : undefined;
 }
 
-const norm = (word: string) => word.toLowerCase().normalize('NFC');
+const APOSTROPHE_VARIANTS = /[‘’ʼʹ´`′＇]/g;
+// This ordinary contraction folds to the listed word "hell" if its
+// apostrophe is deleted. Other punctuation folds retain the existing guard.
+const ORDINARY_APOSTROPHE_WORDS = new Set(["he'll"]);
+const HAN_WORD = /^\p{Script=Han}+$/u;
+
+const norm = (word: string) => word.toLowerCase().normalize('NFC').replace(APOSTROPHE_VARIANTS, "'");
 
 function englishListed(word: string, list: ReadonlySet<string>, lang?: string): boolean {
   return list.has(word) && !ENGLISH_HOMOGRAPHS.get(lang?.split('-')[0] ?? 'en')?.has(word);
@@ -75,31 +82,53 @@ export function isAgeBlocked(word: string, lang?: string): boolean {
  *  space-separated word with non-apostrophe punctuation dropped ("f.u.c.k" -> fuck). Marks stay: Devanagari, Bengali and Amharic
  *  vowel signs are marks, and dropping them turns a listed word into an unlisted one. */
 function textWords(text: string): string[] {
-  const lower = text.toLowerCase().normalize('NFC').replace(/[’ʼ]/g, "'");
+  const lower = norm(text);
   const split = lower.split(/[^\p{L}\p{M}\p{N}]+/u);
-  const joined = lower.split(/\s+/).map((w) => w.replace(/[^\p{L}\p{M}\p{N}']/gu, '').replace(/^'+|'+$/g, ''));
-  return [...new Set([...split, ...joined])].filter(Boolean);
+  const words = lower.split(/\s+/).map((w) => w.replace(/[^\p{L}\p{M}\p{N}']/gu, '').replace(/^'+|'+$/g, ''));
+  const joined = words.map((word) => ORDINARY_APOSTROPHE_WORDS.has(word) ? word : word.replace(/'/g, ''));
+  return [...new Set([...split, ...words, ...joined])].filter(Boolean);
 }
 
 /** Chinese and Japanese are written without spaces, so a listed word can sit inside a longer run ("你是傻瓜"). */
 const unspaced = (lang?: string) => Boolean(lang && (lang.startsWith('zh') || lang === 'ja'));
 
-/** Optional suggestions use word boundaries, unlike the conservative picture
- *  substring check below. Adjacent segments can form a listed expression, but
- *  a list entry inside an ordinary compound (操场, ばかり) cannot match. */
+function cutsReviewedHanCompound(text: string, start: number, end: number, lang?: string): boolean {
+  const key = lang?.startsWith('zh') ? 'zh' : lang;
+  const compounds = (compoundExceptions as Readonly<Record<string, readonly string[]>>)[key ?? ''] ?? [];
+  return compounds.some((word) => {
+    if (isAgeBlocked(word, lang)) return false;
+    for (let left = Math.max(0, start - word.length + 1); left < end; left++) {
+      if (!text.startsWith(word, left)) continue;
+      const right = left + word.length;
+      if ((left < start && start < right) || (left < end && end < right)) return true;
+    }
+    return false;
+  });
+}
+
+/** All languages share punctuation checks. CJK matches cannot split a reviewed
+ *  ordinary compound, even when a match begins in its preceding word (我操控).
+ *  Exceptions never come from frequency or learned vocabulary.
+ *  Join only adjacent Han segments, never Japanese grammatical particles. */
 export function containsBlockedSuggestion(text: string, lang?: string): boolean {
-  if (!unspaced(lang)) return textWords(text).some((word) => isAgeBlocked(word, lang));
+  if (textWords(text).some((word) => isAgeBlocked(word, lang))) return true;
+  if (!unspaced(lang)) return false;
   const local = listsFor(lang);
   const maxLength = Math.max(...[...AGE_BLOCKED_WORDS, ...(local?.profanity ?? []), ...(local?.sensitive ?? [])].map((word) => word.length));
-  const segments = [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(text.normalize('NFC'))]
+  const normalized = norm(text);
+  const segments = [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(normalized)]
     .filter((segment) => segment.isWordLike);
   for (let i = 0; i < segments.length; i++) {
     let word = '';
     for (let j = i; j < segments.length; j++) {
-      if (j > i && segments[j].index !== segments[j - 1].index + segments[j - 1].segment.length) break;
+      if (j > i && (segments[j].index !== segments[j - 1].index + segments[j - 1].segment.length
+        || !HAN_WORD.test(segments[j - 1].segment) || !HAN_WORD.test(segments[j].segment))) break;
       word += segments[j].segment;
       if (word.length > maxLength) break;
-      if (isAgeBlocked(word, lang)) return true;
+      if (isAgeBlocked(word, lang)) {
+        if (cutsReviewedHanCompound(normalized, segments[i].index, segments[j].index + segments[j].segment.length, lang)) continue;
+        return true;
+      }
     }
   }
   return false;

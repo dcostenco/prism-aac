@@ -474,7 +474,15 @@ describe('MessageBar — suggestion word filtering', () => {
     ['bg', 'Искам да ум', 'Искам да умра'],
     ['uk', 'Я тебе вб', "Я тебе вб'ю"],
     ['ja', '死にた', '死にたい'],
-  ])('never offers the listed %s correction "%s" -> "%s" on either suggestion surface', async (lang, input, fixed) => {
+    ['en', "f'", "f'uck"],
+    ['uk', 'Я тебе вб', 'Я тебе вб`ю'],
+    ['uk', 'Я тебе вб', 'Я тебе вб´ю'],
+    ['ja', 'f.u', 'f.u.c.k'],
+    ['zh-Hans', 'f.u', 'f.u.c.k'],
+    ['ja', "That's the killer's ca", "That's the killer's car"],
+    ['zh-Hans', '哎呀我', '哎呀我操'],
+    ['zh-Hans', '我草', '我操'],
+  ])('withholds the listed %s correction "%s" -> "%s"', async (lang, input, fixed) => {
     vi.useFakeTimers();
     try {
       mocks.settingsState.language = lang;
@@ -516,6 +524,17 @@ describe('MessageBar — suggestion word filtering', () => {
     ['zh-Hans', '妈妈', '妈妈的'],
     ['ja', 'たべたば', 'たべたばかり'],
     ['ja', '考え', '考えろ'],
+    ['en', 'He´ll be hom', 'He´ll be home'],
+    ['en', 'He‘ll be hom', 'He‘ll be home'],
+    ['en', 'He`ll be hom', 'He`ll be home'],
+    ['zh-Hans', '我想操', '我想操控'],
+    ['zh-Hant', '幹細', '幹細胞'],
+    ['ja', '今日は暑いし', '今日は暑いしね'],
+    ['ja', '大丈夫ですし', '大丈夫ですしね'],
+    ['ja', '楽しいし', '楽しいしね'],
+    ['zh-Hans', '我操控轮', '我操控轮椅'],
+    ['zh-Hant', '被我操', '被我操控'],
+    ['zh-HK', '我操', '我操控'],
   ])('still offers the ordinary %s completion "%s" -> "%s"', async (lang, input, fixed) => {
     vi.useFakeTimers();
     try {
@@ -527,6 +546,7 @@ describe('MessageBar — suggestion word filtering', () => {
       render(<MessageBar />);
       await act(async () => { await vi.advanceTimersByTimeAsync(450); });
       expect(screen.getByTestId('autocorrect-suggestion')).toHaveTextContent(fixed);
+      expect(mocks.setAiCompletionMock).toHaveBeenCalledWith(fixed.split(/\s+/).at(-1));
       expect(mocks.setTextMock).not.toHaveBeenCalled();
     } finally { vi.useRealTimers(); }
   });
@@ -537,6 +557,37 @@ describe('MessageBar — suggestion word filtering', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^speak$/i })); });
     expect(mocks.aacSpeakMock).toHaveBeenCalledWith('Someone killed my dog', 1, 1, 'neutral', true);
     expect(mocks.setTextMock).not.toHaveBeenCalled();
+  });
+
+  it('cannot publish an old correction after typing changes during the model request', async () => {
+    vi.useFakeTimers();
+    let finish!: (text: string) => void;
+    const pending = new Promise<string>((resolve) => { finish = resolve; });
+    try {
+      mocks.settingsState.language = 'ja';
+      mocks.settingsState.outputLanguage = 'ja';
+      mocks.settingsState.aiAutocorrectEnabled = true;
+      mocks.messageState.text = '今日は暑いし';
+      mocks.correctTextMock.mockReturnValue(pending);
+      const view = render(<MessageBar />);
+      await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+      expect(mocks.correctTextMock).toHaveBeenCalledOnce();
+      expect(screen.queryByTestId('autocorrect-suggestion')).not.toBeInTheDocument();
+
+      mocks.messageState.text = 'ありがとう';
+      mocks.correctTextMock.mockResolvedValue(null);
+      view.rerender(<MessageBar />);
+      await act(async () => { finish('今日は暑いしね'); });
+      await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+
+      expect(screen.queryByTestId('autocorrect-suggestion')).not.toBeInTheDocument();
+      expect(mocks.setAiCompletionMock.mock.calls.every(([word]) => word === null)).toBe(true);
+      expect(mocks.setTextMock).not.toHaveBeenCalled();
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+      expect(screen.getByTestId('message-text')).toHaveTextContent('ありがとう');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
