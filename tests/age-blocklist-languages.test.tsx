@@ -14,7 +14,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { getPredictions } from '@/engine/predictionEngine';
-import { containsProfanity, containsSensitive, isAgeBlocked } from '@/engine/ageBlocklist';
+import { containsBlockedSuggestion, containsProfanity, containsSensitive, isAgeBlocked } from '@/engine/ageBlocklist';
+import compoundExceptions from '@/engine/suggestionCompoundExceptions.json';
 import byLang from '@/engine/ageBlocklistByLang.json';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
 import PredictionBar, { mergeAdvisoryPredictions } from '@/components/PredictionBar';
@@ -57,6 +58,34 @@ describe('the prediction engine', () => {
 });
 
 describe('isAgeBlocked', () => {
+  it.each([['de', 'die'], ['de', 'dies'], ['de', 'hell'], ['nl', 'die'], ['fr', 'retard'], ['de', 'dick'], ['de', 'ass']])
+  ('preserves the ordinary %s homograph "%s"', (lang, word) => {
+    expect(isAgeBlocked(word, lang)).toBe(false);
+    expect(containsSensitive(word, lang)).toBe(false);
+    expect(isAgeBlocked(word, 'en')).toBe(true);
+  });
+
+  it('keeps German dies available through the prediction engine', () => {
+    expect(getPredictions('di', { dies: { count: 50, lastUsed: 0 } }, {}, undefined, {}, [], new Set(), undefined, 'de')).toContain('dies');
+  });
+
+  it.each(['kills', 'killed', 'killing', 'killings', 'killer', 'killers', 'dies', 'died', 'dying'])
+  ('keeps the inflected English word "%s" out of offered suggestions', (word) => {
+    expect(isAgeBlocked(word, 'en')).toBe(true);
+    expect(containsSensitive(`It was ${word}.`, 'en')).toBe(true);
+  });
+
+  it.each(['diet', 'diets', 'dietary', 'kilometer', 'kilometers', 'skill', 'skills', 'skilled', 'hoodie', 'candied'])
+  ('preserves the ordinary word "%s" despite shared letters', (word) => {
+    expect(isAgeBlocked(word, 'en')).toBe(false);
+    expect(containsSensitive(`I want ${word}.`, 'en')).toBe(false);
+  });
+
+  it.each(['kil', 'die', 'dy'])('filters real English corpus suggestions for "%s"', async (prefix) => {
+    const offered = await predict('en', prefix);
+    expect(offered.filter((word) => /^(?:kill(?:s|ed|ing|ings|er|ers)?|die[sd]?|dying)$/.test(word))).toEqual([]);
+  });
+
   it('blocks a word only in the language where it is vulgar', () => {
     expect(isAgeBlocked('fica', 'it')).toBe(true);
     expect(isAgeBlocked('fica', 'pt')).toBe(false); // "stays"
@@ -121,7 +150,90 @@ describe('isAgeBlocked', () => {
   });
 });
 
+describe('optional suggestions preserve words and contractions', () => {
+  for (const lang of ['zh-Hans', 'zh-Hant', 'zh-HK']) {
+    it.each(['我操控', '我操控设备', '我操控轮椅', '被我操控'])('preserves the reviewed word boundary in %s (' + lang + ')', (text) => {
+      expect(containsBlockedSuggestion(text, lang)).toBe(false);
+    });
+    it.each(['我操', '操控我操', '我操操控', '操控操'])('retains a separate listed expression in %s (' + lang + ')', (text) => {
+      expect(containsBlockedSuggestion(text, lang)).toBe(true);
+    });
+  }
+
+  it('limits single-character exemptions to the reviewed ordinary compounds, independent of regenerated vocabulary', () => {
+    expect(compoundExceptions).toEqual({ zh: ['操控', '幹細胞'] });
+    for (const word of compoundExceptions.zh) {
+      expect(isAgeBlocked(word, 'zh')).toBe(false);
+      expect(containsBlockedSuggestion(`我想${word}`, 'zh')).toBe(false);
+      expect(containsBlockedSuggestion(`${word} 操`, 'zh')).toBe(true);
+    }
+  });
+
+  it.each([
+    ['zh-Hans', '我操'], ['zh-Hant', '幹過'], ['zh-Hans', '烧死'],
+    ['zh-Hans', '枪杀'], ['zh-Hans', '追杀'], ['zh-Hant', '殺光'], ['ja', '淫夢'],
+  ])('lists the reproduced %s compound %s explicitly across word and phrase consumers', (lang, text) => {
+    expect(isAgeBlocked(text, lang)).toBe(true);
+    expect(containsBlockedSuggestion(text, lang)).toBe(true);
+  });
+
+  it.each([
+    ['zh-Hans', '我操'], ['zh-Hant', '我操'], ['zh-HK', '我操'],
+    ['zh-Hans', '哎呀我操'], ['zh-Hans', '烧死'], ['zh-Hans', '枪杀'], ['zh-Hans', '追杀'],
+    ['zh-Hant', '殺光'], ['zh-Hant', '幹過'], ['ja', '淫夢'],
+  ])('does not treat a frequency-corpus entry as a neutral %s compound: %s', async (lang, text) => {
+    expect(await containsBlockedSuggestion(text, lang)).toBe(true);
+  });
+
+  it.each([
+    ['zh-Hans', '我想操控'], ['zh-Hant', '幹細胞'],
+    ['ja', '今日は暑いしね'], ['ja', '大丈夫ですしね'], ['ja', '楽しいしね'],
+    ['en', 'He´ll be home'], ['en', 'He‘ll be home'], ['en', 'He`ll be home'],
+  ])('preserves the ordinary %s phrase %s after adversarial review', async (lang, text) => {
+    expect(await containsBlockedSuggestion(text, lang)).toBe(false);
+  });
+
+  it.each([
+    ['en', "f'uck"], ['en', "sh'it"],
+    ['uk', 'Я тебе вб`ю'], ['uk', 'Я тебе вб´ю'],
+    ['ja', "That's the killer's car"], ['zh-Hans', "Kill'em"],
+    ['ja', 'f.u.c.k'], ['zh-Hans', 'f.u.c.k'],
+  ])('retains punctuation-normalized %s filtering for %s', async (lang, text) => {
+    expect(await containsBlockedSuggestion(text, lang)).toBe(true);
+  });
+
+  it.each([
+    ['zh-Hans', '操场 滚动 打滚 操作 妈妈的 你妈妈 他妈妈'],
+    ['zh-Hant', '幹部 幹嘛 幹什麼'],
+    ['ja', 'ばかり 考えろ'],
+    ['en', "He'll be home. He’ll be home."],
+  ])('preserves ordinary %s compounds and contractions', async (lang, text) => {
+    expect(await containsBlockedSuggestion(text, lang)).toBe(false);
+  });
+
+  it.each([
+    ['zh-Hans', '他想自杀'], ['zh-Hant', '你是傻瓜'], ['ja', 'おまえはばかだ'],
+    ['ja', '死にたい'], ['uk', "Я тебе вб'ю"], ['uk', 'Я тебе вб’ю'], ['uk', 'Я тебе вбʼю'],
+    ['en', 'hell'], ['en', 'f.u.c.k'],
+  ])('retains listed %s expressions at segment boundaries', async (lang, text) => {
+    expect(await containsBlockedSuggestion(text, lang)).toBe(true);
+  });
+});
+
 describe('a whole phrase (for pictures)', () => {
+  it.each(["f'uck", "sh'it", 'f`uck', 'sh´it'])('retains the existing punctuation guard for %s', (text) => {
+    expect(containsProfanity(text, 'en')).toBe(true);
+  });
+
+  it.each(['He\'ll', 'He’ll', 'He‘ll', 'He´ll', 'He`ll'])('preserves the ordinary contraction %s for pictures', (text) => {
+    expect(containsSensitive(`${text} be home`, 'en')).toBe(false);
+  });
+
+  it.each(['вб\'ю', 'вб’ю', 'вб´ю', 'вб`ю'])('normalizes the listed Ukrainian apostrophe in %s', (text) => {
+    expect(isAgeBlocked(text, 'uk')).toBe(true);
+    expect(containsSensitive(`Я тебе ${text}`, 'uk')).toBe(true);
+  });
+
   it('finds a listed word glued to another by punctuation, or spelled with dots', () => {
     expect(containsProfanity('shit,dog', 'en')).toBe(true);
     expect(containsProfanity('f.u.c.k', 'en')).toBe(true);
@@ -177,6 +289,11 @@ describe('the prediction bar', () => {
 
   it('never shows a listed AI completion (English)', async () => {
     expect(await tiles('en', 'shit', 'oh ')).not.toContain('shit');
+  });
+
+  it.each([['en', 'diet', 'di'], ['en', 'kilometers', 'kil'], ['de', 'dick', 'dic'], ['fr', 'retard', 'reta']])
+  ('offers the ordinary %s AI completion %s through the prediction tile gate', async (lang, completion, input) => {
+    expect(await tiles(lang, completion, input)).toContain(completion);
   });
 
   it('drops listed words from the advisory predictions', () => {

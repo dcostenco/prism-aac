@@ -12,7 +12,8 @@ import { aacSpeak } from '@/services/aacSpeak';
 import type { SupportedLanguage } from '@/engine/i18n';
 import { tapFeedback, deleteFeedback, speakFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
-import { correctText } from '@/services/textCorrectService';
+import { correctText, disambiguateLangByScript } from '@/services/textCorrectService';
+import { containsBlockedSuggestion } from '@/engine/ageBlocklist';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
@@ -325,6 +326,14 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
         // to avoid double-speaking a phrase.
         return;
       }
+      // Both optional suggestion surfaces follow the prediction word policy.
+      // Never apply this to the user's draft or the explicit Speak action.
+      const correctionLanguage = disambiguateLangByScript(trimmed, language);
+      const suggestionLanguage = disambiguateLangByScript(fixed, correctionLanguage);
+      // Cyrillic detection cannot distinguish every supported language. Keep
+      // the user's selected-language lists alongside the script hints.
+      const suggestionLanguages = new Set([language, correctionLanguage, suggestionLanguage]);
+      if ([...suggestionLanguages].some((lang) => containsBlockedSuggestion(fixed, lang))) return;
       // Reset silence-spoken tracker — input changed enough to need a
       // suggestion, so the next "input is valid" event should re-speak.
       lastSilenceSpokenRef.current = '';
