@@ -11,10 +11,11 @@ export const PROFANITY = new Set([
 
 export const SENSITIVE = new Set([
   'hell', 'damn',
-  'kill', 'suicide', 'murder', 'rape',
+  // Explicit whole words: substring/stem matching would also block "skills" or "kilometers".
+  'kill', 'kills', 'killed', 'killing', 'killings', 'killer', 'killers', 'suicide', 'murder', 'rape',
   'drug', 'drugs', 'cocaine', 'heroin', 'meth', 'weed',
   'gun', 'bomb', 'weapon', 'terrorist',
-  'die', 'dead', 'death',
+  'die', 'dies', 'died', 'dying', 'dead', 'death',
   'hate', 'stupid', 'idiot', 'dumb', 'ugly', 'fat', 'loser',
 ]);
 
@@ -29,28 +30,40 @@ const BY_LANG = new Map(
     .map(([lang, lists]) => [lang, { profanity: new Set(lists.profanity), sensitive: new Set(lists.sensitive) }]),
 );
 
+// Ordinary local homographs: German the/this, bright, thick and card ace;
+// Dutch that; French late. The local language's own lists still take precedence.
+const ENGLISH_HOMOGRAPHS = new Map([
+  ['de', new Set(['die', 'dies', 'hell', 'dick', 'ass'])],
+  ['nl', new Set(['die'])],
+  ['fr', new Set(['retard'])],
+]);
+
 function listsFor(lang?: string) {
   return lang ? BY_LANG.get(lang.startsWith('zh') ? 'zh' : lang) : undefined;
 }
 
 const norm = (word: string) => word.toLowerCase().normalize('NFC');
 
-/** On the English profanity list (every language) or on its own language's. */
+function englishListed(word: string, list: ReadonlySet<string>, lang?: string): boolean {
+  return list.has(word) && !ENGLISH_HOMOGRAPHS.get(lang?.split('-')[0] ?? 'en')?.has(word);
+}
+
+/** English profanity, except ordinary local homographs, or its own language's list. */
 export function isProfane(word: string, lang?: string): boolean {
   const w = norm(word);
   const local = lang === 'tr' ? foldPictureWordCase(word, lang).normalize('NFC') : w;
   const own = listsFor(lang)?.profanity;
-  return PROFANITY.has(w) || (own?.has(w) ?? false) ||
-    (local !== w && (PROFANITY.has(local) || (own?.has(local) ?? false)));
+  return englishListed(w, PROFANITY, lang) || (own?.has(w) ?? false) ||
+    (local !== w && (englishListed(local, PROFANITY, lang) || (own?.has(local) ?? false)));
 }
 
-/** On the English sensitive list (every language) or on its own language's. */
+/** English sensitive words, except ordinary local homographs, or its own language's list. */
 export function isSensitive(word: string, lang?: string): boolean {
   const w = norm(word);
   const local = lang === 'tr' ? foldPictureWordCase(word, lang).normalize('NFC') : w;
   const own = listsFor(lang)?.sensitive;
-  return SENSITIVE.has(w) || (own?.has(w) ?? false) ||
-    (local !== w && (SENSITIVE.has(local) || (own?.has(local) ?? false)));
+  return englishListed(w, SENSITIVE, lang) || (own?.has(w) ?? false) ||
+    (local !== w && (englishListed(local, SENSITIVE, lang) || (own?.has(local) ?? false)));
 }
 
 /** A word the prediction bar never offers: profane or sensitive, in English or in its own language. */
@@ -59,17 +72,38 @@ export function isAgeBlocked(word: string, lang?: string): boolean {
 }
 
 /** Every word of a text: split at anything that is not a letter, mark or digit ("shit,dog" is two words), plus each
- *  space-separated word with its punctuation dropped ("f.u.c.k" -> fuck). Marks stay: Devanagari, Bengali and Amharic
+ *  space-separated word with non-apostrophe punctuation dropped ("f.u.c.k" -> fuck). Marks stay: Devanagari, Bengali and Amharic
  *  vowel signs are marks, and dropping them turns a listed word into an unlisted one. */
 function textWords(text: string): string[] {
-  const lower = text.toLowerCase().normalize('NFC');
+  const lower = text.toLowerCase().normalize('NFC').replace(/[’ʼ]/g, "'");
   const split = lower.split(/[^\p{L}\p{M}\p{N}]+/u);
-  const joined = lower.split(/\s+/).map((w) => w.replace(/[^\p{L}\p{M}\p{N}]/gu, ''));
+  const joined = lower.split(/\s+/).map((w) => w.replace(/[^\p{L}\p{M}\p{N}']/gu, '').replace(/^'+|'+$/g, ''));
   return [...new Set([...split, ...joined])].filter(Boolean);
 }
 
 /** Chinese and Japanese are written without spaces, so a listed word can sit inside a longer run ("你是傻瓜"). */
 const unspaced = (lang?: string) => Boolean(lang && (lang.startsWith('zh') || lang === 'ja'));
+
+/** Optional suggestions use word boundaries, unlike the conservative picture
+ *  substring check below. Adjacent segments can form a listed expression, but
+ *  a list entry inside an ordinary compound (操场, ばかり) cannot match. */
+export function containsBlockedSuggestion(text: string, lang?: string): boolean {
+  if (!unspaced(lang)) return textWords(text).some((word) => isAgeBlocked(word, lang));
+  const local = listsFor(lang);
+  const maxLength = Math.max(...[...AGE_BLOCKED_WORDS, ...(local?.profanity ?? []), ...(local?.sensitive ?? [])].map((word) => word.length));
+  const segments = [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(text.normalize('NFC'))]
+    .filter((segment) => segment.isWordLike);
+  for (let i = 0; i < segments.length; i++) {
+    let word = '';
+    for (let j = i; j < segments.length; j++) {
+      if (j > i && segments[j].index !== segments[j - 1].index + segments[j - 1].segment.length) break;
+      word += segments[j].segment;
+      if (word.length > maxLength) break;
+      if (isAgeBlocked(word, lang)) return true;
+    }
+  }
+  return false;
+}
 
 /** Text (a phrase, not a single word) that holds a profane word. In Chinese and Japanese a listed word counts wherever it
  *  appears; this can refuse a harmless compound (操场 holds 操), which for a picture means only that the phrase shows as text. */

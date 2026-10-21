@@ -14,7 +14,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { getPredictions } from '@/engine/predictionEngine';
-import { containsProfanity, containsSensitive, isAgeBlocked } from '@/engine/ageBlocklist';
+import { containsBlockedSuggestion, containsProfanity, containsSensitive, isAgeBlocked } from '@/engine/ageBlocklist';
 import byLang from '@/engine/ageBlocklistByLang.json';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
 import PredictionBar, { mergeAdvisoryPredictions } from '@/components/PredictionBar';
@@ -57,6 +57,34 @@ describe('the prediction engine', () => {
 });
 
 describe('isAgeBlocked', () => {
+  it.each([['de', 'die'], ['de', 'dies'], ['de', 'hell'], ['nl', 'die'], ['fr', 'retard'], ['de', 'dick'], ['de', 'ass']])
+  ('preserves the ordinary %s homograph "%s"', (lang, word) => {
+    expect(isAgeBlocked(word, lang)).toBe(false);
+    expect(containsSensitive(word, lang)).toBe(false);
+    expect(isAgeBlocked(word, 'en')).toBe(true);
+  });
+
+  it('keeps German dies available through the prediction engine', () => {
+    expect(getPredictions('di', { dies: { count: 50, lastUsed: 0 } }, {}, undefined, {}, [], new Set(), undefined, 'de')).toContain('dies');
+  });
+
+  it.each(['kills', 'killed', 'killing', 'killings', 'killer', 'killers', 'dies', 'died', 'dying'])
+  ('keeps the inflected English word "%s" out of offered suggestions', (word) => {
+    expect(isAgeBlocked(word, 'en')).toBe(true);
+    expect(containsSensitive(`It was ${word}.`, 'en')).toBe(true);
+  });
+
+  it.each(['diet', 'diets', 'dietary', 'kilometer', 'kilometers', 'skill', 'skills', 'skilled', 'hoodie', 'candied'])
+  ('preserves the ordinary word "%s" despite shared letters', (word) => {
+    expect(isAgeBlocked(word, 'en')).toBe(false);
+    expect(containsSensitive(`I want ${word}.`, 'en')).toBe(false);
+  });
+
+  it.each(['kil', 'die', 'dy'])('filters real English corpus suggestions for "%s"', async (prefix) => {
+    const offered = await predict('en', prefix);
+    expect(offered.filter((word) => /^(?:kill(?:s|ed|ing|ings|er|ers)?|die[sd]?|dying)$/.test(word))).toEqual([]);
+  });
+
   it('blocks a word only in the language where it is vulgar', () => {
     expect(isAgeBlocked('fica', 'it')).toBe(true);
     expect(isAgeBlocked('fica', 'pt')).toBe(false); // "stays"
@@ -118,6 +146,25 @@ describe('isAgeBlocked', () => {
     expect(isAgeBlocked('싫어요', 'ko')).toBe(false); // I don't like it
     expect(isAgeBlocked('尿', 'zh-Hans')).toBe(false); // pee
     expect(isAgeBlocked('material', 'es')).toBe(false);
+  });
+});
+
+describe('optional suggestions preserve words and contractions', () => {
+  it.each([
+    ['zh-Hans', '操场 滚动 打滚 操作 妈妈的 你妈妈 他妈妈'],
+    ['zh-Hant', '幹部 幹嘛 幹什麼'],
+    ['ja', 'ばかり 考えろ'],
+    ['en', "He'll be home. He’ll be home."],
+  ])('preserves ordinary %s compounds and contractions', (lang, text) => {
+    expect(containsBlockedSuggestion(text, lang)).toBe(false);
+  });
+
+  it.each([
+    ['zh-Hans', '他想自杀'], ['zh-Hant', '你是傻瓜'], ['ja', 'おまえはばかだ'],
+    ['ja', '死にたい'], ['uk', "Я тебе вб'ю"], ['uk', 'Я тебе вб’ю'], ['uk', 'Я тебе вбʼю'],
+    ['en', 'hell'], ['en', 'f.u.c.k'],
+  ])('retains listed %s expressions at segment boundaries', (lang, text) => {
+    expect(containsBlockedSuggestion(text, lang)).toBe(true);
   });
 });
 

@@ -40,7 +40,7 @@ export interface ValidationOptions {
    *  to common shell anchors. */
   requiredSelectors?: string[];
   /** Rule 9 — critical targets whose full rect must be inside the viewport,
-   *  must not intersect any occluder, and must win a center+4-corner hit
+   *  must not intersect any occluder, and must win a center+4-quarter-point hit
    *  test. Rect math alone cannot see a higher-z-index overlay. */
   criticalSelectors?: string[];
   /** Rule 9 — fixed/sticky chrome that can cover critical targets
@@ -175,7 +175,7 @@ export async function validateRenderedPage(
  */
 /**
  * Rule 9 — critical-target occlusion gate. Runs in-page: viewport
- * containment + occluder intersection + center/4-corner hit test via
+ * containment + occluder intersection + center/4-quarter-point hit test via
  * document.elementFromPoint. Canonical implementation and rationale live in
  * skills/visual-screenshot-verification/occlusion_gate.js.
  *
@@ -192,7 +192,6 @@ export async function checkCriticalOcclusion(
   if (critical.length === 0) return [];
   const result = await page.evaluate(
     ([criticalSelectors, occluderSelectors]) => {
-      const INSET = 2;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const rectOf = (el: Element) => {
@@ -242,10 +241,11 @@ export async function checkCriticalOcclusion(
         }
         const probes: Array<[string, number, number]> = [
           ["center", r.left + r.width / 2, r.top + r.height / 2],
-          ["top-left", r.left + INSET, r.top + INSET],
-          ["top-right", r.right - INSET, r.top + INSET],
-          ["bottom-left", r.left + INSET, r.bottom - INSET],
-          ["bottom-right", r.right - INSET, r.bottom - INSET],
+          // Test the painted surface, not transparent rounded corners.
+          ["top-left", r.left + r.width / 4, r.top + r.height / 4],
+          ["top-right", r.right - r.width / 4, r.top + r.height / 4],
+          ["bottom-left", r.left + r.width / 4, r.bottom - r.height / 4],
+          ["bottom-right", r.right - r.width / 4, r.bottom - r.height / 4],
         ];
         for (const [name, x, y] of probes) {
           if (x < 0 || y < 0 || x > vw || y > vh) continue;

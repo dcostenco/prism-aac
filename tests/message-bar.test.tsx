@@ -175,7 +175,8 @@ vi.mock('@/services/azureTTS', () => ({
   warmupAzureAudio: vi.fn(),
 }));
 
-vi.mock('@/services/textCorrectService', () => ({
+vi.mock('@/services/textCorrectService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/textCorrectService')>()),
   correctText: (...args: unknown[]) => mocks.correctTextMock(...args),
 }));
 
@@ -451,6 +452,93 @@ describe('MessageBar — undo', () => {
 });
 
 // ── speak ─────────────────────────────────────────────────────────────────────
+
+describe('MessageBar — suggestion word filtering', () => {
+  it.each([
+    ['en', 'kil', 'kill'],
+    ['en', 'kil', 'killed'],
+    ['en', 'kil', 'killing'],
+    ['en', 'kil', 'killers'],
+    ['en', 'di', 'die'],
+    ['en', 'di', 'died'],
+    ['en', 'dy', 'dying'],
+    ['en', 'I want ', 'I want to kill'],
+    ['en', 'shi', 'shit'],
+    ['pt', 'cac', 'cacete'],
+    ['zh-Hans', '他想', '他想自杀'],
+    ['en', 'бля', 'блядь'],
+    ['en', 'я хочу убит', 'я хочу убить'],
+    ['en', 'hi', 'блядь'],
+    ['uk', 'Я хочу поме', 'Я хочу померти'],
+    ['uk', 'Я хочу його вбит', 'Я хочу його вбити'],
+    ['bg', 'Искам да ум', 'Искам да умра'],
+    ['uk', 'Я тебе вб', "Я тебе вб'ю"],
+    ['ja', '死にた', '死にたい'],
+  ])('never offers the listed %s correction "%s" -> "%s" on either suggestion surface', async (lang, input, fixed) => {
+    vi.useFakeTimers();
+    try {
+      mocks.settingsState.language = lang;
+      mocks.settingsState.outputLanguage = lang;
+      mocks.settingsState.aiAutocorrectEnabled = true;
+      mocks.messageState.text = input;
+      mocks.correctTextMock.mockResolvedValue(fixed);
+      render(<MessageBar />);
+      await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+
+      expect(mocks.correctTextMock).toHaveBeenCalled();
+      expect(screen.queryByTestId('autocorrect-suggestion')).not.toBeInTheDocument();
+      expect(mocks.setAiCompletionMock.mock.calls.every(([word]) => word === null)).toBe(true);
+      expect(mocks.setTextMock).not.toHaveBeenCalled();
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+      expect(screen.getByTestId('message-text')).toHaveTextContent(input.trim());
+    } finally { vi.useRealTimers(); }
+  });
+
+  it.each([
+    ['en', 'die', 'diet'],
+    ['en', 'kil', 'kilometers'],
+    ['en', 'ski', 'skills'],
+    ['en', 'how much is a diet co', 'how much is a diet coke'],
+    ['de', 'Ich möchte die Banan', 'Ich möchte die Banane'],
+    ['de', 'Es ist hel', 'Es ist hell'],
+    ['de', 'di', 'dies'],
+    ['nl', 'Ik wil die banaa', 'Ik wil die banaan'],
+    ['en', 'прив', 'привет'],
+    ['fr', 'Je suis en reta', 'Je suis en retard'],
+    ['de', 'Die Jacke ist zu dic', 'Die Jacke ist zu dick'],
+    ['de', 'Ich habe ein As', 'Ich habe ein Ass'],
+    ['uk', 'Я хочу вод', 'Я хочу води'],
+    ['bg', 'Искам вод', 'Искам вода'],
+    ['en', "He'll be hom", "He'll be home"],
+    ['en', 'He’ll be hom', 'He’ll be home'],
+    ['zh-Hans', '我们去操', '我们去操场'],
+    ['zh-Hant', '你在幹', '你在幹嘛'],
+    ['zh-Hans', '妈妈', '妈妈的'],
+    ['ja', 'たべたば', 'たべたばかり'],
+    ['ja', '考え', '考えろ'],
+  ])('still offers the ordinary %s completion "%s" -> "%s"', async (lang, input, fixed) => {
+    vi.useFakeTimers();
+    try {
+      mocks.settingsState.language = lang;
+      mocks.settingsState.outputLanguage = lang;
+      mocks.settingsState.aiAutocorrectEnabled = true;
+      mocks.messageState.text = input;
+      mocks.correctTextMock.mockResolvedValue(fixed);
+      render(<MessageBar />);
+      await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+      expect(screen.getByTestId('autocorrect-suggestion')).toHaveTextContent(fixed);
+      expect(mocks.setTextMock).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('keeps user-authored sensitive language speakable', async () => {
+    mocks.messageState.text = 'Someone killed my dog';
+    render(<MessageBar />);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^speak$/i })); });
+    expect(mocks.aacSpeakMock).toHaveBeenCalledWith('Someone killed my dog', 1, 1, 'neutral', true);
+    expect(mocks.setTextMock).not.toHaveBeenCalled();
+  });
+});
 
 describe('MessageBar — speak', () => {
   it('Play suppresses the pending auto-speak timer even when prediction seed loading finishes afterward', async () => {
