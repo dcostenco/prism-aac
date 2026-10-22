@@ -7,8 +7,11 @@ const MAX_DRAFT_CHARS = 4000;
 /** Only the current draft, in this tab, for one authentication round trip. */
 export function rememberWebSignInDraft(): boolean {
   const text = useMessageStore.getState().text;
-  if (!text) return true;
   try {
+    if (!text) {
+      sessionStorage.removeItem(WEB_SIGNIN_DRAFT_KEY);
+      return true;
+    }
     sessionStorage.setItem(WEB_SIGNIN_DRAFT_KEY, JSON.stringify({ text, expiresAt: Date.now() + DRAFT_TTL_MS }));
     return true;
   } catch { return false; }

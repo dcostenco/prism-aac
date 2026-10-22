@@ -9,13 +9,18 @@ export interface AacBillingStatus {
   manageChannel: 'apple' | 'stripe' | null;
   purchaseBlocked?: boolean;
   enabled: boolean;
+  stripeTrialDays?: number;
+  stripeTrial?: { endsAt: string; cancelsAtEnd: boolean } | null;
   offer: { usdMonthly: number; appleProductId: string; monthlySpeechCharacters?: number; monthlyAiRequests?: number; version?: string; allowanceReset?: string };
 }
 
 interface AppleTransaction { transactionId: string; jws: string }
-interface NativeResult {
+export interface NativeResult {
   id?: string;
   displayPrice?: string;
+  introductoryOfferEligible?: boolean;
+  introductoryTrialDays?: number;
+  trialEndsAt?: string;
   status?: 'purchased' | 'restored' | 'cancelled' | 'pending' | 'finished' | 'managed';
   transactions?: AppleTransaction[];
 }
@@ -37,6 +42,7 @@ export class AacBillingRequestError extends Error {
 }
 const pending = new Map<string, { resolve: (value: NativeResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 export const AAC_BILLING_UPDATED = 'prismAacBillingUpdated';
+export const AAC_INTRODUCTORY_TRIAL_DAYS = 14;
 const automaticRestores = new Map<string, Promise<AacBillingStatus>>();
 
 export function hasNativePurchases(): boolean {
@@ -150,7 +156,11 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   // to Buy, where nothing was charged, and a charged customer told to "wait for
   // Apple approval" is being given the wrong explanation for the wrong problem.
   try {
-    return { status: 'purchased', billing: await deliverAppleTransactions(result.transactions) };
+    const billing = await deliverAppleTransactions(result.transactions);
+    // Refresh the open panel's native metadata after confirmation, just as a
+    // restore does. Its pre-purchase product has no confirmed trial end yet.
+    window.dispatchEvent(new Event(AAC_BILLING_UPDATED));
+    return { status: 'purchased', billing };
   } catch (error) {
     // Every failure that reaches here is reported the same way, deliberately.
     // The status does not tell us whether it will resolve: a missing server
@@ -162,7 +172,7 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
     // What is always true is that the account was charged and the entitlement is
     // not confirmed yet, so that is what is said, and the server's explanation
     // goes to the log where support can read it.
-    console.warn('[AAC billing] Apple charged the account but delivery did not confirm',
+    console.warn('[AAC billing] Apple confirmed the subscription but delivery did not confirm',
       error instanceof Error ? error.message : error);
     return { status: 'undelivered' };
   }

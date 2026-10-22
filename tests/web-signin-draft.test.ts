@@ -18,10 +18,11 @@ describe('temporary sign-in draft', () => {
     expect(useMessageStore.getState().text).toBe('Please help me');
     expect(sessionStorage.getItem(WEB_SIGNIN_DRAFT_KEY)).toBeNull();
   });
-  it('does not erase the saved message when an expired preview reloads with an empty in-memory store', () => {
+  it('retires the saved message when the user saves an empty current draft', () => {
     useMessageStore.setState({ text: 'I need water' }); rememberWebSignInDraft();
     useMessageStore.setState({ text: '' }); rememberWebSignInDraft(); recoverWebSignInDraft();
-    expect(useMessageStore.getState().text).toBe('I need water');
+    expect(useMessageStore.getState().text).toBe('');
+    expect(sessionStorage.getItem(WEB_SIGNIN_DRAFT_KEY)).toBeNull();
   });
   it('does not overwrite a message composed after the saved draft', () => {
     useMessageStore.setState({ text: 'Earlier message' }); rememberWebSignInDraft();
