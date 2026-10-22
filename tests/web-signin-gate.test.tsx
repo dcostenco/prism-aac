@@ -1,7 +1,10 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ access: vi.fn(), pathname: '/', profile: null as null | { email: string }, ddAction: vi.fn() }));
+const mocks = vi.hoisted(() => ({ access: vi.fn(), billing: vi.fn(), pathname: '/', profile: null as null | { email: string }, ddAction: vi.fn() }));
+vi.mock('@/services/aacBillingService', async importOriginal => ({
+  ...await importOriginal<typeof import('@/services/aacBillingService')>(), fetchAacBillingStatus: mocks.billing,
+}));
 vi.mock('next/navigation', () => ({ usePathname: () => mocks.pathname }));
 vi.mock('@/services/webAccessService', async importOriginal => ({
   ...await importOriginal<typeof import('@/services/webAccessService')>(), fetchWebAccess: mocks.access,
@@ -15,6 +18,8 @@ import { clearVerifiedLocalAccess } from '@/services/webAccessService';
 import { useMessageStore } from '@/store/messageStore';
 import { rememberWebSignInDraft, WEB_SIGNIN_DRAFT_KEY } from '@/services/webSignInDraft';
 import { resetMonetizationTelemetry } from '@/services/monetizationTelemetry';
+import { AacBillingRequestError } from '@/services/aacBillingService';
+import { clearNativeBillingDraft } from '@/services/nativeBillingDraft';
 
 const board = <button>Communication board action</button>;
 async function tick(ms: number) { await act(async () => { await vi.advanceTimersByTimeAsync(ms); }); }
@@ -28,6 +33,17 @@ const nativeShells = [['Prism AAC', PRISM_AAC_SHELL_BRIDGE], ['Prism AAC Browser
 const gateOutcomes = () => mocks.ddAction.mock.calls
   .filter(([name]) => name === 'aac_web_gate').map(([, ctx]) => (ctx as { outcome: string }).outcome);
 
+const BILLING_ACCOUNT = '82c6813e-4bb2-4b16-baf9-b268e568eaa5';
+const BILLING_RECORD = '2191f41e-1ba9-4afc-bc3c-bab5190fc10d';
+const draftBridge = vi.fn();
+function installDraftBridge() {
+  draftBridge.mockReset().mockImplementation((request: Record<string, string>) => {
+    Reflect.get(window, 'prismBillingDraftResult')({ id: request.id,
+      result: request.operation === 'load' ? { text: 'Please help me', draftID: BILLING_RECORD } : {} });
+  });
+  Reflect.set(window, 'prismNativeBridge', { ...PRISM_AAC_SHELL_BRIDGE, billingDraft: draftBridge });
+}
+
 beforeEach(() => {
   vi.clearAllMocks(); mocks.pathname = '/'; mocks.profile = null;
   clearVerifiedLocalAccess(); sessionStorage.removeItem(WEB_SIGNIN_DRAFT_KEY);
@@ -38,6 +54,69 @@ beforeEach(() => {
   useSettingsStore.setState({ language: 'en' });
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); delete (window as BridgeWindow).prismNativeBridge; });
+
+describe('mounted native billing draft recovery', () => {
+  beforeEach(() => {
+    installDraftBridge();
+    mocks.billing.mockReset().mockResolvedValue({ userId: BILLING_ACCOUNT });
+  });
+  it('consumes the Keychain record after the committed communication text, never before rendering', async () => {
+    let paint: FrameRequestCallback | undefined;
+    const frame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => { paint = callback; return 7; });
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+    function CommunicationBoard() {
+      const text = useMessageStore(state => state.text);
+      return <output data-testid="recovered-message">{text}</output>;
+    }
+    const view = render(<WebSignInGate><CommunicationBoard /></WebSignInGate>);
+    try {
+      await tick(1);
+      expect(screen.getByTestId('recovered-message')).toHaveTextContent('Please help me');
+      expect(draftBridge.mock.calls.some(([request]) => request.operation === 'clear')).toBe(false);
+      await act(async () => { paint!(performance.now()); });
+      expect(draftBridge).toHaveBeenLastCalledWith(expect.objectContaining({ operation: 'clear', draftID: BILLING_RECORD }));
+    } finally { view.unmount(); frame.mockRestore(); cancel.mockRestore(); }
+  });
+  it('restores with the fresh account once, retaining free controls and skipping web snapshots', async () => {
+    sessionStorage.setItem(WEB_SIGNIN_DRAFT_KEY, JSON.stringify({ text: 'Legacy private message', expiresAt: Date.now() + 60_000 }));
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(draftBridge).toHaveBeenCalledWith(expect.objectContaining({ operation: 'load', account: BILLING_ACCOUNT }));
+    expect(useMessageStore.getState().text).toBe('Please help me');
+    fireEvent(window, new Event('pagehide')); fireEvent(window, new Event('focus')); await tick(1);
+    expect(mocks.billing).toHaveBeenCalledOnce();
+    expect(sessionStorage.getItem(WEB_SIGNIN_DRAFT_KEY)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Communication board action' })).toBeEnabled();
+  });
+  it('leaves a bounded draft alone during an outage and retries identity on focus', async () => {
+    mocks.billing.mockRejectedValueOnce(new Error('offline'));
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(draftBridge).not.toHaveBeenCalled();
+    expect(useMessageStore.getState().text).toBe('');
+    fireEvent(window, new Event('focus')); await tick(1);
+    expect(mocks.billing).toHaveBeenCalledTimes(2);
+    expect(useMessageStore.getState().text).toBe('Please help me');
+  });
+  it('clears an expired server session without loading its private draft', async () => {
+    mocks.billing.mockRejectedValueOnce(new AacBillingRequestError('expired', 401));
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(draftBridge).toHaveBeenCalledOnce();
+    expect(draftBridge).toHaveBeenCalledWith(expect.objectContaining({ operation: 'clear' }));
+    expect(useMessageStore.getState().text).toBe('');
+    fireEvent(window, new Event('focus')); await tick(1);
+    expect(mocks.billing).toHaveBeenCalledOnce();
+  });
+  it.each(['typing', 'sign-out', 'unmount'])('rejects pending identity recovery after %s', async action => {
+    let resolve!: (value: { userId: string }) => void;
+    mocks.billing.mockReturnValueOnce(new Promise(done => { resolve = done; }));
+    const view = render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    if (action === 'typing') useMessageStore.setState({ text: 'My new message' });
+    else if (action === 'sign-out') clearNativeBillingDraft();
+    else view.unmount();
+    resolve({ userId: BILLING_ACCOUNT }); await tick(1);
+    expect(draftBridge.mock.calls.some(([request]) => request.operation === 'load')).toBe(false);
+    expect(useMessageStore.getState().text).toBe(action === 'typing' ? 'My new message' : '');
+  });
+});
 
 describe('nonblocking web cloud-preview status', () => {
   it('does not resurrect a message cleared after expiry on focus or reload', async () => {
@@ -177,6 +256,19 @@ describe('nonblocking web cloud-preview status', () => {
     render(<WebSignInGate>{board}</WebSignInGate>); await tick(600_001);
     expect(mocks.access).not.toHaveBeenCalled(); expect(gateOutcomes()).toEqual([]);
     expect(screen.getByText('Communication board action')).toBeVisible();
+  });
+
+  it.each(['disabled', ...nativeShells.map(([name]) => name)])('preserves reload drafts independently of cloud checks in %s', async mode => {
+    if (mode === 'disabled') vi.stubEnv('NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE', '0');
+    else (window as BridgeWindow).prismNativeBridge = nativeShells.find(([name]) => name === mode)![1];
+    useMessageStore.setState({ text: 'Keep my communication' }); rememberWebSignInDraft();
+    useMessageStore.setState({ text: '' });
+    const view = render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(useMessageStore.getState().text).toBe('Keep my communication');
+    fireEvent(window, new Event('pagehide')); view.unmount(); useMessageStore.setState({ text: '' });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(useMessageStore.getState().text).toBe('Keep my communication');
+    expect(mocks.access).not.toHaveBeenCalled(); expect(gateOutcomes()).toEqual([]);
   });
 
   it('separates server-disabled rollout from sign-in', async () => {

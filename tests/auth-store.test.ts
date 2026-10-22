@@ -2,7 +2,7 @@
  * authStore — profile fetch, loading guard, clear, cleanup
  *
  * Covers: initial state, refresh() fetches and sets profile, loading guard
- * prevents concurrent calls, fetch failure sets profile=null+loaded, clear()
+ * prevents concurrent calls, unknown identity preserves drafts, clear()
  * resets state and calls cache-clear helpers, cleanupAuthStore() stops timer.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -14,6 +14,8 @@ const clearPredictionMemoryCacheMock = vi.fn();
 const rotateAnonymousPredictionSessionScopeMock = vi.fn();
 const destroyAacHrrMock = vi.fn();
 const settingsUpdateMock = vi.fn();
+const clearNativeDraftMock = vi.fn();
+vi.mock('@/services/nativeBillingDraft', () => ({ clearNativeBillingDraft: () => clearNativeDraftMock(), hasNativeBillingDraft: () => false }));
 
 vi.mock('@/services/aiService', () => ({
   fetchSynaluxProfile: (...a: unknown[]) => fetchProfileMock(...a),
@@ -38,10 +40,15 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 const { useAuthStore, cleanupAuthStore } = await import('@/store/authStore');
+const { rememberWebSignInDraft, recoverWebSignInDraft, WEB_SIGNIN_DRAFT_KEY } = await import('@/services/webSignInDraft');
+const { useMessageStore } = await import('@/store/messageStore');
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ profile: null, loaded: false, loading: false });
+  useAuthStore.setState({ profile: null, lastConfirmedEmail: null, identityUnknown: true, loaded: false, loading: false });
+  localStorage.clear();
+  useMessageStore.setState({ text: '', undoStack: [] });
+  sessionStorage.removeItem(WEB_SIGNIN_DRAFT_KEY);
 });
 
 // ── initial state ──────────────────────────────────────────────────────────────
@@ -63,6 +70,59 @@ describe('authStore — initial state', () => {
 // ── refresh() ─────────────────────────────────────────────────────────────────
 
 describe('authStore — refresh()', () => {
+  it('keeps communication handoffs recoverable when identity cannot be checked offline', async () => {
+    fetchProfileMock.mockResolvedValue({ email: 'first@example.invalid' });
+    await useAuthStore.getState().refresh();
+    useMessageStore.getState().setTextSilent('I need water');
+    clearNativeDraftMock.mockClear();
+    fetchProfileMock.mockRejectedValue(new Error('Network unavailable'));
+    await useAuthStore.getState().refresh();
+    expect(clearNativeDraftMock).not.toHaveBeenCalled();
+    expect(rememberWebSignInDraft()).toBe(true);
+    useMessageStore.getState().setTextSilent('');
+    recoverWebSignInDraft();
+    expect(useMessageStore.getState().text).toBe('I need water');
+  });
+  it.each([null, { email: 'other@example.invalid' }])('revokes the old handoff after unknown identity becomes a confirmed sign-out or different account: %j', async confirmed => {
+    fetchProfileMock.mockResolvedValue({ email: 'first@example.invalid' });
+    await useAuthStore.getState().refresh();
+    useMessageStore.getState().setTextSilent('I need water');
+    rememberWebSignInDraft('billing');
+    fetchProfileMock.mockResolvedValue(undefined);
+    await useAuthStore.getState().refresh();
+    expect(clearNativeDraftMock).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().profile).toBeNull();
+    expect(sessionStorage.getItem(WEB_SIGNIN_DRAFT_KEY)).not.toBeNull();
+    fetchProfileMock.mockResolvedValue(confirmed);
+    await useAuthStore.getState().refresh();
+    expect(clearNativeDraftMock).toHaveBeenCalledOnce();
+    rememberWebSignInDraft();
+    expect(sessionStorage.getItem(WEB_SIGNIN_DRAFT_KEY)).toBeNull();
+    expect(useMessageStore.getState().text).toBe('I need water');
+  });
+  it('preserves the protected handoff when an unavailable check later confirms the same account', async () => {
+    const profile = { email: 'first@example.invalid' };
+    fetchProfileMock.mockResolvedValue(profile);
+    await useAuthStore.getState().refresh();
+    useMessageStore.getState().setTextSilent('I need water');
+    rememberWebSignInDraft('billing');
+    fetchProfileMock.mockResolvedValue(undefined);
+    await useAuthStore.getState().refresh();
+    fetchProfileMock.mockResolvedValue(profile);
+    await useAuthStore.getState().refresh();
+    expect(clearNativeDraftMock).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(WEB_SIGNIN_DRAFT_KEY)).not.toBeNull();
+  });
+  it('preserves a restart draft during initial identity hydration and clears it on account replacement or sign-out', async () => {
+    fetchProfileMock.mockResolvedValue({ email: 'first@example.invalid' });
+    await useAuthStore.getState().refresh();
+    expect(clearNativeDraftMock).not.toHaveBeenCalled();
+    fetchProfileMock.mockResolvedValue({ email: 'next@example.invalid' });
+    await useAuthStore.getState().refresh();
+    expect(clearNativeDraftMock).toHaveBeenCalledTimes(1);
+    useAuthStore.getState().clear();
+    expect(clearNativeDraftMock).toHaveBeenCalledTimes(2);
+  });
   it('a pending profile fetch cannot sign the user back in after clear', async () => {
     let finish!: (value: unknown) => void;
     fetchProfileMock.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
@@ -110,7 +170,7 @@ describe('authStore — refresh()', () => {
     fetchProfileMock.mockReturnValue(new Promise((r) => { resolveFetch = r; }));
     const p1 = useAuthStore.getState().refresh();
     const p2 = useAuthStore.getState().refresh(); // concurrent call
-    resolveFetch({ tier: 'free' });
+    resolveFetch({ tier: 'free', email: 'guard@example.invalid' });
     await Promise.all([p1, p2]);
     // fetchProfile should only be called once
     expect(fetchProfileMock).toHaveBeenCalledOnce();
@@ -169,8 +229,14 @@ describe('authStore — refresh()', () => {
 // ── clear() ───────────────────────────────────────────────────────────────────
 
 describe('authStore — clear()', () => {
+  it('removes the tab handoff at sign-out without deleting current communication or recreating it on pagehide', () => {
+    useMessageStore.setState({ text: 'Private handoff' }); rememberWebSignInDraft('billing');
+    useAuthStore.getState().clear(); rememberWebSignInDraft();
+    expect(sessionStorage.getItem(WEB_SIGNIN_DRAFT_KEY)).toBeNull();
+    expect(useMessageStore.getState().text).toBe('Private handoff');
+  });
   it('sets profile to null', async () => {
-    fetchProfileMock.mockResolvedValue({ tier: 'pro' });
+    fetchProfileMock.mockResolvedValue({ tier: 'pro', email: 'clear@example.invalid' });
     await useAuthStore.getState().refresh();
     useAuthStore.getState().clear();
     expect(useAuthStore.getState().profile).toBeNull();

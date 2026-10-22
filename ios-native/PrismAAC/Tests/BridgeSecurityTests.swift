@@ -10,6 +10,214 @@ import WebKit
 /// Every named constant, every whitelist rule, and every validator must
 /// have at least one passing test and one failing test (positive + negative).
 final class BridgeSecurityTests: XCTestCase {
+    func test_only_the_main_bundled_document_can_discard_a_billing_draft_by_speaking() {
+        XCTAssertTrue(BridgeSecurityPolicy.isAllowedBundledFrame(pageURL: Bundle.main.bundleURL, isMainFrame: true))
+        XCTAssertFalse(BridgeSecurityPolicy.isAllowedBundledFrame(pageURL: Bundle.main.bundleURL, isMainFrame: false))
+        for other in [nil, url("https://synalux.ai/prism-aac"), url("file:///tmp/other/"), url("about:blank")] {
+            XCTAssertFalse(BridgeSecurityPolicy.isAllowedBundledFrame(pageURL: other, isMainFrame: true))
+        }
+    }
+    @MainActor
+    func test_unused_speech_client_can_be_released_without_a_disconnect_notification() async {
+        var disconnected = false
+        var client: InworldSTTClient? = InworldSTTClient()
+        weak var releasedClient = client
+        client?.onDisconnected = { disconnected = true }
+
+        client = nil
+
+        XCTAssertNil(releasedClient)
+        // Drain the main queue so a destruction callback cannot hide behind
+        // the test finishing before scheduled work runs.
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        XCTAssertFalse(disconnected)
+    }
+
+    @MainActor
+    func test_explicit_speech_disconnect_notifies_and_client_can_then_be_released() async {
+        let disconnected = expectation(description: "Explicit disconnect notifies its caller")
+        var client: InworldSTTClient? = InworldSTTClient()
+        weak var releasedClient = client
+        client?.onDisconnected = { disconnected.fulfill() }
+
+        client?.disconnect()
+        await fulfillment(of: [disconnected], timeout: 2)
+        XCTAssertFalse(client?.isConnected ?? true)
+
+        client = nil
+        XCTAssertNil(releasedClient)
+    }
+
+    @MainActor
+    func test_each_rendered_board_starts_a_new_recovery_budget() {
+        let view = RecoveryWebView()
+        var ready = 0
+        let coordinator = PrismWebView.Coordinator(pipeline: AACPipeline(llm: LLMEngine()), onLoaded: { ready += 1 })
+        for count in 1...4 {
+            coordinator.webViewWebContentProcessDidTerminate(view)
+            XCTAssertEqual(view.requests.count, count)
+            coordinator.webView(view, didStartProvisionalNavigation: nil)
+            coordinator.webView(view, didFinish: nil)
+        }
+        XCTAssertEqual(ready, 4)
+        XCTAssertEqual(view.bundledLoads, 0)
+    }
+    @MainActor
+    func test_a_bundled_board_can_recover_after_its_web_process_dies() {
+        let view = RecoveryWebView()
+        var ready = 0
+        let coordinator = PrismWebView.Coordinator(pipeline: AACPipeline(llm: LLMEngine()), onLoaded: { ready += 1 })
+        let offline = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+        coordinator.webView(view, didFailProvisionalNavigation: nil, withError: offline)
+        coordinator.webView(view, didFailProvisionalNavigation: nil, withError: offline)
+        XCTAssertEqual(view.bundledLoads, 1)
+        coordinator.webView(view, didStartProvisionalNavigation: nil)
+        coordinator.webView(view, didFinish: nil)
+        coordinator.webViewWebContentProcessDidTerminate(view)
+        XCTAssertEqual(view.bundledLoads, 2)
+        coordinator.webView(view, didStartProvisionalNavigation: nil)
+        coordinator.webView(view, didFinish: nil)
+        XCTAssertEqual(ready, 2)
+    }
+
+    @MainActor
+    func test_failed_bundled_rendering_stops_retrying_and_offers_native_reconnect() {
+        let view = RecoveryWebView()
+        var retry: (() -> Void)?
+        var unavailable = 0
+        let coordinator = PrismWebView.Coordinator(pipeline: AACPipeline(llm: LLMEngine()),
+            onUnavailable: { action in unavailable += 1; retry = action })
+        let offline = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+        for _ in 0..<4 { coordinator.webView(view, didFailProvisionalNavigation: nil, withError: offline) }
+        XCTAssertEqual(view.requests.count, 1)
+        XCTAssertEqual(view.bundledLoads, 2)
+        XCTAssertEqual(unavailable, 1)
+        XCTAssertNotNil(retry)
+        retry?()
+        XCTAssertEqual(view.requests.count, 2)
+        XCTAssertEqual(view.requests.last?.url?.host, "synalux.ai")
+        XCTAssertEqual(view.requests.last?.url?.path, "/prism-aac")
+    }
+
+    @MainActor
+    func test_bundled_reconnect_loads_the_full_app_instead_of_the_bundle_directory() {
+        let view = RecoveryWebView()
+        let coordinator = PrismWebView.Coordinator(pipeline: AACPipeline(llm: LLMEngine()))
+        let offline = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+        coordinator.webView(view, didFailProvisionalNavigation: nil, withError: offline)
+        coordinator.webView(view, didFailProvisionalNavigation: nil, withError: offline)
+        XCTAssertEqual(coordinator.mainFrameNavigationPolicy(url("prism-aac-reconnect://app"), webView: view), .cancel)
+        XCTAssertEqual(view.requests.count, 2)
+        XCTAssertEqual(view.requests.last?.url?.host, "synalux.ai")
+        XCTAssertEqual(view.requests.last?.url?.path, "/prism-aac")
+        XCTAssertNotNil(view.requests.last?.url?.query)
+    }
+
+    @MainActor
+    func test_external_communication_intents_leave_the_working_board_in_place() {
+        let view = RecoveryWebView()
+        var opened: [URL] = []
+        var loading = 0
+        let coordinator = PrismWebView.Coordinator(pipeline: AACPipeline(llm: LLMEngine()),
+            onLoading: { loading += 1 }, openExternalURL: { opened.append($0) })
+        for intent in ["tel:123", "mailto:person@example.test", "sms:123"] {
+            let destination = url(intent)
+            XCTAssertEqual(coordinator.mainFrameNavigationPolicy(destination, webView: view), .cancel)
+            XCTAssertEqual(opened.last, destination)
+        }
+        coordinator.webView(view, didFailProvisionalNavigation: nil,
+            withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
+        XCTAssertEqual(loading, 0)
+        XCTAssertTrue(view.requests.isEmpty)
+        XCTAssertEqual(view.bundledLoads, 0)
+    }
+
+    @MainActor
+    func test_sign_out_document_is_visible_and_does_not_consume_aac_recovery() {
+        let view = RecoveryWebView()
+        var loading = 0
+        var visible = 0
+        let coordinator = PrismWebView.Coordinator(pipeline: AACPipeline(llm: LLMEngine()),
+            onLoaded: { visible += 1 }, onLoading: { loading += 1 })
+        XCTAssertEqual(coordinator.mainFrameNavigationPolicy(url("https://synalux.ai/api/auth/signout"), webView: view), .allow)
+        coordinator.webView(view, didStartProvisionalNavigation: nil)
+        coordinator.webView(view, didFinish: nil)
+        let failure = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+        coordinator.webView(view, didFailProvisionalNavigation: nil, withError: failure)
+        coordinator.webView(view, didFail: nil, withError: failure)
+        XCTAssertGreaterThan(visible, 0)
+        XCTAssertEqual(loading, 0)
+        XCTAssertEqual(view.readinessChecks, 0)
+        XCTAssertTrue(view.requests.isEmpty)
+        XCTAssertEqual(view.bundledLoads, 0)
+        _ = coordinator.mainFrameNavigationPolicy(url("https://synalux.ai/prism-aac"), webView: view)
+        coordinator.webViewWebContentProcessDidTerminate(view)
+        XCTAssertEqual(view.requests.count, 1)
+        XCTAssertEqual(view.bundledLoads, 0)
+    }
+
+    @MainActor
+    func test_bundled_document_navigation_still_checks_communication_readiness() throws {
+        let view = RecoveryWebView()
+        var ready = 0
+        let coordinator = PrismWebView.Coordinator(pipeline: AACPipeline(llm: LLMEngine()), onLoaded: { ready += 1 })
+        let failure = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+        coordinator.webView(view, didFailProvisionalNavigation: nil, withError: failure)
+        coordinator.webView(view, didFailProvisionalNavigation: nil, withError: failure)
+        let bundleURL = try XCTUnwrap(view.currentURL)
+        XCTAssertEqual(coordinator.mainFrameNavigationPolicy(bundleURL, webView: view), .allow)
+        coordinator.webView(view, didStartProvisionalNavigation: nil)
+        coordinator.webView(view, didFinish: nil)
+        XCTAssertEqual(view.readinessChecks, 1)
+        XCTAssertEqual(ready, 1)
+    }
+
+    @MainActor
+    func test_process_death_during_sign_out_still_restores_communication() {
+        let view = RecoveryWebView()
+        let coordinator = PrismWebView.Coordinator(pipeline: AACPipeline(llm: LLMEngine()))
+        _ = coordinator.mainFrameNavigationPolicy(url("https://synalux.ai/api/auth/signout"), webView: view)
+        coordinator.webViewWebContentProcessDidTerminate(view)
+        XCTAssertEqual(view.requests.count, 1, "A dead web process must not strand the user on a sign-out document")
+        XCTAssertEqual(view.requests.last?.url?.path, "/prism-aac")
+    }
+
+    func test_external_communication_schemes_are_explicit() {
+        for allowed in ["tel:123", "mailto:person@example.test", "sms:123"] {
+            XCTAssertTrue(BridgeSecurityPolicy.isExternalCommunicationURL(url(allowed)))
+        }
+        for other in ["javascript:alert(1)", "file:///tmp/page", "https://synalux.ai", "intent://app", "prism-aac-reconnect://app"] {
+            XCTAssertFalse(BridgeSecurityPolicy.isExternalCommunicationURL(url(other)))
+        }
+    }
+    func test_fresh_document_preserves_origin_path_and_launch_parameters() throws {
+        let original = url("https://synalux.ai/prism-aac?mode=typing&_aac_launch=old#board")
+        let first = PrismWebView.freshDocumentURL(original)
+        let second = PrismWebView.freshDocumentURL(original)
+        let components = try XCTUnwrap(URLComponents(url: first, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(first.scheme, original.scheme)
+        XCTAssertEqual(first.host, original.host)
+        XCTAssertEqual(first.path, original.path)
+        XCTAssertEqual(first.fragment, original.fragment)
+        XCTAssertEqual(components.queryItems?.first(where: { $0.name == "mode" })?.value, "typing")
+        XCTAssertEqual(components.queryItems?.filter { $0.name == "_aac_launch" }.count, 1)
+        XCTAssertNotEqual(first, second)
+        XCTAssertTrue(BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: first, frameURL: first, isMainFrame: true))
+    }
+
+    func test_billing_opens_only_known_https_destinations_outside_the_board() {
+        for allowed in ["https://checkout.stripe.com/", "https://billing.stripe.com/session",
+                        "https://apps.apple.com/account/subscriptions"] {
+            XCTAssertTrue(BridgeSecurityPolicy.isExternalBillingURL(url(allowed)), allowed)
+        }
+        for blocked in ["http://billing.stripe.com/", "https://billing.stripe.com.evil.com/",
+                        "https://billing.stripe.com:444/", "https://user@billing.stripe.com/",
+                        "https://apps.apple.com/other", "https://synalux.ai/prism-aac"] {
+            XCTAssertFalse(BridgeSecurityPolicy.isExternalBillingURL(url(blocked)), blocked)
+        }
+    }
 
     func test_subscription_requiresHTTPSAACMainFrame() {
         let page = url("https://synalux.ai/prism-aac")
@@ -380,5 +588,24 @@ final class BridgeSecurityTests: XCTestCase {
 
     private func url(_ string: String) -> URL {
         URL(string: string) ?? URL(string: "about:blank")!
+    }
+}
+
+@MainActor
+private final class RecoveryWebView: WKWebView {
+    var currentURL: URL? = URL(string: "https://synalux.ai/prism-aac")
+    var requests: [URLRequest] = []
+    var bundledLoads = 0
+    var readinessChecks = 0
+    override var url: URL? { currentURL }
+    override func load(_ request: URLRequest) -> WKNavigation? {
+        requests.append(request); currentURL = request.url; return nil
+    }
+    override func loadHTMLString(_ string: String, baseURL: URL?) -> WKNavigation? {
+        bundledLoads += 1; currentURL = baseURL; return nil
+    }
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        if javaScriptString.contains("aac-safe-viewport") { readinessChecks += 1 }
+        completionHandler?(true, nil)
     }
 }

@@ -1,4 +1,6 @@
 import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
+import { rememberWebSignInDraft } from '@/services/webSignInDraft';
+import { hasNativeBillingDraft, saveNativeBillingDraft } from '@/services/nativeBillingDraft';
 
 export interface AacBillingStatus {
   userId: string;
@@ -76,8 +78,13 @@ export function nativeSubscription(operation: string, fields: Record<string, str
 async function billingRequest<T>(suffix = '', body?: Record<string, unknown>): Promise<T> {
   const timeout = timeoutSignal(30_000);
   try {
-    const response = await fetch(`${SYNALUX_API}/prism-aac/${suffix || 'billing'}`, {
+    // Older installed workers used NetworkFirst for APIs. A unique URL also
+    // prevents their cached account response from unlocking a local draft.
+    const url = new URL(`${SYNALUX_API}/prism-aac/${suffix || 'billing'}`);
+    if (!body) url.searchParams.set('identityRequest', crypto.randomUUID());
+    const response = await fetch(url.href, {
       method: body ? 'POST' : 'GET', credentials: 'include', signal: timeout.signal,
+      cache: 'no-store',
       headers: { 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}),
     });
     // Parsed defensively and only after the status is known: an error body from
@@ -143,6 +150,7 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   const prepared = await billingRequest<{ accountToken: string }>('billing/apple',
     { action: 'prepare', expectedUserId, expectedOfferVersion });
   if (!prepared.accountToken || prepared.accountToken !== expectedUserId) throw new Error(ERRORS.invalid);
+  await saveNativeBillingDraft(prepared.accountToken);
   const result = await nativeSubscription('purchase', { accountToken: prepared.accountToken });
   if (result.status === 'cancelled' || result.status === 'pending') return { status: result.status };
   if (result.status !== 'purchased' || !result.transactions?.length) throw new Error(ERRORS.invalid);
@@ -193,24 +201,40 @@ export async function restoreAacApplePurchases(explicit = true, accountScope = '
   return restore;
 }
 
-function openStripe(url: string, host: string) {
+async function openStripe(url: string, host: string, account: string) {
   const target = new URL(url);
   if (target.protocol !== 'https:' || target.hostname !== host) throw new Error(ERRORS.invalid);
-  window.location.assign(target.href);
+  await openBillingPage(target.href, account);
+}
+
+async function openBillingPage(url: string, account?: string) {
+  // A failed save must leave the board and its current message in memory.
+  if (!rememberWebSignInDraft('billing')) throw new Error(ERRORS.unavailable);
+  if (hasNativeBillingDraft()) {
+    const scope = account ?? (await fetchAacBillingStatus()).userId;
+    if (!scope) throw new Error(ERRORS.unavailable);
+    await saveNativeBillingDraft(scope);
+  }
+  window.location.assign(url);
 }
 
 export async function purchaseAacWithStripe(expectedUserId: string, expectedOfferVersion: string): Promise<void> {
   const result = await billingRequest<{ url: string }>('checkout',
     { plan: 'aac_standard', currency: 'usd', expectedUserId, expectedOfferVersion });
-  openStripe(result.url, 'checkout.stripe.com');
+  await openStripe(result.url, 'checkout.stripe.com', expectedUserId);
 }
 
 export async function manageAacSubscription(channel: 'apple' | 'stripe') {
   if (channel === 'apple') {
-    if (hasNativePurchases()) await nativeSubscription('manage');
-    else window.location.assign('https://apps.apple.com/account/subscriptions');
+    if (hasNativePurchases()) {
+      if (hasNativeBillingDraft()) await saveNativeBillingDraft((await fetchAacBillingStatus()).userId);
+      await nativeSubscription('manage');
+    } else await openBillingPage('https://apps.apple.com/account/subscriptions');
     return;
   }
   const result = await billingRequest<{ url: string }>('billing', { action: 'manage' });
-  openStripe(result.url, 'billing.stripe.com');
+  // Validate the provider URL before the additional account-status lookup.
+  const target = new URL(result.url);
+  if (target.protocol !== 'https:' || target.hostname !== 'billing.stripe.com') throw new Error(ERRORS.invalid);
+  await openBillingPage(target.href);
 }

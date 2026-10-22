@@ -20,7 +20,7 @@ for (const channel of ['apple', 'stripe']) {
     } }));
     await page.route('**/api/v1/roles/me', route => route.fulfill({ json: { plan: 'free', aac_plan: 'free' } }));
     await page.route('**/api/v1/prism-aac/access', route => route.fulfill({ json: { state: 'signed_in', remainingMs: 0 } }));
-    await page.route('**/api/v1/prism-aac/billing', route => route.fulfill({ json: {
+    await page.route(/\/api\/v1\/prism-aac\/billing(?:\?.*)?$/, route => route.fulfill({ json: {
       userId: 'subscription-test', enabled: true, hasCloudAccess: true, betaExempt: false,
       transitionEndsAt: null, channels: [channel], manageChannel: channel, purchaseBlocked: true,
       // A complete offer, so only the subscription state the server sends
@@ -69,7 +69,7 @@ test('cloud access included with the account plan offers no purchase', async ({ 
   } }));
   await page.route('**/api/v1/roles/me', route => route.fulfill({ json: { plan: 'enterprise', aac_plan: 'enterprise' } }));
   await page.route('**/api/v1/prism-aac/access', route => route.fulfill({ json: { state: 'signed_in', remainingMs: 0 } }));
-  await page.route('**/api/v1/prism-aac/billing', route => route.fulfill({ json: {
+  await page.route(/\/api\/v1\/prism-aac\/billing(?:\?.*)?$/, route => route.fulfill({ json: {
     userId: 'included-test', enabled: true, hasCloudAccess: true, includedWithSynalux: true, betaExempt: false,
     transitionEndsAt: null, channels: [], manageChannel: null, purchaseBlocked: true,
     // A complete offer, so purchaseBlocked is what keeps Subscribe away.

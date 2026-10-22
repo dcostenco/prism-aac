@@ -47,6 +47,88 @@ function fixture(builds: string[], documentBuild: string | null = builds.at(-1)!
 }
 
 describe('safe AAC precache retirement', () => {
+  it('falls back and cancels a stalled body after the total navigation deadline', async () => {
+    const { storage } = fixture(['old'], 'old');
+    const cancel = vi.fn();
+    const response = new Response(new ReadableStream({ cancel }), { headers: { 'content-type': 'text/html' } });
+    const result = await handleCanonicalNavigation({ request: new Request(APP), canonicalUrl: APP,
+      precacheName: name('old'), storage, timeoutMs: 20, fetchResponse: async () => response });
+    expect(result.stored).toBe(false);
+    expect(await result.response.text()).toBe(html('old'));
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+  it('cancels a response arriving after fallback without replacing the saved board', async () => {
+    const { storage, stores } = fixture(['old'], 'old');
+    let release!: (response: Response) => void;
+    const pending = handleCanonicalNavigation({ request: new Request(APP), canonicalUrl: APP,
+      precacheName: name('old'), storage, timeoutMs: 20,
+      fetchResponse: () => new Promise(resolve => { release = resolve; }) });
+    const result = await pending;
+    expect(await result.response.text()).toBe(html('old'));
+    const cancel = vi.fn();
+    release(new Response(new ReadableStream({ cancel }), { headers: { 'content-type': 'text/html' } }));
+    await vi.waitFor(() => expect(cancel).toHaveBeenCalledOnce());
+    expect(stores.get(AAC_CORE_NAVIGATION_CACHE)?.get(APP)).toBe(html('old'));
+  });
+  it('retains the saved board when the replacement body fails while being read', async () => {
+    const { storage } = fixture(['old'], 'old');
+    const response = new Response(new ReadableStream({
+      pull(controller) { controller.error(new Error('connection lost')); },
+    }), { headers: { 'content-type': 'text/html' } });
+    const result = await handleCanonicalNavigation({ request: new Request(APP), canonicalUrl: APP,
+      precacheName: name('old'), storage, fetchResponse: async () => response });
+    expect(result.stored).toBe(false);
+    expect(await result.response.text()).toBe(html('old'));
+  });
+  it('preserves multilingual text split across network chunks', async () => {
+    const { storage } = fixture(['new'], null);
+    const content = html('new') + 'помощь';
+    const bytes = new TextEncoder().encode(content);
+    const response = new Response(new ReadableStream({ start(controller) {
+      for (const byte of bytes) controller.enqueue(new Uint8Array([byte]));
+      controller.close();
+    } }), { headers: { 'content-type': 'text/html' } });
+    const result = await handleCanonicalNavigation({ request: new Request(APP), canonicalUrl: APP,
+      precacheName: name('new'), storage, fetchResponse: async () => response });
+    expect(result.stored).toBe(true);
+    expect(await result.response.text()).toBe(content);
+  });
+  it('keeps a valid offline document when new HTML and its CSP nonce disagree', async () => {
+    const { storage, stores } = fixture(['old', 'new'], 'old');
+    const result = await handleCanonicalNavigation({
+      request: new Request(APP), canonicalUrl: APP, precacheName: name('new'), storage,
+      fetchResponse: async () => new Response(`<script nonce="body-nonce" src="${asset('new')}"></script>`, {
+        headers: { 'content-type': 'text/html', 'content-security-policy': "script-src 'nonce-policy-nonce' 'strict-dynamic'" },
+      }),
+    });
+    expect(result.stored).toBe(false);
+    expect(await result.response.text()).toBe(html('old'));
+    expect(stores.get(AAC_CORE_NAVIGATION_CACHE)?.get(APP)).toBe(html('old'));
+  });
+  it('never serves a cached document with a mismatched nonce when the network is unavailable', async () => {
+    const { storage } = fixture(['old'], null);
+    vi.spyOn(storage, 'match').mockImplementation(async (_request, options) => options?.cacheName === AAC_CORE_NAVIGATION_CACHE
+      ? new Response('<script nonce="old-body"></script>', {
+        headers: { 'content-type': 'text/html', 'content-security-policy': "script-src 'nonce-wrong-policy' 'strict-dynamic'" },
+      }) : undefined);
+    const result = await handleCanonicalNavigation({ request: new Request(APP), canonicalUrl: APP,
+      precacheName: name('old'), storage, fetchResponse: async () => { throw new Error('offline'); } });
+    expect(result.response.type).toBe('error');
+  });
+  it('stores and serves a buffered HTML/CSP pair, detached from the reusable network response', async () => {
+    const { storage } = fixture(['new'], null);
+    const content = `<script nonce="paired" src="${asset('new')}"></script>`;
+    const response = new Response(content, { headers: { 'content-type': 'text/html',
+      'content-security-policy': "script-src 'nonce-paired' 'strict-dynamic'", 'content-encoding': 'gzip', 'content-length': '20' } });
+    const result = await handleCanonicalNavigation({ request: new Request(APP), canonicalUrl: APP,
+      precacheName: name('new'), storage, fetchResponse: async () => response });
+    expect(result.stored).toBe(true);
+    expect(result.response).not.toBe(response);
+    expect(result.response.headers.get('content-security-policy')).toBe(response.headers.get('content-security-policy'));
+    expect(result.response.headers.has('content-encoding')).toBe(false);
+    expect(result.response.headers.has('content-length')).toBe(false);
+    expect(await result.response.text()).toBe(content);
+  });
   it('retires successive old builds once the current document and clients use the current build', async () => {
     const { stores, storage, locks } = fixture(['one']);
     for (const build of ['two', 'three', 'four']) {

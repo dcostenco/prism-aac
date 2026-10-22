@@ -10,6 +10,10 @@ import { rememberWebSignInDraft, recoverWebSignInDraft } from '@/services/webSig
 import { reportWebGate, type WebGateOutcome } from '@/services/monetizationTelemetry';
 import { usePathname } from 'next/navigation';
 import { PRISM_AAC_TERMS_PATH, PRISM_AAC_TERMS_ROUTE } from '@/lib/appPaths';
+import { AacBillingRequestError, fetchAacBillingStatus } from '@/services/aacBillingService';
+import { useMessageStore } from '@/store/messageStore';
+import { acknowledgeNativeBillingDraft, clearNativeBillingDraft, hasNativeBillingDraft, nativeBillingDraftGeneration,
+  observeNativeBillingDraft, recoverNativeBillingDraft } from '@/services/nativeBillingDraft';
 
 type AccessState = WebAccess['state'] | 'checking' | 'error';
 const SIGNED_IN_RECHECK_MS = 5 * 60_000;
@@ -28,6 +32,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
   const native = useSyncExternalStore(subscribeNative, nativeSnapshot, serverNativeSnapshot);
   const { t, rtl } = useT();
   const profile = useAuthStore(s => s.profile);
+  const renderedDraftText = useMessageStore(s => s.text);
   const [state, setState] = useState<AccessState>('checking');
   const [remaining, setRemaining] = useState(0);
   const [warned, setWarned] = useState(false);
@@ -78,15 +83,70 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    alive.current = true;
-    requestVersion.current++;
-    if (!enabled || native) return () => { alive.current = false; };
+    if (!hasNativeBillingDraft()) return;
+    // This effect runs after React commits the recovered store text. Wait a
+    // frame before consuming its native record; unmount cancels that intent.
+    let frame = 0;
+    const acknowledge = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        void acknowledgeNativeBillingDraft(renderedDraftText).catch(() => {
+          console.warn('[AAC billing] Recovered draft cleanup will retry on focus');
+        });
+      });
+    };
+    acknowledge();
+    window.addEventListener('focus', acknowledge);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('focus', acknowledge); };
+  }, [renderedDraftText]);
+
+  useEffect(() => {
+    if (!hasNativeBillingDraft()) return;
+    const stop = observeNativeBillingDraft();
+    let active = true;
+    let inFlight = false;
+    let completed: number | null = null;
+    const recover = async () => {
+      const version = nativeBillingDraftGeneration();
+      if (inFlight || completed === version) return;
+      inFlight = true;
+      try {
+        // Only an authenticated server billing identity can unlock a draft;
+        // initial client profile hydration is not an account decision.
+        const billing = await fetchAacBillingStatus();
+        if (active && billing.userId) {
+          await recoverNativeBillingDraft(billing.userId, version);
+          completed = version;
+        }
+      } catch (error) {
+        if (active && error instanceof AacBillingRequestError && error.status === 401) {
+          clearNativeBillingDraft(); completed = nativeBillingDraftGeneration();
+        }
+        // An outage leaves the bounded draft for a later focus retry.
+      } finally { inFlight = false; }
+    };
+    void recover();
+    window.addEventListener('focus', recover);
+    return () => { active = false; stop(); window.removeEventListener('focus', recover); };
+  }, []);
+
+  useEffect(() => {
     // Hydrate once before pagehide can save an initially empty store. Later
     // account refreshes must never resurrect text the user deliberately cleared.
+    // Draft continuity is independent of cloud enforcement and native billing.
     if (!draftRecovered.current) {
       recoverWebSignInDraft();
       draftRecovered.current = true;
     }
+    const saveDraft = () => { rememberWebSignInDraft(); };
+    window.addEventListener('pagehide', saveDraft);
+    return () => window.removeEventListener('pagehide', saveDraft);
+  }, []);
+
+  useEffect(() => {
+    alive.current = true;
+    requestVersion.current++;
+    if (!enabled || native) return () => { alive.current = false; };
     // Defer out of the effect body; async responses own the state changes.
     const initial = setTimeout(() => {
       if (hasVerifiedLocalAccess()) setState('signed_in');
@@ -105,15 +165,12 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     window.addEventListener(LOCAL_ACCESS_CLEARED, revoke);
     window.addEventListener('storage', storage);
     const refresh = setInterval(focus, SIGNED_IN_RECHECK_MS);
-    const saveDraft = () => { rememberWebSignInDraft(); };
-    window.addEventListener('pagehide', saveDraft);
     return () => {
       alive.current = false;
       clearTimeout(initial); clearInterval(refresh);
       window.removeEventListener('focus', focus);
       window.removeEventListener(LOCAL_ACCESS_CLEARED, revoke);
       window.removeEventListener('storage', storage);
-      window.removeEventListener('pagehide', saveDraft);
     };
   }, [enabled, native, check, profile?.email]);
 

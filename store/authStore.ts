@@ -10,12 +10,17 @@ import { destroyAacHrr } from '@/services/hrrContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { clearVerifiedLocalAccess } from '@/services/webAccessService';
 import { resetMonetizationTelemetry } from '@/services/monetizationTelemetry';
+import { clearNativeBillingDraft } from '@/services/nativeBillingDraft';
+import { clearWebSignInDraft } from '@/services/webSignInDraft';
+import { speechAudioCache } from '@/services/speechAudioCache';
 
 interface AuthState {
   profile: SynaluxProfile | null;
   loaded: boolean;
   loading: boolean;
   identityGeneration: number;
+  lastConfirmedEmail: string | null;
+  identityUnknown: boolean;
   refresh: () => Promise<void>;
   clear: () => void;
 }
@@ -25,26 +30,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   loaded: false,
   loading: false,
   identityGeneration: 0,
+  lastConfirmedEmail: null,
+  identityUnknown: true,
 
   refresh: async () => {
     if (get().loading) return;
     const generation = get().identityGeneration;
     set({ loading: true });
-    try {
-      const profile = await fetchSynaluxProfile();
-      if (get().identityGeneration !== generation) return;
-      const previousIdentity = get().profile?.email.toLowerCase() ?? null;
-      const nextIdentity = profile?.email.toLowerCase() ?? null;
-      if (previousIdentity !== nextIdentity) {
-        set({ identityGeneration: get().identityGeneration + 1 });
-        clearPredictionMemoryCache();
-        destroyAacHrr();
-        rotateAnonymousPredictionSessionScope();
-        useSettingsStore.getState().update({ cloudPredictionEnabled: false });
-      }
-      set({ profile, loaded: true, loading: false });
-    } catch {
-      if (get().identityGeneration !== generation) return;
+    let profile: SynaluxProfile | null | undefined;
+    try { profile = await fetchSynaluxProfile(); }
+    catch { /* An unavailable identity lookup is not a confirmed sign-out. */ }
+    if (get().identityGeneration !== generation) return;
+    const previousIdentity = get().profile?.email.toLowerCase() ?? get().lastConfirmedEmail;
+    if (profile === undefined) {
+      // Stop using unverified personalisation, but preserve communication
+      // handoffs. Remember the last identity so A -> unknown -> B still clears
+      // A's protected handoffs when B is actually confirmed.
       if (get().profile) {
         set({ identityGeneration: get().identityGeneration + 1 });
         clearPredictionMemoryCache();
@@ -52,11 +53,27 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         rotateAnonymousPredictionSessionScope();
         useSettingsStore.getState().update({ cloudPredictionEnabled: false });
       }
-      set({ profile: null, loaded: true, loading: false });
+      set({ profile: null, lastConfirmedEmail: previousIdentity, identityUnknown: true, loaded: true, loading: false });
+      return;
     }
+    const nextIdentity = profile?.email.toLowerCase() ?? null;
+    if (previousIdentity !== nextIdentity) {
+      if (previousIdentity) { clearNativeBillingDraft(); clearWebSignInDraft(); }
+      set({ identityGeneration: get().identityGeneration + 1 });
+      clearPredictionMemoryCache();
+      destroyAacHrr();
+      rotateAnonymousPredictionSessionScope();
+      useSettingsStore.getState().update({ cloudPredictionEnabled: false });
+    }
+    const savedScope = nextIdentity ? speechAudioCache.rememberScope(nextIdentity) : speechAudioCache.forgetScope();
+    set({ profile, lastConfirmedEmail: nextIdentity, identityUnknown: false, loaded: true, loading: false });
+    await savedScope;
   },
 
   clear: () => {
+    void speechAudioCache.forgetScope();
+    clearNativeBillingDraft();
+    clearWebSignInDraft();
     clearVerifiedLocalAccess();
     // The next person on a shared device is a new visitor, and nothing about
     // the last one should survive the sign-out.
@@ -67,7 +84,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     destroyAacHrr();
     rotateAnonymousPredictionSessionScope();
     useSettingsStore.getState().update({ cloudPredictionEnabled: false });
-    set({ profile: null, loaded: true, loading: false, identityGeneration: get().identityGeneration + 1 });
+    set({ profile: null, lastConfirmedEmail: null, identityUnknown: false, loaded: true, loading: false, identityGeneration: get().identityGeneration + 1 });
   },
 }));
 

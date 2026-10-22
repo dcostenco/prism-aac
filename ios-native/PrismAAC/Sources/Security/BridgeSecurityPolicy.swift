@@ -11,6 +11,24 @@ import WebKit
 /// Adding a new bridge action without adding a corresponding test in
 /// BridgeSecurityTests is a protocol violation.
 enum BridgeSecurityPolicy {
+    static func isAllowedBundledFrame(pageURL: URL?, isMainFrame: Bool) -> Bool {
+        guard isMainFrame, let pageURL, pageURL.isFileURL else { return false }
+        return pageURL.standardizedFileURL == Bundle.main.bundleURL.standardizedFileURL
+    }
+    private static let externalCommunicationSchemes: Set<String> = ["tel", "mailto", "sms"]
+
+    static func isExternalCommunicationURL(_ url: URL) -> Bool {
+        externalCommunicationSchemes.contains(url.scheme?.lowercased() ?? "")
+    }
+
+    /// Billing leaves the app in Safari; it must not replace the AAC board or
+    /// gain access to the app-bound WebKit bridge.
+    static func isExternalBillingURL(_ url: URL) -> Bool {
+        guard url.scheme == "https", url.user == nil, url.password == nil,
+              url.port == nil || url.port == 443 else { return false }
+        return url.host == "checkout.stripe.com" || url.host == "billing.stripe.com"
+            || (url.host == "apps.apple.com" && url.path == "/account/subscriptions")
+    }
 
     /// Purchase receipts may only reach the AAC main frame on our HTTPS host.
     static func isAllowedSubscriptionFrame(pageURL: URL?, frameURL: URL?, isMainFrame: Bool) -> Bool {

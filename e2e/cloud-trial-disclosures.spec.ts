@@ -46,7 +46,7 @@ for (const scenario of cases) {
     await page.route('**/api/auth/session', route => route.fulfill({ json: { user: { email: 'trial-test@example.invalid', name: 'Trial test' } } }));
     await page.route('**/api/v1/roles/me', route => route.fulfill({ json: { plan: 'free', aac_plan: 'free' } }));
     await page.route('**/api/v1/prism-aac/access', route => route.fulfill({ json: { state: 'signed_in', remainingMs: 0 } }));
-    await page.route('**/api/v1/prism-aac/billing', route => route.fulfill({ json: {
+    await page.route(/\/api\/v1\/prism-aac\/billing(?:\?.*)?$/, route => route.fulfill({ json: {
       userId: ACCOUNT, enabled: true, hasCloudAccess: subscribed, betaExempt: false,
       transitionEndsAt: null, channels: subscribed ? ['stripe'] : [], manageChannel: subscribed ? 'stripe' : null,
       purchaseBlocked: subscribed, ...(!scenario.endsWith('unknown') ? { stripeTrialDays: eligible ? 14 : 0 } : {}),

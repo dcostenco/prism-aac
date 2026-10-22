@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		50FF3A29D30F48CD5AEDB980 /* BillingDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030F3B04B07BF655073558D8 /* BillingDraftTests.swift */; };
 		5C0B04DB59BB47C4959EC6FD /* AACPictureLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E67BEC3DC14054BF5DDEC3 /* AACPictureLibrary.swift */; };
 		AC1121207B4465D06CA7CC27 /* OfflineWatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC2B537FBFE9AFBA34D4E7A /* OfflineWatchTests.swift */; };
 		0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE9F6102290192A69EA33F /* WatchTTS.swift */; };
@@ -126,6 +127,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		030F3B04B07BF655073558D8 /* BillingDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingDraftTests.swift; sourceTree = "<group>"; };
 		A7E67BEC3DC14054BF5DDEC3 /* AACPictureLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACWatch/Sources/Resources/AACPictureLibrary.swift; sourceTree = SOURCE_ROOT; };
 		018E5C5A5E850B4E8F5302C0 /* PrismAACWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrismAACWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC2B537FBFE9AFBA34D4E7A /* OfflineWatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineWatchTests.swift; sourceTree = "<group>"; };
@@ -226,6 +228,7 @@
 			isa = PBXGroup;
 			children = (
 				009D02A4704E643484C64147 /* AACStoreKitTests.swift */,
+				030F3B04B07BF655073558D8 /* BillingDraftTests.swift */,
 				B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */,
 				5CEA86D8EDFEEEB3B2CE9C10 /* CloudContractTests.swift */,
 				39EE1489A0BF7437616B5D5B /* GeneratedManifestTests.swift */,
@@ -795,6 +798,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EEF759A3AB52055061AA34C5 /* AACStoreKitTests.swift in Sources */,
+				50FF3A29D30F48CD5AEDB980 /* BillingDraftTests.swift in Sources */,
 				6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */,
 				A505ECD1C1950BA0C963A50E /* CloudContractTests.swift in Sources */,
 				7F76E50C22385197DA91EF31 /* GeneratedManifestTests.swift in Sources */,

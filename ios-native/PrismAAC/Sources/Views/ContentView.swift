@@ -10,6 +10,11 @@ import DatadogWebViewTracking
 import StoreKit
 import WatchConnectivity
 
+private func discardBillingDraftForNewCommunication() {
+    do { try BillingDraftStore.shared.clear() }
+    catch { NSLog("[PrismAAC] Could not discard superseded billing draft") }
+}
+
 /// PrismAAC iOS host — WKWebView wrapping synalux.ai/prism-aac.
 ///
 /// Why WKWebView and not a pure SwiftUI rebuild:
@@ -32,11 +37,17 @@ import WatchConnectivity
 struct ContentView: View {
     @EnvironmentObject var app: AppState
     @State private var webLoaded = false
+    @State private var retryWebView: (() -> Void)?
+    @State private var fallbackText = ""
+    @State private var fallbackSpeech = WKWebTTS()
     @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         ZStack(alignment: .top) {
-            PrismWebView(pipeline: app.pipeline, onLoaded: { webLoaded = true }, requestReview: { requestReview() })
+            PrismWebView(pipeline: app.pipeline, onLoaded: { webLoaded = true; retryWebView = nil },
+                         onLoading: { webLoaded = false; retryWebView = nil },
+                         onUnavailable: { retry in webLoaded = false; retryWebView = retry },
+                         requestReview: { requestReview() })
                 .ignoresSafeArea()
 
             if !webLoaded {
@@ -46,10 +57,29 @@ struct ContentView: View {
                         .font(.system(size: 56))
                         .foregroundColor(.accentColor)
                     Text("Prism AAC").font(.title).fontWeight(.bold)
-                    ProgressView("Loading…").tint(.accentColor)
+                    if let retry = retryWebView {
+                        TextField("Type a message", text: $fallbackText)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityIdentifier("native-fallback-message")
+                            .onChange(of: fallbackText) { _ in discardBillingDraftForNewCommunication() }
+                        Button("Speak") { discardBillingDraftForNewCommunication(); fallbackSpeech.speak(fallbackText) }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+                            .accessibilityIdentifier("native-fallback-speak")
+                        Button("Stop") { fallbackSpeech.stop() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
+                        Button("Retry full app") { retry() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
+                            .accessibilityIdentifier("native-fallback-retry")
+                    } else {
+                        ProgressView("Loading…").tint(.accentColor)
+                    }
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
                 .background(Color(UIColor.systemBackground))
                 .transition(.opacity)
             }
@@ -70,9 +100,12 @@ struct ContentView: View {
 struct PrismWebView: UIViewRepresentable {
     let pipeline: AACPipeline
     var onLoaded: (() -> Void)?
+    var onLoading: (() -> Void)?
+    var onUnavailable: ((@escaping () -> Void) -> Void)?
     var requestReview: (() -> Void)?
 
-    func makeCoordinator() -> Coordinator { Coordinator(pipeline: pipeline, onLoaded: onLoaded, requestReview: requestReview) }
+    func makeCoordinator() -> Coordinator { Coordinator(pipeline: pipeline, onLoaded: onLoaded, onLoading: onLoading,
+                                                        onUnavailable: onUnavailable, requestReview: requestReview) }
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -124,18 +157,30 @@ struct PrismWebView: UIViewRepresentable {
         let configuredPort = ProcessInfo.processInfo.environment["PRISM_AAC_DEV_PORT"].flatMap(Int.init)
         let devPort = configuredPort.flatMap { (1...65535).contains($0) ? $0 : nil } ?? 3001
         let url = URL(string: "http://localhost:\(devPort)/prism-aac")!
-        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
+        let cachePolicy: URLRequest.CachePolicy = .reloadIgnoringLocalCacheData
         #else
         let url = URL(string: "https://synalux.ai/prism-aac")!
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy)
+        let cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
         #endif
+        // A fresh request URL prevents WebKit from pairing a reused document
+        // body with a later CSP nonce. The worker still saves one canonical
+        // offline document, independent of this per-launch marker.
+        var request = URLRequest(url: Self.freshDocumentURL(url), cachePolicy: cachePolicy)
         request.timeoutInterval = 15
+        context.coordinator.applicationURL = url
         webView.load(request)
 
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
+
+    static func freshDocumentURL(_ url: URL) -> URL {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+        components.queryItems = (components.queryItems ?? []).filter { $0.name != "_aac_launch" }
+            + [URLQueryItem(name: "_aac_launch", value: UUID().uuidString)]
+        return components.url ?? url
+    }
 
     // MARK: - Native bridge JS
 
@@ -190,6 +235,11 @@ struct PrismWebView: UIViewRepresentable {
                     action: 'signInWithApple'
                 });
             },
+            billingDraft: function(request) {
+                window.webkit.messageHandlers.prismNative.postMessage({
+                    action: 'billingDraft', request: request
+                });
+            },
             subscription: function(request) {
                 window.webkit.messageHandlers.prismNative.postMessage({
                     action: 'subscription', request: request
@@ -225,6 +275,17 @@ struct PrismWebView: UIViewRepresentable {
         let pipeline: AACPipeline
         let tts = WKWebTTS()
         var onLoaded: (() -> Void)?
+        var onLoading: (() -> Void)?
+        var onUnavailable: ((@escaping () -> Void) -> Void)?
+        var applicationURL = URL(string: "https://synalux.ai/prism-aac")!
+        private let openExternalURL: (URL) -> Void
+        private var communicationNavigation = true
+        private var readinessGeneration = 0
+        private var readinessDeadline: DispatchWorkItem?
+        private var recoveryAttempted = false
+        private var usingBundledFallback = false
+        private var bundledRecoveryAttempted = false
+        private static let readinessTimeout: TimeInterval = 12
         private var lastEmergencyTriggerTime: TimeInterval = 0
         private var lastAskAITime: TimeInterval = 0
         private var speechRecognizer: SFSpeechRecognizer?
@@ -240,10 +301,124 @@ struct PrismWebView: UIViewRepresentable {
 
         var requestReview: (() -> Void)?
 
-        init(pipeline: AACPipeline, onLoaded: (() -> Void)? = nil, requestReview: (() -> Void)? = nil) {
+        init(pipeline: AACPipeline, onLoaded: (() -> Void)? = nil, onLoading: (() -> Void)? = nil,
+             onUnavailable: ((@escaping () -> Void) -> Void)? = nil,
+             openExternalURL: @escaping (URL) -> Void = { UIApplication.shared.open($0, options: [:], completionHandler: nil) },
+             requestReview: (() -> Void)? = nil) {
             self.pipeline = pipeline
             self.onLoaded = onLoaded
+            self.onLoading = onLoading
+            self.onUnavailable = onUnavailable
+            self.openExternalURL = openExternalURL
             self.requestReview = requestReview
+        }
+
+        deinit { readinessDeadline?.cancel() }
+
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            readinessGeneration += 1
+            readinessDeadline?.cancel()
+            readinessDeadline = nil
+            guard communicationNavigation else { onLoaded?(); return }
+            onLoading?()
+            let version = readinessGeneration
+            let deadline = DispatchWorkItem { [weak self, weak webView] in
+                guard let self, let webView, self.readinessGeneration == version else { return }
+                self.recoverCommunication(webView)
+            }
+            readinessDeadline = deadline
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.readinessTimeout, execute: deadline)
+        }
+
+        private func checkCommunicationReady(_ webView: WKWebView, version: Int) {
+            guard version == readinessGeneration, readinessDeadline != nil else { return }
+            // A navigation finish is not proof React ran. These controls also
+            // recognize the existing emergency and bundled offline boards.
+            let script = """
+                Boolean((document.querySelector('[data-testid="aac-safe-viewport"]') &&
+                    document.querySelector('[data-testid="message-content"]') && document.querySelector('button')) ||
+                    (document.querySelector('#emergency-input') && document.querySelector('[data-scan-group="emergency-words"] button')) ||
+                    (document.querySelector('#grid button') && document.querySelector('.bar .speak')))
+                """
+            webView.evaluateJavaScript(script) { [weak self, weak webView] result, _ in
+                guard let self, let webView, self.readinessGeneration == version else { return }
+                if result as? Bool == true {
+                    self.readinessDeadline?.cancel()
+                    self.readinessDeadline = nil
+                    self.bundledRecoveryAttempted = false
+                    if !self.usingBundledFallback { self.recoveryAttempted = false }
+                    self.onLoaded?()
+                } else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self, weak webView] in
+                        guard let self, let webView else { return }
+                        self.checkCommunicationReady(webView, version: version)
+                    }
+                }
+            }
+        }
+
+        private func recoverCommunication(_ webView: WKWebView) {
+            readinessGeneration += 1
+            readinessDeadline?.cancel()
+            readinessDeadline = nil
+            if usingBundledFallback {
+                if !bundledRecoveryAttempted {
+                    bundledRecoveryAttempted = true
+                    loadBundledCommunication(webView)
+                } else {
+                    NSLog("[PrismAAC] Bundled communication unavailable; using native speech controls")
+                    onUnavailable?({ [weak self, weak webView] in
+                        guard let self, let webView else { return }
+                        self.reconnectCommunication(webView)
+                    })
+                }
+            } else if !recoveryAttempted {
+                recoveryAttempted = true
+                loadApplication(webView)
+            } else {
+                loadBundledCommunication(webView)
+            }
+        }
+
+        private func loadApplication(_ webView: WKWebView) {
+            usingBundledFallback = false
+            communicationNavigation = true
+            webView.load(URLRequest(url: PrismWebView.freshDocumentURL(applicationURL), cachePolicy: .reloadIgnoringLocalCacheData,
+                                    timeoutInterval: Self.readinessTimeout))
+        }
+
+        private func reconnectCommunication(_ webView: WKWebView) {
+            recoveryAttempted = false
+            bundledRecoveryAttempted = false
+            onLoading?()
+            loadApplication(webView)
+        }
+
+        // Called only for main-frame navigation. Keeping this decision separate
+        // makes external intents and readiness scope testable without dialing.
+        func mainFrameNavigationPolicy(_ url: URL, webView: WKWebView) -> WKNavigationActionPolicy {
+            if BridgeSecurityPolicy.isExternalBillingURL(url) || BridgeSecurityPolicy.isExternalCommunicationURL(url) {
+                openExternalURL(url)
+                return .cancel
+            }
+            if url.scheme == "prism-aac-reconnect" {
+                if usingBundledFallback, webView.url?.isFileURL == true { reconnectCommunication(webView) }
+                return .cancel
+            }
+            let bundledDocument = usingBundledFallback && (url.absoluteString == "about:blank"
+                || (url.isFileURL && url.standardizedFileURL == Bundle.main.bundleURL.standardizedFileURL))
+            let appDocument = url.scheme == applicationURL.scheme
+                && url.host == applicationURL.host && url.port == applicationURL.port
+                && (url.path == applicationURL.path || url.path == applicationURL.path + "/")
+            communicationNavigation = bundledDocument || appDocument
+            if appDocument { usingBundledFallback = false }
+            if !communicationNavigation {
+                readinessGeneration += 1
+                readinessDeadline?.cancel()
+                readinessDeadline = nil
+                onLoaded?()
+            }
+            return .allow
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -269,7 +444,7 @@ struct PrismWebView: UIViewRepresentable {
                     completionHandler: nil
                 )
             }
-            Task { @MainActor in onLoaded?(); onLoaded = nil }
+            checkCommunicationReady(webView, version: readinessGeneration)
         }
 
         private static func isAllowedOrigin(_ url: URL) -> Bool {
@@ -283,6 +458,10 @@ struct PrismWebView: UIViewRepresentable {
                   let action = body["action"] as? String else { return }
             switch action {
             case "speak":
+                if usingBundledFallback, BridgeSecurityPolicy.isAllowedBundledFrame(
+                    pageURL: message.webView?.url, isMainFrame: message.frameInfo.isMainFrame) {
+                    discardBillingDraftForNewCommunication()
+                }
                 let text = String((body["text"] as? String ?? "").prefix(BridgeSecurityPolicy.maxSpeakTextLength))
                 let rawLang = body["lang"] as? String ?? "en-US"
                 let lang = BridgeSecurityPolicy.isValidLang(rawLang) ? rawLang : "en-US"
@@ -420,6 +599,44 @@ struct PrismWebView: UIViewRepresentable {
                       message.frameInfo.isMainFrame else { return }
                 activeWebView = message.webView
                 performSignInWithApple()
+            case "billingDraft":
+                guard let webView = message.webView,
+                      BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: webView.url,
+                        frameURL: message.frameInfo.request.url, isMainFrame: message.frameInfo.isMainFrame),
+                      let request = body["request"] as? [String: Any],
+                      let requestID = request["id"] as? String, UUID(uuidString: requestID) != nil,
+                      let operation = request["operation"] as? String else { return }
+                var response: [String: Any] = ["id": requestID]
+                do {
+                    let store = BillingDraftStore.shared
+                    switch operation {
+                    case "save", "load":
+                        guard let scope = request["account"] as? String, let account = UUID(uuidString: scope) else {
+                            throw BillingDraftStore.StorageError.invalid
+                        }
+                        if operation == "save" {
+                            guard let text = request["text"] as? String else { throw BillingDraftStore.StorageError.invalid }
+                            try store.save(text: text, account: account)
+                            response["result"] = [:] as [String: String]
+                        } else if let draft = try store.load(account: account) {
+                            response["result"] = ["draftID": draft.id.uuidString, "text": draft.text]
+                        } else { response["result"] = [:] as [String: String] }
+                    case "clear":
+                        var expectedID: UUID?
+                        if let raw = request["draftID"] {
+                            guard let value = raw as? String, let id = UUID(uuidString: value) else {
+                                throw BillingDraftStore.StorageError.invalid
+                            }
+                            expectedID = id
+                        }
+                        try store.clear(expectedID: expectedID)
+                        response["result"] = [:] as [String: String]
+                    default: throw BillingDraftStore.StorageError.invalid
+                    }
+                } catch { response["error"] = "Billing draft storage is unavailable" }
+                guard let data = try? JSONSerialization.data(withJSONObject: response),
+                      let json = String(data: data, encoding: .utf8) else { return }
+                webView.evaluateJavaScript("window.prismBillingDraftResult && window.prismBillingDraftResult(\(json))", completionHandler: nil)
             case "subscription":
                 guard let webView = message.webView,
                       BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: webView.url,
@@ -495,6 +712,18 @@ struct PrismWebView: UIViewRepresentable {
                 type: type,
                 isMainFrame: frame.isMainFrame
             ))
+        }
+
+        // Keep the communication document loaded while billing opens outside
+        // the app-bound WebView. target=_blank keeps its existing handler below.
+        func webView(_ webView: WKWebView,
+                     decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            if navigationAction.targetFrame?.isMainFrame == true, let url = navigationAction.request.url {
+                decisionHandler(mainFrameNavigationPolicy(url, webView: webView))
+                return
+            }
+            decisionHandler(.allow)
         }
 
         // MARK: - Handle target="_blank" links
@@ -814,11 +1043,40 @@ struct PrismWebView: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
+            // A superseded navigation is not a failed connection and must not
+            // replace a working communication board with the offline document.
+            let navigationError = error as NSError
+            if navigationError.domain == NSURLErrorDomain && navigationError.code == NSURLErrorCancelled { return }
+            guard communicationNavigation else { return }
+            recoverCommunication(webView)
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            let navigationError = error as NSError
+            if navigationError.domain == NSURLErrorDomain && navigationError.code == NSURLErrorCancelled { return }
+            guard communicationNavigation else { return }
+            recoverCommunication(webView)
+        }
+
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            // Ordinary auth navigation must not trigger AAC recovery. A dead
+            // WebKit process, however, cannot display any page: restore AAC.
+            communicationNavigation = true
+            onLoading?()
+            recoverCommunication(webView)
+        }
+
+        private func loadBundledCommunication(_ webView: WKWebView) {
+            usingBundledFallback = true
+            communicationNavigation = true
             if let url = Bundle.main.url(forResource: "offline", withExtension: "html"),
                let html = try? String(contentsOf: url, encoding: .utf8) {
                 webView.loadHTMLString(html, baseURL: url.deletingLastPathComponent())
             } else {
-                webView.loadHTMLString("<body style='background:#14161d;color:#fff;text-align:center;padding-top:40vh'><h2>No connection</h2><button onclick='location.reload()'>Retry</button></body>", baseURL: nil)
+                onUnavailable?({ [weak self, weak webView] in
+                    guard let self, let webView else { return }
+                    self.reconnectCommunication(webView)
+                })
             }
         }
     }

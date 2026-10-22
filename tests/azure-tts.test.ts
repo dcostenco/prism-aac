@@ -52,11 +52,12 @@ class MockAudioContext {
   close() { /* noop */ }
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.resetAllMocks();
   vi.resetModules();
   vi.stubGlobal('indexedDB', new IDBFactory());
   vi.stubGlobal('crypto', webcrypto);
+  localStorage.clear();
   MockBufferSource.startCalls = 0;
   MockBufferSource.lastInstance = null;
   MockAudioContext.decodeCalls = 0;
@@ -67,6 +68,9 @@ beforeEach(() => {
     MockAudioContext as unknown as typeof AudioContext;
   (window as unknown as { AudioContext: typeof AudioContext }).AudioContext =
     MockAudioContext as unknown as typeof AudioContext;
+  const { useAuthStore } = await import('@/store/authStore');
+  // Existing anonymous-cache cases represent a confirmed signed-out session.
+  useAuthStore.setState({ profile: null, identityUnknown: false, loaded: true });
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
@@ -81,6 +85,62 @@ describe('saved speech playback', () => {
       ...(degraded ? { 'X-TTS-Inworld-Failed': 'true' } : {}),
     } });
   }
+  it('replays signed-in saved speech after an offline reload and revokes it on sign-out', async () => {
+    const account = 'speech-owner@example.invalid';
+    mockFetch({
+      '/prism-aac/session': () => Response.json({ signed_in: true, email: account }),
+      '/roles/me': () => Response.json({ plan: 'free' }),
+      '/tts/public': () => identifiedAudio(),
+    });
+    const { useAuthStore } = await import('@/store/authStore');
+    await useAuthStore.getState().refresh();
+    const first = await import('@/services/azureTTS');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    expect((await first.speakAzure(...args)).success).toBe(true);
+    await vi.waitFor(async () => expect((await speechAudioCache.stats(account)).clips).toBe(1));
+    first.stopAzureAudio();
+    const requests = vi.mocked(fetch).mock.calls.length;
+    vi.resetModules();
+    const reloadedAuth = await import('@/store/authStore');
+    const reloaded = await import('@/services/azureTTS');
+    expect(reloadedAuth.useAuthStore.getState().profile).toBeNull();
+    expect((await reloaded.speakAzure(...args, true)).success).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(requests);
+    reloadedAuth.useAuthStore.getState().clear();
+    expect((await reloaded.speakAzure(...args, true)).success).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(requests);
+  });
+  it('keeps another confirmed account out of the saved speech scope', async () => {
+    const account = 'speech-owner@example.invalid';
+    const { SYNALUX_API } = await import('@/lib/portalConfig');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    const savedKey = JSON.stringify([1, SYNALUX_API, `${phrase}|en-US|friendly|1.00|1.00|Alex`]);
+    await speechAudioCache.rememberScope(account);
+    await speechAudioCache.put(account, savedKey, new ArrayBuffer(1024), { backend: 'inworld', voice: 'Alex', model: 'inworld-tts-2', format: 'audio/mpeg' });
+    mockFetch({
+      '/prism-aac/session': () => Response.json({ signed_in: true, email: 'another@example.invalid' }),
+      '/roles/me': () => Response.json({ plan: 'free' }),
+    });
+    const { useAuthStore } = await import('@/store/authStore');
+    await useAuthStore.getState().refresh();
+    const { speakAzure } = await import('@/services/azureTTS');
+    expect((await speakAzure(...args, true)).success).toBe(false);
+    expect((await speechAudioCache.stats(account)).clips).toBe(1);
+    expect(await speechAudioCache.savedScope()).toBe('another@example.invalid');
+  });
+  it('plays an outage response without saving it under an unverified account or guest', async () => {
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    await speechAudioCache.rememberScope('speech-owner@example.invalid');
+    const { useAuthStore } = await import('@/store/authStore');
+    useAuthStore.setState({ profile: null, identityUnknown: true, loaded: true });
+    const put = vi.spyOn(speechAudioCache, 'put');
+    mockFetch({ '/tts/public': () => identifiedAudio() });
+    const { speakAzure } = await import('@/services/azureTTS');
+    expect((await speakAzure(...args)).success).toBe(true);
+    expect(put).not.toHaveBeenCalled();
+    expect((await speakAzure(...args, true)).success).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
   // Measured at 4990ms against a 5000ms default, so it failed or passed
   // depending on machine load. It is heavy, not hung: with headroom the whole
   // suite passes. The ceiling is raised for this test alone rather than

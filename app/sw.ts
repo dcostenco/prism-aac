@@ -16,6 +16,7 @@ declare global {
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
 const SW_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || 'dev';
+const AAC_IDENTITY_PATH = /\/api\/v1\/prism-aac\/(?:billing|session)(?:\/|$)/;
 const currentPrecache = AAC_PRECACHE_PREFIX + SW_VERSION;
 const precacheEntries = self.__SW_MANIFEST;
 const currentStaticPrecacheAssets = (precacheEntries ?? []).flatMap(entry => {
@@ -49,6 +50,12 @@ const serwist = new Serwist({
   clientsClaim: true,   // take control of all open tabs immediately
   navigationPreload: true,
   runtimeCaching: [
+    // Identity must come from the server, never a previous account's API cache.
+    // Match both the canonical portal URL and the standalone app's rewrite.
+    {
+      matcher: ({ url }) => AAC_IDENTITY_PATH.test(url.pathname),
+      handler: new NetworkOnly(),
+    },
     // Access grants and partial chunks never replace the complete offline pack.
     {
       matcher: ({ url }) => url.pathname.includes(PICTURE_PACK_API_PATH),

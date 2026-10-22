@@ -92,7 +92,10 @@ public final class InworldSTTClient: NSObject {
     }()
 
     deinit {
-        disconnect()
+        // disconnect() schedules a weak-self callback, which is unsafe once
+        // NSObject deallocation has begun. Destruction only releases resources.
+        shouldReconnect = false
+        cleanup()
     }
 
     // MARK: - Public API
