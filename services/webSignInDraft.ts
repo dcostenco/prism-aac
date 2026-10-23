@@ -5,7 +5,7 @@ export const WEB_SIGNIN_DRAFT_KEY = 'prism-aac-signin-draft-v1';
 const DRAFT_TTL_MS = 30 * 60_000;
 // Checkout attempts last an hour. Allow a bounded return window, without
 // extending the ordinary sign-in copy's privacy retention.
-const BILLING_DRAFT_TTL_MS = 75 * 60_000;
+const EXTERNAL_RETURN_WINDOW_MS = 75 * 60_000;
 const MAX_DRAFT_CHARS = 4000;
 let revokedDraft: Pick<ReturnType<typeof useMessageStore.getState>, 'text' | 'undoStack'> | null = null;
 
@@ -40,9 +40,9 @@ export function rememberWebSignInDraft(purpose: 'signin' | 'billing' = 'signin')
     // deadline rather than shortening it to 30 minutes or renewing it forever.
     const billing = purpose === 'billing' || (saved?.purpose === 'billing' && saved.text === text
       && typeof saved.expiresAt === 'number' && saved.expiresAt > Date.now()
-      && saved.expiresAt <= Date.now() + BILLING_DRAFT_TTL_MS);
+      && saved.expiresAt <= Date.now() + EXTERNAL_RETURN_WINDOW_MS);
     const expiresAt = purpose !== 'billing' && billing ? saved!.expiresAt
-      : Date.now() + (billing ? BILLING_DRAFT_TTL_MS : DRAFT_TTL_MS);
+      : Date.now() + (billing ? EXTERNAL_RETURN_WINDOW_MS : DRAFT_TTL_MS);
     sessionStorage.setItem(WEB_SIGNIN_DRAFT_KEY, JSON.stringify({ text, expiresAt, ...(billing ? { purpose: 'billing' } : {}) }));
     return true;
   } catch { return false; }
@@ -59,7 +59,7 @@ export function recoverWebSignInDraft(): void {
     const saved = JSON.parse(raw);
     if (typeof saved.text === 'string' && saved.text.length <= MAX_DRAFT_CHARS
       && Number.isFinite(saved.expiresAt) && saved.expiresAt > Date.now()
-      && saved.expiresAt <= Date.now() + (saved.purpose === 'billing' ? BILLING_DRAFT_TTL_MS : DRAFT_TTL_MS)
+      && saved.expiresAt <= Date.now() + (saved.purpose === 'billing' ? EXTERNAL_RETURN_WINDOW_MS : DRAFT_TTL_MS)
       && !useMessageStore.getState().text) {
       useMessageStore.getState().setTextSilent(saved.text);
     }
