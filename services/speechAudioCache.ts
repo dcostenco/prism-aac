@@ -2,7 +2,9 @@
 export const SPEECH_CACHE_POLICY = {
   database: 'prism-aac-speech-audio-v1',
   store: 'clips',
-  version: 1,
+  scopeStore: 'identity',
+  scopePointer: 'prism-aac-speech-scope-v1',
+  version: 2,
   maxBytes: 20 * 1024 * 1024,
   maxClipBytes: 1024 * 1024,
   maxEntries: 512,
@@ -26,9 +28,16 @@ interface Clip {
 }
 export interface SpeechCacheStats { bytes: number; clips: number; available: boolean }
 const EMPTY_STATS: SpeechCacheStats = { bytes: 0, clips: 0, available: false };
+const SCOPE_RECORD_KEY = 'last-confirmed';
+const SCOPE_MAX_CHARS = 320;
+const SCOPE_MAX_BYTES = 2048;
+const SCOPE_IV_BYTES = 12;
+const SCOPE_KEY_BYTES = 32;
+interface SavedScope { key: string; token: string; secret: ArrayBuffer; iv: ArrayBuffer; payload: ArrayBuffer }
 
 export class SpeechAudioCache {
   private epoch = 0;
+  private scopeMemo: { token: string; value: string } | null = null;
   constructor(private readonly policy: typeof SPEECH_CACHE_POLICY = SPEECH_CACHE_POLICY) {}
 
   private async digest(value: string): Promise<string | null> {
@@ -39,7 +48,8 @@ export class SpeechAudioCache {
   }
 
   private transaction<T>(mode: IDBTransactionMode, fallback: T,
-    work: (store: IDBObjectStore, done: (value: T) => void, active: () => boolean) => void): Promise<T> {
+    work: (store: IDBObjectStore, done: (value: T) => void, active: () => boolean) => void,
+    storeName: string = this.policy.store): Promise<T> {
     return new Promise(resolve => {
       if (typeof indexedDB === 'undefined') { resolve(fallback); return; }
       let db: IDBDatabase | undefined;
@@ -60,8 +70,8 @@ export class SpeechAudioCache {
       try {
         const open = indexedDB.open(this.policy.database, this.policy.version);
         open.onupgradeneeded = () => {
-          if (!open.result.objectStoreNames.contains(this.policy.store)) {
-            open.result.createObjectStore(this.policy.store, { keyPath: 'key' });
+          for (const name of [this.policy.store, this.policy.scopeStore]) {
+            if (!open.result.objectStoreNames.contains(name)) open.result.createObjectStore(name, { keyPath: 'key' });
           }
         };
         open.onerror = () => finish(fallback);
@@ -71,11 +81,11 @@ export class SpeechAudioCache {
           if (settled) { db.close(); return; }
           db.onversionchange = () => db?.close();
           try {
-            tx = db.transaction(this.policy.store, mode);
+            tx = db.transaction(storeName, mode);
             tx.oncomplete = () => finish(value);
             tx.onerror = tx.onabort = () => finish(fallback);
             work(
-              tx.objectStore(this.policy.store),
+              tx.objectStore(storeName),
               result => { if (!settled) value = result; },
               () => !settled,
             );
@@ -83,6 +93,68 @@ export class SpeechAudioCache {
         };
       } catch { finish(fallback); }
     });
+  }
+
+  private scopeToken(): string | null {
+    try { return localStorage.getItem(this.policy.scopePointer); } catch { return null; }
+  }
+
+  /** Read-only offline identity; never an authentication or entitlement grant. */
+  async savedScope(): Promise<string | null> {
+    const token = this.scopeToken();
+    if (!token) return null;
+    if (this.scopeMemo?.token === token) return this.scopeMemo.value;
+    const record = await this.transaction<SavedScope | null>('readonly', null, (store, done) => {
+      const request = store.get(SCOPE_RECORD_KEY);
+      request.onsuccess = () => done(request.result ?? null);
+    }, this.policy.scopeStore);
+    if (!record || record.token !== token || record.iv?.byteLength !== SCOPE_IV_BYTES
+      || !record.payload?.byteLength || record.payload.byteLength > SCOPE_MAX_BYTES
+      || record.secret?.byteLength !== SCOPE_KEY_BYTES) return null;
+    try {
+      const secret = await crypto.subtle.importKey('raw', record.secret, 'AES-GCM', false, ['decrypt']);
+      const bytes = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: record.iv }, secret, record.payload);
+      const value = new TextDecoder().decode(bytes);
+      if (!value || value.length > SCOPE_MAX_CHARS || this.scopeToken() !== token) return null;
+      this.scopeMemo = { token, value };
+      return value;
+    } catch { return null; }
+  }
+
+  async rememberScope(value: string): Promise<boolean> {
+    if (!value || value.length > SCOPE_MAX_CHARS) return false;
+    if (this.scopeMemo?.value === value && this.scopeToken() === this.scopeMemo.token) return true;
+    let token: string;
+    try {
+      token = crypto.randomUUID();
+      // Publish the opaque generation before asynchronous encryption. A later
+      // sign-out or account switch can revoke even an unfinished write.
+      localStorage.setItem(this.policy.scopePointer, token);
+      this.scopeMemo = { token, value };
+      // WebKit can stall while cloning CryptoKey into IndexedDB. Keep bounded
+      // device-local key bytes; imported keys stay nonextractable in memory.
+      // This hides identity text at rest, not from scripts running on this origin.
+      const keyBytes = crypto.getRandomValues(new Uint8Array(SCOPE_KEY_BYTES));
+      const secret = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt']);
+      const iv = crypto.getRandomValues(new Uint8Array(SCOPE_IV_BYTES));
+      const payload = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, secret, new TextEncoder().encode(value));
+      return await this.transaction('readwrite', false, (store, done) => {
+        if (this.scopeToken() !== token) return;
+        store.put({ key: SCOPE_RECORD_KEY, token, secret: keyBytes.buffer, iv: iv.buffer, payload } satisfies SavedScope);
+        done(true);
+      }, this.policy.scopeStore);
+    } catch { return false; }
+  }
+
+  async forgetScope(): Promise<boolean> {
+    this.scopeMemo = null;
+    try { localStorage.removeItem(this.policy.scopePointer); } catch { /* storage unavailable */ }
+    return this.transaction('readwrite', false, (store, done) => {
+      // Another tab may already have confirmed a new account.
+      if (this.scopeToken()) return;
+      store.delete(SCOPE_RECORD_KEY);
+      done(true);
+    }, this.policy.scopeStore);
   }
 
   private valid(clip: Clip | undefined): clip is Clip {

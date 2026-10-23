@@ -122,6 +122,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "coming_soon",
           "core_aac_no_account",
@@ -461,6 +466,7 @@
           "wasm_tts",
           "wasm_tts_desc",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -475,6 +481,9 @@
           "word_visibility",
           "you",
           "your_name"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "sw": {
@@ -597,6 +606,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "coming_soon",
           "core_aac_no_account",
@@ -936,6 +950,7 @@
           "wasm_tts",
           "wasm_tts_desc",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -950,6 +965,9 @@
           "word_visibility",
           "you",
           "your_name"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "bn": {
@@ -1072,6 +1090,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "coming_soon",
           "core_aac_no_account",
@@ -1411,6 +1434,7 @@
           "wasm_tts",
           "wasm_tts_desc",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1425,6 +1449,9 @@
           "word_visibility",
           "you",
           "your_name"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "es": {
@@ -1463,6 +1490,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1473,6 +1505,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1482,6 +1515,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "fr": {
@@ -1520,6 +1556,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1530,6 +1571,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1539,6 +1581,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "pt": {
@@ -1577,6 +1622,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1587,6 +1637,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1596,6 +1647,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "ro": {
@@ -1634,6 +1688,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1644,6 +1703,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1653,6 +1713,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "uk": {
@@ -1691,6 +1754,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1701,6 +1769,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1710,6 +1779,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "ru": {
@@ -1748,6 +1820,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1758,6 +1835,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1767,6 +1845,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "de": {
@@ -1805,6 +1886,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1815,6 +1901,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1824,6 +1911,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "ja": {
@@ -1862,6 +1952,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1872,6 +1967,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1881,6 +1977,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "ko": {
@@ -1919,6 +2018,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1929,6 +2033,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1938,6 +2043,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "zh": {
@@ -1976,6 +2084,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -1986,6 +2099,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -1995,6 +2109,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "ar": {
@@ -2033,6 +2150,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2043,6 +2165,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2052,6 +2175,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "hi": {
@@ -2090,6 +2216,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2100,6 +2231,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2109,6 +2241,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "it": {
@@ -2147,6 +2282,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2157,6 +2297,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2166,6 +2307,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "pl": {
@@ -2204,6 +2348,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2214,6 +2363,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2223,6 +2373,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "he": {
@@ -2261,6 +2414,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2271,6 +2429,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2280,6 +2439,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "nl": {
@@ -2318,6 +2480,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2328,6 +2495,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2337,6 +2505,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "vi": {
@@ -2375,6 +2546,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2385,6 +2561,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2394,6 +2571,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "tl": {
@@ -2432,6 +2612,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2442,6 +2627,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2451,6 +2637,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "tr": {
@@ -2489,6 +2678,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2499,6 +2693,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2508,6 +2703,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "id": {
@@ -2546,6 +2744,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2556,6 +2759,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2565,6 +2769,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "bg": {
@@ -2603,6 +2810,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2613,6 +2825,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2622,6 +2835,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "zh-Hant": {
@@ -2660,6 +2876,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2670,6 +2891,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2679,6 +2901,9 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       },
       "zh-HK": {
@@ -2717,6 +2942,11 @@
           "cloud_subscription_unknown",
           "cloud_terms",
           "cloud_transition_ends",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
           "cloud_update_ios",
           "speech_cache_clear",
           "speech_cache_clear_failed",
@@ -2727,6 +2957,7 @@
           "speech_cache_usage",
           "toolbar_browser",
           "web_preview_notice",
+          "web_preview_warning",
           "web_signin_check_again",
           "web_signin_checking_desc",
           "web_signin_draft_fallback",
@@ -2736,6 +2967,30 @@
           "web_signin_required",
           "web_signin_saved",
           "web_signin_still_signed_out"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
+        ]
+      },
+      "zh-Hans": {
+        "generator": "codex-assisted",
+        "generatedAt": "2026-10-18T06:52:56.583597+00:00",
+        "reviewed": [],
+        "unreviewed": [
+          "cloud_subscription_terms",
+          "cloud_subscription_terms_apple",
+          "cloud_trial_apple",
+          "cloud_trial_cancelled_date",
+          "cloud_trial_end_date",
+          "cloud_trial_offer",
+          "cloud_trial_web",
+          "web_preview_notice",
+          "web_preview_warning",
+          "web_signin_explanation",
+          "web_signin_free_account"
+        ],
+        "additionalGenerators": [
+          "codex-assisted"
         ]
       }
     },

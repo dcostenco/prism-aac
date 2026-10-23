@@ -99,6 +99,7 @@ vi.mock('@/store/categoryStore', () => ({ useCategoryStore: mocks.useCategorySto
 vi.mock('@/store/authStore',     () => ({ useAuthStore:     mocks.useAuthStore     }));
 
 vi.mock('@/services/aacBillingService', () => ({
+  AAC_INTRODUCTORY_TRIAL_DAYS: 14,
   AAC_BILLING_UPDATED: 'prismAacBillingUpdated',
   fetchAacBillingStatus: mocks.billing,
   hasNativePurchases: () => false,
@@ -440,13 +441,24 @@ describe('SettingsModal — account section', () => {
     expect(screen.getByText('checking_sign_in')).toBeInTheDocument();
   });
 
-  it('offers approved AAC terms and separate Apple terms without signing in', () => {
+  it('keeps the loaded account visible during a background refresh so billing does not remount in a loop', () => {
+    mocks.authState.loaded = true;
+    mocks.authState.loading = true;
+    mocks.authState.profile = { email: 'background-test@example.invalid', name: 'Background test', plan: 'free' } as typeof mocks.authState.profile;
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByRole('button', { name: /synalux_account/i }));
+    expect(screen.getByText('background-test@example.invalid')).toBeInTheDocument();
+    expect(screen.queryByText('checking_sign_in')).not.toBeInTheDocument();
+  });
+
+  it('keeps AAC terms, Apple terms and source access reachable without signing in', () => {
     mocks.uiState.showSettings = true;
     mocks.authState.profile = null;
     render(<SettingsModal />);
     fireEvent.click(screen.getByRole('button', { name: /synalux_account/i }));
     expect(screen.getByRole('link', { name: 'cloud_terms', exact: true })).toHaveAttribute('href', '/prism-aac/terms');
     expect(screen.getByRole('link', { name: 'cloud_terms (Apple)' })).toHaveAttribute('href', 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
+    expect(screen.getByRole('link', { name: 'cloud_source_code' })).toHaveAttribute('href', 'https://github.com/dcostenco/prism-aac');
   });
 
   it('shows sign-in link when not signed in', () => {

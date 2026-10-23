@@ -12,6 +12,7 @@ vi.mock('@/store/authStore', () => ({ useAuthStore: Object.assign((selector: (s:
   { getState: () => ({ profile: state.profile, refresh: state.refresh }) }) }));
 vi.mock('@/services/aacBillingService', () => ({
   AAC_BILLING_UPDATED: 'prismAacBillingUpdated',
+  AAC_INTRODUCTORY_TRIAL_DAYS: 14,
   fetchAacBillingStatus: state.fetch, hasNativePurchases: () => state.nativePurchases,
   nativeSubscription: state.product, purchaseAacWithApple: state.apple, purchaseAacWithStripe: state.stripe,
   restoreAacApplePurchases: state.restore, manageAacSubscription: state.manage,
@@ -53,6 +54,61 @@ async function subscribeWithAppleOnceShown() {
 }
 
 describe('AAC account purchase settings', () => {
+  it('discloses a verified 14-day web trial and card requirement before explicit checkout', async () => {
+    state.fetch.mockResolvedValue({ ...free, stripeTrialDays: 14 });
+    render(<CloudSubscriptionSettings />);
+    const buy = await screen.findByRole('button', { name: 'Start 14-day trial · US$4.99/month after' });
+    expect(screen.getByTestId('cloud-offer-terms')).toHaveTextContent('Payment details are required');
+    expect(screen.getByTestId('cloud-offer-terms')).toHaveTextContent('first charge date before you confirm');
+    expect(state.stripe).not.toHaveBeenCalled();
+    fireEvent.click(buy);
+    await waitFor(() => expect(state.stripe).toHaveBeenCalledWith(free.userId, free.offer.version));
+  });
+  it('uses Apple eligibility rather than the web trial and retains its localized price', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.fetch.mockResolvedValue({ ...free, stripeTrialDays: 0 });
+    state.product.mockResolvedValue({ id: free.offer.appleProductId, displayPrice: '€5.99',
+      introductoryOfferEligible: true, introductoryTrialDays: 14 });
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: 'Start 14-day trial with Apple · €5.99/month after' })).toBeVisible();
+    expect(screen.getByTestId('cloud-offer-terms')).toHaveTextContent('at least 24 hours');
+    expect(state.product).toHaveBeenCalledWith('product', { accountToken: free.userId });
+    expect(state.apple).not.toHaveBeenCalled();
+  });
+  it.each([
+    { eligible: false, days: 14 }, { eligible: undefined, days: undefined }, { eligible: true, days: 7 },
+  ])('does not invent the agreed Apple trial for an ineligible, older or different offer: %j', async ({ eligible, days }) => {
+    state.native = true; state.nativePurchases = true;
+    state.fetch.mockResolvedValue({ ...free, stripeTrialDays: 14 });
+    state.product.mockResolvedValue({ id: free.offer.appleProductId, displayPrice: '$4.99',
+      introductoryOfferEligible: eligible, introductoryTrialDays: days });
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: 'Subscribe with Apple · $4.99/month' })).toBeVisible();
+    expect(screen.queryByText(/Eligible accounts can start/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('cloud-offer-terms')).toHaveTextContent('Apple shows eligibility');
+  });
+  it('does not reuse the last account\'s Apple price or trial eligibility while loading another account', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.product.mockResolvedValueOnce({ id: free.offer.appleProductId, displayPrice: '€5.99',
+      introductoryOfferEligible: true, introductoryTrialDays: 14 });
+    const view = render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Start 14-day trial with Apple/ })).toBeVisible();
+    state.profile = { ...state.profile, email: 'next-account@example.invalid' };
+    state.product.mockReturnValue(new Promise(() => {}));
+    view.rerender(<CloudSubscriptionSettings />);
+    expect(screen.queryByRole('button', { name: /€5.99/ })).not.toBeInTheDocument();
+    expect(state.apple).not.toHaveBeenCalled();
+  });
+  it.each([false, true])('shows the original trial end and scheduled cancellation=%s without creating a new trial', async cancelsAtEnd => {
+    const endsAt = '2099-11-01T12:34:00Z';
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe',
+      purchaseBlocked: true, stripeTrial: { endsAt, cancelsAtEnd } });
+    render(<CloudSubscriptionSettings />);
+    const date = await screen.findByTestId('cloud-trial-date');
+    expect(date).toHaveTextContent(new Date(endsAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }));
+    if (cancelsAtEnd) expect(date).toHaveTextContent('Cancellation is scheduled');
+    expect(state.stripe).not.toHaveBeenCalled();
+  });
   it('offers AAC terms and separate Apple terms even while billing is unavailable', async () => {
     state.fetch.mockRejectedValue(new Error('Offline'));
     render(<CloudSubscriptionSettings />);

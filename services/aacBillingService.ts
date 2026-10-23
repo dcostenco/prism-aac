@@ -1,4 +1,6 @@
 import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
+import { rememberWebSignInDraft } from '@/services/webSignInDraft';
+import { hasNativeBillingDraft, saveNativeBillingDraft } from '@/services/nativeBillingDraft';
 
 export interface AacBillingStatus {
   userId: string;
@@ -9,13 +11,18 @@ export interface AacBillingStatus {
   manageChannel: 'apple' | 'stripe' | null;
   purchaseBlocked?: boolean;
   enabled: boolean;
+  stripeTrialDays?: number;
+  stripeTrial?: { endsAt: string; cancelsAtEnd: boolean } | null;
   offer: { usdMonthly: number; appleProductId: string; monthlySpeechCharacters?: number; monthlyAiRequests?: number; version?: string; allowanceReset?: string };
 }
 
 interface AppleTransaction { transactionId: string; jws: string }
-interface NativeResult {
+export interface NativeResult {
   id?: string;
   displayPrice?: string;
+  introductoryOfferEligible?: boolean;
+  introductoryTrialDays?: number;
+  trialEndsAt?: string;
   status?: 'purchased' | 'restored' | 'cancelled' | 'pending' | 'finished' | 'managed';
   transactions?: AppleTransaction[];
 }
@@ -37,6 +44,7 @@ export class AacBillingRequestError extends Error {
 }
 const pending = new Map<string, { resolve: (value: NativeResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 export const AAC_BILLING_UPDATED = 'prismAacBillingUpdated';
+export const AAC_INTRODUCTORY_TRIAL_DAYS = 14;
 const automaticRestores = new Map<string, Promise<AacBillingStatus>>();
 
 export function hasNativePurchases(): boolean {
@@ -70,8 +78,13 @@ export function nativeSubscription(operation: string, fields: Record<string, str
 async function billingRequest<T>(suffix = '', body?: Record<string, unknown>): Promise<T> {
   const timeout = timeoutSignal(30_000);
   try {
-    const response = await fetch(`${SYNALUX_API}/prism-aac/${suffix || 'billing'}`, {
+    // Older installed workers used NetworkFirst for APIs. A unique URL also
+    // prevents their cached account response from unlocking a local draft.
+    const url = new URL(`${SYNALUX_API}/prism-aac/${suffix || 'billing'}`);
+    if (!body) url.searchParams.set('identityRequest', crypto.randomUUID());
+    const response = await fetch(url.href, {
       method: body ? 'POST' : 'GET', credentials: 'include', signal: timeout.signal,
+      cache: 'no-store',
       headers: { 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}),
     });
     // Parsed defensively and only after the status is known: an error body from
@@ -137,6 +150,7 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   const prepared = await billingRequest<{ accountToken: string }>('billing/apple',
     { action: 'prepare', expectedUserId, expectedOfferVersion });
   if (!prepared.accountToken || prepared.accountToken !== expectedUserId) throw new Error(ERRORS.invalid);
+  await saveNativeBillingDraft(prepared.accountToken);
   const result = await nativeSubscription('purchase', { accountToken: prepared.accountToken });
   if (result.status === 'cancelled' || result.status === 'pending') return { status: result.status };
   if (result.status !== 'purchased' || !result.transactions?.length) throw new Error(ERRORS.invalid);
@@ -150,7 +164,11 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   // to Buy, where nothing was charged, and a charged customer told to "wait for
   // Apple approval" is being given the wrong explanation for the wrong problem.
   try {
-    return { status: 'purchased', billing: await deliverAppleTransactions(result.transactions) };
+    const billing = await deliverAppleTransactions(result.transactions);
+    // Refresh the open panel's native metadata after confirmation, just as a
+    // restore does. Its pre-purchase product has no confirmed trial end yet.
+    window.dispatchEvent(new Event(AAC_BILLING_UPDATED));
+    return { status: 'purchased', billing };
   } catch (error) {
     // Every failure that reaches here is reported the same way, deliberately.
     // The status does not tell us whether it will resolve: a missing server
@@ -162,7 +180,7 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
     // What is always true is that the account was charged and the entitlement is
     // not confirmed yet, so that is what is said, and the server's explanation
     // goes to the log where support can read it.
-    console.warn('[AAC billing] Apple charged the account but delivery did not confirm',
+    console.warn('[AAC billing] Apple confirmed the subscription but delivery did not confirm',
       error instanceof Error ? error.message : error);
     return { status: 'undelivered' };
   }
@@ -183,24 +201,40 @@ export async function restoreAacApplePurchases(explicit = true, accountScope = '
   return restore;
 }
 
-function openStripe(url: string, host: string) {
+async function openStripe(url: string, host: string, account: string) {
   const target = new URL(url);
   if (target.protocol !== 'https:' || target.hostname !== host) throw new Error(ERRORS.invalid);
-  window.location.assign(target.href);
+  await openBillingPage(target.href, account);
+}
+
+async function openBillingPage(url: string, account?: string) {
+  // A failed save must leave the board and its current message in memory.
+  if (!rememberWebSignInDraft('billing')) throw new Error(ERRORS.unavailable);
+  if (hasNativeBillingDraft()) {
+    const scope = account ?? (await fetchAacBillingStatus()).userId;
+    if (!scope) throw new Error(ERRORS.unavailable);
+    await saveNativeBillingDraft(scope);
+  }
+  window.location.assign(url);
 }
 
 export async function purchaseAacWithStripe(expectedUserId: string, expectedOfferVersion: string): Promise<void> {
   const result = await billingRequest<{ url: string }>('checkout',
     { plan: 'aac_standard', currency: 'usd', expectedUserId, expectedOfferVersion });
-  openStripe(result.url, 'checkout.stripe.com');
+  await openStripe(result.url, 'checkout.stripe.com', expectedUserId);
 }
 
 export async function manageAacSubscription(channel: 'apple' | 'stripe') {
   if (channel === 'apple') {
-    if (hasNativePurchases()) await nativeSubscription('manage');
-    else window.location.assign('https://apps.apple.com/account/subscriptions');
+    if (hasNativePurchases()) {
+      if (hasNativeBillingDraft()) await saveNativeBillingDraft((await fetchAacBillingStatus()).userId);
+      await nativeSubscription('manage');
+    } else await openBillingPage('https://apps.apple.com/account/subscriptions');
     return;
   }
   const result = await billingRequest<{ url: string }>('billing', { action: 'manage' });
-  openStripe(result.url, 'billing.stripe.com');
+  // Validate the provider URL before the additional account-status lookup.
+  const target = new URL(result.url);
+  if (target.protocol !== 'https:' || target.hostname !== 'billing.stripe.com') throw new Error(ERRORS.invalid);
+  await openBillingPage(target.href);
 }

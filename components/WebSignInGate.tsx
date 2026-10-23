@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useT } from '@/engine/useT';
 import { useAuthStore } from '@/store/authStore';
-import { synaluxSignInUrl } from '@/services/aiService';
 import { isPrismNativeShell } from '@/services/nativeShell';
 import { fetchWebAccess, hasVerifiedLocalAccess, rememberVerifiedLocalAccess, clearVerifiedLocalAccess,
   LOCAL_ACCESS_CLEARED, LOCAL_ACCESS_KEY, type WebAccess } from '@/services/webAccessService';
@@ -11,62 +10,56 @@ import { rememberWebSignInDraft, recoverWebSignInDraft } from '@/services/webSig
 import { reportWebGate, type WebGateOutcome } from '@/services/monetizationTelemetry';
 import { usePathname } from 'next/navigation';
 import { PRISM_AAC_TERMS_PATH, PRISM_AAC_TERMS_ROUTE } from '@/lib/appPaths';
+import { AacBillingRequestError, fetchAacBillingStatus } from '@/services/aacBillingService';
+import { useMessageStore } from '@/store/messageStore';
+import { acknowledgeNativeBillingDraft, clearNativeBillingDraft, hasNativeBillingDraft, nativeBillingDraftGeneration,
+  observeNativeBillingDraft, recoverNativeBillingDraft } from '@/services/nativeBillingDraft';
 
 type AccessState = WebAccess['state'] | 'checking' | 'error';
-const PRIVACY_URL = 'https://synalux.ai/legal/privacy';
 const SIGNED_IN_RECHECK_MS = 5 * 60_000;
+const PREVIEW_WARNING_SECONDS = 2 * 60;
 const subscribeNative = () => () => {};
 // Any native shell, not only one that offers Sign in with Apple: the Browser
 // shell has no such method and was walled after a 60-second preview.
 const nativeSnapshot = () => isPrismNativeShell();
 const serverNativeSnapshot = () => false;
 
-/** Registration gate only. Cloud entitlement is enforced separately by the portal. */
+/** Advisory cloud-preview status. Core AAC never depends on account status. */
 export default function WebSignInGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const publicTerms = pathname === PRISM_AAC_TERMS_ROUTE || pathname === PRISM_AAC_TERMS_PATH;
   const enabled = process.env.NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE === '1' && !publicTerms;
   const native = useSyncExternalStore(subscribeNative, nativeSnapshot, serverNativeSnapshot);
-  const { t } = useT();
+  const { t, rtl } = useT();
   const profile = useAuthStore(s => s.profile);
+  const renderedDraftText = useMessageStore(s => s.text);
   const [state, setState] = useState<AccessState>('checking');
   const [remaining, setRemaining] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [draftFallback, setDraftFallback] = useState(false);
-  // Counts explicit re-checks that came back still gated. A re-check that
-  // changes nothing on screen is indistinguishable from a dead button, and
-  // the count re-announces the status line on every press.
-  const [signedOutChecks, setSignedOutChecks] = useState(0);
+  const [warned, setWarned] = useState(false);
   // The reported decision, kept apart from `state` because `state` is also set
   // optimistically from local storage before any server answer. React
   // coalesces an unchanged value, so a poll that keeps answering the same
   // thing is reported once per episode, not once per poll.
   const [outcome, setOutcome] = useState<WebGateOutcome | null>(null);
   const expires = useRef(0);
-  const anonymousAccess = useRef(false);
   const requestVersion = useRef(0);
   const alive = useRef(false);
-  const signInButton = useRef<HTMLButtonElement>(null);
+  const draftRecovered = useRef(false);
 
   // Returns the decision this call produced, or null when it was superseded
   // or the gate unmounted. A caller cannot otherwise distinguish a server
   // answer that changed nothing from no answer at all.
   const check = useCallback(async (): Promise<AccessState | null> => {
     const version = ++requestVersion.current;
-    setBusy(true);
     try {
       const result = await fetchWebAccess();
       if (!alive.current || version !== requestVersion.current) return null;
       if (result.state === 'signed_in') rememberVerifiedLocalAccess();
       else if (result.state !== 'disabled') clearVerifiedLocalAccess(false);
-      anonymousAccess.current = result.state === 'preview' || result.state === 'sign_in_required';
       // A focus event or duplicate response cannot extend an existing preview.
       const candidate = performance.now() + result.remainingMs;
       if (result.state === 'preview') expires.current = expires.current ? Math.min(expires.current, candidate) : candidate;
       const left = Math.max(0, expires.current - performance.now());
-      if (result.state === 'signed_in' || result.state === 'disabled' || (result.state === 'preview' && left > 0)) {
-        recoverWebSignInDraft();
-      } else if (!rememberWebSignInDraft()) setDraftFallback(true);
       setRemaining(Math.ceil(left / 1000));
       const decided = result.state === 'preview' && left <= 0 ? 'sign_in_required' : result.state;
       setState(decided);
@@ -75,7 +68,6 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     } catch {
       if (alive.current && version === requestVersion.current) {
         if (hasVerifiedLocalAccess()) {
-          recoverWebSignInDraft();
           setState('signed_in');
           // Carried by a previously verified local session, not by the server.
           // Reported as its own outcome so registration conversion is not
@@ -86,10 +78,69 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
         setState('error'); setOutcome('error');
         return 'error';
       }
-    } finally {
-      if (alive.current && version === requestVersion.current) setBusy(false);
     }
     return null;
+  }, []);
+
+  useEffect(() => {
+    if (!hasNativeBillingDraft()) return;
+    // This effect runs after React commits the recovered store text. Wait a
+    // frame before consuming its native record; unmount cancels that intent.
+    let frame = 0;
+    const acknowledge = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        void acknowledgeNativeBillingDraft(renderedDraftText).catch(() => {
+          console.warn('[AAC billing] Recovered draft cleanup will retry on focus');
+        });
+      });
+    };
+    acknowledge();
+    window.addEventListener('focus', acknowledge);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('focus', acknowledge); };
+  }, [renderedDraftText]);
+
+  useEffect(() => {
+    if (!hasNativeBillingDraft()) return;
+    const stop = observeNativeBillingDraft();
+    let active = true;
+    let inFlight = false;
+    let completed: number | null = null;
+    const recover = async () => {
+      const version = nativeBillingDraftGeneration();
+      if (inFlight || completed === version) return;
+      inFlight = true;
+      try {
+        // Only an authenticated server billing identity can unlock a draft;
+        // initial client profile hydration is not an account decision.
+        const billing = await fetchAacBillingStatus();
+        if (active && billing.userId) {
+          await recoverNativeBillingDraft(billing.userId, version);
+          completed = version;
+        }
+      } catch (error) {
+        if (active && error instanceof AacBillingRequestError && error.status === 401) {
+          clearNativeBillingDraft(); completed = nativeBillingDraftGeneration();
+        }
+        // An outage leaves the bounded draft for a later focus retry.
+      } finally { inFlight = false; }
+    };
+    void recover();
+    window.addEventListener('focus', recover);
+    return () => { active = false; stop(); window.removeEventListener('focus', recover); };
+  }, []);
+
+  useEffect(() => {
+    // Hydrate once before pagehide can save an initially empty store. Later
+    // account refreshes must never resurrect text the user deliberately cleared.
+    // Draft continuity is independent of cloud enforcement and native billing.
+    if (!draftRecovered.current) {
+      recoverWebSignInDraft();
+      draftRecovered.current = true;
+    }
+    const saveDraft = () => { rememberWebSignInDraft(); };
+    window.addEventListener('pagehide', saveDraft);
+    return () => window.removeEventListener('pagehide', saveDraft);
   }, []);
 
   useEffect(() => {
@@ -114,15 +165,12 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     window.addEventListener(LOCAL_ACCESS_CLEARED, revoke);
     window.addEventListener('storage', storage);
     const refresh = setInterval(focus, SIGNED_IN_RECHECK_MS);
-    const saveDraft = () => { if (anonymousAccess.current) rememberWebSignInDraft(); };
-    window.addEventListener('pagehide', saveDraft);
     return () => {
       alive.current = false;
       clearTimeout(initial); clearInterval(refresh);
       window.removeEventListener('focus', focus);
       window.removeEventListener(LOCAL_ACCESS_CLEARED, revoke);
       window.removeEventListener('storage', storage);
-      window.removeEventListener('pagehide', saveDraft);
     };
   }, [enabled, native, check, profile?.email]);
 
@@ -139,7 +187,6 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
       const left = Math.max(0, expires.current - performance.now());
       setRemaining(Math.ceil(left / 1000));
       if (left <= 0) {
-        if (!rememberWebSignInDraft()) setDraftFallback(true);
         setState('sign_in_required');
         setOutcome('sign_in_required');
       }
@@ -149,58 +196,34 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     return () => { clearInterval(tick); document.removeEventListener('visibilitychange', update); };
   }, [state, enabled, native]);
 
+  // Keep the live region mounted before inserting its static warning. Unlike
+  // the visual countdown, this text changes only once and never takes focus.
   useEffect(() => {
-    if (state === 'sign_in_required' || state === 'error') signInButton.current?.focus();
-  }, [state]);
+    if (state !== 'preview' || remaining <= 0 || remaining > PREVIEW_WARNING_SECONDS || warned) return;
+    let active = true;
+    queueMicrotask(() => { if (active) setWarned(true); });
+    return () => { active = false; };
+  }, [state, remaining, warned]);
 
-  // Native bridge is injected before page JavaScript. It is a UI distinction,
-  // never evidence of cloud entitlement on the server.
-  if (!enabled || native || state === 'disabled' || state === 'signed_in') return children;
-  if (state === 'preview') return <div className="h-svh flex flex-col">
-    <div className="shrink-0 text-center text-xs px-3 py-1 bg-slate-900 text-white" data-testid="web-preview-notice">
-      {t('web_preview_notice').replace('{seconds}', String(remaining))}
-    </div>
-    <div className="aac-web-preview-body min-h-0 flex-1 overflow-hidden">{children}</div>
+  const showNotice = enabled && !native && state !== 'disabled' && state !== 'signed_in';
+  const preview = state === 'preview';
+  const warning = preview && warned;
+  // Keep the same parent and child positions in every state. Replacing or
+  // reparenting the board can reset local controls, playback and keyboard focus.
+  // The portal enforces cloud access independently of this advisory display.
+  return <div className="h-svh flex flex-col">
+    {showNotice && <div dir={rtl ? 'rtl' : 'ltr'}
+      className={`shrink-0 flex flex-col items-center justify-center sm:flex-row sm:gap-x-3 text-center text-xs px-3 py-2 ${warning ? 'bg-amber-100 text-amber-950' : 'bg-slate-900 text-white'}`}
+      data-testid="web-preview-notice" data-state={state}>
+      {(preview || state === 'sign_in_required') && <p role={preview ? 'timer' : undefined} aria-live="off">
+        {t('web_preview_notice').replace('{time}', preview ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}` : '0:00')}
+      </p>}
+      <p role="status" aria-live="polite" aria-atomic="true" data-testid="web-preview-warning"
+        className={warning ? 'mt-1 font-semibold sm:mt-0' : undefined}>
+        {preview ? warning ? t('web_preview_warning') : '' : t('cloud_core_free')}
+      </p>
+      {state === 'error' && <p role="status" className="mt-1 sm:mt-0">{t('web_signin_network_error')}</p>}
+    </div>}
+    <div key="communication" className="aac-web-preview-body min-h-0 flex-1 overflow-hidden">{children}</div>
   </div>;
-  return <main className="h-svh w-full overflow-auto flex items-center justify-center bg-slate-50 text-slate-900 p-6"
-    data-testid="web-signin-gate">
-    <section className="w-full max-w-md space-y-5" aria-labelledby="web-signin-title">
-      <h1 id="web-signin-title" className="text-2xl font-semibold">
-        {t(state === 'checking' ? 'checking_sign_in' : 'web_signin_required')}
-      </h1>
-      <p id="web-signin-explanation">{t(state === 'checking' ? 'web_signin_checking_desc' : 'web_signin_explanation')}</p>
-      <p className="text-sm">{t('web_signin_saved')}</p>
-      {state === 'error' && <p role="alert" className="text-red-700">{t('web_signin_network_error')}</p>}
-      {draftFallback && <p role="alert" className="text-sm">{t('web_signin_draft_fallback')}</p>}
-      <button ref={signInButton} type="button" disabled={state === 'checking'} aria-describedby="web-signin-explanation"
-        onClick={() => {
-          // Reported only where the user actually leaves for sign-in. The
-          // draft-save failure below stays on this page to warn first, and
-          // counting that press would make departures outnumber sign-ins.
-          if (draftFallback) {
-            reportWebGate('sign_in_clicked');
-            window.open(synaluxSignInUrl(), '_blank', 'noopener,noreferrer'); return;
-          }
-          if (!rememberWebSignInDraft()) { setDraftFallback(true); return; }
-          reportWebGate('sign_in_clicked');
-          window.location.assign(synaluxSignInUrl());
-        }} className="aac-btn block w-full rounded-xl bg-blue-700 text-white text-center px-4 py-4 font-semibold">
-        {t('continue_to_google')}
-      </button>
-      {signedOutChecks > 0 && <p key={signedOutChecks} role="status" className="text-sm"
-        data-testid="web-signin-recheck-status">{t('web_signin_still_signed_out')}</p>}
-      <button type="button" disabled={busy}
-        onClick={() => void (async () => {
-          // Only a decision still gating the app needs saying; every other
-          // outcome already changes the screen (preview, error, or the app).
-          if (await check() === 'sign_in_required') setSignedOutChecks(n => n + 1);
-        })()}
-        className="aac-btn w-full rounded-xl border border-slate-400 px-4 py-4 disabled:opacity-50">
-        {t('web_signin_check_again')}
-      </button>
-      <p className="text-sm"><a className="underline" href={PRIVACY_URL}>{t('cloud_privacy')}</a>
-        {' · '}<a className="underline" href={PRISM_AAC_TERMS_PATH}>{t('cloud_terms')}</a>
-        {' · '}<a className="underline" href="https://github.com/dcostenco/prism-aac" target="_blank" rel="noopener noreferrer">{t('cloud_source_code')}</a></p>
-    </section>
-  </main>;
 }

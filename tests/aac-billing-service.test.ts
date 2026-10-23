@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { purchaseAacWithApple, restoreAacApplePurchases } from '@/services/aacBillingService';
+import { AAC_BILLING_UPDATED, purchaseAacWithApple, restoreAacApplePurchases } from '@/services/aacBillingService';
 
 const account = '11111111-1111-4111-8111-111111111111';
 const offerVersion = 'test-offer-v1';
@@ -15,6 +15,8 @@ type BridgeHost = {
 };
 const host = window as unknown as BridgeHost;
 const calls: string[] = [];
+const updates: string[][] = [];
+const recordUpdate = () => { updates.push([...calls]); };
 let nativeStatus = 'purchased';
 let deliveryStatus = 200;
 /** Non-null to serve a body the portal never sends — an edge proxy's HTML. */
@@ -24,6 +26,8 @@ let acknowledgeTransactionId: string | null = null;
 let nativeTransactions: Array<{ transactionId: string; jws: string }> = [transaction];
 
 beforeEach(() => {
+  updates.length = 0;
+  window.addEventListener(AAC_BILLING_UPDATED, recordUpdate);
   calls.length = 0; nativeStatus = 'purchased'; deliveryStatus = 200; deliveryBody = null;
   acknowledgeTransactionId = null;
   nativeTransactions = [transaction];
@@ -54,7 +58,7 @@ beforeEach(() => {
     return Response.json(billing);
   }));
 });
-afterEach(() => { vi.unstubAllGlobals(); delete host.prismNativeBridge; });
+afterEach(() => { window.removeEventListener(AAC_BILLING_UPDATED, recordUpdate); vi.unstubAllGlobals(); delete host.prismNativeBridge; });
 
 describe('Apple purchase delivery', () => {
   it('coalesces overlapping automatic recovery for the same account', async () => {
@@ -83,6 +87,7 @@ describe('Apple purchase delivery', () => {
   it('binds the account before purchase and finishes only after the server confirms delivery', async () => {
     expect((await purchaseAacWithApple(account, offerVersion)).billing?.hasCloudAccess).toBe(true);
     expect(calls).toEqual(['prepare', 'purchase', 'reconcile', 'finish:20001', 'status']);
+    expect(updates).toEqual([calls], 'The open native Settings panel must refresh its trial date only after verified delivery and fresh status');
   });
   // The account is charged before delivery is attempted, so no delivery failure
   // may be reported as a failed purchase — whatever the status. An earlier
@@ -98,6 +103,7 @@ describe('Apple purchase delivery', () => {
     deliveryStatus = status;
     await expect(purchaseAacWithApple(account, offerVersion)).resolves.toEqual({ status: 'undelivered' });
     expect(calls).not.toContain('finish:20001');
+    expect(updates).toEqual([], 'A failed delivery must not announce a successful billing refresh');
   });
 
   // The card is already charged. Surfacing that as a failure would tell the user
@@ -115,6 +121,7 @@ describe('Apple purchase delivery', () => {
     nativeStatus = status;
     expect(await purchaseAacWithApple(account, offerVersion)).toEqual({ status });
     expect(calls).toEqual(['prepare', 'purchase']);
+    expect(updates).toEqual([]);
   });
   it('automatic recovery skips a transaction bound to another AAC account without blocking the rest', async () => {
     // Shared device: the Apple ID holds a subscription bound to a different AAC

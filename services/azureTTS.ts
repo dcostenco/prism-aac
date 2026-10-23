@@ -281,8 +281,10 @@ export function clearTtsCache(): void {
   _ttsCache.clear();
 }
 
-export function getSpeechCacheScope(): string {
-  return useAuthStore.getState().profile?.email?.toLowerCase() ?? 'guest';
+export async function getSpeechCacheScope(): Promise<string> {
+  const auth = useAuthStore.getState();
+  return auth.profile?.email?.toLowerCase()
+    ?? (auth.identityUnknown ? await speechAudioCache.savedScope() : null) ?? 'guest';
 }
 
 export async function clearSavedSpeech(): Promise<boolean> {
@@ -656,17 +658,17 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   lastSpokenText = text;
   lastSpokenAt = nowMs;
 
-  const scope = getSpeechCacheScope();
+  const controller = new AbortController();
+  activeControllers.add(controller);
+  const scope = await getSpeechCacheScope();
   const requestKey = JSON.stringify([1, SYNALUX_API, _ttsCacheKey(text, lang, tone, rate, voiceId)]);
   const cacheKey = JSON.stringify([scope, requestKey]);
   const cacheEpoch = speechAudioCache.generation();
-  const controller = new AbortController();
-  activeControllers.add(controller);
   try {
     const memory = _ttsCacheGet(cacheKey);
     const disk = !memory && useSettingsStore.getState().speechCacheEnabled !== false
       ? await speechAudioCache.get(scope, requestKey) : null;
-    if (scope !== getSpeechCacheScope()) abortController(controller, 'superseded');
+    if (scope !== await getSpeechCacheScope()) abortController(controller, 'superseded');
     const cancelled = intentionalCancellation(controller);
     if (cancelled) return cancelled;
     const cached = memory ?? disk?.audio;
@@ -806,11 +808,13 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
         // Audio playbackRate — that caused double-slow in translation mode:
         // aacSpeak effectiveRate × 0.6 → SSML rate 0.6 → old pbRate 0.6
         // = 0.36× speed (en-ro regression, May 2026).
-        if (scope !== getSpeechCacheScope()) abortController(controller, 'superseded');
+        if (scope !== await getSpeechCacheScope()) abortController(controller, 'superseded');
         const result = await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt, 1.0, controller);
         const degraded = res.headers.get('X-TTS-Inworld-Failed') || res.headers.get('X-TTS-Degraded')
           || res.headers.get('X-TTS-Lang-Fallback') || res.headers.get('X-TTS-Gender-Fallback');
-        if (result.success && !result.cancelled && !degraded && text.length <= CLOUD_SPEECH_MAX_CHARS
+        const auth = useAuthStore.getState();
+        const verifiedIdentity = !!auth.profile || (auth.loaded && !auth.identityUnknown);
+        if (result.success && !result.cancelled && !degraded && verifiedIdentity && text.length <= CLOUD_SPEECH_MAX_CHARS
           && cacheEpoch === speechAudioCache.generation()) {
           _ttsCacheSet(cacheKey, audioBytes);
           const identity = responseCacheIdentity(res);

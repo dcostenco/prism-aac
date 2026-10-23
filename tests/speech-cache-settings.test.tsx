@@ -6,7 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speechAudioCache } from '@/services/speechAudioCache';
 import { clearSavedSpeech } from '@/services/azureTTS';
 
-vi.mock('@/services/azureTTS', () => ({ clearSavedSpeech: vi.fn(), getSpeechCacheScope: () => 'guest' }));
+vi.mock('@/services/azureTTS', () => ({ clearSavedSpeech: vi.fn(), getSpeechCacheScope: async () => 'guest' }));
 vi.mock('@/services/speechAudioCache', () => ({
   speechAudioCache: { stats: vi.fn() }, SPEECH_CACHE_POLICY: { maxBytes: 20 * 1024 * 1024 },
 }));

@@ -34,7 +34,12 @@
           "familyShareable": false,
           "groupNumber": 1,
           "internalID": "aac_cloud_monthly_test",
-          "introductoryOffer": null,
+          "introductoryOffer": {
+            "internalID": "aac_cloud_intro_test",
+            "numberOfPeriods": 1,
+            "paymentMode": "free",
+            "subscriptionPeriod": "P2W"
+          },
           "localizations": [
             {
               "description": "Local simulator fixture only",
