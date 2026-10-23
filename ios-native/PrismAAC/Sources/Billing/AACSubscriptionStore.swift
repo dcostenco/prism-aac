@@ -7,6 +7,7 @@ import UIKit
 @MainActor
 final class AACSubscriptionStore {
     static let shared = AACSubscriptionStore()
+    static let subscriptionManagementURL = "https://account.apple.com/account/manage/section/subscriptions"
     private var listener: Task<Void, Never>?
     var onTransactionsChanged: (() -> Void)?
 
@@ -15,13 +16,14 @@ final class AACSubscriptionStore {
     }
 
     enum PurchaseError: LocalizedError {
-        case unavailable, unverified, accountMismatch, alreadySubscribed
+        case unavailable, unverified, accountMismatch, alreadySubscribed, sandboxManagementOnMac
         var errorDescription: String? {
             switch self {
             case .unavailable: return "The subscription is unavailable. Please try again."
             case .unverified: return "Apple could not verify this purchase. Please try Restore Purchases."
             case .accountMismatch: return "This Apple subscription belongs to a different AAC account. Sign in to that account to restore it."
             case .alreadySubscribed: return "You already have this Apple subscription. Use Restore Purchases."
+            case .sandboxManagementOnMac: return "Apple does not support the subscription sheet on this Mac. Manage Sandbox subscriptions on an iPhone or iPad in Settings > Developer > Sandbox Apple Account > Manage. For local StoreKit tests, use Xcode's transaction manager."
             }
         }
     }
@@ -127,7 +129,29 @@ final class AACSubscriptionStore {
     }
 
     func manage(in scene: UIWindowScene) async throws {
-        try await AppStore.showManageSubscriptions(in: scene)
+        #if targetEnvironment(macCatalyst)
+        let onMac = true
+        #else
+        let onMac = ProcessInfo.processInfo.isiOSAppOnMac
+        #endif
+        var environment: AppStore.Environment?
+        if onMac, case .verified(let transaction)? = await Transaction.latest(for: productID) {
+            environment = transaction.environment
+        }
+        try await Self.manage(onMac: onMac, environment: environment,
+            openExternal: { await UIApplication.shared.open($0) },
+            showSheet: { try await AppStore.showManageSubscriptions(in: scene) })
+    }
+
+    static func manage(onMac: Bool, environment: AppStore.Environment?,
+                       openExternal: (URL) async -> Bool, showSheet: () async throws -> Void) async throws {
+        // Apple's in-app subscription sheet is unsupported in iOS-on-Mac and Catalyst.
+        guard onMac else { try await showSheet(); return }
+        // The regular App Store account page cannot manage a Sandbox test purchase.
+        guard environment != .sandbox, environment != .xcode else { throw PurchaseError.sandboxManagementOnMac }
+        guard let url = URL(string: subscriptionManagementURL), await openExternal(url) else {
+            throw PurchaseError.unavailable
+        }
     }
 
     private func envelope(_ result: VerificationResult<Transaction>, _ transaction: Transaction) -> [String: String] {

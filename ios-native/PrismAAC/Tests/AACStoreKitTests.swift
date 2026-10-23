@@ -3,6 +3,57 @@ import StoreKit
 import StoreKitTest
 @testable import PrismAAC
 
+@MainActor
+final class AACSubscriptionManagementTests: XCTestCase {
+    func testMacOpensAppleAccountInsteadOfTheUnsupportedSheet() async throws {
+        var opened: URL?
+        try await AACSubscriptionStore.manage(onMac: true, environment: .production,
+            openExternal: { opened = $0; return true },
+            showSheet: { XCTFail("The subscription sheet is unsupported on Mac") })
+        XCTAssertEqual(opened?.absoluteString, "https://account.apple.com/account/manage/section/subscriptions")
+    }
+
+    func testIPhoneAndIPadKeepTheNativeSheetIncludingSandbox() async throws {
+        var shown = false
+        try await AACSubscriptionStore.manage(onMac: false, environment: .sandbox,
+            openExternal: { _ in XCTFail("iPhone and iPad must keep native subscription management"); return false },
+            showSheet: { shown = true })
+        XCTAssertTrue(shown)
+    }
+
+    func testMacTestPurchasesDoNotOpenTheRegularAppleAccount() async throws {
+        for environment in [AppStore.Environment.sandbox, .xcode] {
+            do {
+                try await AACSubscriptionStore.manage(onMac: true, environment: environment,
+                    openExternal: { _ in XCTFail("Test purchases do not belong to the regular Apple account"); return true },
+                    showSheet: { XCTFail("The subscription sheet is unsupported on Mac") })
+                XCTFail("Test subscriptions need actionable Sandbox management instructions")
+            } catch AACSubscriptionStore.PurchaseError.sandboxManagementOnMac {
+                XCTAssertTrue(AACSubscriptionStore.PurchaseError.sandboxManagementOnMac.localizedDescription.contains("Settings > Developer > Sandbox Apple Account"))
+            }
+        }
+    }
+
+    func testRejectedMacHandoffDoesNotReportManagementOpened() async throws {
+        do {
+            try await AACSubscriptionStore.manage(onMac: true, environment: .production,
+                openExternal: { _ in false }, showSheet: { XCTFail("Do not fall back to an unsupported sheet") })
+            XCTFail("A rejected URL handoff must remain an error")
+        } catch AACSubscriptionStore.PurchaseError.unavailable { }
+    }
+
+    func testNativeSheetFailureIsStillReported() async throws {
+        do {
+            try await AACSubscriptionStore.manage(onMac: false, environment: .production,
+                openExternal: { _ in XCTFail("Do not redirect a failed iOS sheet"); return true },
+                showSheet: { throw URLError(.notConnectedToInternet) })
+            XCTFail("A failed sheet must remain an error")
+        } catch let error as URLError {
+            XCTAssertEqual(error.code, .notConnectedToInternet)
+        }
+    }
+}
+
 /// Uses Apple's local StoreKit engine and the real AACSubscriptionStore.
 /// No App Store account, provider webhook, or real payment is involved.
 @MainActor
