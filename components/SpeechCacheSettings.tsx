@@ -21,7 +21,7 @@ export default function SpeechCacheSettings() {
 
   useEffect(() => {
     let active = true;
-    void speechAudioCache.stats(getSpeechCacheScope()).then(value => {
+    void getSpeechCacheScope().then(scope => speechAudioCache.stats(scope)).then(value => {
       if (active) setStats(value);
     });
     return () => { active = false; };
@@ -35,7 +35,7 @@ export default function SpeechCacheSettings() {
     finally { setBusy(false); setRevision(value => value + 1); }
   };
 
-  return <div className="mt-4 space-y-2 border-t border-theme pt-3">
+  return <div data-testid="speech-cache-settings" className="mt-4 space-y-2 border-t border-theme pt-3">
     <label className="flex items-center justify-between gap-3 text-primary text-sm">
       <span>{t('speech_cache_enable')}</span>
       <input type="checkbox" checked={enabled} disabled={busy}

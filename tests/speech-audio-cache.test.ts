@@ -7,12 +7,64 @@ const IDENTITY = { backend: 'inworld' as const, voice: 'Alex', model: 'inworld-t
 const AUDIO = new Uint8Array([1, 2, 3, 4]).buffer;
 
 beforeEach(() => {
+  localStorage.clear();
   vi.stubGlobal('indexedDB', new IDBFactory());
   vi.stubGlobal('crypto', webcrypto);
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('persistent speech storage', () => {
+  it('restores an encrypted last scope without persisting the account name', async () => {
+    const cache = new SpeechAudioCache();
+    expect(await cache.rememberScope('account-a@example.invalid')).toBe(true);
+    expect(localStorage.getItem(SPEECH_CACHE_POLICY.scopePointer)).not.toContain('account-a');
+    expect(await new SpeechAudioCache().savedScope()).toBe('account-a@example.invalid');
+    const db = await new Promise<IDBDatabase>(resolve => {
+      const open = indexedDB.open(SPEECH_CACHE_POLICY.database, SPEECH_CACHE_POLICY.version);
+      open.onsuccess = () => resolve(open.result);
+    });
+    const records = await new Promise<unknown[]>(resolve => {
+      const tx = db.transaction(SPEECH_CACHE_POLICY.scopeStore, 'readonly');
+      const get = tx.objectStore(SPEECH_CACHE_POLICY.scopeStore).getAll();
+      get.onsuccess = () => resolve(get.result);
+    });
+    db.close();
+    expect(JSON.stringify(records)).not.toContain('account-a');
+    // Persist buffers rather than CryptoKey objects: WebKit can stall cloning keys.
+    expect((records[0] as { secret: ArrayBuffer }).secret.byteLength).toBe(32);
+  });
+
+  it('revokes a pending scope write before sign-out and keeps a later account separate', async () => {
+    const cache = new SpeechAudioCache();
+    const pending = cache.rememberScope('account-a@example.invalid');
+    const cleared = cache.forgetScope();
+    expect(await pending).toBe(false);
+    await cleared;
+    expect(await new SpeechAudioCache().savedScope()).toBeNull();
+    expect(await cache.rememberScope('account-b@example.invalid')).toBe(true);
+    expect(await new SpeechAudioCache().savedScope()).toBe('account-b@example.invalid');
+    await cache.forgetScope();
+    expect(await new SpeechAudioCache().savedScope()).toBeNull();
+  });
+
+  it('upgrades old clip storage without changing the saved speech keys', async () => {
+    const scope = 'legacy@example.invalid';
+    const key = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify([scope, 'phrase'])))), x => x.toString(16).padStart(2, '0')).join('');
+    const scopeKey = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(scope))), x => x.toString(16).padStart(2, '0')).join('');
+    await new Promise<void>(resolve => {
+      const open = indexedDB.open(SPEECH_CACHE_POLICY.database, 1);
+      open.onupgradeneeded = () => open.result.createObjectStore(SPEECH_CACHE_POLICY.store, { keyPath: 'key' });
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction(SPEECH_CACHE_POLICY.store, 'readwrite');
+        tx.objectStore(SPEECH_CACHE_POLICY.store).put({ key, scope: scopeKey, audio: AUDIO, identity: IDENTITY, updatedAt: Date.now(), usedAt: Date.now() });
+        tx.oncomplete = () => { db.close(); resolve(); };
+      };
+    });
+    const cache = new SpeechAudioCache();
+    expect(await cache.rememberScope(scope)).toBe(true);
+    expect((await cache.get((await cache.savedScope())!, 'phrase'))?.audio).toEqual(AUDIO);
+  });
   it.each(['inworld', 'azure'] as const)('retains %s audio across service recreation without exposing another profile', async backend => {
     const identity = { ...IDENTITY, backend };
     expect(await new SpeechAudioCache().put('profile-a', 'hello', AUDIO, identity)).toBe(true);

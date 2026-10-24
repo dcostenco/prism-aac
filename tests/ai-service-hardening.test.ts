@@ -3,7 +3,7 @@
  *
  * Covers the critical synalux-facing paths not tested by existing files:
  *   - fetchSynaluxProfile(): two-step lookup (/auth/session + /roles/me), null
- *     on 401/throw, free-tier fallback when roles/me fails, aac_plan preference,
+ *     on confirmed sign-out, undefined on unknown identity, free-tier fallback when roles/me fails, aac_plan preference,
  *     is_platform_admin, credentials:include guard
  *   - parseCaregiverNote(): empty input → note_only, valid JSON parsed, JSON
  *     parse failure → fallback, action cap (20), payload string caps, boostCount
@@ -182,6 +182,29 @@ describe('fetchSynaluxProfile — Prism AAC sign-in', () => {
     expect(await fetchSynaluxProfile()).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  it('an explicit signed_in:false is a definite sign-out without consulting the portal', async () => {
+    fetchMock.mockResolvedValueOnce(json({ signed_in: false }));
+    expect(await fetchSynaluxProfile()).toBeNull();
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+  it('an incomplete AAC response can fall back to a confirmed portal identity', async () => {
+    fetchMock.mockResolvedValueOnce(json({ unexpected: true }))
+      .mockResolvedValueOnce(json({ user: { email: 'fallback@example.invalid' } }))
+      .mockResolvedValueOnce(json({ aac_plan: 'free' }));
+    expect(await fetchSynaluxProfile()).toMatchObject({ email: 'fallback@example.invalid' });
+  });
+  it.each([{}, null, { user: null }])('a valid empty portal session confirms sign-out: %j', async session => {
+    fetchMock.mockResolvedValueOnce(json({}, 404)).mockResolvedValueOnce(json(session));
+    expect(await fetchSynaluxProfile()).toBeNull();
+  });
+  it.each([{}, null, { user: null }])('an empty portal session cannot revoke an unavailable AAC session: %j', async session => {
+    fetchMock.mockResolvedValueOnce(json({}, 503)).mockResolvedValueOnce(json(session));
+    expect(await fetchSynaluxProfile()).toBeUndefined();
+  });
+  it('a portal401 cannot revoke an AAC sign-in whose store is unavailable', async () => {
+    fetchMock.mockResolvedValueOnce(json({}, 503)).mockResolvedValueOnce(json({}, 401));
+    expect(await fetchSynaluxProfile()).toBeUndefined();
+  });
 
   it.each([404, 503])('%s from the AAC endpoint (older portal, store down) falls back to the portal session', async (status) => {
     fetchMock
@@ -252,28 +275,33 @@ describe('signOutOfPrismAac', () => {
 // ── fetchSynaluxProfile — session failure paths ───────────────────────────
 
 describe('fetchSynaluxProfile — session failure', () => {
+  it.each([500, 503])('reports unknown identity when both session services return %s', async status => {
+    fetchMock.mockImplementation(async () => new Response('{}', { status }));
+    expect(await fetchSynaluxProfile()).toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
   it('returns null when session call returns 401', async () => {
     fetchMock.mockResolvedValueOnce(new Response('', { status: 401 }));
     expect(await fetchSynaluxProfile()).toBeNull();
   });
 
-  it('returns null when session fetch throws', async () => {
+  it('reports unknown when session fetch throws', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Network down'));
-    expect(await fetchSynaluxProfile()).toBeNull();
+    expect(await fetchSynaluxProfile()).toBeUndefined();
   });
 
-  it('returns null when session body has no user.email', async () => {
+  it('reports unknown when session body has no user.email', async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ user: { name: 'Ghost' } }), { status: 200 }),
     );
-    expect(await fetchSynaluxProfile()).toBeNull();
+    expect(await fetchSynaluxProfile()).toBeUndefined();
   });
 
-  it('returns null when session body is null', async () => {
+  it('reports unknown when the AAC session body is null and the portal cannot be reached', async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify(null), { status: 200 }),
     );
-    expect(await fetchSynaluxProfile()).toBeNull();
+    expect(await fetchSynaluxProfile()).toBeUndefined();
   });
 });
 

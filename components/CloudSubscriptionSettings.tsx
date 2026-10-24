@@ -5,14 +5,14 @@ import { useT } from '@/engine/useT';
 import { useAuthStore } from '@/store/authStore';
 import { isNativeiOS, type SynaluxProfile } from '@/services/aiService';
 import { fetchAacBillingStatus, hasNativePurchases, manageAacSubscription, nativeSubscription,
-  purchaseAacWithApple, purchaseAacWithStripe, restoreAacApplePurchases, AAC_BILLING_UPDATED, type AacBillingStatus } from '@/services/aacBillingService';
+  purchaseAacWithApple, purchaseAacWithStripe, restoreAacApplePurchases, AAC_BILLING_UPDATED, AAC_INTRODUCTORY_TRIAL_DAYS, type AacBillingStatus, type NativeResult } from '@/services/aacBillingService';
 import { firstOfferImpression, offerImpressionKey, reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
 import { resumeCloudPrediction } from '@/services/predictionMemoryService';
-import { APPLE_STANDARD_EULA_URL } from '@/lib/appPaths';
+import { APPLE_STANDARD_EULA_URL, PRISM_AAC_SOURCE_URL } from '@/lib/appPaths';
 import TermsLink from '@/components/TermsLink';
 
 export default function CloudSubscriptionSettings() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const profile = useAuthStore(s => s.profile);
   const account = profile?.email;
   // Keyed by the account it was fetched for. On a shared device the signed-in
@@ -35,7 +35,10 @@ export default function CloudSubscriptionSettings() {
       if (current.plan === 'free') void useAuthStore.getState().refresh();
     }
   };
-  const [price, setPrice] = useState<string | null>(null);
+  const [nativeLoaded, setNativeLoaded] = useState<{ account?: string; userId: string; version?: string; product: NativeResult } | null>(null);
+  const product = nativeLoaded?.account === account && nativeLoaded?.userId === billing?.userId
+    && nativeLoaded?.version === billing?.offer.version && nativeLoaded?.product.id === billing?.offer.appleProductId
+    ? nativeLoaded?.product : null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -48,9 +51,9 @@ export default function CloudSubscriptionSettings() {
     const result = await fetchAacBillingStatus();
     if (useAuthStore.getState().profile?.email === identity) setBilling(result);
     if (native && hasNativePurchases() && result.enabled && !result.betaExempt) {
-      const product = await nativeSubscription('product');
+      const product = await nativeSubscription('product', { accountToken: result.userId });
       if (useAuthStore.getState().profile?.email === identity && product.id === result.offer.appleProductId && product.displayPrice) {
-        setPrice(product.displayPrice);
+        setNativeLoaded({ account: identity, userId: result.userId, version: result.offer.version, product });
       }
     }
   }, [account, native]);
@@ -61,8 +64,10 @@ export default function CloudSubscriptionSettings() {
     void fetchAacBillingStatus().then(result => {
       if (active) setBilling(result);
       if (active && native && hasNativePurchases() && !result.betaExempt && result.enabled) {
-        void nativeSubscription('product').then(product => {
-          if (active && product.id === result.offer.appleProductId && product.displayPrice) setPrice(product.displayPrice);
+        void nativeSubscription('product', { accountToken: result.userId }).then(product => {
+          if (active && product.id === result.offer.appleProductId && product.displayPrice) {
+            setNativeLoaded({ account, userId: result.userId, version: result.offer.version, product });
+          }
         }).catch(e => { if (active) setError(e.message); });
       }
     }).catch(e => { if (active) setError(e.message); });
@@ -128,7 +133,13 @@ export default function CloudSubscriptionSettings() {
     });
   };
 
-  const quotedPrice = native ? price : billing ? `US$${billing.offer.usdMonthly.toFixed(2)}` : null;
+  const quotedPrice = native ? product?.displayPrice : billing ? `US$${billing.offer.usdMonthly.toFixed(2)}` : null;
+  const trialDays = native ? product?.introductoryOfferEligible === true ? product.introductoryTrialDays : 0
+    : billing?.stripeTrialDays;
+  const hasTrial = trialDays === AAC_INTRODUCTORY_TRIAL_DAYS;
+  const trialEndsAt = native ? product?.trialEndsAt : billing?.stripeTrial?.endsAt;
+  const trialDate = trialEndsAt && Number.isFinite(Date.parse(trialEndsAt))
+    ? new Date(trialEndsAt).toLocaleString(lang, { dateStyle: 'medium', timeStyle: 'short' }) : null;
   const canPurchase = Boolean(billing?.enabled && !billing.betaExempt && !billing.purchaseBlocked && billing.channels.length === 0
     && quotedPrice && billing.offer.version && (!native || hasNativePurchases())
     && (billing.offer.monthlySpeechCharacters ?? 0) > 0 && (billing.offer.monthlyAiRequests ?? 0) > 0);
@@ -164,6 +175,9 @@ export default function CloudSubscriptionSettings() {
     <p className="text-xs text-muted">{t('cloud_core_free')}</p>
     {billing?.betaExempt && <p role="status" className="text-sm text-primary">{t('cloud_beta_access')}</p>}
     {billing?.hasCloudAccess && !billing.betaExempt && <p role="status" className="text-sm text-primary">{t('cloud_access_active')}</p>}
+    {billing?.hasCloudAccess && trialDate && <p className="text-xs text-muted" data-testid="cloud-trial-date">
+      {t(!native && billing.stripeTrial?.cancelsAtEnd ? 'cloud_trial_cancelled_date' : 'cloud_trial_end_date').replace('{date}', trialDate)}
+    </p>}
     {billing?.transitionEndsAt && !billing.betaExempt && <p className="text-xs text-muted">
       {t('cloud_transition_ends').replace('{date}', new Date(billing.transitionEndsAt).toLocaleDateString())}
     </p>}
@@ -173,9 +187,13 @@ export default function CloudSubscriptionSettings() {
     </p>}
     {billing?.offer.allowanceReset === 'utc_calendar_month' && <p className="text-xs text-muted">{t('cloud_allowance_reset')}</p>}
     {canPurchase && <>
-      <p className="text-xs text-muted">{t(native ? 'cloud_subscription_terms_apple' : 'cloud_subscription_terms').replace('{price}', quotedPrice!)}</p>
+      <div data-testid="cloud-offer-terms" className="space-y-2 text-xs text-muted">
+        {hasTrial && <p>{t('cloud_trial_offer').replace('{days}', String(trialDays))}</p>}
+        <p>{t(native ? 'cloud_subscription_terms_apple' : 'cloud_subscription_terms').replace('{price}', quotedPrice!)}</p>
+      </div>
       <button type="button" disabled={busy} className={button} onClick={() => void purchase()}>
-        {t(native ? 'cloud_subscribe_apple' : 'cloud_subscribe_web').replace('{price}', quotedPrice!)}
+        {t(hasTrial ? native ? 'cloud_trial_apple' : 'cloud_trial_web' : native ? 'cloud_subscribe_apple' : 'cloud_subscribe_web')
+          .replace('{days}', String(trialDays)).replace('{price}', quotedPrice!)}
       </button>
     </>}
     {native && billing?.enabled && !hasNativePurchases() && !billing.betaExempt &&
@@ -213,7 +231,7 @@ export default function CloudSubscriptionSettings() {
           Source. We are the copyright holder and so are not bound by our own licence,
           but the offer is what makes that term credible against a fork — and it is
           what a user of this build is entitled to expect. */}
-      {' · '}<a href="https://github.com/dcostenco/prism-aac" target="_blank" rel="noopener noreferrer">{t('cloud_source_code')}</a></p>
+      {' · '}<a href={PRISM_AAC_SOURCE_URL} target="_blank" rel="noopener noreferrer">{t('cloud_source_code')}</a></p>
     {notice && <p role="status" className="text-xs text-muted">{notice}</p>}
     {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
   </div>;

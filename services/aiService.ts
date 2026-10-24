@@ -202,10 +202,10 @@ export interface SynaluxProfile {
  * Prism AAC's own sign-in (GET /api/v1/prism-aac/session). It lasts until Sign
  * out, while the portal session ends after 8 hours; the endpoint turns a portal
  * sign-in into one and renews it on every call, including authStore's 30-minute
- * re-check. Returns the identity, 'signed-out' (a definite no), or null when it
- * cannot tell (an older portal without the endpoint, a network or server error).
+ * re-check. Returns the identity, 'signed-out' (a definite no), 'unsupported'
+ * for an older portal, or null when the endpoint cannot tell.
  */
-async function fetchAacSession(): Promise<{ email: string; name: string } | 'signed-out' | null> {
+async function fetchAacSession(): Promise<{ email: string; name: string } | 'signed-out' | 'unsupported' | null> {
   const t = timeoutSignal(5000);
   try {
     const res = await fetch(`${SYNALUX_API}/prism-aac/session`, {
@@ -214,9 +214,11 @@ async function fetchAacSession(): Promise<{ email: string; name: string } | 'sig
       signal: t.signal,
     });
     if (res.status === 401) return 'signed-out';
+    if (res.status === 404) return 'unsupported';
     if (!res.ok) return null;
     const body = await res.json() as { signed_in?: boolean; email?: string; name?: string } | null;
-    if (!body?.signed_in || !body.email) return 'signed-out';
+    if (body?.signed_in === false) return 'signed-out';
+    if (body?.signed_in !== true || typeof body.email !== 'string' || !body.email) return null;
     return { email: body.email, name: body.name || body.email };
   } catch {
     return null;
@@ -247,7 +249,8 @@ export async function signOutOfPrismAac(): Promise<boolean> {
   }
 }
 
-export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
+/** null is a confirmed sign-out; undefined means identity could not be checked. */
+export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null | undefined> {
   // Same-origin when served from synalux.ai/prism-aac (cookie auto-attached).
   // Cross-origin (prism-aac.vercel.app) requires include + portal CORS.
   //
@@ -264,7 +267,7 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
   let name = '';
   const aac = await fetchAacSession();
   if (aac === 'signed-out') return null;
-  if (aac) {
+  if (aac && aac !== 'unsupported') {
     email = aac.email;
     name = aac.name;
   } else {
@@ -275,13 +278,19 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
         headers: { 'Accept': 'application/json' },
         signal: sessT.signal,
       });
-      if (!sessRes.ok) return null;
+      if (sessRes.status === 401) return aac === 'unsupported' ? null : undefined;
+      if (!sessRes.ok) return undefined;
       const sess = await sessRes.json();
-      if (!sess?.user?.email) return null;
+      // The portal's shorter session cannot revoke an AAC sign-in whose own
+      // store is temporarily unavailable. Only legacy portals delegate that
+      // sign-out decision to NextAuth's empty session response.
+      if (sess === null || (typeof sess === 'object' && !Array.isArray(sess)
+        && (sess.user === null || Object.keys(sess).length === 0))) return aac === 'unsupported' ? null : undefined;
+      if (typeof sess?.user?.email !== 'string' || !sess.user.email) return undefined;
       email = sess.user.email;
       name = sess.user.name || sess.user.email;
     } catch {
-      return null;
+      return undefined;
     } finally {
       sessT.cancel();
     }

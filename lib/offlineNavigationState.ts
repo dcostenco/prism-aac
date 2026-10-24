@@ -2,6 +2,24 @@ import { AAC_CORE_NAVIGATION_CACHE, AAC_LEGACY_CORE_NAVIGATION_CACHES, AAC_OFFLI
 
 export { AAC_OFFLINE_NAVIGATION_LOCK } from './offlinePrecacheRetention';
 const NAVIGATION_TIMEOUT_MS = 3_000;
+const CSP_NONCE = /'nonce-([^']+)'/g;
+const SCRIPT_NONCE = /<script\b[^>]*\bnonce=(?:"([^"]*)"|'([^']*)')/gi;
+
+/** Detach bytes from the network/cache backing resource while retaining CSP. */
+function snapshotDocument(response: Response, html: string): Response | null {
+  const allowed = new Set(Array.from((response.headers.get('content-security-policy') ?? '').matchAll(CSP_NONCE), match => match[1]));
+  if (allowed.size) {
+    const nonces = Array.from(html.matchAll(SCRIPT_NONCE), match => match[1] ?? match[2]);
+    if (!nonces.length || nonces.some(nonce => !allowed.has(nonce))) return null;
+  }
+  const headers = new Headers(response.headers);
+  // Fetch has already decoded the body. Its old transport lengths/encoding
+  // must not describe the newly constructed UTF-8 representation.
+  headers.delete('content-encoding');
+  headers.delete('content-length');
+  headers.delete('transfer-encoding');
+  return new Response(html, { status: response.status, statusText: response.statusText, headers });
+}
 
 export type OfflineNavigationLocks = Pick<LockManager, 'request'>;
 
@@ -11,7 +29,7 @@ export interface CanonicalNavigationResult {
 }
 
 export interface CanonicalNavigationState {
-  outcome: 'saved' | 'network-unavailable' | 'not-html' | 'incomplete-static' | 'storage-failed';
+  outcome: 'saved' | 'network-unavailable' | 'not-html' | 'nonce-mismatch' | 'incomplete-static' | 'storage-failed';
   precacheName: string;
   requiredCount?: number;
   missingAssets?: string[];
@@ -39,7 +57,10 @@ export async function handleCanonicalNavigation(options: {
     try {
       for (const cacheName of [AAC_CORE_NAVIGATION_CACHE, ...AAC_LEGACY_CORE_NAVIGATION_CACHES]) {
         const response = await storage.match(canonicalUrl, { cacheName });
-        if (response) return response;
+        if (response) {
+          const snapshot = snapshotDocument(response, await response.text());
+          if (snapshot) return snapshot;
+        }
       }
       return undefined;
     }
@@ -47,12 +68,40 @@ export async function handleCanonicalNavigation(options: {
   };
   const fallback = async () => (await savedDocument()) ?? Response.error();
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const network = Promise.resolve().then(() => fetchResponse(request)).then(
-    response => ({ kind: 'response' as const, response }),
-    () => ({ kind: 'failure' as const }),
-  );
+  let timedOut = false;
+  let bodyReader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  const network = Promise.resolve().then(() => fetchResponse(request)).then(async response => {
+    if (timedOut) {
+      void response.body?.cancel().catch(() => console.warn('[service-worker] abandoned navigation body cancellation failed'));
+      return { kind: 'failure' as const };
+    }
+    let html = '';
+    if (response.status === 200 && response.headers.get('content-type')?.toLowerCase().includes('text/html')) {
+      const reader = response.body?.getReader();
+      bodyReader = reader;
+      const decoder = new TextDecoder();
+      try {
+        while (reader) {
+          const chunk = await reader.read();
+          if (chunk.done) break;
+          html += decoder.decode(chunk.value, { stream: true });
+        }
+        html += decoder.decode();
+      } finally {
+        reader?.releaseLock();
+        bodyReader = undefined;
+      }
+    }
+    return { kind: 'response' as const, response, html };
+  }).catch(() => ({ kind: 'failure' as const }));
   const timed = new Promise<{ kind: 'timeout' }>(resolve => {
-    timer = setTimeout(() => resolve({ kind: 'timeout' }), timeoutMs);
+    timer = setTimeout(() => {
+      timedOut = true;
+      resolve({ kind: 'timeout' });
+      // Cancel the original reader, rather than a tee created by clone(), so
+      // an unfinished body cannot outlive the fallback and retain resources.
+      void bodyReader?.cancel().catch(() => console.warn('[service-worker] stalled navigation body cancellation failed'));
+    }, timeoutMs);
   });
   const result = await Promise.race([network, timed]);
   if (timer) clearTimeout(timer);
@@ -60,7 +109,7 @@ export async function handleCanonicalNavigation(options: {
     report({ outcome: 'network-unavailable' });
     return { response: await fallback(), stored: false };
   }
-  const response = result.response;
+  let response = result.response;
   if (response.status >= 500) {
     report({ outcome: 'network-unavailable' });
     return { response: await fallback(), stored: false };
@@ -70,7 +119,13 @@ export async function handleCanonicalNavigation(options: {
     return { response, stored: false };
   }
 
-  const html = await response.clone().text();
+  const html = result.html;
+  const snapshot = snapshotDocument(response, html);
+  if (!snapshot) {
+    report({ outcome: 'nonce-mismatch' });
+    return { response: await fallback(), stored: false };
+  }
+  response = snapshot;
   const assets = [...new Set([...documentAssets(html, canonicalUrl), ...precacheAssets])];
   const safeLockManager = locks && typeof locks.request === 'function' ? locks : null;
 

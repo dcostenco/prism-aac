@@ -26,7 +26,7 @@ async function signedInPortal(page: Page, deleteBody: Record<string, unknown>) {
   });
   await page.route('**/api/v1/roles/me', route => route.fulfill({ json: { aac_plan: 'free', needs_onboarding: true } }));
   await page.route('**/api/v1/prism-aac/access', route => route.fulfill({ json: { state: 'signed_in', remainingMs: 0 } }));
-  await page.route('**/api/v1/prism-aac/billing', route => route.fulfill({ json: {
+  await page.route(/\/api\/v1\/prism-aac\/billing(?:\?.*)?$/, route => route.fulfill({ json: {
     userId: 'signout-test', enabled: true, hasCloudAccess: false, includedWithSynalux: false, betaExempt: false,
     transitionEndsAt: null, channels: [], manageChannel: null, purchaseBlocked: false,
     offer: { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly', version: 'test-offer-v1',

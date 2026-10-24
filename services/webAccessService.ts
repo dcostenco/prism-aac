@@ -6,7 +6,8 @@ export interface WebAccess {
 }
 const ACCESS_STATES = new Set(['disabled', 'signed_in', 'preview', 'sign_in_required']);
 const ACCESS_ERROR = 'Sign-in status could not be checked. Please reconnect and try again.';
-const MAX_PREVIEW_MS = 60_000;
+// Validation bound for the public response contract, never Cloud authorization.
+const MAX_PREVIEW_MS = 10 * 60_000;
 export const LOCAL_ACCESS_KEY = 'prism-aac-verified-local-access';
 export const LOCAL_ACCESS_CLEARED = 'prismAacLocalAccessCleared';
 let verifiedInMemory = false;

@@ -33,9 +33,10 @@ targets:
       - path: PrismAAC/Sources
         excludes:
           - "**/*.md"
+          - "Resources/offline.html"
     resources:
       - path: PrismAAC/Assets.xcassets
-      - path: PrismAAC/Resources/offline.html
+      - path: PrismAAC/Sources/Resources/offline.html
       - path: PrismAAC/Resources/prism-aac-1b7-q8.gguf
     info:
       path: PrismAAC/Info.plist

@@ -73,7 +73,6 @@ const AUTH_DRIFT_PATTERNS = [
 ];
 
 const VALIDATION_RETRY_ATTEMPTS = 5;
-const VALIDATION_RETRY_DELAY_MS = 250;
 const RETRYABLE_VALIDATION_REASONS = new Set([
   "missing_selector",
   "blank_canvas",
