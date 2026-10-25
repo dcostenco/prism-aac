@@ -108,6 +108,11 @@ final class AACStoreKitTests: XCTestCase {
         XCTAssertEqual(again["trialEndsAt"] as? String, date, "Refreshing must not move the trial clock")
         let otherAccount = try await store.product(accountToken: UUID())
         XCTAssertNil(otherAccount["trialEndsAt"], "A shared Apple account must not expose another AAC account's date")
+        XCTAssertEqual(otherAccount["introductoryOfferEligible"] as? Bool, false,
+            "Switching AAC accounts must not reoffer a trial on an active Apple subscription")
+        let unbound = try await store.product()
+        XCTAssertEqual(unbound["introductoryOfferEligible"] as? Bool, false)
+        XCTAssertNil(unbound["trialEndsAt"], "An unbound offer query must not reveal the owner's trial date")
     }
 
     func testPurchaseRemainsRecoverableUntilDeliveryAcknowledgement() async throws {

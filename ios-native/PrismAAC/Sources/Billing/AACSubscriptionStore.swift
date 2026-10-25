@@ -58,16 +58,18 @@ final class AACSubscriptionStore {
             "introductoryTrialDays": days]
         // Transaction dates are display-only. The private service still verifies
         // and owns access. Never display another AAC account's trial on a shared device.
-        if let accountToken {
-            for await verification in Transaction.currentEntitlements {
-                guard case .verified(let transaction) = verification,
-                      transaction.productID == product.id, transaction.appAccountToken == accountToken,
-                      transaction.revocationDate == nil, let expires = transaction.expirationDate,
-                      expires > .now else { continue }
-                if #available(iOS 17.2, *), transaction.offer?.type == .introductory,
-                   transaction.offer?.paymentMode == .freeTrial {
-                    result["trialEndsAt"] = ISO8601DateFormatter().string(from: expires)
-                }
+        for await verification in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = verification,
+                  transaction.productID == product.id,
+                  transaction.revocationDate == nil, let expires = transaction.expirationDate,
+                  expires > .now else { continue }
+            // Eligibility can lag a completed purchase. An active Apple subscription
+            // cannot start another introductory offer, even on a different AAC account.
+            result["introductoryOfferEligible"] = false
+            guard let accountToken, transaction.appAccountToken == accountToken else { continue }
+            if #available(iOS 17.2, *), transaction.offer?.type == .introductory,
+               transaction.offer?.paymentMode == .freeTrial {
+                result["trialEndsAt"] = ISO8601DateFormatter().string(from: expires)
             }
         }
         return result

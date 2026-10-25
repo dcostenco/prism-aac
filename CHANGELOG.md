@@ -1,5 +1,26 @@
 # PrismAAC Changelog
 
+## [1.9.3] - Unreleased — Native billing recovery and communication access
+
+Native iPhone, iPad and Watch build 56 is in preparation; it has not been
+uploaded or submitted to the App Store.
+
+- Recover one encrypted, device-only billing draft for up to 75 minutes after
+  an app restart; clear it after recovery, sign-out or an account change.
+- Preserve communication through billing navigation, identity outages and
+  offline fallback. Boards, saved phrases, cached/device speech, on-device AI
+  and emergency communication remain available without a subscription.
+- Route subscription management on Mac by the verified transaction environment,
+  showing test guidance for Sandbox transactions while retaining the native
+  subscription sheet on iPhone and iPad.
+- Prevent a delayed StoreKit eligibility response from offering another trial
+  while a verified Apple subscription is active, including after switching AAC
+  accounts; keep the original trial date private to its owning account.
+- Preserve the bundled iOS offline page, app icons and shared picture library
+  when regenerating the Xcode project, with checks for Apple sign-in and
+  matching iOS/Watch release versions.
+- Keep the 14-day opt-in Cloud trial and existing paywall settings unchanged.
+
 ## [1.9.0] - 2026-09-08 — Cloud subscription, persistent speech cache, 25 languages
 
 Web (synalux.ai/prism-aac) and iOS 1.9.0 (build 53).
