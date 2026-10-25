@@ -7,11 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		50FF3A29D30F48CD5AEDB980 /* BillingDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030F3B04B07BF655073558D8 /* BillingDraftTests.swift */; };
-		5C0B04DB59BB47C4959EC6FD /* AACPictureLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E67BEC3DC14054BF5DDEC3 /* AACPictureLibrary.swift */; };
-		AC1121207B4465D06CA7CC27 /* OfflineWatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC2B537FBFE9AFBA34D4E7A /* OfflineWatchTests.swift */; };
 		0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE9F6102290192A69EA33F /* WatchTTS.swift */; };
 		12D45E7B40FD87921C2E498C /* AppIcon46x46@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */; };
+		13166181EE5898EB1AEF34F2 /* AACPictureLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED74F4373A2B8985C0968487 /* AACPictureLibrary.swift */; };
 		13FA82972CFC073092E77BB7 /* PhraseSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA891B441091DCDA4FC123A /* PhraseSpeaker.swift */; };
 		15329694952B810BB933A054 /* AppIcon24x24@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B665BC61F5A2CB0E5F7A9D6C /* AppIcon24x24@2x.png */; };
 		16C92F9D1626ED8AD8FDBC2D /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51300DB32F4B39E077974619 /* OnboardingView.swift */; };
@@ -32,6 +30,7 @@
 		3F4FDC469542E9A9D39C391F /* WatchLayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */; };
 		45F15F15FE63465B2ED9A84C /* DatadogLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7470815699E3F5011B3436C /* DatadogLogger.swift */; };
 		4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */; };
+		50FF3A29D30F48CD5AEDB980 /* BillingDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030F3B04B07BF655073558D8 /* BillingDraftTests.swift */; };
 		520CBFCB73C47A12E8E6AFE3 /* BedsideModeExtendedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */; };
 		555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */; };
 		5A3B7E03AFE8DE8F8E05A555 /* CrisisFilterProofTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F796E5D650863E87BBD1B18 /* CrisisFilterProofTests.swift */; };
@@ -63,12 +62,15 @@
 		A761744803E81B1102D1B58A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C616FA71B6C3F3227FC90 /* ContentView.swift */; };
 		A7E2FBB0D485DD0753609E0D /* AppIcon29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */; };
 		A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */; };
+		AC34010D330473F40E87A3AB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 247F6A618DF47E3C102F0356 /* Assets.xcassets */; };
 		AEF9DA886ECAEB3F6AC80C0C /* DatadogCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8F650B487BBFAB451AC07AAB /* DatadogCore */; };
 		AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514A2FD3A0BC693D56606896 /* LLMEngine.swift */; };
 		BC2DEA033D504DFE89AD51F5 /* ShortcutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B927159177F5F825EBE1CEA0 /* ShortcutDelegate.swift */; };
 		BC74D841F1239D8358B195CA /* AppStoreScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E756609B993B514F971E39F /* AppStoreScreenshots.swift */; };
 		BD48CFC0BB74B04161F4F234 /* AppIcon1024x1024.png in Resources */ = {isa = PBXBuildFile; fileRef = 996E43914516CE515BD9BB2E /* AppIcon1024x1024.png */; };
 		BF20DAD3065444218DAAC3D8 /* AACSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 9A76C7E6E7970C80C7E6168E /* AACSubscriptions.storekit */; };
+		C42E6E711EED305BDDA9AB5B /* OfflineWatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C2EF15621EFE4DA4485FE5E /* OfflineWatchTests.swift */; };
+		CE10B904D2298B300FAA7F0F /* AACPictureLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED74F4373A2B8985C0968487 /* AACPictureLibrary.swift */; };
 		D77E71A3AFF973A5D7A80182 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50392198C3596E4E3CAA44 /* KeychainHelper.swift */; };
 		DD3E80F91C7B8C4E1B48D784 /* AACSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 9A76C7E6E7970C80C7E6168E /* AACSubscriptions.storekit */; };
 		DE76830C66CD657FA386D5D8 /* SmolLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B974BD455A3291D82E49CE /* SmolLMEngine.swift */; };
@@ -82,13 +84,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		B0997EFA9512A0016C5B2425 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 94B38DF5C167816F45B98216 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = C059824D983FDADEE5E3C89D;
-			remoteInfo = PrismAACWatch;
-		};
 		79F1897122443ED3CA3471A6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 94B38DF5C167816F45B98216 /* Project object */;
@@ -102,6 +97,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 37F3B4323FACF28FDB1C7BA2;
 			remoteInfo = PrismAAC;
+		};
+		E3B4A119DFAB4DCA9123BC37 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 94B38DF5C167816F45B98216 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C059824D983FDADEE5E3C89D;
+			remoteInfo = PrismAACWatch;
 		};
 		E4C3FDECB7C5552D302DB2C1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -127,15 +129,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		030F3B04B07BF655073558D8 /* BillingDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingDraftTests.swift; sourceTree = "<group>"; };
-		A7E67BEC3DC14054BF5DDEC3 /* AACPictureLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACWatch/Sources/Resources/AACPictureLibrary.swift; sourceTree = SOURCE_ROOT; };
-		018E5C5A5E850B4E8F5302C0 /* PrismAACWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrismAACWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		CFC2B537FBFE9AFBA34D4E7A /* OfflineWatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineWatchTests.swift; sourceTree = "<group>"; };
 		009D02A4704E643484C64147 /* AACStoreKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACStoreKitTests.swift; sourceTree = "<group>"; };
 		014C80C26C6E4BD11C430E8E /* MonetizationSimulatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonetizationSimulatorTests.swift; sourceTree = "<group>"; };
+		030F3B04B07BF655073558D8 /* BillingDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingDraftTests.swift; sourceTree = "<group>"; };
 		0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@3x.png"; sourceTree = "<group>"; };
 		1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEmergencyManager.swift; sourceTree = "<group>"; };
 		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
+		247F6A618DF47E3C102F0356 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		27F621FF903791DF9713E9E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon46x46@2x.png"; sourceTree = "<group>"; };
 		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -165,10 +165,12 @@
 		824CFF80AABA2799959262E4 /* SafetyFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilter.swift; sourceTree = "<group>"; };
 		893663D6FC6015F606DAC1E9 /* AIConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConsentView.swift; sourceTree = "<group>"; };
 		8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrismAACWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C2EF15621EFE4DA4485FE5E /* OfflineWatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineWatchTests.swift; sourceTree = "<group>"; };
 		95805409B214B9D6DF2076F7 /* AppIcon54x54@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon54x54@2x.png"; sourceTree = "<group>"; };
 		996E43914516CE515BD9BB2E /* AppIcon1024x1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIcon1024x1024.png; sourceTree = "<group>"; };
 		99E02A56FC22AA400043891E /* AppIcon98x98@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon98x98@2x.png"; sourceTree = "<group>"; };
 		9A76C7E6E7970C80C7E6168E /* AACSubscriptions.storekit */ = {isa = PBXFileReference; path = AACSubscriptions.storekit; sourceTree = "<group>"; };
+		9C7DF4E018C0211850E7E3CE /* PrismAACWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrismAACWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPictogramCards.swift; sourceTree = "<group>"; };
 		A7415B4A02CB4DA26893A619 /* WatchLLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLLMEngine.swift; sourceTree = "<group>"; };
 		A9608B96E043220F2C92F586 /* AppIcon108x108@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon108x108@2x.png"; sourceTree = "<group>"; };
@@ -193,6 +195,7 @@
 		E1B974BD455A3291D82E49CE /* SmolLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmolLMEngine.swift; sourceTree = "<group>"; };
 		E806C70DB42E2879A665E4C3 /* WatchStreamingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStreamingTests.swift; sourceTree = "<group>"; };
 		EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon44x44@2x.png"; sourceTree = "<group>"; };
+		ED74F4373A2B8985C0968487 /* AACPictureLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACPictureLibrary.swift; sourceTree = "<group>"; };
 		F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeSecurityPolicy.swift; sourceTree = "<group>"; };
 		F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACApp.swift; sourceTree = "<group>"; };
 		FBA891B441091DCDA4FC123A /* PhraseSpeaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhraseSpeaker.swift; sourceTree = "<group>"; };
@@ -216,6 +219,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		01887CA8366ED57E5AB81732 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				ED74F4373A2B8985C0968487 /* AACPictureLibrary.swift */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		18D635BB530A54414C7CFB29 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
@@ -255,14 +266,6 @@
 			path = PrismAACUITests;
 			sourceTree = "<group>";
 		};
-		43A69F0077A17C6E1E89988B /* PrismAACWatchUITests */ = {
-			isa = PBXGroup;
-			children = (
-				CFC2B537FBFE9AFBA34D4E7A /* OfflineWatchTests.swift */,
-			);
-			path = PrismAACWatchUITests;
-			sourceTree = "<group>";
-		};
 		27E260A2E20EED5FD7D47A08 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -273,6 +276,14 @@
 				B927159177F5F825EBE1CEA0 /* ShortcutDelegate.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		32292E5D0CE3DF3800E93611 /* PrismAACWatchUITests */ = {
+			isa = PBXGroup;
+			children = (
+				8C2EF15621EFE4DA4485FE5E /* OfflineWatchTests.swift */,
+			);
+			path = PrismAACWatchUITests;
 			sourceTree = "<group>";
 		};
 		3469B32C50BADE0129E9AE97 /* Billing */ = {
@@ -290,7 +301,7 @@
 				2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */,
 				81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */,
 				8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */,
-				018E5C5A5E850B4E8F5302C0 /* PrismAACWatchUITests.xctest */,
+				9C7DF4E018C0211850E7E3CE /* PrismAACWatchUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -298,6 +309,8 @@
 		50079412AC90BAE269F6364D /* PrismAAC */ = {
 			isa = PBXGroup;
 			children = (
+				247F6A618DF47E3C102F0356 /* Assets.xcassets */,
+				79B5A76BB920E2CEA4B68BE3 /* Resources */,
 				BF84A2F43F9820AD6D6409EE /* Sources */,
 				21B589C99A1546866494C0DE /* Tests */,
 			);
@@ -325,7 +338,6 @@
 		604F964895256A45797E94C1 /* PrismAACWatch */ = {
 			isa = PBXGroup;
 			children = (
-				A7E67BEC3DC14054BF5DDEC3 /* AACPictureLibrary.swift */,
 				7795A92B4E6D956D4CC34A5A /* Sources */,
 			);
 			path = PrismAACWatch;
@@ -356,11 +368,19 @@
 				969C8F21D16D5D15A3EF068F /* AI */,
 				59A0D9C574D82B5EA3441709 /* App */,
 				98093A83AD7EC30FE022A107 /* Emergency */,
+				01887CA8366ED57E5AB81732 /* Resources */,
 				18D635BB530A54414C7CFB29 /* Shared */,
 				51965D32F560CA8C415B64C0 /* Views */,
 				E970667AC8E75965175D46B2 /* WatchIcons */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		79B5A76BB920E2CEA4B68BE3 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		9447AA50B808C2BC223505DD /* Views */ = {
@@ -479,8 +499,8 @@
 				C9E23B3E9714B3C5BA2C8627 /* Packages */,
 				50079412AC90BAE269F6364D /* PrismAAC */,
 				25B2932001EBE7028330646D /* PrismAACUITests */,
-				43A69F0077A17C6E1E89988B /* PrismAACWatchUITests */,
 				604F964895256A45797E94C1 /* PrismAACWatch */,
+				32292E5D0CE3DF3800E93611 /* PrismAACWatchUITests */,
 				C61715FB16A043BE009B6616 /* TestResources */,
 				3810A000D727421B7A8621B9 /* Products */,
 			);
@@ -508,23 +528,22 @@
 			productReference = 81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		46BCF9A8F1FAA3E29669F610 /* PrismAACWatchUITests */ = {
+		32E7722D82C8685A127C123E /* PrismAACWatchUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 118080D6B6DD9E1FA6CB0CC3 /* Build configuration list for PBXNativeTarget "PrismAACWatchUITests" */;
+			buildConfigurationList = 604C6F5BF73D124132980141 /* Build configuration list for PBXNativeTarget "PrismAACWatchUITests" */;
 			buildPhases = (
-				695D4E5BF198BF355D2E54A2 /* Sources */,
-				D323AD199158266B9523677E /* Resources */,
+				AE5CC6992F4DBE5D5237BF0C /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				5B4C1427552D6818C6A2DF11 /* PBXTargetDependency */,
+				BBCB880D154284F496A5D770 /* PBXTargetDependency */,
 			);
 			name = PrismAACWatchUITests;
 			packageProductDependencies = (
 			);
 			productName = PrismAACWatchUITests;
-			productReference = 018E5C5A5E850B4E8F5302C0 /* PrismAACWatchUITests.xctest */;
+			productReference = 9C7DF4E018C0211850E7E3CE /* PrismAACWatchUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		37F3B4323FACF28FDB1C7BA2 /* PrismAAC */ = {
@@ -577,7 +596,7 @@
 			buildPhases = (
 				B349B71D3D5FD9432870AA63 /* Sources */,
 				604D2E3D24C8DC7EED136626 /* Resources */,
-				A5D29E2DC6A24674B954FB8C /* Install generated pictures */,
+				3F78E25AB3577BF1FFD7C0E6 /* Install generated pictures */,
 			);
 			buildRules = (
 			);
@@ -602,7 +621,7 @@
 					081C499743C163B60754C060 = {
 						TestTargetID = 37F3B4323FACF28FDB1C7BA2;
 					};
-					46BCF9A8F1FAA3E29669F610 = {
+					32E7722D82C8685A127C123E = {
 						TestTargetID = C059824D983FDADEE5E3C89D;
 					};
 				};
@@ -629,19 +648,12 @@
 				46A764FCF03891511096393D /* PrismAACTests */,
 				081C499743C163B60754C060 /* PrismAACUITests */,
 				C059824D983FDADEE5E3C89D /* PrismAACWatch */,
-				46BCF9A8F1FAA3E29669F610 /* PrismAACWatchUITests */,
+				32E7722D82C8685A127C123E /* PrismAACWatchUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		D323AD199158266B9523677E /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		2BAE74DA7698863003E9C490 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -687,6 +699,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				35D9A95BD14055A496098878 /* Assets.xcassets in Resources */,
+				AC34010D330473F40E87A3AB /* Assets.xcassets in Resources */,
 				64BFB93793BFBD59BD651173 /* offline.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -694,11 +707,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		A5D29E2DC6A24674B954FB8C /* Install generated pictures */ = {
+		3F78E25AB3577BF1FFD7C0E6 /* Install generated pictures */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
-			files = ();
+			files = (
+			);
+			inputFileListPaths = (
+			);
 			inputPaths = (
 				"$(SRCROOT)/../scripts/install-native-picture-pack.sh",
 				"$(SRCROOT)/../scripts/prepare-native-picture-pack.mjs",
@@ -716,6 +732,8 @@
 				"$(AAC_PICTURE_PACK_DIR)/pictures-0004.aacpack",
 			);
 			name = "Install generated pictures";
+			outputFileListPaths = (
+			);
 			outputPaths = (
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AACPictures.aacpack",
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/aacPictureManifest.json",
@@ -724,19 +742,11 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$SRCROOT/../scripts/install-native-picture-pack.sh\"\n";
+			shellScript = "/bin/sh \"$SRCROOT/../scripts/install-native-picture-pack.sh\"";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		695D4E5BF198BF355D2E54A2 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AC1121207B4465D06CA7CC27 /* OfflineWatchTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		100CF211900441E7098D2862 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -751,11 +761,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AE5CC6992F4DBE5D5237BF0C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C42E6E711EED305BDDA9AB5B /* OfflineWatchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B349B71D3D5FD9432870AA63 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5C0B04DB59BB47C4959EC6FD /* AACPictureLibrary.swift in Sources */,
+				13166181EE5898EB1AEF34F2 /* AACPictureLibrary.swift in Sources */,
 				D77E71A3AFF973A5D7A80182 /* KeychainHelper.swift in Sources */,
 				1B7A5CF4B9FB846133F1E17B /* WCSessionRouter.swift in Sources */,
 				A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */,
@@ -774,6 +792,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE10B904D2298B300FAA7F0F /* AACPictureLibrary.swift in Sources */,
 				A2378644AD87D49B61BC9290 /* AACPipeline.swift in Sources */,
 				75BFA621AB0F87F8C303727B /* AACSubscriptionStore.swift in Sources */,
 				7BF6F741042E8662EF9A0E09 /* AIConsentView.swift in Sources */,
@@ -813,11 +832,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		5B4C1427552D6818C6A2DF11 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = C059824D983FDADEE5E3C89D /* PrismAACWatch */;
-			targetProxy = B0997EFA9512A0016C5B2425 /* PBXContainerItemProxy */;
-		};
 		7E765695EA85381AD75FE2AD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 37F3B4323FACF28FDB1C7BA2 /* PrismAAC */;
@@ -833,47 +847,14 @@
 			target = 37F3B4323FACF28FDB1C7BA2 /* PrismAAC */;
 			targetProxy = 79F1897122443ED3CA3471A6 /* PBXContainerItemProxy */;
 		};
+		BBCB880D154284F496A5D770 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C059824D983FDADEE5E3C89D /* PrismAACWatch */;
+			targetProxy = E3B4A119DFAB4DCA9123BC37 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		E6506729C5D90E1760DA79A9 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchuitests";
-				SDKROOT = watchos;
-				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				TARGETED_DEVICE_FAMILY = 4;
-				TEST_TARGET_NAME = PrismAACWatch;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-			};
-			name = Debug;
-		};
-		5615F7413517C41A067A2A9D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchuitests";
-				SDKROOT = watchos;
-				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				TARGETED_DEVICE_FAMILY = 4;
-				TEST_TARGET_NAME = PrismAACWatch;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-			};
-			name = Release;
-		};
 		0D2FB979974D64CDFF7A9B89 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -891,6 +872,26 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PrismAAC.app/PrismAAC";
 			};
 			name = Release;
+		};
+		34CA75AB0F34329A0932A1CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchuitests";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = PrismAACWatch;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
 		};
 		360CF1468895472D6B4F4F86 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -990,10 +991,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.9.2;
+				MARKETING_VERSION = 1.9.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1068,13 +1069,33 @@
 			};
 			name = Debug;
 		};
+		93C2B2931A88173E7865AE02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchuitests";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = PrismAACWatch;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
 		ACCA8FB65EBB98661B0050B0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -1082,7 +1103,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.9.2;
+				MARKETING_VERSION = 1.9.3;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -1096,7 +1117,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -1104,7 +1125,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.9.2;
+				MARKETING_VERSION = 1.9.3;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -1116,10 +1137,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.9.2;
+				MARKETING_VERSION = 1.9.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1150,20 +1171,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		118080D6B6DD9E1FA6CB0CC3 /* Build configuration list for PBXNativeTarget "PrismAACWatchUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E6506729C5D90E1760DA79A9 /* Debug */,
-				5615F7413517C41A067A2A9D /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
 		287B58E9C7C10FCE9347EF19 /* Build configuration list for PBXProject "PrismAAC" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				890A9F6DD7A61A07007D4CCE /* Debug */,
 				5A494470A9CF40DCBB73ED59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		604C6F5BF73D124132980141 /* Build configuration list for PBXNativeTarget "PrismAACWatchUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				34CA75AB0F34329A0932A1CF /* Debug */,
+				93C2B2931A88173E7865AE02 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

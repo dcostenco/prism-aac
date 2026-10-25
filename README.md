@@ -26,6 +26,11 @@ Part of the [Synalux platform](https://synalux.ai).
 
 ### Native apps
 
+**Next native update: 1.9.3 (build 56), in preparation.** Adds encrypted billing
+draft recovery, preserves communication through billing and identity outages,
+and updates Mac subscription management. The 14-day opt-in trial is unchanged.
+This build has not been uploaded or submitted to the App Store.
+
 <p align="center">
   <img src="docs/screenshots/ios-iphone.png" alt="PrismAAC on iPhone" width="220" />
   <img src="docs/screenshots/ios-ipad.png" alt="PrismAAC on iPad" width="360" />

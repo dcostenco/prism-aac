@@ -34,6 +34,17 @@ test('project regeneration preserves offline picture packaging and its acceptanc
     assert.equal(generated.status, 0, generated.stdout + generated.stderr);
     const projectPath = path.join(native, 'PrismAAC.xcodeproj');
     const { objects } = plistJson(path.join(projectPath, 'project.pbxproj'));
+    const ios = Object.values(objects).find(object => object.isa === 'PBXNativeTarget' && object.name === 'PrismAAC');
+    assert.ok(ios, 'The iOS communication app must remain a target.');
+    const iosResources = ios.buildPhases.map(id => objects[id]).find(object => object.isa === 'PBXResourcesBuildPhase');
+    const iosResourceNames = iosResources.files.map(id => path.basename(objects[objects[id].fileRef].path));
+    assert.ok(iosResourceNames.includes('offline.html'), 'A regenerated iOS app must retain its bundled offline communication page.');
+    assert.ok(iosResourceNames.includes('Assets.xcassets'), 'The iOS app icon must survive regeneration.');
+    assert.ok(!iosResourceNames.includes('prism-aac-1b7-q8.gguf'),
+      'The fixture omits optional model weights; regeneration must not create a missing-file copy step.');
+    const iosSources = ios.buildPhases.map(id => objects[id]).find(object => object.isa === 'PBXSourcesBuildPhase');
+    assert.equal(iosSources.files.filter(id => path.basename(objects[objects[id].fileRef].path) === 'AACPictureLibrary.swift').length, 1,
+      'The iOS fallback must compile exactly one copy of its shared picture library.');
     const watch = Object.values(objects).find(object => object.isa === 'PBXNativeTarget' && object.name === 'PrismAACWatch');
     assert.ok(watch, 'The independently running Watch app must remain a target.');
     const phase = watch.buildPhases.map(id => objects[id]).find(object => object.name === 'Install generated pictures');
@@ -48,6 +59,14 @@ test('project regeneration preserves offline picture packaging and its acceptanc
     assert.match(scheme, /<TestAction[\s\S]*BlueprintName = "PrismAACWatchUITests"/);
     assert.deepEqual(plistJson(path.join(native, 'PrismAAC/Info.plist')).WKAppBoundDomains, EXPECTED_DOMAINS,
       'The generated iOS wrapper must retain trusted origins for its offline service worker.');
+    assert.deepEqual(plistJson(path.join(native, 'PrismAAC/PrismAAC.entitlements'))['com.apple.developer.applesignin'], ['Default'],
+      'Regeneration must not remove the Apple sign-in capability.');
+    for (const app of ['PrismAAC', 'PrismAACWatch']) {
+      const before = plistJson(path.join(ROOT, 'ios-native', app, 'Info.plist'));
+      const generated = plistJson(path.join(native, app, 'Info.plist'));
+      assert.equal(generated.CFBundleShortVersionString, before.CFBundleShortVersionString, `${app} release version`);
+      assert.equal(generated.CFBundleVersion, before.CFBundleVersion, `${app} release build`);
+    }
     const watchResources = watch.buildPhases.map(id => objects[id]).find(object => object.isa === 'PBXResourcesBuildPhase');
     const resourceNames = watchResources.files.map(id => objects[objects[id].fileRef].path);
     assert.ok(resourceNames.includes('aacTranslations.json'), 'Watch translations must ship with the regenerated app.');

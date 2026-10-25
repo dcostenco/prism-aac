@@ -35,7 +35,7 @@ final class MonetizationSimulatorTests: XCTestCase {
         app = XCUIApplication()
         app.launchEnvironment["PRISM_AAC_DEV_PORT"] = "6947"
         // Existing preference keys skip unrelated first-run consent screens.
-        app.launchArguments = ["-onboarding_complete", "YES", "-ai_consent_accepted", "YES", "-ai_declined", "YES"]
+        app.launchArguments = ["-UITEST_MODE", "-onboarding_complete", "YES", "-ai_consent_accepted", "YES", "-ai_declined", "YES"]
         app.launch()
         XCTAssertTrue(web.buttons["Settings"].waitForExistence(timeout: 25))
     }
@@ -94,7 +94,7 @@ final class MonetizationSimulatorTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(100))
         }
         XCTAssertTrue(fresh, "An empty composer alone cannot prove fresh account recovery ran")
-        openAccount()
+        try openAccount()
         XCTAssertTrue(web.staticTexts["Cloud access is active on your account."].waitForExistence(timeout: 15))
         web.buttons["Close settings"].tap()
         let composer = web.otherElements.matching(NSPredicate(format: "label BEGINSWITH %@", "Message text")).firstMatch
@@ -102,22 +102,38 @@ final class MonetizationSimulatorTests: XCTestCase {
         XCTAssertEqual(composer.staticTexts.count, 0, "The accessible message status must have no composed text after recovery is consumed")
     }
 
-    private func openAccount() {
+    private func openAccount() throws {
         web.buttons["Settings"].tap()
+        guard web.buttons["Close settings"].waitForExistence(timeout: 10) else {
+            capture("settings-unreachable")
+            throw NSError(domain: "AACAccountNavigation", code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Settings must open before account navigation"])
+        }
         let account = web.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Synalux Account")).firstMatch
         for _ in 0..<12 {
             if account.exists && account.isHittable { break }
-            web.swipeUp()
+            web.swipeUp(velocity: .slow)
         }
-        XCTAssertTrue(account.isHittable, "Account section must be reachable")
+        guard account.isHittable else {
+            capture("account-unreachable")
+            throw NSError(domain: "AACAccountNavigation", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Account section must be reachable"])
+        }
         account.tap()
     }
 
     func testNativeCommunicationRemainsAvailableBeyondWebPreview() async throws {
+        if !web.buttons["H"].exists {
+            web.buttons.matching(NSPredicate(format: "label CONTAINS %@", "KB")).firstMatch.tap()
+        }
         let h = web.buttons["H"]
-        XCTAssertTrue(h.waitForExistence(timeout: 5))
+        guard h.waitForExistence(timeout: 10) else {
+            XCTFail("The visible Keyboard action must expose typing"); return
+        }
+        web.buttons["Delete"].press(forDuration: 1.6)
         h.tap()
         web.buttons["I"].tap()
+        XCTAssertTrue(web.staticTexts["hi"].waitForExistence(timeout: 5))
         // Both MessageBar and Keyboard expose Speak. Select the keyboard's
         // final Speak element explicitly instead of an ambiguous label query.
         let speak = try XCTUnwrap(web.buttons.matching(identifier: "Speak").allElementsBoundByIndex.last)
@@ -127,6 +143,7 @@ final class MonetizationSimulatorTests: XCTestCase {
         try await Task.sleep(for: .seconds(62))
         XCTAssertTrue(web.buttons["Settings"].exists)
         XCTAssertTrue(web.buttons["H"].isHittable)
+        XCTAssertTrue(web.staticTexts["hi"].exists, "The composed message must survive the expired-preview wait")
         XCTAssertFalse(web.staticTexts["Sign in to continue using Prism AAC"].exists)
         capture("simulator-after-one-minute")
     }
@@ -146,7 +163,7 @@ final class MonetizationSimulatorTests: XCTestCase {
         web.buttons["I"].tap()
         XCTAssertTrue(web.staticTexts["hi"].waitForExistence(timeout: 5))
         capture("stripe-board-before")
-        openAccount()
+        try openAccount()
         let manage = web.buttons["Manage subscription"]
         XCTAssertTrue(manage.waitForExistence(timeout: 20))
         for _ in 0..<6 {
@@ -181,7 +198,7 @@ final class MonetizationSimulatorTests: XCTestCase {
         web.buttons["Delete"].press(forDuration: 1.6)
         for letter in ["H", "E", "L", "P"] { web.buttons[letter].tap() }
         XCTAssertTrue(web.staticTexts["help"].waitForExistence(timeout: 5))
-        openAccount()
+        try openAccount()
         let manage = web.buttons["Manage subscription"]
         XCTAssertTrue(manage.waitForExistence(timeout: 20))
         for _ in 0..<6 {
@@ -334,7 +351,7 @@ final class MonetizationSimulatorTests: XCTestCase {
 
     @available(iOS 17.2, *)
     func testApplePurchaseAndRelaunchRecoveryThroughNativeBridge() async throws {
-        openAccount()
+        try openAccount()
         let purchase = web.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Start 14-day trial with Apple")).firstMatch
         XCTAssertTrue(purchase.waitForExistence(timeout: 20), "Real StoreKit product must reach the web purchase UI")
         for _ in 0..<6 {
@@ -358,7 +375,7 @@ final class MonetizationSimulatorTests: XCTestCase {
         app.terminate()
         app.launch()
         XCTAssertTrue(web.buttons["Settings"].waitForExistence(timeout: 20))
-        openAccount()
+        try openAccount()
         XCTAssertTrue(active.waitForExistence(timeout: 20))
         XCTAssertTrue(web.staticTexts["Cloud subscription · Active"].exists)
         XCTAssertFalse(web.staticTexts["Free"].exists)
