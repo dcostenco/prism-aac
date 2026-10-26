@@ -57,15 +57,15 @@ Inworld TTS 나레이션과 함께 모든 주요 기능을 보여주는 30초 �
 
 | 장면 | 기능 | 스크린샷 |
 |---|---|---|
-| **홈** — 어구 탭 | 22개 카테고리의 픽토그램 보드, 읽기 버튼 | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
-| **카테고리** | 도움, 음식, 장소, 감정을 위한 빠른 어구 | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **홈** — 어구 탭 | 카테고리와 읽기 버튼이 있는 그림 보드 | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **카테고리** | 대명사 및 범주별 어휘 | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
 | **AI 채팅** | 메시지 작성, 대화 연습 | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
-| **비상 알림** | 원탭 간병인/간호사 호출 | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **비상 알림** | 보호자 알림 확인 또는 취소 | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
 | **일정** | 시각적 일일 루틴 — 아침, 학교, 점심, 잠자리 | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
 | **게임** | 버블 팝, 색상 찾기, 짝 맞추기, 예/아니오, 완성하기 | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
-| **수학 및 학업** | 힌트, 채점, 풀이 + 숫자 패드가 포함된 적응형 수학 | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
-| **머리 및 시선 추적** | 카메라 기반 머무르기 커서, 시선 제어, 보정 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
-| **12개 언어** | 영어, 스페인어, 프랑스어, 러시아어, 일본어, 한국어, 중국어, 아랍어 등 | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
+| **수학 및 학업** | 수학 캔버스와 과목별 키보드 | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **입력 모드** | 카메라 입력 및 접근성 제어 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **언어** | 언어 선택 및 현지화된 인터페이스 | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -83,7 +83,7 @@ Inworld TTS 나레이션과 함께 모든 주요 기능을 보여주는 30초 �
 | 🏪 **마켓플레이스** | 음성 팩, 어휘 팩, 게임 팩 | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **컴포트 플레이어** | 병원 입원 환자를 위한 침상 미디어 플레이어 | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **침상 모드** | 거치대 사용 / 누워있는 상태를 위한 전체 화면 AI 채팅 | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **시각적 컨텍스트** | 카메라인식 사물 → 관련 어구 추천 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👁 **시각적 컨텍스트** | 설정의 카메라 및 비전 옵션 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | 👋 **핸즈프리** | 머리 및 손 제스처 인식 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | ⚙️ **설정** | 25개 언어, 운동 장애 편의 기능, 음성 선택기 + 음성 캐시 | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **클라우드 음성 및 AI** | 자연스러운 음성 + 클라우드 AI를 위한 선택적 월 US$4.99 제공량 | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
@@ -877,7 +877,7 @@ AAC 사용자의 표현 방식에 맞춰 작동하는 기기 내 및 클라우�
 ### 🎮 게임
 치료 기법에 기반한 12가지 AAC 전용 게임입니다. 단순한 재미가 아닌 **소통 능력 향상을 목적으로 개발**되었습니다. 각 게임은 발화 시도와 정확도를 기록하여 적응형 학습 엔진이 다음에 필요한 적절한 게임을 추천할 수 있도록 돕습니다.
 
-![9개 게임 타일이 포함된 게임 패널](../../docs/screenshots/2026-10/games.png)
+![12개 게임 타일이 포함된 게임 패널](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>12가지 게임 및 기술 세부사항</strong></summary>
@@ -1122,7 +1122,7 @@ Chrome 주소창에 `chrome://extensions`를 입력하고, 우측 상단 **개�
 ### ⚙️ 설정
 25개 언어 / 28개 지역 지원, 테마 선택 (라이트 / 다크 / 고대비), 그리드 크기 조절 (4–20 타일), 운동 편의 기능 (수학 누름 시간 설정, 2회 탭 확대, 머리 추적 누름 시간, 제스처 민감도, 영점 이탈 자동 정지), 음성 선택기 (전체 무료 제공), 음성 캐시 설정 및 관리, AI 자동 보정 켜기/끄기, 알림 설정, 도구 모음 맞춤 구성, 역사 지역 선택, Cloud 요금제가 포함된 Synalux 계정 관리를 지원합니다.
 
-![설정 — 언어 선택기 및 테마 전환 버튼](../../docs/screenshots/2026-10/settings.png)
+![설정 — 카테고리, 격자 크기 및 테마 설정](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>수학 및 접근성 설정</strong></summary>

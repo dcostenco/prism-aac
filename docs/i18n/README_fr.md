@@ -57,15 +57,15 @@ Vidéo de 30 secondes présentant toutes les fonctionnalités majeures avec narr
 
 | Scène | Fonctionnalité | Capture d'écran |
 |---|---|---|
-| **Accueil** — appuyer sur les phrases | Tableau de pictogrammes avec 22 catégories, bouton Parler | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
-| **Catégories** | Phrases rapides pour Aide, Nourriture, Lieux, Émotions | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **Accueil** — appuyer sur les phrases | Tableau d’images avec catégories et bouton Parler | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Catégories** | Pronoms et autres éléments de vocabulaire classés par catégorie | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
 | **Chat IA** | Composer des messages, pratiquer des conversations | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
-| **Alerte d'urgence** | Appel de l'aidant/infirmier en un seul geste | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Alerte d'urgence** | Confirmer ou annuler une alerte à l’aidant | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
 | **Emploi du temps** | Routines quotidiennes visuelles — matin, école, déjeuner, coucher | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
 | **Jeux** | Éclater des bulles, Chasse aux couleurs, Associer, Oui/Non, Compléter | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
-| **Maths & École** | Maths adaptatives avec Indice, Vérifier, Résoudre + pavé numérique | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
-| **Poursuite oculaire & céphalique** | Curseur à fixation par caméra, contrôle du regard, étalonnage | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
-| **12 Langues** | Anglais, Espagnol, Français, Russe, Japonais, Coréen, Chinois, Arabe et plus | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
+| **Maths & École** | Canvas de mathématiques et claviers par matière | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **Modes de saisie** | Saisie par caméra et commandes d’accessibilité | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **Langues** | Choix de la langue et interface localisée | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -83,7 +83,7 @@ Vidéo de 30 secondes présentant toutes les fonctionnalités majeures avec narr
 | 🏪 **Boutique** | Packs de voix, de vocabulaire, de jeux | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Lecteur Réconfort** | Lecteur multimédia de chevet pour patients hospitalisés | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Mode Chevet** | Chat IA en plein écran pour téléphone sur support / utilisation allongée | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Contexte visuel** | La caméra détecte les objets → suggère des phrases adaptées | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👁 **Contexte visuel** | Options de caméra et de vision dans Paramètres | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | 👋 **Mains libres** | Reconnaissance des mouvements de la tête + gestes de la main | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | ⚙️ **Paramètres** | 25 langues, adaptations motrices, sélecteur de voix + cache vocal | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Synthèse & IA Cloud** | Forfait optionnel à 4,99 US$/mois pour voix naturelles + IA cloud | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
@@ -879,7 +879,7 @@ Emploi du temps visuel "d'abord-ensuite" pour accompagner les routines et les tr
 ### 🎮 Jeux
 12 jeux de CAA conçus sur des bases thérapeutiques. Élaborés pour encourager la communication, **non pour occuper l'écran**. Chaque jeu enregistre les productions verbales + la précision pour permettre au moteur adaptatif de proposer le jeu le plus adapté par la suite.
 
-![Panneau de jeux avec 9 tuiles de jeux](../../docs/screenshots/2026-10/games.png)
+![Panneau de jeux avec 12 tuiles de jeux](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>Les 12 jeux + détails techniques</strong></summary>
@@ -1124,7 +1124,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ### ⚙️ Paramètres
 25 langues / 28 déclinaisons régionales, thèmes (clair / sombre / haut contraste), taille de grille (4 à 20 tuiles), réglages moteurs (temps de maintien en maths, loupe à deux appuis, durée de fixation de la tête, sensibilité des gestes, désactivation automatique sur dérive), choix de la voix (gratuit pour tous), gestion et durée du cache vocal, autocorrection IA activée/désactivée, notifications, personnalisation de la barre d'outils, choix de la région pour l'histoire, Compte Synalux avec forfait Cloud.
 
-![Paramètres — choix de la langue + changement de thème](../../docs/screenshots/2026-10/settings.png)
+![Paramètres — catégories, taille de la grille et réglages du thème](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Paramètres de maths + accessibilité</strong></summary>

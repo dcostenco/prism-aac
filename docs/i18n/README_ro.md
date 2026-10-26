@@ -57,15 +57,15 @@ Videoclip de 30 de secunde care prezintă toate caracteristicile principale cu n
 
 | Scenă | Funcționalitate | Captură de ecran |
 |---|---|---|
-| **Acasă** — atinge expresii | Tablă cu pictagrame și 22 de categorii, buton Vorbește | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
-| **Categorii** | Expresii rapide pentru Ajutor, Mâncare, Locuri, Sentimente | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **Acasă** — atinge expresii | Tablă cu imagini, categorii și buton Vorbește | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Categorii** | Pronume și alte cuvinte organizate pe categorii | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
 | **Chat AI** | Compune mesaje, exersează conversații | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
-| **Alertă de Urgență** | Apelare printr-o singură atingere pentru îngrijitor/asistent | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Alertă de Urgență** | Confirmă sau anulează o alertă pentru îngrijitor | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
 | **Program** | Rutine zilnice vizuale — dimineață, școală, prânz, culcare | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
 | **Jocuri** | Sparge Bule, Vânătoare de Culori, Potrivește, Da/Nu, Completează | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
-| **Matematică și Școală** | Matematică adaptivă cu Indiciu, Verifică, Rezolvă + tastatură numerică | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
-| **Urmărire cap și ochi** | Cursor bazat pe fixarea privirii cu camera, control prin privire, calibrare | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
-| **12 Limbi** | Engleză, Spaniolă, Franceză, Rusă, Japoneză, Coreeană, Chineză, Arabă și altele | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
+| **Matematică și Școală** | Canvas de matematică și tastaturi pentru materii | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **Moduri de introducere** | Introducere prin cameră și controale de accesibilitate | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **Limbi** | Selectarea limbii și interfață localizată | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -83,7 +83,7 @@ Videoclip de 30 de secunde care prezintă toate caracteristicile principale cu n
 | 🏪 **Piață (Marketplace)** | Pachete de voci, pachete de vocabular, pachete de jocuri | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Player de Confort** | Player media la patul pacientului pentru spital | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Modul La Pat** | Chat AI pe ecran complet pentru utilizarea telefonului pe suport / culcat | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Context Vizual** | Camera detectează obiecte → sugerează expresii relevante | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👁 **Context Vizual** | Opțiuni pentru cameră și viziune în Setări | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | 👋 **Fără mâini** | Recunoaștere a mișcărilor capului și gesturilor mâinii | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | ⚙️ **Setări** | 25 de limbi, adaptări motorii, selector de voce + memorie cache pentru vorbire | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Vorbire și AI în Cloud** | Resursă opțională de 4,99 US$/lună pentru voci naturale + AI în cloud | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
@@ -883,7 +883,7 @@ Program vizual prima dată-apoi pentru suport în rutine și tranziții. Fiecare
 ### 🎮 Jocuri
 12 jocuri AAC bazate pe dovezi. Create pentru a preda comunicarea, **nu pentru timpul petrecut în fața ecranului**. Fiecare joc înregistrează enunțurile + precizia, astfel încât motorul adaptiv să poată sugera cel mai potrivit joc următor.
 
-![Panoul Jocuri cu 9 casete de jocuri](../../docs/screenshots/2026-10/games.png)
+![Panoul Jocuri cu 12 casete de jocuri](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>Cele 12 jocuri + detalii tehnice</strong></summary>
@@ -1128,7 +1128,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ### ⚙️ Setări
 25 de limbi / 28 de variante locale, temă (luminos / întunecat / contrast ridicat), dimensiune grilă (4–20 casete), adaptări motorii (menținere prin fixare la matematică, mărire prin două atingeri, fixare privire la urmărirea capului, sensibilitate gesturi, dezactivare automată la abatere), selector de voce (gratuit pentru toată lumea), utilizarea memoriei cache pentru vorbire și păstrarea datelor, autocorecție AI activată/dezactivată, notificări, personalizare bară de instrumente, selector regiune istorică, Cont Synalux cu planul Cloud.
 
-![Setări — selector de limbă + comutator temă](../../docs/screenshots/2026-10/settings.png)
+![Setări — categorii, dimensiunea grilei și controale pentru temă](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Setări de matematică + accesibilitate</strong></summary>

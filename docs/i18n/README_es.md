@@ -57,15 +57,15 @@ Vídeo de 30 segundos que muestra las principales funciones con narración de In
 
 | Escena | Función | Captura de pantalla |
 |---|---|---|
-| **Inicio** — tocar frases | Tablero de pictogramas con 22 categorías, botón Hablar | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
-| **Categorías** | Frases rápidas para Ayuda, Comida, Lugares, Sentimientos | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **Inicio** — tocar frases | Tablero de imágenes con categorías y botón Hablar | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Categorías** | Pronombres y otro vocabulario organizado por categorías | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
 | **Chat IA** | Redactar mensajes, practicar conversaciones | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
-| **Alerta de emergencia** | Llamada a cuidador/enfermero con un solo toque | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Alerta de emergencia** | Confirmar o cancelar una alerta al cuidador | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
 | **Horario** | Rutinas diarias visuales — mañana, escuela, almuerzo, hora de dormir | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
 | **Juegos** | Explotar burbujas, Caza de colores, Emparejar, Sí/No, Completar | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
-| **Matemáticas y escuela** | Matemáticas adaptativas con Pista, Comprobar, Resolver + teclado numérico | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
-| **Seguimiento cefálico y ocular** | Cursor por fijación basado en cámara, control ocular, calibración | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
-| **12 idiomas** | Inglés, español, francés, ruso, japonés, coreano, chino, árabe y más | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
+| **Matemáticas y escuela** | Lienzo de matemáticas y teclados por asignatura | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **Modos de entrada** | Entrada por cámara y controles de accesibilidad | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **Idiomas** | Selección de idioma e interfaz localizada | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -83,7 +83,7 @@ Vídeo de 30 segundos que muestra las principales funciones con narración de In
 | 🏪 **Mercado** | Paquetes de voces, de vocabulario y de juegos | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Reproductor de confort** | Reproductor multimedia de cabecera para pacientes hospitalizados | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Modo de cabecera** | Chat IA a pantalla completa para uso en soporte de teléfono o tumbado | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Contexto visual** | La cámara detecta objetos → sugiere frases relevantes | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👁 **Contexto visual** | Opciones de cámara y visión en Ajustes | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | 👋 **Manos libres** | Reconocimiento de gestos de cabeza y manos | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | ⚙️ **Ajustes** | 25 idiomas, adaptaciones motoras, selector de voz + caché de voz | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Voz e IA en la nube** | Plan opcional de 4,99 US$/mes para voces naturales e IA en la nube | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
@@ -878,7 +878,7 @@ Horario visual «primero-después» para el seguimiento de rutinas y transicione
 ### 🎮 Juegos
 12 juegos orientados al aprendizaje de la comunicación mediante CAA, **enfocados en el desarrollo del lenguaje**. Cada juego registra el progreso y la precisión para permitir al sistema recomendar las actividades más convenientes.
 
-![Panel de juegos con 9 tarjetas de acceso](../../docs/screenshots/2026-10/games.png)
+![Panel de juegos con 12 tarjetas de juego](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>Los 12 juegos + detalles técnicos</strong></summary>
@@ -1123,7 +1123,7 @@ ESCENA=tareas     CONF=0,80 FRASES=Ayuda por favor|No lo entiendo|Terminado    B
 ### ⚙️ Ajustes
 25 idiomas / 28 variantes regionales, tema (claro / oscuro / alto contraste), tamaño de cuadrícula (4 a 20 casillas), opciones de accesibilidad motora (tiempo de permanencia en matemáticas, ampliación en dos toques, tiempo de fijación en seguimiento de cabeza, sensibilidad de gestos, corrección de desviación), selector de voz (gratuito), gestión y uso de la caché de voz, autocorrección por IA, notificaciones, personalización de la barra de herramientas, región para el módulo de historia y gestión de la cuenta Synalux con el plan Cloud.
 
-![Ajustes — selector de idioma y tema](../../docs/screenshots/2026-10/settings.png)
+![Ajustes — categorías, tamaño de la cuadrícula y controles del tema](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Ajustes de matemáticas y accesibilidad</strong></summary>

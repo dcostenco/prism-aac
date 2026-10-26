@@ -57,15 +57,15 @@ Teil der [Synalux-Plattform](https://synalux.ai).
 
 | Szene | Funktion | Screenshot |
 |---|---|---|
-| **Startseite** — Phrasen antippen | Piktogramm-Tafel mit 22 Kategorien, Vorlesen-Button | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
-| **Kategorien** | Schnelle Phrasen für Hilfe, Essen, Orte, Gefühle | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **Startseite** — Phrasen antippen | Bildtafel mit Kategorien und Sprechen-Schaltfläche | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Kategorien** | Pronomen und weiterer kategorisierter Wortschatz | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
 | **KI-Chat** | Nachrichten verfassen, Gespräche üben | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
-| **Notruf-Alarm** | Pflegekraft-/Pflegepersonal-Ruf mit einem Tipp | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Notruf-Alarm** | Pflegealarm bestätigen oder abbrechen | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
 | **Tagesplan** | Visuelle Tagesroutinen — Morgen, Schule, Mittagessen, Schlafenszeit | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
 | **Spiele** | Seifenblasen platzen, Farbensuche, Zuordnen, Ja/Nein, Vervollständigen | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
-| **Mathe & Schule** | Adaptives Rechnen mit Hinweis, Prüfen, Lösen + Ziffernblock | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
-| **Kopf- & Blicksteuerung** | Kamerabasierter Verweilcursor, Blicksteuerung, Kalibrierung | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
-| **12 Sprachen** | Englisch, Spanisch, Französisch, Russisch, Japanisch, Koreanisch, Chinesisch, Arabisch & mehr | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
+| **Mathe & Schule** | Mathe-Canvas und Tastaturen für verschiedene Fächer | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **Eingabemodi** | Kameraeingabe und Bedienelemente für Barrierefreiheit | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **Sprachen** | Sprachauswahl und lokalisierte Oberfläche | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -83,7 +83,7 @@ Teil der [Synalux-Plattform](https://synalux.ai).
 | 🏪 **Marktplatz** | Sprachpakete, Vokabularpakete, Spielepakete | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Komfort-Player** | Medienplayer am Krankenbett für Patienten | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Bett-Modus** | Vollbild-KI-Chat für die Nutzung im Halter oder im Liegen | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Visueller Kontext** | Kamera erkennt Objekte → schlägt passende Sätze vor | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👁 **Visueller Kontext** | Kamera- und Visionsoptionen in den Einstellungen | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | 👋 **Freihändig** | Kopf- + Handgestenerkennung | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | ⚙️ **Einstellungen** | 25 Sprachen, motorische Anpassungen, Sprachauswahl + Sprachspeicher | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Cloud-Sprache und KI** | Optionales Guthaben für 4,99 US$/Monat für natürliche Stimmen + Cloud-KI | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
@@ -877,7 +877,7 @@ Visueller Zuerst-Dann-Tagesplan zur Unterstützung von Routinen + Übergängen. 
 ### 🎮 Spiele
 12 evidenzbasierte AAC-Spiele. Entwickelt, um Kommunikation zu lehren, **nicht für Bildschirmnutzung zum Zeitvertreib**. Jedes Spiel zeichnet Äußerungen + Genauigkeit auf, sodass die adaptive Engine das am besten passende nächste Spiel vorschlagen kann.
 
-![Spiele-Panel mit 9 Spielkacheln](../../docs/screenshots/2026-10/games.png)
+![Spiele-Panel mit 12 Spielkacheln](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>Die 12 Spiele + technische Details</strong></summary>
@@ -1122,7 +1122,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ### ⚙️ Einstellungen
 25 Sprachen / 28 Sprachräume, Design (Hell / Dunkel / Hoher Kontrast), Rastergröße (4–20 Kacheln), motorische Anpassungen (Mathematik-Haltezeit-Verweilen, Lupe mit zwei Tippern, Kopfsteuerungs-Verweilen, Gesten-Empfindlichkeit, automatische Drift-Deaktivierung), Stimmenauswahl (kostenlos für alle), Nutzung und Speicherung des Sprach-Caches, KI-Autokorrektur Ein/Aus, Benachrichtigungen, Anpassung der Werkzeugleiste, Auswahl der Geschichtsregion, Synalux-Konto mit dem Cloud-Tarif.
 
-![Einstellungen — Sprachauswahl + Design-Umschalter](../../docs/screenshots/2026-10/settings.png)
+![Einstellungen — Kategorien, Rastergröße und Design-Einstellungen](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Mathematik- + Barrierefreiheits-Einstellungen</strong></summary>

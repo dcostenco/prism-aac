@@ -57,15 +57,15 @@
 
 | 场景 | 功能 | 截图 |
 |---|---|---|
-| **首页** — 点击短语 | 拥有 22 个分类的象形图面板，朗读按钮 | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
-| **分类** | 求助、食物、地点、情绪的快捷短语 | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **首页** — 点击短语 | 带分类和朗读按钮的图片沟通板 | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **分类** | 代词及其他分类词汇 | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
 | **AI 对话** | 编写消息，练习对话 | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
-| **紧急警报** | 一键呼叫照护者/护士 | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **紧急警报** | 确认或取消照护者警报 | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
 | **日程表** | 视觉化日常作息 — 早晨、学校、午餐、睡前 | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
 | **游戏** | 戳气泡、寻找颜色、对对碰、是不是、完成句子 | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
-| **数学与学科** | 自适应数学，包含提示、检查、解答 + 数字键盘 | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
-| **头部与眼球追踪** | 基于摄像头的驻留光标、注视控制、校准 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
-| **12 种语言** | 英语、西班牙语、法语、俄语、日语、韩语、中文、阿拉伯语等 | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
+| **数学与学科** | 数学画布和学科键盘 | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **输入模式** | 摄像头输入和无障碍控制 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **语言** | 语言选择和本地化界面 | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -83,7 +83,7 @@
 | 🏪 **应用市场** | 语音包、词汇包、游戏包 | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **舒缓播放器** | 专为住院患者设计的床边媒体播放器 | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **床边模式** | 全屏 AI 对话，适用于手机支架/卧床使用 | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **视觉语境** | 摄像头识别物体 → 推荐相关短语 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👁 **视觉语境** | 设置中的摄像头和视觉选项 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | 👋 **无障碍手势** | 头部 + 手势识别 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | ⚙️ **设置** | 25 种语言、运动调节、语音选择器 + 语音缓存 | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **云端语音与 AI** | 可选的 4.99 美元/月配额，用于自然语音 + 云端 AI | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
@@ -883,7 +883,7 @@ Top-1 = 目标词汇位于第 1 个贴片。Top-5 = 目标词汇位于任意前 
 ### 🎮 游戏
 12 款基于循证医学的 AAC 游戏。专为沟通教学设计，**而非用于消磨屏幕时间**。每款游戏都会记录表达内容和准确率，以便自适应引擎推荐最契合的下一款游戏。
 
-![包含 9 个游戏贴片的游戏面板](../../docs/screenshots/2026-10/games.png)
+![包含 12 个游戏贴片的游戏面板](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>12 款游戏 + 技术细节</strong></summary>
@@ -1128,7 +1128,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ### ⚙️ 设置
 25 种语言 / 28 个地区版本、主题（浅色 / 深色 / 高对比度）、网格大小（4–20 个贴片）、运动调节（数学按压驻留、两次点击放大、头部追踪驻留、手势灵敏度、偏移自动禁用）、语音选择器（所有人免费）、语音缓存使用与保留、AI 自动纠错开关、通知设置、工具栏自定义、历史地区选择器，以及带 Cloud 计划的 Synalux 账号。
 
-![设置 — 语言选择器 + 主题切换](../../docs/screenshots/2026-10/settings.png)
+![设置 — 类别、网格大小和主题控件](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>数学 + 无障碍设置</strong></summary>

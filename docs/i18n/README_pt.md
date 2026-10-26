@@ -57,15 +57,15 @@ Vídeo de 30 segundos apresentando todos os principais recursos com narração I
 
 | Cena | Recurso | Captura de tela |
 |---|---|---|
-| **Início** — toque nas frases | Prancha de pictogramas com 22 categorias, botão Falar | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
-| **Categorias** | Frases rápidas para Ajuda, Comida, Lugares, Sentimentos | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **Início** — toque nas frases | Quadro de imagens com categorias e botão Falar | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Categorias** | Pronomes e outros vocabulários organizados por categoria | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
 | **Chat de IA** | Componha mensagens, pratique conversas | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
-| **Alerta de Emergência** | Chamada de cuidador/enfermeiro com um toque | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Alerta de Emergência** | Confirmar ou cancelar um alerta ao cuidador | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
 | **Rotina** | Rotinas diárias visuais — manhã, escola, almoço, dormir | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
 | **Jogos** | Estourar Bolhas, Caça às Cores, Combinar, Sim/Não, Complete a Frase | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
-| **Matemática e Escola** | Matemática adaptativa com Dica, Verificar, Resolver + teclado numérico | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
-| **Rastreamento Cefálico e Ocular** | Cursor de fixação por câmera, controle por olhar, calibração | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
-| **12 Idiomas** | Inglês, Espanhol, Francês, Russo, Japonês, Coreano, Chinês, Árabe e mais | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
+| **Matemática e Escola** | Canvas de matemática e teclados por disciplina | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **Modos de entrada** | Entrada por câmera e controles de acessibilidade | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **Idiomas** | Seleção de idioma e interface localizada | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -83,7 +83,7 @@ Vídeo de 30 segundos apresentando todos os principais recursos com narração I
 | 🏪 **Marketplace** | Pacotes de voz, pacotes de vocabulário, pacotes de jogos | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Tocador de Conforto** | Reprodutor de mídia de leito para pacientes hospitalizados | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Modo Leito** | Chat de IA em tela cheia para uso com celular no suporte / deitado | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Contexto Visual** | Câmera detecta objetos → sugere frases relevantes | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👁 **Contexto Visual** | Opções de câmera e visão nas Configurações | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | 👋 **Mãos livres** | Reconhecimento de gestos cefálicos + manuais | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | ⚙️ **Configurações** | 25 idiomas, adaptações motoras, seletor de voz + cache de fala | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Fala e IA em Nuvem** | Cota opcional de US$ 4,99/mês para voces naturais + IA em nuvem | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
@@ -878,7 +878,7 @@ Painel visual de rotinas "primeiro-depois" para apoio na organização de tarefa
 ### 🎮 Jogos
 12 jogos educativos voltados para CAA. Desenvolvidos para estimular o aprendizado da comunicação, **evitando o uso focado apenas em entretenimento de tela**. Cada jogo registra as expressões utilizadas e a taxa de acerto para que o mecanismo adaptativo possa sugerir a atividade mais adequada a seguir.
 
-![Painel de jogos com 9 opções visíveis](../../docs/screenshots/2026-10/games.png)
+![Painel de jogos com 12 opções visíveis](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>Os 12 jogos + detalhes técnicos</strong></summary>
@@ -928,7 +928,7 @@ Pacotes de voz (vozes Inworld, voz personalizada de familiares ou cuidadores), p
 ### 📄 Leitor de PDF
 Abra um documento em PDF, visualize um cartão por página e toque para ouvir a leitura com a voz configurada. Atividades escolares, comunicados, artigos — carregue o arquivo PDF e acompanhe por áudio sem necessidade de leitura direta na tela. Sem dependência do Adobe Reader; a conversão ocorre inteiramente no navegador.
 
-![Painel do Leitor de PDF — tela inicial com o botão "+ Abrir PDF"]](../../docs/screenshots/2026-10/pdf-reader.png)
+![Painel do Leitor de PDF — tela inicial com o botão "+ Abrir PDF"](../../docs/screenshots/2026-10/pdf-reader.png)
 
 <details>
 <summary><strong>Recursos + detalhes técnicos</strong></summary>
@@ -947,7 +947,7 @@ Abra um documento em PDF, visualize um cartão por página e toque para ouvir a 
 ### 👁 Leitor de Captura de Tela (OCR)
 Cole ou envie a foto de um exercício, imagem de página web ou foto de um livro — o texto reconhecido aparece ao lado da imagem. Toque em **▶ Falar** para ouvir o conteúdo ou em **↧ Enviar para barra** para ajustar o texto antes da leitura.
 
-![Painel do Leitor de Captura de Tela (OCR) — tela inicial com o botão "+ Abrir imagem"]](../../docs/screenshots/2026-10/ocr-reader.png)
+![Painel do Leitor de Captura de Tela (OCR) — tela inicial com o botão "+ Abrir imagem"](../../docs/screenshots/2026-10/ocr-reader.png)
 
 <details>
 <summary><strong>Recursos + detalhes técnicos</strong></summary>
@@ -1123,7 +1123,7 @@ CENÁRIO=estudos    CONFIANÇA=0.80 FRASES=Me ajuda, por favor|Não entendi|Pron
 ### ⚙️ Configurações
 25 idiomas / 28 variantes regionais, temas (claro / escuro / alto contraste), tamanho da grade (4 a 20 cartões), adaptações motoras (tempo de fixação para toque em matemática, ampliação em dois toques, tempo de fixação para rastreamento cefálico, sensibilidade de gestos, desativação por desvio), seletor de voz (gratuito para todos os usuários), uso de cache de fala, ativação de autocorreção por IA, notificações, personalização da barra de ferramentas, seletor de região histórica, Conta Synalux com o plano Cloud.
 
-![Configurações — seletor de idioma + opção de tema](../../docs/screenshots/2026-10/settings.png)
+![Configurações — categorias, tamanho da grade e controles de tema](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Configurações de matemática + acessibilidade</strong></summary>

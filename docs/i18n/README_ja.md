@@ -57,15 +57,15 @@ Inworld TTS ナレーション付きで、主要機能を30秒で紹介する動
 
 | シーン | 機能 | スクリーンショット |
 |---|---|---|
-| **ホーム** — フレーズをタップ | 22カテゴリのピクトグラムボード、読み上げボタン | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
-| **カテゴリ** | 助け、食べ物、場所、気持ちに関するクイックフレーズ | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **ホーム** — フレーズをタップ | カテゴリと読み上げボタン付きのピクチャーボード | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **カテゴリ** | 代名詞など、カテゴリ別に整理された語彙 | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
 | **AI チャット** | メッセージ作成、会話の練習 | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
-| **緊急アラート** | ワンタップで介護者/看護師を呼び出し | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **緊急アラート** | 介助者への緊急通知を確認またはキャンセル | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
 | **スケジュール** | 朝、学校、昼食、就寝などの視覚的日課 | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
 | **ゲーム** | バブルポップ、カラーハント、マッチイット、はい/いいえ、フィニッシュイット | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
-| **数学 & 学習** | ヒント、確認、解答機能 + テンキー付きの適応型数学 | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
-| **ヘッド & アイ トラッキング** | カメラベースの滞留カーソル、視線制御、キャリブレーション | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
-| **12言語** | 英語、スペイン語、フランス語、ロシア語、日本語、韓国語、中国語、アラビア語など | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
+| **数学 & 学習** | 数学キャンバスと各教科のキーボード | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **入力モード** | カメラ入力とアクセシビリティ操作 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **言語** | 言語の選択とローカライズされたインターフェース | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -83,7 +83,7 @@ Inworld TTS ナレーション付きで、主要機能を30秒で紹介する動
 | 🏪 **マーケットプレイス** | 音声パック、語彙パック、ゲームパック | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **コンフォートプレーヤー** | 入院患者向けのベッドサイドメディアプレーヤー | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **ベッドサイドモード** | スタンド固定や横になった状態での利用に特化したフルスクリーンAIチャット | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **ビジョンコンテキスト** | カメラが物体を検知 → 適切なフレーズを提案 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👁 **ビジョンコンテキスト** | 設定のカメラとビジョンのオプション | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | 👋 **ハンズフリー** | 頭部や手によるジェスチャー認識 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
 | ⚙️ **設定** | 25言語、運動機能の調整、音声選択 + 読み上げキャッシュ | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **クラウド音声 & AI** | 自然な音声とクラウドAIクレジットが使えるオプションの月額US$4.99プラン | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
@@ -879,7 +879,7 @@ AAC利用者の声に合わせて調整された、オンデバイス + クラ�
 ### 🎮 ゲーム
 エビデンスに基づいた12種類のAACゲーム。**スクリーンタイムを増やすためではなく**、コミュニケーションを学ぶために設計されています。各ゲームは発話内容と正確性を記録し、適応エンジンが次に最適なゲームを提案します。
 
-![9つのゲームタイルが表示されたゲームパネル](../../docs/screenshots/2026-10/games.png)
+![12個のゲームタイルが表示されたゲームパネル](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>12種類のゲーム + 技術的詳細</strong></summary>
@@ -1124,7 +1124,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=手伝って|わかりません|終わった 
 ### ⚙️ 設定
 25言語 / 28ロケール、テーマ（ライト / ダーク / ハイコントラスト）、グリッドサイズ（4〜20タイル）、運動機能の調整（数学キーの保持時間滞留、2段階拡大入力、ヘッドトラッキング滞留時間、ジェスチャー感度、位置ズレ自動解除）、音声選択（全ユーザー無料）、音声キャッシュの使用量と保持期間、AI自動修正のON/OFF、通知、ツールバーのカスタマイズ、歴史地域の選択、Cloudプランを含む Synalux アカウント。
 
-![設定 — 言語選択 + テーマ切り替え](../../docs/screenshots/2026-10/settings.png)
+![設定 — カテゴリ、グリッドサイズ、テーマの設定](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>数学 + アクセシビリティ設定</strong></summary>
