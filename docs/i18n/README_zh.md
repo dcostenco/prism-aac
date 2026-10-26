@@ -23,17 +23,17 @@
   <a href="../../TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Terms"></a>
 </p>
 
-![iPad 上的 Prism AAC 主画面 — 工具栏、输入框、五个预测词贴片以及完整 QWERTY 键盘（正式发布 Web 应用，1.9.0）](../../docs/screenshots/app-hero.png)
+![Prism AAC 当前网页应用中的图片沟通板](../../docs/screenshots/2026-10/ipad-landscape.png)
 
 ### 原生应用
 
 <p align="center">
-  <img src="../../docs/screenshots/ios-iphone.png" alt="iPhone 上的 PrismAAC" width="220" />
-  <img src="../../docs/screenshots/ios-ipad.png" alt="iPad 上的 PrismAAC" width="360" />
+  <img src="../../docs/screenshots/2026-10/native-iphone-typing.png" alt="iPhone 上的 PrismAAC 输入模式 — iOS 模拟器，版本 1.9.3 (56)" width="220" />
+  <img src="../../docs/screenshots/2026-10/native-ipad-typing.png" alt="iPad 上的 PrismAAC 输入模式 — iOS 模拟器，版本 1.9.3 (56)" width="360" />
   <img src="../../docs/screenshots/watch-ultra.png" alt="Apple Watch Ultra 上的 PrismAAC" width="120" />
 </p>
 
-<sub>iPhone 和 iPad 截帧捕获自运行正式发布 Web 应用的构建版本 1.9.0 (53)，2026-09-08。Watch 截帧取自 1.4.0。</sub>
+<sub>iPhone 和 iPad 截图：iOS 模拟器，版本 1.9.3 (56)，2026 年 10 月 25 日，输入模式。Apple Watch 图片来自版本 1.4.0。</sub>
 
 | 平台 | 状态 | 端侧 AI | 备注 |
 |----------|--------|-------------|-------|
@@ -51,19 +51,21 @@
 
 30 秒视频，配以 Inworld TTS 旁白，展现所有主要功能：
 
-https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
+[观看之前的预览视频](https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4)
+
+<sub>当前网页应用截图于 2026 年 10 月 26 日使用当前 Prism AAC 图片包拍摄，与之前的预览视频分开。 [截图说明](../../docs/screenshots/2026-10/capture-notes.md)。</sub>
 
 | 场景 | 功能 | 截图 |
 |---|---|---|
-| **首页** — 点击短语 | 拥有 22 个分类的象形图面板，朗读按钮 | <img src="../../docs/screenshots/appstore/ipad_home.png" width="200"> |
-| **分类** | 求助、食物、地点、情绪的快捷短语 | <img src="../../docs/screenshots/appstore/ipad_categories.png" width="200"> |
-| **AI 对话** | 编写消息，练习对话 | <img src="../../docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
-| **紧急警报** | 一键呼叫照护者/护士 | <img src="../../docs/screenshots/appstore/video/frame_03.png" width="200"> |
-| **日程表** | 视觉化日常作息 — 早晨、学校、午餐、睡前 | <img src="../../docs/screenshots/appstore/ipad_schedule.png" width="200"> |
-| **游戏** | 戳气泡、寻找颜色、对对碰、是不是、完成句子 | <img src="../../docs/screenshots/appstore/ipad_games.png" width="200"> |
-| **数学与学科** | 自适应数学，包含提示、检查、解答 + 数字键盘 | <img src="../../docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **头部与眼球追踪** | 基于摄像头的驻留光标、注视控制、校准 | <img src="../../docs/screenshots/appstore/video/frame_07.png" width="200"> |
-| **12 种语言** | 英语、西班牙语、法语、俄语、日语、韩语、中文、阿拉伯语等 | <img src="../../docs/screenshots/appstore/video/frame_08.png" width="200"> |
+| **首页** — 点击短语 | 拥有 22 个分类的象形图面板，朗读按钮 | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **分类** | 求助、食物、地点、情绪的快捷短语 | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **AI 对话** | 编写消息，练习对话 | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
+| **紧急警报** | 一键呼叫照护者/护士 | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **日程表** | 视觉化日常作息 — 早晨、学校、午餐、睡前 | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
+| **游戏** | 戳气泡、寻找颜色、对对碰、是不是、完成句子 | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
+| **数学与学科** | 自适应数学，包含提示、检查、解答 + 数字键盘 | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **头部与眼球追踪** | 基于摄像头的驻留光标、注视控制、校准 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **12 种语言** | 英语、西班牙语、法语、俄语、日语、韩语、中文、阿拉伯语等 | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -71,19 +73,19 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 
 | 模块 | 功能 | 预览 |
 |---|---|---|
-| 📂 **分类** | 适合非阅读者的 PECS 风格图片贴片 | <img src="../../docs/screenshots/panel-categories.png" width="120"> |
-| ⌨️ **输入与朗读** | 键盘 + 词汇预测 + 神经网络语音 | <img src="../../docs/screenshots/app-hero.png" width="120"> |
-| ✨ **AI 对话** | 专为 AAC 用户调校的端侧 + 云端助手 | <img src="../../docs/screenshots/panel-ai-chat.png" width="120"> |
-| 💬 **AAC 聊天** | 接收来自照护者 + 联系人的消息 | <img src="../../docs/screenshots/panel-aac-chat.png" width="120"> |
+| 📂 **分类** | 适合非阅读者的 PECS 风格图片贴片 | <img src="../../docs/screenshots/2026-10/ipad-landscape.png" width="120"> |
+| ⌨️ **输入与朗读** | 键盘 + 词汇预测 + 神经网络语音 | <img src="../../docs/screenshots/2026-10/keyboard.png" width="120"> |
+| ✨ **AI 对话** | 专为 AAC 用户调校的端侧 + 云端助手 | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="120"> |
+| 💬 **AAC 聊天** | 接收来自照护者 + 联系人的消息 | <img src="../../docs/screenshots/2026-10/aac-chat.png" width="120"> |
 | 🧮 **数学 + 学科** | 带有领域感知导师的网格画布 | <img src="../../docs/screenshots/math-canvas-typed.png" width="120"> |
-| 🗓 **日程表** | 视觉化“先…然后…”日常作息 | <img src="../../docs/screenshots/panel-schedule.png" width="120"> |
-| 🎮 **游戏** | 12 款康复辅助 AAC 游戏 | <img src="../../docs/screenshots/panel-games.png" width="120"> |
+| 🗓 **日程表** | 视觉化“先…然后…”日常作息 | <img src="../../docs/screenshots/2026-10/schedule.png" width="120"> |
+| 🎮 **游戏** | 12 款康复辅助 AAC 游戏 | <img src="../../docs/screenshots/2026-10/games.png" width="120"> |
 | 🏪 **应用市场** | 语音包、词汇包、游戏包 | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **舒缓播放器** | 专为住院患者设计的床边媒体播放器 | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **床边模式** | 全屏 AI 对话，适用于手机支架/卧床使用 | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **视觉语境** | 摄像头识别物体 → 推荐相关短语 | <img src="../../docs/screenshots/vision-mealtime.png" width="120"> |
-| 👋 **无障碍手势** | 头部 + 手势识别 | <img src="../../docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **设置** | 25 种语言、运动调节、语音选择器 + 语音缓存 | <img src="../../docs/screenshots/panel-settings.png" width="120"> |
+| 👁 **视觉语境** | 摄像头识别物体 → 推荐相关短语 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👋 **无障碍手势** | 头部 + 手势识别 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| ⚙️ **设置** | 25 种语言、运动调节、语音选择器 + 语音缓存 | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **云端语音与 AI** | 可选的 4.99 美元/月配额，用于自然语音 + 云端 AI | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
@@ -109,16 +111,16 @@ Prism AAC 于 2026 年 6 月接受了 [70 项对抗性无障碍审计](ACCESSIBI
 ### 响应式布局 — iPhone 与 iPad，竖屏与横屏
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone 竖屏" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone 横屏" width="280" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad 竖屏" width="240" />
+  <img src="../../docs/screenshots/2026-10/iphone-portrait.png" alt="iPhone 竖屏" width="160" />
+  <img src="../../docs/screenshots/2026-10/iphone-landscape.png" alt="iPhone 横屏 — 输入模式" width="280" />
+  <img src="../../docs/screenshots/2026-10/ipad-portrait.png" alt="iPad 竖屏" width="240" />
 </p>
 
 ### 视觉模式
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="iPhone 上的深色 + 高对比度" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="iPad 横屏上的深色 + 高对比度" width="340" />
+  <img src="../../docs/screenshots/2026-10/iphone-dark.png" alt="iPhone 上的深色 + 高对比度" width="160" />
+  <img src="../../docs/screenshots/2026-10/ipad-dark.png" alt="iPad 横屏上的深色 + 高对比度" width="340" />
 </p>
 
 - **浅色 / 深色 / 高对比度** 主题
@@ -423,9 +425,9 @@ Chevron 符号。导航操作不会添加词汇或触发朗读；
 
 PECS 风格的图片贴片。点击分类，点击贴片，听到词发音，并看到词落入消息栏。适用于非阅读者、预备阅读者和初级沟通者。贴片集和排序会随着时间推移通过扩散激活实现个性化 — 儿童点击最多的贴片会上升；数月未用的贴片会自动淡出。
 
-**环绕式布局** — 分类显示在键盘旁可滚动的左侧列中，因此 AAC 用户可以同时点击图片贴片和进行打字，无需切换模式。预测条保持可见；两种输入方式始终触手可及。
+Prism AAC 有两种输入模式。图片模式显示词汇板；输入模式显示键盘和词语预测。点按 **KB** 切换到输入模式，点按 **HIDE KB** 返回图片模式。
 
-![环绕模式下的分类 — 左侧为可滚动的分类卡片，右侧为完整键盘](../../docs/screenshots/categories-surround-v2.png)
+![Prism AAC 分类图片词汇板](../../docs/screenshots/2026-10/categories.png)
 
 <details>
 <summary><strong>功能 + 技术细节</strong></summary>
@@ -445,7 +447,7 @@ PECS 风格的图片贴片。点击分类，点击贴片，听到词发音，并
 ### ⌨️ 输入与朗读
 带有 **词汇预测**、**AI 自动补全** 和一键 **朗读** 按钮的屏幕键盘，可用自然神经网络语音朗读消息栏。打字会训练预测引擎：儿童打字最多的词汇会在下一阶段更早呈现。
 
-![已打出“hello”的 Prism AAC 键盘、预测贴片和朗读按钮](../../docs/screenshots/keyboard-typing.png)
+![空白的 Prism AAC 键盘，已准备好输入，并显示预测词块和朗读按钮](../../docs/screenshots/2026-10/keyboard.png)
 
 **阅读辅助功能（具备 Read & Write 等级的功能）** — 适用于有阅读/记忆/认知需求的用户：
 
@@ -492,7 +494,7 @@ Top-1 = 目标词汇位于第 1 个贴片。Top-5 = 目标词汇位于任意前 
 
 **翻译模式** — 当应用语言与输出语言不一致时（例如输入葡萄牙语，输出英语），每次 AI 交流都会自动路由至启用了流式传输的翻译路径，相比单语模式没有任何速度损失。
 
-![AI 对话面板 — AI 模式下预测条已隐藏，下方可使用完整键盘](../../docs/screenshots/panel-ai-chat-v2.png)
+![AI 对话面板 — AI 模式下预测条已隐藏，下方可使用完整键盘](../../docs/screenshots/2026-10/ai-chat.png)
 
 <details>
 <summary><strong>功能 + 技术细节</strong></summary>
@@ -751,7 +753,7 @@ Top-1 = 目标词汇位于第 1 个贴片。Top-5 = 目标词汇位于任意前 
 ### 📨 发送消息 — 服务提供商选择器
 当某个联系人配置了多种服务提供商（例如同时配置了邮件和短信）时，撰写区域上方会出现 **“Send via”** 区域。在撰写前只需点击一次即可切换提供商 — 无需离开面板。
 
-![联系人服务提供商选择器 — 'Send via' 行高亮显示绿色 Mail，SMS 选项可用](../../docs/screenshots/contact-provider-picker.png)
+![AAC Chat 空联系人面板，尚未配置联系人](../../docs/screenshots/2026-10/aac-chat.png)
 
 ---
 
@@ -862,7 +864,7 @@ Top-1 = 目标词汇位于第 1 个贴片。Top-5 = 目标词汇位于任意前 
 ### 🗓 日程表
 用于日常作息 + 过渡支持的视觉化“先…然后…”日程表。每个步骤都是一个图片贴片 + 标签；完成一个贴片会播放提示音并显示视觉进度标记。奖励商店（付费层）会在作息流程结束后解锁。
 
-![带有先-后板 + 活动列表的日程表面板](../../docs/screenshots/panel-schedule.png)
+![带有先-后板 + 活动列表的日程表面板](../../docs/screenshots/2026-10/schedule.png)
 
 <details>
 <summary><strong>功能 + 技术细节</strong></summary>
@@ -881,7 +883,7 @@ Top-1 = 目标词汇位于第 1 个贴片。Top-5 = 目标词汇位于任意前 
 ### 🎮 游戏
 12 款基于循证医学的 AAC 游戏。专为沟通教学设计，**而非用于消磨屏幕时间**。每款游戏都会记录表达内容和准确率，以便自适应引擎推荐最契合的下一款游戏。
 
-![包含 9 个游戏贴片的游戏面板](../../docs/screenshots/panel-games.png)
+![包含 9 个游戏贴片的游戏面板](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>12 款游戏 + 技术细节</strong></summary>
@@ -931,7 +933,7 @@ Top-1 = 目标词汇位于第 1 个贴片。Top-5 = 目标词汇位于任意前 
 ### 📄 PDF 阅读器
 打开 PDF，每个页面呈现为一个贴片，点击即可用您的声音朗读。学校练习册、带 home 字母、文章 — 导入任何 PDF，用倾听代替艰难的阅读。无需安装 Adobe Reader；整个库完全在您的浏览器中运行。
 
-![PDF 阅读器面板 — 带有“+ 打开 PDF”提示的空白状态](../../docs/screenshots/panel-pdf-reader.png)
+![PDF 阅读器面板 — 带有“+ 打开 PDF”提示的空白状态](../../docs/screenshots/2026-10/pdf-reader.png)
 
 <details>
 <summary><strong>功能 + 技术细节</strong></summary>
@@ -950,7 +952,7 @@ Top-1 = 目标词汇位于第 1 个贴片。Top-5 = 目标词汇位于任意前 
 ### 👁 截图阅读器 (OCR)
 粘贴或上传练习册照片、网页截图、教科书页面照片 — 识别出的文本会展示在图片旁，您可以点击 **▶ 朗读** 进行听取，或点击 **↧ 发送至消息栏** 在朗读前进行编辑。
 
-![截图阅读器 (OCR) 面板 — 带有“+ 打开图片”提示的空白状态](../../docs/screenshots/panel-ocr-capture.png)
+![截图阅读器 (OCR) 面板 — 带有“+ 打开图片”提示的空白状态](../../docs/screenshots/2026-10/ocr-reader.png)
 
 <details>
 <summary><strong>功能 + 技术细节</strong></summary>
@@ -1066,7 +1068,7 @@ npm run build
 
 短语支持 12+ 种语言（英语、西班牙语、法语、葡萄牙语、罗马尼亚语、乌克兰语、俄语、德语、日语、韩语、中文、阿拉伯语等）。语言会自动跟随应用的语言设置 — 切换至俄语，摄像头推荐的短语会自动由 “I want more” 变为 “Хочу ещё”。
 
-![视觉语境 — 检测到就餐场景](../../docs/screenshots/vision-mealtime.png)
+![设置 — 摄像头和视觉选项](../../docs/screenshots/2026-10/input-modes.png)
 
 <details>
 <summary><strong>工作原理（技术细节）</strong></summary>
@@ -1126,12 +1128,12 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ### ⚙️ 设置
 25 种语言 / 28 个地区版本、主题（浅色 / 深色 / 高对比度）、网格大小（4–20 个贴片）、运动调节（数学按压驻留、两次点击放大、头部追踪驻留、手势灵敏度、偏移自动禁用）、语音选择器（所有人免费）、语音缓存使用与保留、AI 自动纠错开关、通知设置、工具栏自定义、历史地区选择器，以及带 Cloud 计划的 Synalux 账号。
 
-![设置 — 语言选择器 + 主题切换](../../docs/screenshots/panel-settings.png)
+![设置 — 语言选择器 + 主题切换](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>数学 + 无障碍设置</strong></summary>
 
-![设置 — 数学按压驻留 + 两次点击放大](../../docs/screenshots/panel-settings-math.png)
+![设置 — 数学按压驻留 + 两次点击放大](../../docs/screenshots/2026-10/math-settings.png)
 
 - **数学按压驻留** — 0–1500 ms 滑块；0 = 立即点击，200–1500 ms 可帮助精细动作欠佳的用户（驻留期间会填满绿色进度环，便于直观感知）。
 - **两次点击放大** — 第一次点击任意数学键使其进入预备状态（1.4 倍放大 + 绿色光圈，未确认提交），第二次点击确认提交。2 秒后自动取消预备状态。可与按压驻留叠加使用。
@@ -1145,7 +1147,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 <details>
 <summary><strong>输入模式 — 语音、手势、AI 自动纠错</strong></summary>
 
-![设置 — 输入模式面板](../../docs/screenshots/panel-settings-input-modes.png)
+![设置 — 输入模式面板](../../docs/screenshots/2026-10/input-modes.png)
 
 - **语音输入** — Web Speech API，具备语言感知能力（英式英语 vs 美式英语等）；免费层可用
 - **AI 自动纠错与补全** — 每次打字停顿均会通过云端自动纠错（Gemini 2.5 Flash-Lite）进行处理。在低带宽场景下默认关闭。

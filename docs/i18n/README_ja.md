@@ -23,17 +23,17 @@
   <a href="TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Terms"></a>
 </p>
 
-![iPad上のPrism AACメイン画面 — ツールバー、入力バー、5つの予測タイル、フルQWERTYキーボード（本番ウェブアプリ, 1.9.0）](../../docs/screenshots/app-hero.png)
+![現在のPrism AACウェブアプリのピクチャーボード](../../docs/screenshots/2026-10/ipad-landscape.png)
 
 ### ネイティブアプリ
 
 <p align="center">
-  <img src="../../docs/screenshots/ios-iphone.png" alt="iPhoneでのPrismAAC" width="220" />
-  <img src="../../docs/screenshots/ios-ipad.png" alt="iPadでのPrismAAC" width="360" />
+  <img src="../../docs/screenshots/2026-10/native-iphone-typing.png" alt="iPhoneのPrismAAC入力モード — iOSシミュレータ、バージョン1.9.3 (56)" width="220" />
+  <img src="../../docs/screenshots/2026-10/native-ipad-typing.png" alt="iPadのPrismAAC入力モード — iOSシミュレータ、バージョン1.9.3 (56)" width="360" />
   <img src="../../docs/screenshots/watch-ultra.png" alt="Apple Watch UltraでのPrismAAC" width="120" />
 </p>
 
-<sub>iPhoneおよびiPadの画面フレームは、本番ウェブアプリを実行するビルド1.9.0 (53) からキャプチャ（2026-09-08）。Watchフレームは1.4.0より。</sub>
+<sub>iPhone・iPadの画像：iOSシミュレータ、バージョン1.9.3 (56)、2026年10月25日、入力モード。Apple Watchの画像はバージョン1.4.0。</sub>
 
 | プラットフォーム | ステータス | オンデバイスAI | 備考 |
 |----------|--------|-------------|-------|
@@ -51,19 +51,21 @@
 
 Inworld TTS ナレーション付きで、主要機能を30秒で紹介する動画：
 
-https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
+[以前のプレビュー動画を見る](https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4)
+
+<sub>現在のウェブアプリの画像。2026年10月26日に現行のPrism AACピクチャーパックを使用して撮影しました。以前のプレビュー動画とは別の画像です。[撮影メモ](../../docs/screenshots/2026-10/capture-notes.md)。</sub>
 
 | シーン | 機能 | スクリーンショット |
 |---|---|---|
-| **ホーム** — フレーズをタップ | 22カテゴリのピクトグラムボード、読み上げボタン | <img src="../../docs/screenshots/appstore/ipad_home.png" width="200"> |
-| **カテゴリ** | 助け、食べ物、場所、気持ちに関するクイックフレーズ | <img src="../../docs/screenshots/appstore/ipad_categories.png" width="200"> |
-| **AI チャット** | メッセージ作成、会話の練習 | <img src="../../docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
-| **緊急アラート** | ワンタップで介護者/看護師を呼び出し | <img src="../../docs/screenshots/appstore/video/frame_03.png" width="200"> |
-| **スケジュール** | 朝、学校、昼食、就寝などの視覚的日課 | <img src="../../docs/screenshots/appstore/ipad_schedule.png" width="200"> |
-| **ゲーム** | バブルポップ、カラーハント、マッチイット、はい/いいえ、フィニッシュイット | <img src="../../docs/screenshots/appstore/ipad_games.png" width="200"> |
-| **数学 & 学習** | ヒント、確認、解答機能 + テンキー付きの適応型数学 | <img src="../../docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **ヘッド & アイ トラッキング** | カメラベースの滞留カーソル、視線制御、キャリブレーション | <img src="../../docs/screenshots/appstore/video/frame_07.png" width="200"> |
-| **12言語** | 英語、スペイン語、フランス語、ロシア語、日本語、韓国語、中国語、アラビア語など | <img src="../../docs/screenshots/appstore/video/frame_08.png" width="200"> |
+| **ホーム** — フレーズをタップ | 22カテゴリのピクトグラムボード、読み上げボタン | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **カテゴリ** | 助け、食べ物、場所、気持ちに関するクイックフレーズ | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **AI チャット** | メッセージ作成、会話の練習 | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
+| **緊急アラート** | ワンタップで介護者/看護師を呼び出し | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **スケジュール** | 朝、学校、昼食、就寝などの視覚的日課 | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
+| **ゲーム** | バブルポップ、カラーハント、マッチイット、はい/いいえ、フィニッシュイット | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
+| **数学 & 学習** | ヒント、確認、解答機能 + テンキー付きの適応型数学 | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **ヘッド & アイ トラッキング** | カメラベースの滞留カーソル、視線制御、キャリブレーション | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **12言語** | 英語、スペイン語、フランス語、ロシア語、日本語、韓国語、中国語、アラビア語など | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -71,19 +73,19 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 
 | モジュール | 機能の概要 | プレビュー |
 |---|---|---|
-| 📂 **カテゴリ** | 読字が困難な方向けのPECSスタイルの画像タイル | <img src="../../docs/screenshots/panel-categories.png" width="120"> |
-| ⌨️ **入力 & 読み上げ** | キーボード + 単語予測 + ニューラル音声 | <img src="../../docs/screenshots/app-hero.png" width="120"> |
-| ✨ **AI チャット** | AAC利用者に最適化されたオンデバイス + クラウドのアシスタント | <img src="../../docs/screenshots/panel-ai-chat.png" width="120"> |
-| 💬 **AAC チャット** | 介護者や連絡先からの受信メッセージ | <img src="../../docs/screenshots/panel-aac-chat.png" width="120"> |
+| 📂 **カテゴリ** | 読字が困難な方向けのPECSスタイルの画像タイル | <img src="../../docs/screenshots/2026-10/ipad-landscape.png" width="120"> |
+| ⌨️ **入力 & 読み上げ** | キーボード + 単語予測 + ニューラル音声 | <img src="../../docs/screenshots/2026-10/keyboard.png" width="120"> |
+| ✨ **AI チャット** | AAC利用者に最適化されたオンデバイス + クラウドのアシスタント | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="120"> |
+| 💬 **AAC チャット** | 介護者や連絡先からの受信メッセージ | <img src="../../docs/screenshots/2026-10/aac-chat.png" width="120"> |
 | 🧮 **数学 + 各教科** | 領域に特化したチューターを備えたセルグリッドキャンバス | <img src="../../docs/screenshots/math-canvas-typed.png" width="120"> |
-| 🗓 **スケジュール** | 「まず〜をして、次に〜をする」視覚的ルーチン | <img src="../../docs/screenshots/panel-schedule.png" width="120"> |
-| 🎮 **ゲーム** | 療育的な12種類のAACゲーム | <img src="../../docs/screenshots/panel-games.png" width="120"> |
+| 🗓 **スケジュール** | 「まず〜をして、次に〜をする」視覚的ルーチン | <img src="../../docs/screenshots/2026-10/schedule.png" width="120"> |
+| 🎮 **ゲーム** | 療育的な12種類のAACゲーム | <img src="../../docs/screenshots/2026-10/games.png" width="120"> |
 | 🏪 **マーケットプレイス** | 音声パック、語彙パック、ゲームパック | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **コンフォートプレーヤー** | 入院患者向けのベッドサイドメディアプレーヤー | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **ベッドサイドモード** | スタンド固定や横になった状態での利用に特化したフルスクリーンAIチャット | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **ビジョンコンテキスト** | カメラが物体を検知 → 適切なフレーズを提案 | <img src="../../docs/screenshots/vision-mealtime.png" width="120"> |
-| 👋 **ハンズフリー** | 頭部や手によるジェスチャー認識 | <img src="../../docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **設定** | 25言語、運動機能の調整、音声選択 + 読み上げキャッシュ | <img src="../../docs/screenshots/panel-settings.png" width="120"> |
+| 👁 **ビジョンコンテキスト** | カメラが物体を検知 → 適切なフレーズを提案 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👋 **ハンズフリー** | 頭部や手によるジェスチャー認識 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| ⚙️ **設定** | 25言語、運動機能の調整、音声選択 + 読み上げキャッシュ | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **クラウド音声 & AI** | 自然な音声とクラウドAIクレジットが使えるオプションの月額US$4.99プラン | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
@@ -109,16 +111,16 @@ Prism AAC は 2026年6月に [70項目の敵対的アクセシビリティ監査
 ### レスポンシブレイアウト — iPhone & iPad、縦画面 & 横画面
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone 縦画面" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone 横画面" width="280" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad 縦画面" width="240" />
+  <img src="../../docs/screenshots/2026-10/iphone-portrait.png" alt="iPhone 縦画面" width="160" />
+  <img src="../../docs/screenshots/2026-10/iphone-landscape.png" alt="iPhone横向き — 入力モード" width="280" />
+  <img src="../../docs/screenshots/2026-10/ipad-portrait.png" alt="iPad 縦画面" width="240" />
 </p>
 
 ### 視覚モード
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="iPhoneでのダーク + ハイコントラスト" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="iPad横画面でのダーク + ハイコントラスト" width="340" />
+  <img src="../../docs/screenshots/2026-10/iphone-dark.png" alt="iPhoneでのダーク + ハイコントラスト" width="160" />
+  <img src="../../docs/screenshots/2026-10/ipad-dark.png" alt="iPad横画面でのダーク + ハイコントラスト" width="340" />
 </p>
 
 - **ライト / ダーク / ハイコントラスト** テーマ
@@ -419,9 +421,9 @@ PredictionBar タップ --> recordPredictionHit() (動的インポート, ~0.01m
 
 PECSスタイルの画像タイル。カテゴリをタップし、タイルをタップすると単語が再生され、メッセージバーに追加されます。文字が読めない子ども、読字準備期の子ども、コミュニケーションを学び始めた子どもに最適です。タイルの配置や順序は、広がりアクティベーション（Spreading Activation）によって時間の経過とともにパーソナライズされます — よくタップされるタイルが上位に配置され、何ヶ月も使われていないタイルは表示が小さくなります。
 
-**サラウンドレイアウト** — カテゴリがキーボードの横にスクロール可能な左カラムとして配置されるため、モードを切り替えることなく画像タイルのタップとタイピングを同時に行えます。予測バーは表示されたまま維持され、どちらの入力方法にも常時アクセス可能です。
+Prism AACには2つの入力モードがあります。ピクチャーモードでは語彙ボードを表示し、入力モードではキーボードと単語予測を表示します。**KB**で入力モードに切り替え、**HIDE KB**でピクチャーモードに戻ります。
 
-![サラウンドモードのカテゴリ — 左側にスクロール可能なカテゴリカード、右側にフルキーボード](../../docs/screenshots/categories-surround-v2.png)
+![Prism AACのカテゴリ付きピクチャーボード](../../docs/screenshots/2026-10/categories.png)
 
 <details>
 <summary><strong>機能 + 技術的詳細</strong></summary>
@@ -441,7 +443,7 @@ PECSスタイルの画像タイル。カテゴリをタップし、タイルを�
 ### ⌨️ 入力 & 読み上げ
 **単語予測**、**AI自動補完**、メッセージバーを自然なニューラル音声で読み上げるワンタップの**読み上げ**ボタンを備えた画面上キーボード。入力内容は予測エンジンの学習に反映され、頻繁に入力する単語が次回のセッションで優先して表示されます。
 
-![「hello」と入力されたPrism AACキーボード、予測タイル、読み上げボタン](../../docs/screenshots/keyboard-typing.png)
+![入力待ちの空のPrism AACキーボード。予測タイルと読み上げボタンを表示](../../docs/screenshots/2026-10/keyboard.png)
 
 **読書アシスタント機能（Read & Write と同等の機能）** — 読字、記憶、認知面でサポートが必要な方向け：
 
@@ -488,7 +490,7 @@ AAC利用者の声に合わせて調整された、オンデバイス + クラ�
 
 **翻訳モード** — アプリの言語と出力言語が異なる場合（例：ポルトガル語で入力し、英語で出力する場合）、すべてのAI対話は自動的にストリーミング付きの翻訳パスにルーティングされ、単一言語モードと同等の処理速度を維持します。
 
-![AIチャットパネル — AIモードでは予測バーが非表示になり、下にフルキーボードが表示される](../../docs/screenshots/panel-ai-chat-v2.png)
+![AIチャットパネル — AIモードでは予測バーが非表示になり、下にフルキーボードが表示される](../../docs/screenshots/2026-10/ai-chat.png)
 
 <details>
 <summary><strong>機能 + 技術的詳細</strong></summary>
@@ -747,7 +749,7 @@ AAC利用者の声に合わせて調整された、オンデバイス + クラ�
 ### 📨 メッセージの送信 — プロバイダー選択
 連絡先に複数のプロバイダー（メールやSMSなど）が設定されている場合、入力エリアの上に **「送信方法」** セクションが表示されます。入力前にワンタップでプロバイダーを切り替えることができ、パネルを離れる必要はありません。
 
-![連絡先のプロバイダー選択 — メールが緑色でハイライトされ、SMSが選択可能な状態の「送信方法」行](../../docs/screenshots/contact-provider-picker.png)
+![連絡先未設定のAAC Chat連絡先パネル](../../docs/screenshots/2026-10/aac-chat.png)
 
 ---
 
@@ -858,7 +860,7 @@ AAC利用者の声に合わせて調整された、オンデバイス + クラ�
 ### 🗓 スケジュール
 日常のルーチンや切り替えをサポートする視視覚的な「まず〜をして、次に〜をする」スケジュール。各ステップは画像タイルとラベルで構成され、タイルを完了するとチャイムが鳴りチェックマークが表示されます。ルーチンを完了するとご褒美ショップ（有料階層）が利用可能になります。
 
-![「まず〜をして、次に〜をする」ボードとアクティビティリストが表示されたスケジュールパネル](../../docs/screenshots/panel-schedule.png)
+![「まず〜をして、次に〜をする」ボードとアクティビティリストが表示されたスケジュールパネル](../../docs/screenshots/2026-10/schedule.png)
 
 <details>
 <summary><strong>機能 + 技術的詳細</strong></summary>
@@ -877,7 +879,7 @@ AAC利用者の声に合わせて調整された、オンデバイス + クラ�
 ### 🎮 ゲーム
 エビデンスに基づいた12種類のAACゲーム。**スクリーンタイムを増やすためではなく**、コミュニケーションを学ぶために設計されています。各ゲームは発話内容と正確性を記録し、適応エンジンが次に最適なゲームを提案します。
 
-![9つのゲームタイルが表示されたゲームパネル](../../docs/screenshots/panel-games.png)
+![9つのゲームタイルが表示されたゲームパネル](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>12種類のゲーム + 技術的詳細</strong></summary>
@@ -927,7 +929,7 @@ AAC利用者の声に合わせて調整された、オンデバイス + クラ�
 ### 📄 PDF リーダー
 PDFを開くと1ページにつき1つのタイルが表示され、タップすると自分の選択した音声で読み上げられます。学校のプリント、連絡帳、記事など — あらゆるPDFを取り込んで、無理に読もうとせずに聴くことができます。Adobe Reader は不要で、ライブラリ全体がブラウザ上で動作します。
 
-![PDFリーダーパネル — 「+ PDFを開く」プロンプトが表示された初期状態](../../docs/screenshots/panel-pdf-reader.png)
+![PDFリーダーパネル — 「+ PDFを開く」プロンプトが表示された初期状態](../../docs/screenshots/2026-10/pdf-reader.png)
 
 <details>
 <summary><strong>機能 + 技術的詳細</strong></summary>
@@ -946,7 +948,7 @@ PDFを開くと1ページにつき1つのタイルが表示され、タップす
 ### 👁 スクリーンショットリーダー (OCR)
 プリントの写真、ウェブページのスクリーンショット、教科書の写真を貼り付けまたはアップロードすると、認識されたテキストが画像の横に表示されます。**▶ 読み上げ** をタップして聴くことも、**↧ メッセージバーに送る** をタップして読み上げ前に編集することもできます。
 
-![スクリーンショットリーダー（OCR）パネル — 「+ 画像を開く」プロンプトが表示された初期状態](../../docs/screenshots/panel-ocr-capture.png)
+![スクリーンショットリーダー（OCR）パネル — 「+ 画像を開く」プロンプトが表示された初期状態](../../docs/screenshots/2026-10/ocr-reader.png)
 
 <details>
 <summary><strong>機能 + 技術的詳細</strong></summary>
@@ -1062,7 +1064,7 @@ npm run build
 
 フレーズは12以上の言語（英語、スペイン語、フランス語、ポルトガル語、ルーマニア語、ウクライナ語、ロシア語、ドイツ語、日本語、韓国語、中国語、アラビア語など）で利用可能です。アプリの言語設定に追従します — 日本語に設定すれば「I want more」の代わりに「おかわり」が提案されます。
 
-![ビジョンコンテキスト — 食事のシーンを検知](../../docs/screenshots/vision-mealtime.png)
+![設定 — カメラとビジョンのオプション](../../docs/screenshots/2026-10/input-modes.png)
 
 <details>
 <summary><strong>仕組み（技術的詳細）</strong></summary>
@@ -1122,12 +1124,12 @@ SCENE=schoolwork CONF=0.80 PHRASES=手伝って|わかりません|終わった 
 ### ⚙️ 設定
 25言語 / 28ロケール、テーマ（ライト / ダーク / ハイコントラスト）、グリッドサイズ（4〜20タイル）、運動機能の調整（数学キーの保持時間滞留、2段階拡大入力、ヘッドトラッキング滞留時間、ジェスチャー感度、位置ズレ自動解除）、音声選択（全ユーザー無料）、音声キャッシュの使用量と保持期間、AI自動修正のON/OFF、通知、ツールバーのカスタマイズ、歴史地域の選択、Cloudプランを含む Synalux アカウント。
 
-![設定 — 言語選択 + テーマ切り替え](../../docs/screenshots/panel-settings.png)
+![設定 — 言語選択 + テーマ切り替え](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>数学 + アクセシビリティ設定</strong></summary>
 
-![設定 — 数学キーの保持時間 + 2段階拡大入力](../../docs/screenshots/panel-settings-math.png)
+![設定 — 数学キーの保持時間 + 2段階拡大入力](../../docs/screenshots/2026-10/math-settings.png)
 
 - **数学キーの保持時間（滞留）** — 0〜1500 ms のスライダー。0 = 即時クリック、200〜1500 ms は手先の不器用さを持つユーザーをサポート（滞留中は進行を示す緑のリングが表示されます）。
 - **2段階拡大入力** — 数学キーを1回タップすると準備状態（1.4倍拡大 + 緑のハロー表示、確定なし）になり、2回目のタップで入力確定。2秒で自動解除。保持時間滞留と組み合わせ可能。
@@ -1141,7 +1143,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=手伝って|わかりません|終わった 
 <details>
 <summary><strong>入力モード — 音声、ジェスチャー、AI自動修正</strong></summary>
 
-![設定 — 入力モードパネル](../../docs/screenshots/panel-settings-input-modes.png)
+![設定 — 入力モードパネル](../../docs/screenshots/2026-10/input-modes.png)
 
 - **音声入力** — Web Speech API、言語認識対応（イギリス英語 vs アメリカ英語など）；無料階層
 - **AI自動修正 & 補完** — キーストロークの合間にクラウドの自動修正（Gemini 2.5 Flash-Lite）を実行。帯域幅が狭い環境ではデフォルトでOFF

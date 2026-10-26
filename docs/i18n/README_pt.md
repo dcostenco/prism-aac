@@ -23,17 +23,17 @@ Parte da [plataforma Synalux](https://synalux.ai).
   <a href="TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Termos"></a>
 </p>
 
-![Tela principal do Prism AAC no iPad — barra de ferramentas, barra de digitação, cinco blocos de predição e o teclado qwerty completo (aplicativo web em produção, 1.9.0)](../../docs/screenshots/app-hero.png)
+![Quadro de imagens do aplicativo web atual do Prism AAC](../../docs/screenshots/2026-10/ipad-landscape.png)
 
 ### Aplicativos nativos
 
 <p align="center">
-  <img src="../../docs/screenshots/ios-iphone.png" alt="PrismAAC no iPhone" width="220" />
-  <img src="../../docs/screenshots/ios-ipad.png" alt="PrismAAC no iPad" width="360" />
+  <img src="../../docs/screenshots/2026-10/native-iphone-typing.png" alt="PrismAAC no modo de digitação em iPhone — simulador iOS, versão 1.9.3 (56)" width="220" />
+  <img src="../../docs/screenshots/2026-10/native-ipad-typing.png" alt="PrismAAC no modo de digitação em iPad — simulador iOS, versão 1.9.3 (56)" width="360" />
   <img src="../../docs/screenshots/watch-ultra.png" alt="PrismAAC no Apple Watch Ultra" width="120" />
 </p>
 
-<sub>Molduras de iPhone e iPad capturadas da versão 1.9.0 (53) executando o aplicativo web de produção, 08/09/2026. Moldura do Watch da versão 1.4.0.</sub>
+<sub>Capturas de iPhone e iPad: simulador iOS, versão 1.9.3 (56), 25 de outubro de 2026, modo de digitação. Imagem do Apple Watch da versão 1.4.0.</sub>
 
 | Plataforma | Status | IA no dispositivo | Notas |
 |----------|--------|-------------|-------|
@@ -51,19 +51,21 @@ Parte da [plataforma Synalux](https://synalux.ai).
 
 Vídeo de 30 segundos apresentando todos os principais recursos com narração Inworld TTS:
 
-https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
+[Ver o vídeo de apresentação anterior](https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4)
+
+<sub>Capturas atuais do aplicativo web, feitas em 26 de outubro de 2026 com o pacote de imagens atual do Prism AAC; separadas do vídeo de apresentação anterior. [Notas de captura](../../docs/screenshots/2026-10/capture-notes.md).</sub>
 
 | Cena | Recurso | Captura de tela |
 |---|---|---|
-| **Início** — toque nas frases | Prancha de pictogramas com 22 categorias, botão Falar | <img src="../../docs/screenshots/appstore/ipad_home.png" width="200"> |
-| **Categorias** | Frases rápidas para Ajuda, Comida, Lugares, Sentimentos | <img src="../../docs/screenshots/appstore/ipad_categories.png" width="200"> |
-| **Chat de IA** | Componha mensagens, pratique conversas | <img src="../../docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
-| **Alerta de Emergência** | Chamada de cuidador/enfermeiro com um toque | <img src="../../docs/screenshots/appstore/video/frame_03.png" width="200"> |
-| **Rotina** | Rotinas diárias visuais — manhã, escola, almoço, dormir | <img src="../../docs/screenshots/appstore/ipad_schedule.png" width="200"> |
-| **Jogos** | Estourar Bolhas, Caça às Cores, Combinar, Sim/Não, Complete a Frase | <img src="../../docs/screenshots/appstore/ipad_games.png" width="200"> |
-| **Matemática e Escola** | Matemática adaptativa com Dica, Verificar, Resolver + teclado numérico | <img src="../../docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **Rastreamento Cefálico e Ocular** | Cursor de fixação por câmera, controle por olhar, calibração | <img src="../../docs/screenshots/appstore/video/frame_07.png" width="200"> |
-| **12 Idiomas** | Inglês, Espanhol, Francês, Russo, Japonês, Coreano, Chinês, Árabe e mais | <img src="../../docs/screenshots/appstore/video/frame_08.png" width="200"> |
+| **Início** — toque nas frases | Prancha de pictogramas com 22 categorias, botão Falar | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Categorias** | Frases rápidas para Ajuda, Comida, Lugares, Sentimentos | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **Chat de IA** | Componha mensagens, pratique conversas | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
+| **Alerta de Emergência** | Chamada de cuidador/enfermeiro com um toque | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Rotina** | Rotinas diárias visuais — manhã, escola, almoço, dormir | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
+| **Jogos** | Estourar Bolhas, Caça às Cores, Combinar, Sim/Não, Complete a Frase | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
+| **Matemática e Escola** | Matemática adaptativa com Dica, Verificar, Resolver + teclado numérico | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **Rastreamento Cefálico e Ocular** | Cursor de fixação por câmera, controle por olhar, calibração | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **12 Idiomas** | Inglês, Espanhol, Francês, Russo, Japonês, Coreano, Chinês, Árabe e mais | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -71,19 +73,19 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 
 | Módulo | O que faz | Demonstração |
 |---|---|---|
-| 📂 **Categorias** | Cartões de imagens no estilo PECS para não leitores | <img src="../../docs/screenshots/panel-categories.png" width="120"> |
-| ⌨️ **Digitar e falar** | Teclado + predição de palavras + voz neural | <img src="../../docs/screenshots/app-hero.png" width="120"> |
-| ✨ **Chat de IA** | Assistente no dispositivo + nuvem adaptado para usuários de CAA | <img src="../../docs/screenshots/panel-ai-chat.png" width="120"> |
-| 💬 **Chat CAA** | Mensagens recebidas de cuidadores + contatos | <img src="../../docs/screenshots/panel-aac-chat.png" width="120"> |
+| 📂 **Categorias** | Cartões de imagens no estilo PECS para não leitores | <img src="../../docs/screenshots/2026-10/ipad-landscape.png" width="120"> |
+| ⌨️ **Digitar e falar** | Teclado + predição de palavras + voz neural | <img src="../../docs/screenshots/2026-10/keyboard.png" width="120"> |
+| ✨ **Chat de IA** | Assistente no dispositivo + nuvem adaptado para usuários de CAA | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="120"> |
+| 💬 **Chat CAA** | Mensagens recebidas de cuidadores + contatos | <img src="../../docs/screenshots/2026-10/aac-chat.png" width="120"> |
 | 🧮 **Matemática + matérias** | Tela em grade com tutor especializado na disciplina | <img src="../../docs/screenshots/math-canvas-typed.png" width="120"> |
-| 🗓 **Rotina** | Rotinas visuais do tipo "primeiro-depois" | <img src="../../docs/screenshots/panel-schedule.png" width="120"> |
-| 🎮 **Jogos** | 12 jogos terapêuticos de CAA | <img src="../../docs/screenshots/panel-games.png" width="120"> |
+| 🗓 **Rotina** | Rotinas visuais do tipo "primeiro-depois" | <img src="../../docs/screenshots/2026-10/schedule.png" width="120"> |
+| 🎮 **Jogos** | 12 jogos terapêuticos de CAA | <img src="../../docs/screenshots/2026-10/games.png" width="120"> |
 | 🏪 **Marketplace** | Pacotes de voz, pacotes de vocabulário, pacotes de jogos | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Tocador de Conforto** | Reprodutor de mídia de leito para pacientes hospitalizados | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Modo Leito** | Chat de IA em tela cheia para uso com celular no suporte / deitado | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Contexto Visual** | Câmera detecta objetos → sugere frases relevantes | <img src="../../docs/screenshots/vision-mealtime.png" width="120"> |
-| 👋 **Mãos livres** | Reconhecimento de gestos cefálicos + manuais | <img src="../../docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **Configurações** | 25 idiomas, adaptações motoras, seletor de voz + cache de fala | <img src="../../docs/screenshots/panel-settings.png" width="120"> |
+| 👁 **Contexto Visual** | Câmera detecta objetos → sugere frases relevantes | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👋 **Mãos livres** | Reconhecimento de gestos cefálicos + manuais | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| ⚙️ **Configurações** | 25 idiomas, adaptações motoras, seletor de voz + cache de fala | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Fala e IA em Nuvem** | Cota opcional de US$ 4,99/mês para voces naturais + IA em nuvem | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
@@ -109,16 +111,16 @@ Navegação na prancha de imagens: deslize para a esquerda/direita na grade de v
 ### Layout responsivo — iPhone e iPad, retrato e paisagem
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone em modo retrato" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone em modo paisagem" width="280" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad em modo retrato" width="240" />
+  <img src="../../docs/screenshots/2026-10/iphone-portrait.png" alt="iPhone em modo retrato" width="160" />
+  <img src="../../docs/screenshots/2026-10/iphone-landscape.png" alt="iPhone na horizontal — modo de digitação" width="280" />
+  <img src="../../docs/screenshots/2026-10/ipad-portrait.png" alt="iPad em modo retrato" width="240" />
 </p>
 
 ### Modos visuais
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="Escuro + alto contraste no iPhone" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="Escuro + alto contraste no iPad em modo paisagem" width="340" />
+  <img src="../../docs/screenshots/2026-10/iphone-dark.png" alt="Escuro + alto contraste no iPhone" width="160" />
+  <img src="../../docs/screenshots/2026-10/ipad-dark.png" alt="Escuro + alto contraste no iPad em modo paisagem" width="340" />
 </p>
 
 - Temas **Claro / Escuro / Alto Contraste**
@@ -419,9 +421,9 @@ No modo Imagem, o Tamanho da Grade define a quantidade de cartões por página d
 
 Cartões de imagem no estilo PECS. Toque em uma categoria, toque em um cartão, ouça a palavra e veja-a ir para a barra de mensagem. Funciona para não leitores, leitores iniciantes e comunicadores em desenvolvimento. Os conjuntos de cartões e sua ordem se personalizam ao longo do tempo por ativação espalhada — os cartões mais utilizados ganham destaque; os que não são usados há meses diminuem de prioridade.
 
-**Layout envolvente** — as categorias aparecem em uma coluna rolável à esquerda ao lado do teclado, permitindo tocar nos cartões de imagem E digitar simultaneamente sem mudar de modo. A barra de predição permanece visível; ambas as entradas estão sempre acessíveis.
+O Prism AAC tem dois modos de entrada. O modo de imagens mostra o quadro de vocabulário; o modo de digitação mostra o teclado e a previsão de palavras. Use **KB** para mudar para digitação e **HIDE KB** para voltar às imagens.
 
-![Categorias no modo envolvente — cartões de categoria com rolagem à esquerda, teclado completo à direita](../../docs/screenshots/categories-surround-v2.png)
+![Quadro de vocabulário com imagens do Prism AAC](../../docs/screenshots/2026-10/categories.png)
 
 <details>
 <summary><strong>Recursos + detalhes técnicos</strong></summary>
@@ -441,7 +443,7 @@ Cartões de imagem no estilo PECS. Toque em uma categoria, toque em um cartão, 
 ### ⌨️ Digitar e falar
 Teclado na tela com **predição de palavras**, **autocompletar por IA** e um botão **Falar** de um toque que lê a barra de mensagem em voz alta com uma voz neural natural. A digitação treina o mecanismo de predição: as palavras mais digitadas aparecem mais cedo nas sessões seguintes.
 
-![Teclado Prism AAC com "olá" digitado, blocos de predição e botão Falar](../../docs/screenshots/keyboard-typing.png)
+![Teclado do Prism AAC vazio e pronto para digitação, com blocos de previsão e botão Falar](../../docs/screenshots/2026-10/keyboard.png)
 
 **Recursos de assistência à leitura (equivalência ao Read & Write)** — para usuários com necessidades de leitura / memória / cognição:
 
@@ -488,7 +490,7 @@ Assistente no dispositivo + nuvem ajustado para a voz do usuário de CAA. Respos
 
 **Modo de tradução** — quando o idioma do aplicativo e o idioma de saída forem diferentes (ex.: entrada em português, saída em inglês), cada troca de mensagens é enviada automaticamente pelo caminho de tradução com transmissão em fluxo ativada, sem perda de velocidade em relação ao modo de um único idioma.
 
-![Painel do Chat de IA — barra de predição oculta no modo IA, teclado completo acessível abaixo](../../docs/screenshots/panel-ai-chat-v2.png)
+![Painel do Chat de IA — barra de predição oculta no modo IA, teclado completo acessível abaixo](../../docs/screenshots/2026-10/ai-chat.png)
 
 <details>
 <summary><strong>Recursos + detalhes técnicos</strong></summary>
@@ -747,7 +749,7 @@ O tamanho mínimo do cartão (88 × 80 px) atende ao requisito de tamanho de alv
 ### 📨 Enviar mensagem — seletor de meio de envio
 Quando um contato possui múltiplos meios configurados (ex.: E-mail e SMS), uma seção **"Enviar por"** é exibida acima da área de digitação. Um toque altera o meio de envio antes da escrita — sem necessidade de sair do painel.
 
-![Seletor de meio de envio do contato — linha 'Enviar por' com E-mail destacado em verde, SMS disponível](../../docs/screenshots/contact-provider-picker.png)
+![Painel de contatos do AAC Chat vazio, sem contatos configurados](../../docs/screenshots/2026-10/aac-chat.png)
 
 ---
 
@@ -858,7 +860,7 @@ Roteiros de problemas resolvidos passo a passo cobrindo cada teclado temático, 
 ### 🗓 Rotina
 Painel visual de rotinas "primeiro-depois" para apoio na organização de tarefas e transições. Cada etapa traz uma imagem + texto; ao concluir um item, um sinal sonoro suave é emitido junto ao indicador visual de conclusão. Uma área de recompensas (plano pago) pode ser desbloqueada ao final da sequência.
 
-![Painel de rotinas com prancha primeiro-depois e lista de atividades](../../docs/screenshots/panel-schedule.png)
+![Painel de rotinas com prancha primeiro-depois e lista de atividades](../../docs/screenshots/2026-10/schedule.png)
 
 <details>
 <summary><strong>Recursos + detalhes técnicos</strong></summary>
@@ -876,7 +878,7 @@ Painel visual de rotinas "primeiro-depois" para apoio na organização de tarefa
 ### 🎮 Jogos
 12 jogos educativos voltados para CAA. Desenvolvidos para estimular o aprendizado da comunicação, **evitando o uso focado apenas em entretenimento de tela**. Cada jogo registra as expressões utilizadas e a taxa de acerto para que o mecanismo adaptativo possa sugerir a atividade mais adequada a seguir.
 
-![Painel de jogos com 9 opções visíveis](../../docs/screenshots/panel-games.png)
+![Painel de jogos com 9 opções visíveis](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>Os 12 jogos + detalhes técnicos</strong></summary>
@@ -926,7 +928,7 @@ Pacotes de voz (vozes Inworld, voz personalizada de familiares ou cuidadores), p
 ### 📄 Leitor de PDF
 Abra um documento em PDF, visualize um cartão por página e toque para ouvir a leitura com a voz configurada. Atividades escolares, comunicados, artigos — carregue o arquivo PDF e acompanhe por áudio sem necessidade de leitura direta na tela. Sem dependência do Adobe Reader; a conversão ocorre inteiramente no navegador.
 
-![Painel do Leitor de PDF — tela inicial com o botão "+ Abrir PDF"]](../../docs/screenshots/panel-pdf-reader.png)
+![Painel do Leitor de PDF — tela inicial com o botão "+ Abrir PDF"]](../../docs/screenshots/2026-10/pdf-reader.png)
 
 <details>
 <summary><strong>Recursos + detalhes técnicos</strong></summary>
@@ -945,7 +947,7 @@ Abra um documento em PDF, visualize um cartão por página e toque para ouvir a 
 ### 👁 Leitor de Captura de Tela (OCR)
 Cole ou envie a foto de um exercício, imagem de página web ou foto de um livro — o texto reconhecido aparece ao lado da imagem. Toque em **▶ Falar** para ouvir o conteúdo ou em **↧ Enviar para barra** para ajustar o texto antes da leitura.
 
-![Painel do Leitor de Captura de Tela (OCR) — tela inicial com o botão "+ Abrir imagem"]](../../docs/screenshots/panel-ocr-capture.png)
+![Painel do Leitor de Captura de Tela (OCR) — tela inicial com o botão "+ Abrir imagem"]](../../docs/screenshots/2026-10/ocr-reader.png)
 
 <details>
 <summary><strong>Recursos + detalhes técnicos</strong></summary>
@@ -1061,7 +1063,7 @@ Aponte a câmera do aparelho para objetos do dia a dia e a barra de predição e
 
 As frases estão disponíveis em mais de 12 idiomas (Português, Inglês, Espanhol, Francês, Romeno, Ucraniano, Russo, Alemão, Japonês, Coreano, Chinês, Árabe e outros). O idioma acompanha a configuração do aplicativo — ao alterar para espanhol, a câmera sugerirá "Quiero más" em vez de "Quero mais".
 
-![Contexto Visual — cenário de refeição identificado](../../docs/screenshots/vision-mealtime.png)
+![Configurações — opções de câmera e visão](../../docs/screenshots/2026-10/input-modes.png)
 
 <details>
 <summary><strong>Como funciona (técnica)</strong></summary>
@@ -1121,12 +1123,12 @@ CENÁRIO=estudos    CONFIANÇA=0.80 FRASES=Me ajuda, por favor|Não entendi|Pron
 ### ⚙️ Configurações
 25 idiomas / 28 variantes regionais, temas (claro / escuro / alto contraste), tamanho da grade (4 a 20 cartões), adaptações motoras (tempo de fixação para toque em matemática, ampliação em dois toques, tempo de fixação para rastreamento cefálico, sensibilidade de gestos, desativação por desvio), seletor de voz (gratuito para todos os usuários), uso de cache de fala, ativação de autocorreção por IA, notificações, personalização da barra de ferramentas, seletor de região histórica, Conta Synalux com o plano Cloud.
 
-![Configurações — seletor de idioma + opção de tema](../../docs/screenshots/panel-settings.png)
+![Configurações — seletor de idioma + opção de tema](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Configurações de matemática + acessibilidade</strong></summary>
 
-![Configurações — tempo de fixação em matemática + ampliação em dois toques](../../docs/screenshots/panel-settings-math.png)
+![Configurações — tempo de fixação em matemática + ampliação em dois toques](../../docs/screenshots/2026-10/math-settings.png)
 
 - **Tempo de fixação para matemática** — seletor de 0 a 1500 ms; 0 = toque imediato, 200 a 1500 ms auxilia usuários com imprecisão motora (um indicador circular verde se preenche durante o tempo de toque).
 - **Ampliação em dois toques** — o primeiro toque em qualquer tecla de matemática destaca a opção (ampliação de 1,4× + contorno verde, sem confirmar), o segundo toque confirma. Cancelamento automático após 2 s. Funciona de forma integrada com o tempo de fixação.
@@ -1140,7 +1142,7 @@ CENÁRIO=estudos    CONFIANÇA=0.80 FRASES=Me ajuda, por favor|Não entendi|Pron
 <details>
 <summary><strong>Modos de entrada — voz, gestos, autocorreção por IA</strong></summary>
 
-![Configurações — painel de modos de entrada](../../docs/screenshots/panel-settings-input-modes.png)
+![Configurações — painel de modos de entrada](../../docs/screenshots/2026-10/input-modes.png)
 
 - **Entrada de voz** — Web Speech API com suporte ao idioma selecionado; disponível no plano gratuito
 - **Autocorreção e Conclusão por IA** — pausas na digitação utilizam a autocorreção na nuvem (Gemini 2.5 Flash-Lite). Desativado por padrão em conexões de menor velocidade.

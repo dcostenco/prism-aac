@@ -23,17 +23,17 @@ Teil der [Synalux-Plattform](https://synalux.ai).
   <a href="../../TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="AGB"></a>
 </p>
 
-![Prism AAC Hauptbildschirm auf dem iPad — Symbolleiste, Eingabezeile, fünf Vorhersage-Kacheln und die vollständige QWERTY-Tastatur (Produktions-Web-App, 1.9.0)](../../docs/screenshots/app-hero.png)
+![Aktuelle Bildtafel der Prism-AAC-Web-App](../../docs/screenshots/2026-10/ipad-landscape.png)
 
 ### Native Apps
 
 <p align="center">
-  <img src="../../docs/screenshots/ios-iphone.png" alt="PrismAAC auf dem iPhone" width="220" />
-  <img src="../../docs/screenshots/ios-ipad.png" alt="PrismAAC auf dem iPad" width="360" />
+  <img src="../../docs/screenshots/2026-10/native-iphone-typing.png" alt="PrismAAC im Tippmodus auf dem iPhone — iOS-Simulator, Version 1.9.3 (56)" width="220" />
+  <img src="../../docs/screenshots/2026-10/native-ipad-typing.png" alt="PrismAAC im Tippmodus auf dem iPad — iOS-Simulator, Version 1.9.3 (56)" width="360" />
   <img src="../../docs/screenshots/watch-ultra.png" alt="PrismAAC auf der Apple Watch Ultra" width="120" />
 </p>
 
-<sub>iPhone- und iPad-Rahmen aufgenommen von Build 1.9.0 (53) der Produktions-Web-App, 08.09.2026. Apple Watch-Rahmen von Build 1.4.0.</sub>
+<sub>iPhone- und iPad-Aufnahmen: iOS-Simulator, Version 1.9.3 (56), 25. Oktober 2026, Tippmodus. Apple-Watch-Aufnahme aus Version 1.4.0.</sub>
 
 | Plattform | Status | On-Device AI | Hinweise |
 |-----------|--------|--------------|----------|
@@ -51,19 +51,21 @@ Teil der [Synalux-Plattform](https://synalux.ai).
 
 30-sekündiges Video, das alle wichtigen Funktionen mit Inworld-TTS-Sprachausgabe zeigt:
 
-https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
+[Früheres Vorschauvideo ansehen](https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4)
+
+<sub>Aktuelle Web-App-Aufnahmen, am 26. Oktober 2026 mit dem aktuellen Prism-AAC-Bildpaket erstellt; getrennt vom früheren Vorschauvideo. [Aufnahmenachweise](../../docs/screenshots/2026-10/capture-notes.md).</sub>
 
 | Szene | Funktion | Screenshot |
 |---|---|---|
-| **Startseite** — Phrasen antippen | Piktogramm-Tafel mit 22 Kategorien, Vorlesen-Button | <img src="../../docs/screenshots/appstore/ipad_home.png" width="200"> |
-| **Kategorien** | Schnelle Phrasen für Hilfe, Essen, Orte, Gefühle | <img src="../../docs/screenshots/appstore/ipad_categories.png" width="200"> |
-| **KI-Chat** | Nachrichten verfassen, Gespräche üben | <img src="../../docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
-| **Notruf-Alarm** | Pflegekraft-/Pflegepersonal-Ruf mit einem Tipp | <img src="../../docs/screenshots/appstore/video/frame_03.png" width="200"> |
-| **Tagesplan** | Visuelle Tagesroutinen — Morgen, Schule, Mittagessen, Schlafenszeit | <img src="../../docs/screenshots/appstore/ipad_schedule.png" width="200"> |
-| **Spiele** | Seifenblasen platzen, Farbensuche, Zuordnen, Ja/Nein, Vervollständigen | <img src="../../docs/screenshots/appstore/ipad_games.png" width="200"> |
-| **Mathe & Schule** | Adaptives Rechnen mit Hinweis, Prüfen, Lösen + Ziffernblock | <img src="../../docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **Kopf- & Blicksteuerung** | Kamerabasierter Verweilcursor, Blicksteuerung, Kalibrierung | <img src="../../docs/screenshots/appstore/video/frame_07.png" width="200"> |
-| **12 Sprachen** | Englisch, Spanisch, Französisch, Russisch, Japanisch, Koreanisch, Chinesisch, Arabisch & mehr | <img src="../../docs/screenshots/appstore/video/frame_08.png" width="200"> |
+| **Startseite** — Phrasen antippen | Piktogramm-Tafel mit 22 Kategorien, Vorlesen-Button | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Kategorien** | Schnelle Phrasen für Hilfe, Essen, Orte, Gefühle | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **KI-Chat** | Nachrichten verfassen, Gespräche üben | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
+| **Notruf-Alarm** | Pflegekraft-/Pflegepersonal-Ruf mit einem Tipp | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Tagesplan** | Visuelle Tagesroutinen — Morgen, Schule, Mittagessen, Schlafenszeit | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
+| **Spiele** | Seifenblasen platzen, Farbensuche, Zuordnen, Ja/Nein, Vervollständigen | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
+| **Mathe & Schule** | Adaptives Rechnen mit Hinweis, Prüfen, Lösen + Ziffernblock | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **Kopf- & Blicksteuerung** | Kamerabasierter Verweilcursor, Blicksteuerung, Kalibrierung | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **12 Sprachen** | Englisch, Spanisch, Französisch, Russisch, Japanisch, Koreanisch, Chinesisch, Arabisch & mehr | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -71,19 +73,19 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 
 | Modul | Funktion | Vorschau |
 |---|---|---|
-| 📂 **Kategorien** | Symbolkarten im PECS-Stil für Nicht-Lese-Kundige | <img src="../../docs/screenshots/panel-categories.png" width="120"> |
-| ⌨️ **Tippen & Sprechen** | Tastatur + Wortvorhersage + neuronale Stimme | <img src="../../docs/screenshots/app-hero.png" width="120"> |
-| ✨ **KI-Chat** | Lokaler + Cloud-Assistent, optimiert für UK-Nutzer | <img src="../../docs/screenshots/panel-ai-chat.png" width="120"> |
-| 💬 **UK-Chat** | Eingehende Nachrichten von Bezugspersonen + Kontakten | <img src="../../docs/screenshots/panel-aac-chat.png" width="120"> |
+| 📂 **Kategorien** | Symbolkarten im PECS-Stil für Nicht-Lese-Kundige | <img src="../../docs/screenshots/2026-10/ipad-landscape.png" width="120"> |
+| ⌨️ **Tippen & Sprechen** | Tastatur + Wortvorhersage + neuronale Stimme | <img src="../../docs/screenshots/2026-10/keyboard.png" width="120"> |
+| ✨ **KI-Chat** | Lokaler + Cloud-Assistent, optimiert für UK-Nutzer | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="120"> |
+| 💬 **UK-Chat** | Eingehende Nachrichten von Bezugspersonen + Kontakten | <img src="../../docs/screenshots/2026-10/aac-chat.png" width="120"> |
 | 🧮 **Mathematik + Fächer** | Zelle-Raster-Arbeitsfläche mit fachspezifischem Tutor | <img src="../../docs/screenshots/math-canvas-typed.png" width="120"> |
-| 🗓 **Tagesplan** | Visuelle Zuerst-Dann-Abläufe | <img src="../../docs/screenshots/panel-schedule.png" width="120"> |
-| 🎮 **Spiele** | 12 therapeutische UK-Spiele | <img src="../../docs/screenshots/panel-games.png" width="120"> |
+| 🗓 **Tagesplan** | Visuelle Zuerst-Dann-Abläufe | <img src="../../docs/screenshots/2026-10/schedule.png" width="120"> |
+| 🎮 **Spiele** | 12 therapeutische UK-Spiele | <img src="../../docs/screenshots/2026-10/games.png" width="120"> |
 | 🏪 **Marktplatz** | Sprachpakete, Vokabularpakete, Spielepakete | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Komfort-Player** | Medienplayer am Krankenbett für Patienten | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Bett-Modus** | Vollbild-KI-Chat für die Nutzung im Halter oder im Liegen | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Visueller Kontext** | Kamera erkennt Objekte → schlägt passende Sätze vor | <img src="../../docs/screenshots/vision-mealtime.png" width="120"> |
-| 👋 **Freihändig** | Kopf- + Handgestenerkennung | <img src="../../docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **Einstellungen** | 25 Sprachen, motorische Anpassungen, Sprachauswahl + Sprachspeicher | <img src="../../docs/screenshots/panel-settings.png" width="120"> |
+| 👁 **Visueller Kontext** | Kamera erkennt Objekte → schlägt passende Sätze vor | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👋 **Freihändig** | Kopf- + Handgestenerkennung | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| ⚙️ **Einstellungen** | 25 Sprachen, motorische Anpassungen, Sprachauswahl + Sprachspeicher | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Cloud-Sprache und KI** | Optionales Guthaben für 4,99 US$/Monat für natürliche Stimmen + Cloud-KI | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
@@ -109,16 +111,16 @@ Navigation im Symbolfeld: Wischen Sie nach links/rechts innerhalb des Vokabularr
 ### Responsives Layout – iPhone & iPad, Hoch- & Querformat
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone Hochformat" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone Querformat" width="280" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad Hochformat" width="240" />
+  <img src="../../docs/screenshots/2026-10/iphone-portrait.png" alt="iPhone Hochformat" width="160" />
+  <img src="../../docs/screenshots/2026-10/iphone-landscape.png" alt="iPhone Querformat — Tippmodus" width="280" />
+  <img src="../../docs/screenshots/2026-10/ipad-portrait.png" alt="iPad Hochformat" width="240" />
 </p>
 
 ### Visuelle Modi
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="Dunkel + hoher Kontrast auf dem iPhone" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="Dunkel + hoher Kontrast auf dem iPad Querformat" width="340" />
+  <img src="../../docs/screenshots/2026-10/iphone-dark.png" alt="Dunkel + hoher Kontrast auf dem iPhone" width="160" />
+  <img src="../../docs/screenshots/2026-10/ipad-dark.png" alt="Dunkel + hoher Kontrast auf dem iPad Querformat" width="340" />
 </p>
 
 - Design-Farbschemata für **Hell / Dunkel / Hoher Kontrast**
@@ -417,9 +419,9 @@ Im Bild-Modus legt die Rastergröße die Anzahl der Kacheln pro Vokabularseite f
 
 Bildkacheln im PECS-Stil. Tippen Sie auf eine Kategorie, tippen Sie auf eine Kachel, hören Sie das Wort und sehen Sie zu, wie es in der Nachrichtenleiste landet. Funktioniert für Nichtleser, Leseanfänger und fortgeschrittene Kommunizierende gleichermaßen. Kachelsätze und deren Reihenfolge personalisieren sich im Laufe der Zeit durch aktivierende Ausbreitung — Kacheln, die Ihr Kind am häufigsten tippt, rücken nach oben; Kacheln, die monatelang nicht genutzt wurden, verblassen.
 
-**Surround-Layout** — Kategorien erscheinen in einer scrollbaren linken Spalte neben der Tastatur, sodass der AAC-Benutzer Bildkacheln tippen UND gleichzeitig schreiben kann, ohne den Modus zu wechseln. Die Vorhersageleiste bleibt sichtbar; beide Eingaben sind immer zugänglich.
+Prism AAC hat zwei Eingabemodi. Im Bildmodus wird die Vokabeltafel angezeigt; im Tippmodus die Tastatur mit Wortvorhersage. Mit **KB** wechselst du zum Tippmodus, mit **HIDE KB** zurück zum Bildmodus.
 
-![Kategorien im Surround-Modus — scrollbare Kategoriekarten links, vollständige Tastatur rechts](../../docs/screenshots/categories-surround-v2.png)
+![Bildtafel mit Kategorien in Prism AAC](../../docs/screenshots/2026-10/categories.png)
 
 <details>
 <summary><strong>Funktionen + technische Details</strong></summary>
@@ -439,7 +441,7 @@ Bildkacheln im PECS-Stil. Tippen Sie auf eine Kategorie, tippen Sie auf eine Kac
 ### ⌨️ Schreiben & Sprechen
 Bildschirmtastatur mit **Wortvorhersage**, **KI-Autovervollständigung** und einer **Sprechen**-Taste mit einem Tippen, die die Nachrichtenleiste mit einer natürlichen neuronalen Stimme laut vorliest. Das Schreiben schult die Vorhersage-Engine: Wörter, die Ihr Kind am häufigsten tippt, erscheinen in der nächsten Sitzung früher.
 
-![Prism AAC-Tastatur mit getipptem „hello“, Vorhersagekacheln und Sprechen-Taste](../../docs/screenshots/keyboard-typing.png)
+![Leere Prism-AAC-Tastatur, bereit zur Eingabe, mit Vorhersagekacheln und Sprechen-Taste](../../docs/screenshots/2026-10/keyboard.png)
 
 **Leseassistenz-Funktionen (Read & Write-Parität)** — für Benutzer mit Lese-, Gedächtnis- oder kognitiven Anforderungen:
 
@@ -486,7 +488,7 @@ Auf dem Gerät + Cloud-Assistent, abgestimmt auf die Stimme des AAC-Benutzers. G
 
 **Übersetzungsmodus** — Wenn die App-Sprache und die Ausgabesprache voneinander abweichen (z. B. Eingabe auf Portugiesisch, Ausgabe auf Englisch), wird jeder KI-Austausch automatisch über den Übersetzungspfad mit aktiviertem Streaming geleitet, sodass kein Geschwindigkeitsnachteil gegenüber dem einsprachigen Modus entsteht.
 
-![KI-Chat-Panel — Vorhersageleiste im KI-Modus ausgeblendet, vollständige Tastatur unten zugänglich](../../docs/screenshots/panel-ai-chat-v2.png)
+![KI-Chat-Panel — Vorhersageleiste im KI-Modus ausgeblendet, vollständige Tastatur unten zugänglich](../../docs/screenshots/2026-10/ai-chat.png)
 
 <details>
 <summary><strong>Funktionen + technische Details</strong></summary>
@@ -745,7 +747,7 @@ Die Mindestkartengröße (88 × 80 px) erfüllt die WCAG 2.5.5 AAA-Zielgrößena
 ### 📨 Nachricht senden — Anbieter-Auswahl
 Wenn ein Kontakt über mehrere konfigurierte Anbieter verfügt (z. B. sowohl E-Mail als auch SMS), erscheint über dem Verfassungsbereich der Abschnitt **„Senden über“**. Ein Tippen wechselt den Anbieter vor dem Verfassen — das Panel muss nicht verlassen werden.
 
-![Kontakt-Anbieter-Auswahl — 'Senden über'-Zeile mit grün hervorgehobener E-Mail, SMS verfügbar](../../docs/screenshots/contact-provider-picker.png)
+![Leere AAC-Chat-Kontaktansicht ohne eingerichtete Kontakte](../../docs/screenshots/2026-10/aac-chat.png)
 
 ---
 
@@ -856,7 +858,7 @@ Vollständiger Index, Rangliste unterstützter Fächer und das Handbuch „Wie m
 ### 🗓 Tagesplan
 Visueller Zuerst-Dann-Tagesplan zur Unterstützung von Routinen + Übergängen. Jeder Schritt ist eine Bildkachel + Beschriftung; das Fertigstellen einer Kachel löst einen Signalton + eine visuelle Fortschrittsmarkierung aus. Der Belohnungsshop (kostenpflichtige Stufe) wird am Ende einer Routine freigeschaltet.
 
-![Tagesplan-Panel mit Zuerst-Dann-Board + Aktivitätsliste](../../docs/screenshots/panel-schedule.png)
+![Tagesplan-Panel mit Zuerst-Dann-Board + Aktivitätsliste](../../docs/screenshots/2026-10/schedule.png)
 
 <details>
 <summary><strong>Funktionen + technische Details</strong></summary>
@@ -875,7 +877,7 @@ Visueller Zuerst-Dann-Tagesplan zur Unterstützung von Routinen + Übergängen. 
 ### 🎮 Spiele
 12 evidenzbasierte AAC-Spiele. Entwickelt, um Kommunikation zu lehren, **nicht für Bildschirmnutzung zum Zeitvertreib**. Jedes Spiel zeichnet Äußerungen + Genauigkeit auf, sodass die adaptive Engine das am besten passende nächste Spiel vorschlagen kann.
 
-![Spiele-Panel mit 9 Spielkacheln](../../docs/screenshots/panel-games.png)
+![Spiele-Panel mit 9 Spielkacheln](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>Die 12 Spiele + technische Details</strong></summary>
@@ -925,7 +927,7 @@ Stimmpakete (Inworld-Stimmen, benutzerdefinierte geklonte Stimme eines Geschwist
 ### 📄 PDF-Reader
 Öffnen Sie ein PDF, sehen Sie eine Kachel pro Seite, tippen Sie darauf, um sie in Ihrer Stimme sprechen zu hören. Schularbeitsblätter, Elternbriefe, Artikel — fügen Sie jedes PDF ein und hören Sie zu, anstatt zu versuchen, es zu lesen. Kein Adobe Reader erforderlich; die gesamte Bibliothek läuft in Ihrem Browser.
 
-![PDF-Reader-Panel — leerer Zustand mit Aufforderung "+ PDF öffnen"](../../docs/screenshots/panel-pdf-reader.png)
+![PDF-Reader-Panel — leerer Zustand mit Aufforderung "+ PDF öffnen"](../../docs/screenshots/2026-10/pdf-reader.png)
 
 <details>
 <summary><strong>Funktionen + technische Details</strong></summary>
@@ -944,7 +946,7 @@ Stimmpakete (Inworld-Stimmen, benutzerdefinierte geklonte Stimme eines Geschwist
 ### 👁 Screenshot-Reader (OCR)
 Fügen Sie ein Foto eines Arbeitsblatts, einen Screenshot einer Webseite oder ein Bild einer Schulbuchseite ein oder laden Sie es hoch — der erkannte Text erscheint neben dem Bild und Sie können auf **▶ Sprechen** tippen, um ihn zu hören, oder auf **↧ In Nachrichtenleiste einfügen**, um ihn vor dem Sprechen zu bearbeiten.
 
-![Screenshot-Reader (OCR)-Panel — leerer Zustand mit Aufforderung "+ Bild öffnen"](../../docs/screenshots/panel-ocr-capture.png)
+![Screenshot-Reader (OCR)-Panel — leerer Zustand mit Aufforderung "+ Bild öffnen"](../../docs/screenshots/2026-10/ocr-reader.png)
 
 <details>
 <summary><strong>Funktionen + technische Details</strong></summary>
@@ -1060,7 +1062,7 @@ Richten Sie die Kamera auf alltägliche Gegenstände und die Vorhersageleiste ze
 
 Phrasen sind in 12+ Sprachen verfügbar (Englisch, Spanisch, Französisch, Portugiesisch, Rumänisch, Ukrainisch, Russisch, Deutsch, Japanisch, Koreanisch, Chinesisch, Arabisch und mehr). Die Sprache folgt der Sprachstellung der App — wechseln Sie zu Russisch und die Kamera schlägt „Хочу ещё“ anstelle von „Ich möchte mehr“ vor.
 
-![Visueller Kontext — Mahlzeit-Szene erkannt](../../docs/screenshots/vision-mealtime.png)
+![Einstellungen — Kamera- und Visionsoptionen](../../docs/screenshots/2026-10/input-modes.png)
 
 <details>
 <summary><strong>Wie es funktioniert (technisch)</strong></summary>
@@ -1120,12 +1122,12 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ### ⚙️ Einstellungen
 25 Sprachen / 28 Sprachräume, Design (Hell / Dunkel / Hoher Kontrast), Rastergröße (4–20 Kacheln), motorische Anpassungen (Mathematik-Haltezeit-Verweilen, Lupe mit zwei Tippern, Kopfsteuerungs-Verweilen, Gesten-Empfindlichkeit, automatische Drift-Deaktivierung), Stimmenauswahl (kostenlos für alle), Nutzung und Speicherung des Sprach-Caches, KI-Autokorrektur Ein/Aus, Benachrichtigungen, Anpassung der Werkzeugleiste, Auswahl der Geschichtsregion, Synalux-Konto mit dem Cloud-Tarif.
 
-![Einstellungen — Sprachauswahl + Design-Umschalter](../../docs/screenshots/panel-settings.png)
+![Einstellungen — Sprachauswahl + Design-Umschalter](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Mathematik- + Barrierefreiheits-Einstellungen</strong></summary>
 
-![Einstellungen — Mathematik-Haltezeit + Lupe mit zwei Tippern](../../docs/screenshots/panel-settings-math.png)
+![Einstellungen — Mathematik-Haltezeit + Lupe mit zwei Tippern](../../docs/screenshots/2026-10/math-settings.png)
 
 - **Mathematik-Haltezeit-Verweilen** — Schieberegler von 0–1500 ms; 0 = sofortiger Klick, 200–1500 ms hilft Benutzern mit motorischer Ungenauigkeit (ein grüner Fortschrittsring füllt sich während des Verweilens, damit sie es sehen können).
 - **Lupe mit zwei Tippern** — Der erste Tipp auf eine beliebige Mathematik-Taste bereitet diese vor (1,4× Vergrößerung + grüner Heiligenschein, keine Eingabe), der zweite Tipp führt die Eingabe aus. Automatische Deaktivierung nach 2 s. Lässt sich mit dem Haltezeit-Verweilen kombinieren.
@@ -1139,7 +1141,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 <details>
 <summary><strong>Eingabemodi — Sprache, Gesten, KI-Autokorrektur</strong></summary>
 
-![Einstellungen — Eingabemodi-Panel](../../docs/screenshots/panel-settings-input-modes.png)
+![Einstellungen — Eingabemodi-Panel](../../docs/screenshots/2026-10/input-modes.png)
 
 - **Spracheingabe** — Web Speech API, sprachbewusst (z. B. Britisches Englisch vs. US-Englisch usw.); kostenlose Stufe
 - **KI-Autokorrektur & Vervollständigung** — jede Pause beim Tastenanschlag wird über die Cloud-Autokorrektur geleitet (Gemini 2.5 Flash-Lite). Bei geringer Bandbreite standardmäßig ausgeschaltet.

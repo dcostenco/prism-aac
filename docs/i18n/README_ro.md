@@ -23,17 +23,17 @@ Parte a [platformei Synalux](https://synalux.ai).
   <a href="TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Termeni"></a>
 </p>
 
-![Ecranul principal Prism AAC pe iPad — bară de instrumente, bară de introducere text, cinci casete de predicție și tastatura qwerty completă (aplicație web de producție, 1.9.0)](../../docs/screenshots/app-hero.png)
+![Tablă cu imagini din aplicația web Prism AAC actuală](../../docs/screenshots/2026-10/ipad-landscape.png)
 
 ### Aplicații native
 
 <p align="center">
-  <img src="../../docs/screenshots/ios-iphone.png" alt="PrismAAC pe iPhone" width="220" />
-  <img src="../../docs/screenshots/ios-ipad.png" alt="PrismAAC pe iPad" width="360" />
+  <img src="../../docs/screenshots/2026-10/native-iphone-typing.png" alt="PrismAAC în modul de tastare pe iPhone — simulator iOS, versiunea 1.9.3 (56)" width="220" />
+  <img src="../../docs/screenshots/2026-10/native-ipad-typing.png" alt="PrismAAC în modul de tastare pe iPad — simulator iOS, versiunea 1.9.3 (56)" width="360" />
   <img src="../../docs/screenshots/watch-ultra.png" alt="PrismAAC pe Apple Watch Ultra" width="120" />
 </p>
 
-<sub>Cadre iPhone și iPad capturate din versiunea 1.9.0 (53) rulate pe aplicația web de producție, 08-09-2026. Cadrul de ceas provine din versiunea 1.4.0.</sub>
+<sub>Capturi iPhone și iPad: simulator iOS, versiunea 1.9.3 (56), 25 octombrie 2026, modul de tastare. Imaginea Apple Watch este din versiunea 1.4.0.</sub>
 
 | Platformă | Status | AI pe dispozitiv | Note |
 |----------|--------|-------------|-------|
@@ -51,19 +51,21 @@ Parte a [platformei Synalux](https://synalux.ai).
 
 Videoclip de 30 de secunde care prezintă toate caracteristicile principale cu narațiune Inworld TTS:
 
-https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
+[Vezi videoclipul anterior de prezentare](https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4)
+
+<sub>Capturi actuale ale aplicației web, realizate la 26 octombrie 2026 cu pachetul actual de imagini Prism AAC; separate de videoclipul anterior de prezentare. [Note despre capturi](../../docs/screenshots/2026-10/capture-notes.md).</sub>
 
 | Scenă | Funcționalitate | Captură de ecran |
 |---|---|---|
-| **Acasă** — atinge expresii | Tablă cu pictagrame și 22 de categorii, buton Vorbește | <img src="../../docs/screenshots/appstore/ipad_home.png" width="200"> |
-| **Categorii** | Expresii rapide pentru Ajutor, Mâncare, Locuri, Sentimente | <img src="../../docs/screenshots/appstore/ipad_categories.png" width="200"> |
-| **Chat AI** | Compune mesaje, exersează conversații | <img src="../../docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
-| **Alertă de Urgență** | Apelare printr-o singură atingere pentru îngrijitor/asistent | <img src="../../docs/screenshots/appstore/video/frame_03.png" width="200"> |
-| **Program** | Rutine zilnice vizuale — dimineață, școală, prânz, culcare | <img src="../../docs/screenshots/appstore/ipad_schedule.png" width="200"> |
-| **Jocuri** | Sparge Bule, Vânătoare de Culori, Potrivește, Da/Nu, Completează | <img src="../../docs/screenshots/appstore/ipad_games.png" width="200"> |
-| **Matematică și Școală** | Matematică adaptivă cu Indiciu, Verifică, Rezolvă + tastatură numerică | <img src="../../docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **Urmărire cap și ochi** | Cursor bazat pe fixarea privirii cu camera, control prin privire, calibrare | <img src="../../docs/screenshots/appstore/video/frame_07.png" width="200"> |
-| **12 Limbi** | Engleză, Spaniolă, Franceză, Rusă, Japoneză, Coreeană, Chineză, Arabă și altele | <img src="../../docs/screenshots/appstore/video/frame_08.png" width="200"> |
+| **Acasă** — atinge expresii | Tablă cu pictagrame și 22 de categorii, buton Vorbește | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Categorii** | Expresii rapide pentru Ajutor, Mâncare, Locuri, Sentimente | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **Chat AI** | Compune mesaje, exersează conversații | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
+| **Alertă de Urgență** | Apelare printr-o singură atingere pentru îngrijitor/asistent | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Program** | Rutine zilnice vizuale — dimineață, școală, prânz, culcare | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
+| **Jocuri** | Sparge Bule, Vânătoare de Culori, Potrivește, Da/Nu, Completează | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
+| **Matematică și Școală** | Matematică adaptivă cu Indiciu, Verifică, Rezolvă + tastatură numerică | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **Urmărire cap și ochi** | Cursor bazat pe fixarea privirii cu camera, control prin privire, calibrare | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **12 Limbi** | Engleză, Spaniolă, Franceză, Rusă, Japoneză, Coreeană, Chineză, Arabă și altele | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -71,19 +73,19 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 
 | Modul | Ce face | Previzualizare |
 |---|---|---|
-| 📂 **Categorii** | Casete cu imagini în stil PECS pentru persoane care nu citesc | <img src="../../docs/screenshots/panel-categories.png" width="120"> |
-| ⌨️ **Scrie și vorbește** | Tastatură + predicție de cuvinte + voce neuronală | <img src="../../docs/screenshots/app-hero.png" width="120"> |
-| ✨ **Chat AI** | Asistent pe dispozitiv + cloud adaptat pentru utilizatorii AAC | <img src="../../docs/screenshots/panel-ai-chat.png" width="120"> |
-| 💬 **Chat AAC** | Mesaje primite de la îngrijitori + contacte | <img src="../../docs/screenshots/panel-aac-chat.png" width="120"> |
+| 📂 **Categorii** | Casete cu imagini în stil PECS pentru persoane care nu citesc | <img src="../../docs/screenshots/2026-10/ipad-landscape.png" width="120"> |
+| ⌨️ **Scrie și vorbește** | Tastatură + predicție de cuvinte + voce neuronală | <img src="../../docs/screenshots/2026-10/keyboard.png" width="120"> |
+| ✨ **Chat AI** | Asistent pe dispozitiv + cloud adaptat pentru utilizatorii AAC | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="120"> |
+| 💬 **Chat AAC** | Mesaje primite de la îngrijitori + contacte | <img src="../../docs/screenshots/2026-10/aac-chat.png" width="120"> |
 | 🧮 **Matematică + materii** | Pânză cu grilă de celule și tutor specializat pe domeniu | <img src="../../docs/screenshots/math-canvas-typed.png" width="120"> |
-| 🗓 **Program** | Rutine vizuale de tip prima dată - apoi | <img src="../../docs/screenshots/panel-schedule.png" width="120"> |
-| 🎮 **Jocuri** | 12 jocuri terapeutice AAC | <img src="../../docs/screenshots/panel-games.png" width="120"> |
+| 🗓 **Program** | Rutine vizuale de tip prima dată - apoi | <img src="../../docs/screenshots/2026-10/schedule.png" width="120"> |
+| 🎮 **Jocuri** | 12 jocuri terapeutice AAC | <img src="../../docs/screenshots/2026-10/games.png" width="120"> |
 | 🏪 **Piață (Marketplace)** | Pachete de voci, pachete de vocabular, pachete de jocuri | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Player de Confort** | Player media la patul pacientului pentru spital | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Modul La Pat** | Chat AI pe ecran complet pentru utilizarea telefonului pe suport / culcat | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Context Vizual** | Camera detectează obiecte → sugerează expresii relevante | <img src="../../docs/screenshots/vision-mealtime.png" width="120"> |
-| 👋 **Fără mâini** | Recunoaștere a mișcărilor capului și gesturilor mâinii | <img src="../../docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **Setări** | 25 de limbi, adaptări motorii, selector de voce + memorie cache pentru vorbire | <img src="../../docs/screenshots/panel-settings.png" width="120"> |
+| 👁 **Context Vizual** | Camera detectează obiecte → sugerează expresii relevante | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👋 **Fără mâini** | Recunoaștere a mișcărilor capului și gesturilor mâinii | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| ⚙️ **Setări** | 25 de limbi, adaptări motorii, selector de voce + memorie cache pentru vorbire | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Vorbire și AI în Cloud** | Resursă opțională de 4,99 US$/lună pentru voci naturale + AI în cloud | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
@@ -109,16 +111,16 @@ Navigare pe tabla cu imagini: glisează spre stânga/dreapta în grila de vocabu
 ### Aspect adaptiv — iPhone și iPad, portret și peisaj
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone portret" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone peisaj" width="280" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad portret" width="240" />
+  <img src="../../docs/screenshots/2026-10/iphone-portrait.png" alt="iPhone portret" width="160" />
+  <img src="../../docs/screenshots/2026-10/iphone-landscape.png" alt="iPhone landscape — modul de tastare" width="280" />
+  <img src="../../docs/screenshots/2026-10/ipad-portrait.png" alt="iPad portret" width="240" />
 </p>
 
 ### Moduri vizuale
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="Întunecat + contrast ridicat pe iPhone" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="Întunecat + contrast ridicat pe iPad peisaj" width="340" />
+  <img src="../../docs/screenshots/2026-10/iphone-dark.png" alt="Întunecat + contrast ridicat pe iPhone" width="160" />
+  <img src="../../docs/screenshots/2026-10/ipad-dark.png" alt="Întunecat + contrast ridicat pe iPad peisaj" width="340" />
 </p>
 
 - Teme **Luminos / Întunecat / Contrast Ridicat**
@@ -423,9 +425,9 @@ un subsol vizibil separat pentru numărul de pagini.
 
 Casete cu imagini în stil PECS. Atinge o categorie, atinge o casetă, ascultă cuvântul, privește cum ajunge în bara de mesaje. Funcționează la fel de bine pentru cei care nu citesc, cei care învață să citească sau cei în curs de dezvoltare a comunicării. Seturile de casete și ordonarea se personalizează în timp prin activare extinsă — casetele pe care copilul tău le atinge cel mai des urcă; cele neutilizate timp de luni de zile își pierd din vizibilitate.
 
-**Aspect învăluitor (Surround layout)** — categoriile apar într-o coloană derulabilă în stânga, alături de tastatură, astfel încât utilizatorul AAC poate atinge casetele cu imagini ȘI tastează simultan, fără a schimba modurile. Bara de predicție rămâne vizibilă; ambele intrări sunt întotdeauna accesibile.
+Prism AAC are două moduri de introducere. Modul Imagini afișează tabla de vocabular; modul Tastare afișează tastatura și predicția cuvintelor. Folosește **KB** pentru a trece la Tastare și **HIDE KB** pentru a reveni la Imagini.
 
-![Categorii în modul învăluitor — carduri de categorii derulabile în stânga, tastatură completă în dreapta](../../docs/screenshots/categories-surround-v2.png)
+![Tablă cu vocabular ilustrat și categorii Prism AAC](../../docs/screenshots/2026-10/categories.png)
 
 <details>
 <summary><strong>Funcționalități + detalii tehnice</strong></summary>
@@ -445,7 +447,7 @@ Casete cu imagini în stil PECS. Atinge o categorie, atinge o casetă, ascultă 
 ### ⌨️ Scrie și vorbește
 Tastatură pe ecran cu **predicție de cuvinte**, **autocompletare AI** și un buton **Vorbește** ce citește bara de mesaje tare, cu o voce neuronală naturală. Tastarea învață motorul de predicție: cuvintele pe care copilul tău le tastează cel mai des apar mai devreme în sesiunea următoare.
 
-![Tastatura Prism AAC cu cuvântul "hello" tapat, casete de predicție și butonul Vorbește](../../docs/screenshots/keyboard-typing.png)
+![Tastatură Prism AAC goală, pregătită pentru tastare, cu predicții și butonul Vorbește](../../docs/screenshots/2026-10/keyboard.png)
 
 **Caracteristici de asistență la citire (paritate cu Read & Write)** — pentru utilizatori cu nevoi de citire / memorie / cognitive:
 
@@ -492,7 +494,7 @@ Asistent pe dispozitiv + cloud adaptat pentru vocea utilizatorului AAC. Răspuns
 
 **Modul Traducere** — când limba aplicației și limba de ieșire diferă (de ex. introducere în portugheză, ieșire în engleză), fiecare schimb AI este redirecționat automat prin calea de traducere cu fluxul activat, astfel încât nu există nicio penalizare de viteză față de modul monolingv.
 
-![Panou Chat AI — bara de predicție ascunsă în modul AI, tastatura completă accesibilă dedesubt](../../docs/screenshots/panel-ai-chat-v2.png)
+![Panou Chat AI — bara de predicție ascunsă în modul AI, tastatura completă accesibilă dedesubt](../../docs/screenshots/2026-10/ai-chat.png)
 
 <details>
 <summary><strong>Funcționalități + detalii tehnice</strong></summary>
@@ -751,7 +753,7 @@ Dimensiunea minimă a cardului (88 × 80 px) îndeplinește cerința de dimensiu
 ### 📨 Trimitere mesaj — selector furnizor
 Când un contact are mai mulți furnizori configurați (de ex. atât Mail, cât și SMS), o secțiune **"Trimite prin"** apare deasupra zonei de redactare. O singură atingere schimbă furnizorul înainte de redactare — nu este nevoie să părăsești panoul.
 
-![Selector furnizor contact — rândul 'Trimite prin' cu Mail evidențiat verde, SMS disponibil](../../docs/screenshots/contact-provider-picker.png)
+![Panou de contacte AAC Chat gol, fără contacte configurate](../../docs/screenshots/2026-10/aac-chat.png)
 
 ---
 
@@ -862,7 +864,7 @@ Indexul complet, materiile cu suport insuficient clasificate și ghidul "cum să
 ### 🗓 Program
 Program vizual prima dată-apoi pentru suport în rutine și tranziții. Fiecare pas este o casetă cu imagine + etichetă; finalizarea unei casete redă un semnal sonor + un marcaj vizual de progres. Magazinul de recompense (nivel plătit) se deblochează la sfârșitul unei rutine.
 
-![Panou Program cu tablă prima dată-apoi + listă de activități](../../docs/screenshots/panel-schedule.png)
+![Panou Program cu tablă prima dată-apoi + listă de activități](../../docs/screenshots/2026-10/schedule.png)
 
 <details>
 <summary><strong>Funcționalități + detalii tehnice</strong></summary>
@@ -881,7 +883,7 @@ Program vizual prima dată-apoi pentru suport în rutine și tranziții. Fiecare
 ### 🎮 Jocuri
 12 jocuri AAC bazate pe dovezi. Create pentru a preda comunicarea, **nu pentru timpul petrecut în fața ecranului**. Fiecare joc înregistrează enunțurile + precizia, astfel încât motorul adaptiv să poată sugera cel mai potrivit joc următor.
 
-![Panoul Jocuri cu 9 casete de jocuri](../../docs/screenshots/panel-games.png)
+![Panoul Jocuri cu 9 casete de jocuri](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>Cele 12 jocuri + detalii tehnice</strong></summary>
@@ -931,7 +933,7 @@ Pachete de voci (voci Inworld, voce clonată personalizat a unui frate/părinte)
 ### 📄 Cititor PDF
 Deschide un PDF, vezi o casetă pentru fiecare pagină, atinge pentru a o auzi rostită în vocea ta. Fișe școlare, scrisori trimise acasă, articole — introdu orice PDF și ascultă în loc să încerci să îl citești. Nu este necesar Adobe Reader; întreaga bibliotecă rulează în browserul tău.
 
-![Panou Cititor PDF — stare goală cu îndemnul "+ Deschide PDF"](../../docs/screenshots/panel-pdf-reader.png)
+![Panou Cititor PDF — stare goală cu îndemnul "+ Deschide PDF"](../../docs/screenshots/2026-10/pdf-reader.png)
 
 <details>
 <summary><strong>Funcționalități + detalii tehnice</strong></summary>
@@ -950,7 +952,7 @@ Deschide un PDF, vezi o casetă pentru fiecare pagină, atinge pentru a o auzi r
 ### 👁 Cititor Capturi de Ecran (OCR)
 Lipește sau încarcă o fotografie a unei fișe de lucru, o captură de ecran a unei pagini web, o imagine a unei pagini dintr-un manual — textul recunoscut apare lângă imagine și poți atinge **▶ Vorbește** pentru a-l auzi, sau **↧ Trimite în bara de mesaje** pentru a-l edita înainte de a-l rosti.
 
-![Panou Cititor Capturi de Ecran (OCR) — stare goală cu îndemnul "+ Deschide imaginea"](../../docs/screenshots/panel-ocr-capture.png)
+![Panou Cititor Capturi de Ecran (OCR) — stare goală cu îndemnul "+ Deschide imaginea"](../../docs/screenshots/2026-10/ocr-reader.png)
 
 <details>
 <summary><strong>Funcționalități + detalii tehnice</strong></summary>
@@ -1066,7 +1068,7 @@ Introducere opțională bazată pe cameră pentru utilizatorii care nu pot ating
 
 Expresiile sunt disponibile în peste 12 limbi (engleză, spaniolă, franceză, portugheză, română, ucraineană, rusă, germană, japoneză, coreeană, chineză, arabă și altele). Limba urmărește setarea de limbă a aplicației — schimbă la rusă și camera va sugera "Хочу ещё" în loc de "Mai vreau".
 
-![Context Vizual — scenă de masă detectată](../../docs/screenshots/vision-mealtime.png)
+![Setări — opțiuni pentru cameră și viziune](../../docs/screenshots/2026-10/input-modes.png)
 
 <details>
 <summary><strong>Cum funcționează (tehnic)</strong></summary>
@@ -1126,12 +1128,12 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ### ⚙️ Setări
 25 de limbi / 28 de variante locale, temă (luminos / întunecat / contrast ridicat), dimensiune grilă (4–20 casete), adaptări motorii (menținere prin fixare la matematică, mărire prin două atingeri, fixare privire la urmărirea capului, sensibilitate gesturi, dezactivare automată la abatere), selector de voce (gratuit pentru toată lumea), utilizarea memoriei cache pentru vorbire și păstrarea datelor, autocorecție AI activată/dezactivată, notificări, personalizare bară de instrumente, selector regiune istorică, Cont Synalux cu planul Cloud.
 
-![Setări — selector de limbă + comutator temă](../../docs/screenshots/panel-settings.png)
+![Setări — selector de limbă + comutator temă](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Setări de matematică + accesibilitate</strong></summary>
 
-![Setări — timp de menținere la matematică + mărire prin două atingeri](../../docs/screenshots/panel-settings-math.png)
+![Setări — timp de menținere la matematică + mărire prin două atingeri](../../docs/screenshots/2026-10/math-settings.png)
 
 - **Menținere prin fixare la matematică** — glisor 0–1500 ms; 0 = clic instantaneu, 200–1500 ms ajută utilizatorii cu imprecizie motorie (un inel de progres verde se umple în timpul menținerii pentru a fi vizibil).
 - **Mărire prin două atingeri** — prima atingere pe orice tastă de matematică o pregătește (scară 1.4× + aureolă verde, fără confirmare), a doua atingere o confirmă. Dezactivare automată în 2 s. Se combină cu menținerea prin fixare.
@@ -1145,7 +1147,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 <details>
 <summary><strong>Moduri de introducere — voce, gesturi, autocorecție AI</strong></summary>
 
-![Setări — panoul moduri de introducere](../../docs/screenshots/panel-settings-input-modes.png)
+![Setări — panoul moduri de introducere](../../docs/screenshots/2026-10/input-modes.png)
 
 - **Introducere vocală** — Web Speech API, adaptat la limbă (engleză UK vs engleză US etc.); nivel gratuit
 - **Autocorecție și Completare AI** — fiecare pauză de tastare trece prin autocorecția din cloud (Gemini 2.5 Flash-Lite). Dezactivat implicit în scenarii cu lățime de bandă redusă.
