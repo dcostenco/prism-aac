@@ -1,0 +1,18 @@
+{
+  "capturedAt": "2026-10-26T16:43:52.690Z",
+  "captureRun": "b069f865-1cb2-4006-8eca-146e1042a61b",
+  "testCase": "feature panels with the current picture library",
+  "surface": "web",
+  "url": "https://synalux.ai/prism-aac",
+  "viewport": {
+    "width": 1032,
+    "height": 1376
+  },
+  "dpr": 1,
+  "picturePackVersion": "294639f647b616cc5c1b4d7bff31f063dd1cc2ff9d889f369265cfdea538da6d",
+  "imageSha256": "614e182aeb7b68baab822d8cfc2cf555bef078a502713046390555259d36a9fe",
+  "criticalSelectors": [
+    "button[aria-label=\"Categories\"]"
+  ],
+  "pictureSource": "verified local Prism AAC picture pack"
+}

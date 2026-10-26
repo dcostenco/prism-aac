@@ -1,0 +1,30 @@
+[
+  {
+    "file": "native-ipad-typing.png",
+    "source": "iOS 26.2 simulator; local fixture billing-retention journey",
+    "capturedDate": "2026-10-25",
+    "nativeVersion": "1.9.3",
+    "nativeBuild": "56",
+    "commit": "76283fbbe5fc2240cf9d52a09af3d5c176b05a5f",
+    "run": "aac-native-ui-9037a79c-17f5-4fe5-bca9-587c91d50a21",
+    "webBuildId": "GItcIL27pxaRIErqb7vTP",
+    "width": 1640,
+    "height": 2360,
+    "sha256": "f857762f0c0670181c49b660fdb848565d4bc0511514fa815fbf1d82a4adfda3",
+    "boundary": "Native simulator typing UI only; no provider/purchase/restore claim"
+  },
+  {
+    "file": "native-iphone-typing.png",
+    "source": "iOS 26.2 simulator; local fixture billing-retention journey",
+    "capturedDate": "2026-10-25",
+    "nativeVersion": "1.9.3",
+    "nativeBuild": "56",
+    "commit": "76283fbbe5fc2240cf9d52a09af3d5c176b05a5f",
+    "run": "aac-native-ui-93d4b65a-2ea9-4a19-87f0-e32e599c8939",
+    "webBuildId": "GItcIL27pxaRIErqb7vTP",
+    "width": 1179,
+    "height": 2556,
+    "sha256": "5d3ca42fdccb04c65b73e248d326618f54d0920d48cb63cfe6bfe13e9506bfec",
+    "boundary": "Native simulator typing UI only; no provider/purchase/restore claim"
+  }
+]

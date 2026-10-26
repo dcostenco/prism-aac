@@ -22,7 +22,7 @@ Part of the [Synalux platform](https://synalux.ai).
   <a href="TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Terms"></a>
 </p>
 
-![Prism AAC main screen on iPad — toolbar, type-here bar, five prediction tiles, and the full qwerty keyboard (production web app, 1.9.0)](docs/screenshots/app-hero.png)
+![Prism AAC picture board in the current web app](docs/screenshots/2026-10/ipad-landscape.png)
 
 ### Native apps
 
@@ -32,12 +32,12 @@ and updates Mac subscription management. The 14-day opt-in trial is unchanged.
 This build has not been uploaded or submitted to the App Store.
 
 <p align="center">
-  <img src="docs/screenshots/ios-iphone.png" alt="PrismAAC on iPhone" width="220" />
-  <img src="docs/screenshots/ios-ipad.png" alt="PrismAAC on iPad" width="360" />
+  <img src="docs/screenshots/2026-10/native-iphone-typing.png" alt="PrismAAC typing mode on iPhone — native simulator, build 1.9.3 (56)" width="220" />
+  <img src="docs/screenshots/2026-10/native-ipad-typing.png" alt="PrismAAC typing mode on iPad — native simulator, build 1.9.3 (56)" width="360" />
   <img src="docs/screenshots/watch-ultra.png" alt="PrismAAC on Apple Watch Ultra" width="120" />
 </p>
 
-<sub>iPhone and iPad frames captured from build 1.9.0 (53) running the production web app, 2026-09-08. Watch frame from 1.4.0.</sub>
+<sub>iPhone and iPad: native simulator build 1.9.3 (56), captured October 25, 2026, in typing mode. Apple Watch image from build 1.4.0.</sub>
 
 | Platform | Status | On-device AI | Notes |
 |----------|--------|-------------|-------|
@@ -51,23 +51,28 @@ This build has not been uploaded or submitted to the App Store.
 
 ---
 
-## App Store Preview Video
+## Current Web App Screenshots
 
-30-second video showcasing all major features with Inworld TTS narration:
-
-https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
+These screenshots show the current web app and its feature panels.
 
 | Scene | Feature | Screenshot |
 |---|---|---|
-| **Home** — tap phrases | Pictogram board with 22 categories, Speak button | <img src="docs/screenshots/appstore/ipad_home.png" width="200"> |
-| **Categories** | Quick phrases for Help, Food, Places, Feelings | <img src="docs/screenshots/appstore/ipad_categories.png" width="200"> |
-| **AI Chat** | Compose messages, practice conversations | <img src="docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
-| **Emergency Alert** | One-tap caregiver/nurse call | <img src="docs/screenshots/appstore/video/frame_03.png" width="200"> |
-| **Schedule** | Visual daily routines — morning, school, lunch, bedtime | <img src="docs/screenshots/appstore/ipad_schedule.png" width="200"> |
-| **Games** | Bubble Pop, Color Hunt, Match It, Yes/No, Finish It | <img src="docs/screenshots/appstore/ipad_games.png" width="200"> |
-| **Math & School** | Adaptive math with Hint, Check, Solve + number pad | <img src="docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **Head & Eye Tracking** | Camera-based dwell cursor, gaze control, calibration | <img src="docs/screenshots/appstore/video/frame_07.png" width="200"> |
-| **12 Languages** | English, Spanish, French, Russian, Japanese, Korean, Chinese, Arabic & more | <img src="docs/screenshots/appstore/video/frame_08.png" width="200"> |
+| **Home** — tap phrases | Picture board with categories and Speak button | <img src="docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **Categories** | Pronouns and other categorized vocabulary | <img src="docs/screenshots/2026-10/categories.png" width="200"> |
+| **AI Chat** | Compose messages, practice conversations | <img src="docs/screenshots/2026-10/ai-chat.png" width="200"> |
+| **Emergency Alert** | Confirm or cancel a caregiver alert | <img src="docs/screenshots/2026-10/emergency.png" width="200"> |
+| **Schedule** | Visual daily routines — morning, school, lunch, bedtime | <img src="docs/screenshots/2026-10/schedule.png" width="200"> |
+| **Games** | Bubble Pop, Color Hunt, Match It, Yes/No, Finish It | <img src="docs/screenshots/2026-10/games.png" width="200"> |
+| **Math & School** | Math canvas and subject keyboards | <img src="docs/screenshots/2026-10/math.png" width="200"> |
+| **Input Modes** | Camera input and accessibility controls | <img src="docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **Languages** | Language selection and localized interface | <img src="docs/screenshots/2026-10/languages.png" width="200"> |
+
+Web screenshots were captured October 26, 2026 with the current Prism AAC picture pack. See [capture notes](docs/screenshots/2026-10/capture-notes.md) for provenance.
+
+## App Store Preview Video
+
+The historical 30-second preview video has Inworld TTS narration and predates
+the screenshot refresh: [watch the preview](https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4).
 
 ---
 
@@ -75,19 +80,19 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 
 | Module | What it does | Preview |
 |---|---|---|
-| 📂 **Categories** | PECS-style picture tiles for non-readers | <img src="docs/screenshots/panel-categories.png" width="120"> |
-| ⌨️ **Type & speak** | Keyboard + word prediction + neural voice | <img src="docs/screenshots/app-hero.png" width="120"> |
-| ✨ **AI Chat** | On-device + cloud assistant tuned for AAC users | <img src="docs/screenshots/panel-ai-chat.png" width="120"> |
-| 💬 **AAC Chat** | Incoming messages from caregivers + contacts | <img src="docs/screenshots/panel-aac-chat.png" width="120"> |
+| 📂 **Categories** | PECS-style picture tiles for non-readers | <img src="docs/screenshots/2026-10/ipad-landscape.png" width="120"> |
+| ⌨️ **Type & speak** | Keyboard + word prediction + neural voice | <img src="docs/screenshots/2026-10/keyboard.png" width="120"> |
+| ✨ **AI Chat** | On-device + cloud assistant tuned for AAC users | <img src="docs/screenshots/2026-10/ai-chat.png" width="120"> |
+| 💬 **AAC Chat** | Incoming messages from caregivers + contacts | <img src="docs/screenshots/2026-10/aac-chat.png" width="120"> |
 | 🧮 **Math + subjects** | Cell-grid canvas with domain-aware tutor | <img src="docs/screenshots/math-canvas-typed.png" width="120"> |
-| 🗓 **Schedule** | Visual first-then routines | <img src="docs/screenshots/panel-schedule.png" width="120"> |
-| 🎮 **Games** | 12 therapeutic AAC games | <img src="docs/screenshots/panel-games.png" width="120"> |
+| 🗓 **Schedule** | Visual first-then routines | <img src="docs/screenshots/2026-10/schedule.png" width="120"> |
+| 🎮 **Games** | 12 therapeutic AAC games | <img src="docs/screenshots/2026-10/games.png" width="120"> |
 | 🏪 **Marketplace** | Voice packs, vocab packs, game packs | <img src="docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Comfort Player** | Bedside media player for hospital patients | <img src="docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Bedside Mode** | Full-screen AI chat for phone-in-stand / lying-down use | <img src="e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **Vision Context** | Camera detects objects → suggests relevant phrases | <img src="docs/screenshots/vision-mealtime.png" width="120"> |
-| 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **Settings** | 25 languages, motor accommodations, voice picker + speech cache | <img src="docs/screenshots/panel-settings.png" width="120"> |
+| 👁 **Vision Context** | Camera and vision options in Settings | <img src="docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/2026-10/input-modes.png" width="120"> |
+| ⚙️ **Settings** | 25 languages, motor accommodations, voice picker + speech cache | <img src="docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **Cloud speech and AI** | Optional US$4.99/month allowance for natural voices + cloud AI | <img src="docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
@@ -113,16 +118,16 @@ Picture-board navigation: swipe left/right within the vocabulary grid or bottom 
 ### Responsive layout — iPhone & iPad, portrait & landscape
 
 <p align="center">
-  <img src="docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone portrait" width="160" />
-  <img src="docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone landscape" width="280" />
-  <img src="docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad portrait" width="240" />
+  <img src="docs/screenshots/2026-10/iphone-portrait.png" alt="iPhone portrait" width="160" />
+  <img src="docs/screenshots/2026-10/iphone-landscape.png" alt="iPhone landscape" width="280" />
+  <img src="docs/screenshots/2026-10/ipad-portrait.png" alt="iPad portrait" width="240" />
 </p>
 
 ### Visual modes
 
 <p align="center">
-  <img src="docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="Dark + high contrast on iPhone" width="160" />
-  <img src="docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="Dark + high contrast on iPad landscape" width="340" />
+  <img src="docs/screenshots/2026-10/iphone-dark.png" alt="Dark mode on iPhone" width="160" />
+  <img src="docs/screenshots/2026-10/ipad-dark.png" alt="Dark mode on iPad" width="340" />
 </p>
 
 - **Light / Dark / High Contrast** themes
@@ -427,9 +432,9 @@ a separate visible page-count footer.
 
 PECS-style picture tiles. Tap a category, tap a tile, hear the word, watch it land in the message bar. Works for non-readers, pre-readers, and emerging communicators alike. Tile sets and ordering personalize over time via spreading activation — the tiles your child taps most rise; the ones unused for months fade.
 
-**Surround layout** — categories appear in a scrollable left column alongside the keyboard, so the AAC user can tap picture tiles AND type simultaneously without switching modes. The prediction bar stays visible; both inputs are always accessible.
+Prism AAC has two input modes. **Picture mode** shows the vocabulary board; **Typing mode** shows the keyboard and word predictions. Use **KB** to switch to Typing mode and **HIDE KB** to return to Picture mode.
 
-![Categories in surround mode — scrollable category cards on the left, full keyboard on the right](docs/screenshots/categories-surround-v2.png)
+![Prism AAC picture board with categories](docs/screenshots/2026-10/categories.png)
 
 <details>
 <summary><strong>Features + technical details</strong></summary>
@@ -449,7 +454,7 @@ PECS-style picture tiles. Tap a category, tap a tile, hear the word, watch it la
 ### ⌨️ Type & speak
 On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap **Speak** button that reads the message bar aloud in a natural neural voice. Typing teaches the prediction engine: words your child types most surface earlier next session.
 
-![Prism AAC keyboard with "hello" typed, prediction tiles, and Speak button](docs/screenshots/keyboard-typing.png)
+![Prism AAC keyboard, prediction pictures, and Speak button](docs/screenshots/2026-10/keyboard.png)
 
 **Reading-assistant features (Read & Write parity)** — for users with reading / memory / cognitive needs:
 
@@ -496,7 +501,7 @@ On-device + cloud assistant tuned for the AAC user's voice. Streamed responses, 
 
 **Translation mode** — when the app language and output language differ (e.g. input in Portuguese, output in English), every AI exchange is automatically routed through the translation path with streaming enabled, so there is no speed penalty versus monolingual mode.
 
-![AI Chat panel — prediction bar hidden in AI mode, full keyboard accessible below](docs/screenshots/panel-ai-chat-v2.png)
+![AI Chat panel — prediction bar hidden in AI mode, full keyboard accessible below](docs/screenshots/2026-10/ai-chat.png)
 
 <details>
 <summary><strong>Features + technical details</strong></summary>
@@ -755,7 +760,7 @@ The minimum card size (88 × 80 px) meets the WCAG 2.5.5 AAA target size require
 ### 📨 Send a message — provider picker
 When a contact has multiple configured providers (e.g. both Mail and SMS), a **"Send via"** section appears above the compose area. One tap switches provider before composing — no need to leave the panel.
 
-![Contact provider picker — 'Send via' row with Mail highlighted green, SMS available](docs/screenshots/contact-provider-picker.png)
+![AAC Chat contacts panel with no contacts configured](docs/screenshots/2026-10/aac-chat.png)
 
 ---
 
@@ -866,7 +871,7 @@ Full index, ranked under-supported subjects, and the "how to add a new workflow"
 ### 🗓 Schedule
 Visual first-then schedule for routine + transition support. Each step is a picture tile + label; finishing a tile fires a chime + a visual progress mark. Reward shop (paid tier) unlocks at the end of a routine.
 
-![Schedule panel with first-then board + activity list](docs/screenshots/panel-schedule.png)
+![Schedule panel with first-then board + activity list](docs/screenshots/2026-10/schedule.png)
 
 <details>
 <summary><strong>Features + technical details</strong></summary>
@@ -885,7 +890,7 @@ Visual first-then schedule for routine + transition support. Each step is a pict
 ### 🎮 Games
 12 evidence-based AAC games. Built to teach communication, **not for screen time**. Each game records utterances + accuracy so the adaptive engine can suggest the next-best-fit game.
 
-![Games panel with 9 game tiles](docs/screenshots/panel-games.png)
+![Games panel with 12 game tiles](docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>The 12 games + technical details</strong></summary>
@@ -935,7 +940,7 @@ Voice packs (Inworld voices, custom-cloned voice of a sibling/parent), vocab pac
 ### 📄 PDF Reader
 Open a PDF, see one tile per page, tap to hear it spoken in your voice. School worksheets, take-home letters, articles — feed any PDF in and listen instead of trying to read it. No Adobe Reader required; the entire library runs in your browser.
 
-![PDF Reader panel — empty state with "+ Open PDF" prompt](docs/screenshots/panel-pdf-reader.png)
+![PDF Reader panel — empty state with "+ Open PDF" prompt](docs/screenshots/2026-10/pdf-reader.png)
 
 <details>
 <summary><strong>Features + technical details</strong></summary>
@@ -954,7 +959,7 @@ Open a PDF, see one tile per page, tap to hear it spoken in your voice. School w
 ### 👁 Screenshot Reader (OCR)
 Paste or upload a photo of a worksheet, screenshot of a webpage, picture of a textbook page — the recognized text shows up next to the image and you can tap **▶ Speak** to hear it, or **↧ Send to message bar** to edit before speaking.
 
-![Screenshot Reader (OCR) panel — empty state with "+ Open image" prompt](docs/screenshots/panel-ocr-capture.png)
+![Screenshot Reader (OCR) panel — empty state with "+ Open image" prompt](docs/screenshots/2026-10/ocr-reader.png)
 
 <details>
 <summary><strong>Features + technical details</strong></summary>
@@ -1070,7 +1075,7 @@ Point the camera at everyday objects and the prediction bar instantly surfaces r
 
 Phrases are available in 12+ languages (English, Spanish, French, Portuguese, Romanian, Ukrainian, Russian, German, Japanese, Korean, Chinese, Arabic, and more). The language follows the app's language setting — switch to Russian and the camera suggests "Хочу ещё" instead of "I want more".
 
-![Vision Context — mealtime scene detected](docs/screenshots/vision-mealtime.png)
+![Settings panel with camera and vision input options](docs/screenshots/2026-10/input-modes.png)
 
 <details>
 <summary><strong>How it works (technical)</strong></summary>
@@ -1130,12 +1135,12 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ### ⚙️ Settings
 25 languages / 28 locales, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (free for everyone), speech-cache usage and retention, AI autocorrect on/off, notifications, toolbar customization, history region picker, Synalux Account with the Cloud plan.
 
-![Settings — language picker + theme toggle](docs/screenshots/panel-settings.png)
+![Settings — categories, grid size, and theme controls](docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>Math + accessibility settings</strong></summary>
 
-![Settings — math hold-time + two-hit magnify](docs/screenshots/panel-settings-math.png)
+![Settings — math hold-time + two-hit magnify](docs/screenshots/2026-10/math-settings.png)
 
 - **Math hold-time dwell** — 0–1500 ms slider; 0 = instant click, 200–1500 ms helps users with motor imprecision (a green progress ring fills during the dwell so they can see it).
 - **Two-hit magnify** — first tap on any math key arms it (1.4× scale + green halo, no commit), second tap commits. 2 s auto-disarms. Composes with hold-time dwell.
@@ -1149,7 +1154,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 <details>
 <summary><strong>Input modes — voice, gestures, AI autocorrect</strong></summary>
 
-![Settings — input modes panel](docs/screenshots/panel-settings-input-modes.png)
+![Settings — input modes panel](docs/screenshots/2026-10/input-modes.png)
 
 - **Voice input** — Web Speech API, language-aware (UK English vs US English etc.); free tier
 - **AI Autocorrect & Completion** — every keystroke pause routes through the cloud autocorrect (Gemini 2.5 Flash-Lite). Off by default in low-bandwidth scenarios.

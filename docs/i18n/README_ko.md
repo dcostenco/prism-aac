@@ -23,17 +23,17 @@
   <a href="TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Terms"></a>
 </p>
 
-![iPad에서의 Prism AAC 메인 화면 — 도구 모음, 입력란, 5개의 예측 타일 및 전체 QWERTY 키보드 (프로덕션 웹 앱, 1.9.0)](../../docs/screenshots/app-hero.png)
+![현재 Prism AAC 웹 앱의 그림 보드](../../docs/screenshots/2026-10/ipad-landscape.png)
 
 ### 네이티브 앱
 
 <p align="center">
-  <img src="../../docs/screenshots/ios-iphone.png" alt="iPhone에서의 PrismAAC" width="220" />
-  <img src="../../docs/screenshots/ios-ipad.png" alt="iPad에서의 PrismAAC" width="360" />
+  <img src="../../docs/screenshots/2026-10/native-iphone-typing.png" alt="iPhone의 PrismAAC 입력 모드 — iOS 시뮬레이터, 버전 1.9.3 (56)" width="220" />
+  <img src="../../docs/screenshots/2026-10/native-ipad-typing.png" alt="iPad의 PrismAAC 입력 모드 — iOS 시뮬레이터, 버전 1.9.3 (56)" width="360" />
   <img src="../../docs/screenshots/watch-ultra.png" alt="Apple Watch Ultra에서의 PrismAAC" width="120" />
 </p>
 
-<sub>iPhone 및 iPad 프레임은 프로덕션 웹 앱을 실행하는 빌드 1.9.0 (53)에서 캡처됨 (2026-09-08). Watch 프레임은 1.4.0에서 캡처됨.</sub>
+<sub>iPhone 및 iPad 캡처: iOS 시뮬레이터, 버전 1.9.3 (56), 2026년 10월 25일, 입력 모드. Apple Watch 이미지는 버전 1.4.0.</sub>
 
 | 플랫폼 | 상태 | 기기 내 AI | 비고 |
 |----------|--------|-------------|-------|
@@ -51,19 +51,21 @@
 
 Inworld TTS 나레이션과 함께 모든 주요 기능을 보여주는 30초 동영상:
 
-https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
+[이전 미리보기 영상 보기](https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4)
+
+<sub>현재 Prism AAC 그림 팩을 사용해 2026년 10월 26일에 캡처한 최신 웹 앱 이미지이며, 이전 미리보기 영상과는 별개입니다. [캡처 정보](../../docs/screenshots/2026-10/capture-notes.md).</sub>
 
 | 장면 | 기능 | 스크린샷 |
 |---|---|---|
-| **홈** — 어구 탭 | 22개 카테고리의 픽토그램 보드, 읽기 버튼 | <img src="../../docs/screenshots/appstore/ipad_home.png" width="200"> |
-| **카테고리** | 도움, 음식, 장소, 감정을 위한 빠른 어구 | <img src="../../docs/screenshots/appstore/ipad_categories.png" width="200"> |
-| **AI 채팅** | 메시지 작성, 대화 연습 | <img src="../../docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
-| **비상 알림** | 원탭 간병인/간호사 호출 | <img src="../../docs/screenshots/appstore/video/frame_03.png" width="200"> |
-| **일정** | 시각적 일일 루틴 — 아침, 학교, 점심, 잠자리 | <img src="../../docs/screenshots/appstore/ipad_schedule.png" width="200"> |
-| **게임** | 버블 팝, 색상 찾기, 짝 맞추기, 예/아니오, 완성하기 | <img src="../../docs/screenshots/appstore/ipad_games.png" width="200"> |
-| **수학 및 학업** | 힌트, 채점, 풀이 + 숫자 패드가 포함된 적응형 수학 | <img src="../../docs/screenshots/appstore/video/frame_06.png" width="200"> |
-| **머리 및 시선 추적** | 카메라 기반 머무르기 커서, 시선 제어, 보정 | <img src="../../docs/screenshots/appstore/video/frame_07.png" width="200"> |
-| **12개 언어** | 영어, 스페인어, 프랑스어, 러시아어, 일본어, 한국어, 중국어, 아랍어 등 | <img src="../../docs/screenshots/appstore/video/frame_08.png" width="200"> |
+| **홈** — 어구 탭 | 카테고리와 읽기 버튼이 있는 그림 보드 | <img src="../../docs/screenshots/2026-10/ipad-portrait.png" width="200"> |
+| **카테고리** | 대명사 및 범주별 어휘 | <img src="../../docs/screenshots/2026-10/categories.png" width="200"> |
+| **AI 채팅** | 메시지 작성, 대화 연습 | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="200"> |
+| **비상 알림** | 보호자 알림 확인 또는 취소 | <img src="../../docs/screenshots/2026-10/emergency.png" width="200"> |
+| **일정** | 시각적 일일 루틴 — 아침, 학교, 점심, 잠자리 | <img src="../../docs/screenshots/2026-10/schedule.png" width="200"> |
+| **게임** | 버블 팝, 색상 찾기, 짝 맞추기, 예/아니오, 완성하기 | <img src="../../docs/screenshots/2026-10/games.png" width="200"> |
+| **수학 및 학업** | 수학 캔버스와 과목별 키보드 | <img src="../../docs/screenshots/2026-10/math.png" width="200"> |
+| **입력 모드** | 카메라 입력 및 접근성 제어 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="200"> |
+| **언어** | 언어 선택 및 현지화된 인터페이스 | <img src="../../docs/screenshots/2026-10/languages.png" width="200"> |
 
 ---
 
@@ -71,19 +73,19 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 
 | 모듈 | 기능 | 미리보기 |
 |---|---|---|
-| 📂 **카테고리** | 글을 읽지 못하는 사용자를 위한 PECS 방식의 그림 타일 | <img src="../../docs/screenshots/panel-categories.png" width="120"> |
-| ⌨️ **입력 및 발화** | 키보드 + 단어 예측 + 신경망 음성 | <img src="../../docs/screenshots/app-hero.png" width="120"> |
-| ✨ **AI 채팅** | AAC 사용자에 맞춘 기기 내 및 클라우드 어시스턴트 | <img src="../../docs/screenshots/panel-ai-chat.png" width="120"> |
-| 💬 **AAC 대화** | 간병인 및 연락처에서 도착한 수신 메시지 | <img src="../../docs/screenshots/panel-aac-chat.png" width="120"> |
+| 📂 **카테고리** | 글을 읽지 못하는 사용자를 위한 PECS 방식의 그림 타일 | <img src="../../docs/screenshots/2026-10/ipad-landscape.png" width="120"> |
+| ⌨️ **입력 및 발화** | 키보드 + 단어 예측 + 신경망 음성 | <img src="../../docs/screenshots/2026-10/keyboard.png" width="120"> |
+| ✨ **AI 채팅** | AAC 사용자에 맞춘 기기 내 및 클라우드 어시스턴트 | <img src="../../docs/screenshots/2026-10/ai-chat.png" width="120"> |
+| 💬 **AAC 대화** | 간병인 및 연락처에서 도착한 수신 메시지 | <img src="../../docs/screenshots/2026-10/aac-chat.png" width="120"> |
 | 🧮 **수학 + 과목** | 영역 인식 튜터가 있는 셀 그리드 캔버스 | <img src="../../docs/screenshots/math-canvas-typed.png" width="120"> |
-| 🗓 **일정** | 시각적 단계별 루틴 | <img src="../../docs/screenshots/panel-schedule.png" width="120"> |
-| 🎮 **게임** | 12가지 치료 목적의 AAC 게임 | <img src="../../docs/screenshots/panel-games.png" width="120"> |
+| 🗓 **일정** | 시각적 단계별 루틴 | <img src="../../docs/screenshots/2026-10/schedule.png" width="120"> |
+| 🎮 **게임** | 12가지 치료 목적의 AAC 게임 | <img src="../../docs/screenshots/2026-10/games.png" width="120"> |
 | 🏪 **마켓플레이스** | 음성 팩, 어휘 팩, 게임 팩 | <img src="../../docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **컴포트 플레이어** | 병원 입원 환자를 위한 침상 미디어 플레이어 | <img src="../../docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **침상 모드** | 거치대 사용 / 누워있는 상태를 위한 전체 화면 AI 채팅 | <img src="../../e2e/_screenshots/bedside-overlay-open.png" width="120"> |
-| 👁 **시각적 컨텍스트** | 카메라인식 사물 → 관련 어구 추천 | <img src="../../docs/screenshots/vision-mealtime.png" width="120"> |
-| 👋 **핸즈프리** | 머리 및 손 제스처 인식 | <img src="../../docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **설정** | 25개 언어, 운동 장애 편의 기능, 음성 선택기 + 음성 캐시 | <img src="../../docs/screenshots/panel-settings.png" width="120"> |
+| 👁 **시각적 컨텍스트** | 설정의 카메라 및 비전 옵션 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| 👋 **핸즈프리** | 머리 및 손 제스처 인식 | <img src="../../docs/screenshots/2026-10/input-modes.png" width="120"> |
+| ⚙️ **설정** | 25개 언어, 운동 장애 편의 기능, 음성 선택기 + 음성 캐시 | <img src="../../docs/screenshots/2026-10/settings.png" width="120"> |
 | ☁️ **클라우드 음성 및 AI** | 자연스러운 음성 + 클라우드 AI를 위한 선택적 월 US$4.99 제공량 | <img src="../../docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
@@ -109,16 +111,16 @@ Prism AAC는 2026년 6월에 iPhone 세로/가로, iPad 세로/가로 모드 전
 ### 반응형 레이아웃 — iPhone 및 iPad, 세로 및 가로
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone 세로" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone 가로" width="280" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad 세로" width="240" />
+  <img src="../../docs/screenshots/2026-10/iphone-portrait.png" alt="iPhone 세로" width="160" />
+  <img src="../../docs/screenshots/2026-10/iphone-landscape.png" alt="iPhone 가로 모드 — 입력 모드" width="280" />
+  <img src="../../docs/screenshots/2026-10/ipad-portrait.png" alt="iPad 세로" width="240" />
 </p>
 
 ### 시각 모드
 
 <p align="center">
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="iPhone의 다크 + 고대비 모드" width="160" />
-  <img src="../../docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="iPad 가로 모드의 다크 + 고대비 모드" width="340" />
+  <img src="../../docs/screenshots/2026-10/iphone-dark.png" alt="iPhone의 다크 + 고대비 모드" width="160" />
+  <img src="../../docs/screenshots/2026-10/ipad-dark.png" alt="iPad 가로 모드의 다크 + 고대비 모드" width="340" />
 </p>
 
 - **라이트 / 다크 / 고대비** 테마
@@ -417,9 +419,9 @@ PredictionBar 탭 --> recordPredictionHit() (동적 임포트, ~0.01ms)
 
 PECS 방식의 그림 타일입니다. 카테고리를 탭하고 타일을 누르면 단어가 음성으로 출력되고 입력란에 들어갑니다. 문자를 읽지 못하거나 이제 배우기 시작한 사용자 모두에게 적합합니다. 퍼짐 활성화(Spreading Activation) 알고리즘을 통해 사용 패턴에 따라 타일 배치가 최적화됩니다 — 자주 누르는 타일은 위로 올라오고, 몇 달 동안 쓰지 않은 타일은 차츰 뒤로 밀려납니다.
 
-**서라운드 레이아웃** — 카테고리가 키보드 좌측 스크롤 칼럼에 함께 배치되어, 모드를 전환할 필요 없이 그림 타일 선택과 텍스트 입력을 동시에 진행할 수 있습니다. 상단 예측 바도 유지되므로 두 입력 방식 모두 언제든 활용할 수 있습니다.
+Prism AAC에는 두 가지 입력 모드가 있습니다. 그림 모드는 어휘 보드를, 입력 모드는 키보드와 단어 예측을 표시합니다. **KB**를 눌러 입력 모드로 전환하고 **HIDE KB**를 눌러 그림 모드로 돌아갑니다.
 
-![서라운드 모드의 카테고리 — 왼쪽에 스크롤 가능한 카테고리 카드, 오른쪽에 전체 키보드](../../docs/screenshots/categories-surround-v2.png)
+![카테고리가 있는 Prism AAC 그림 어휘 보드](../../docs/screenshots/2026-10/categories.png)
 
 <details>
 <summary><strong>기능 및 기술 세부사항</strong></summary>
@@ -439,7 +441,7 @@ PECS 방식의 그림 타일입니다. 카테고리를 탭하고 타일을 누�
 ### ⌨️ 입력 및 발화
 화면 키보드와 **단어 예측**, **AI 자동 완성**, 그리고 입력란의 메시지를 자연스러운 신경망 음성으로 읽어주는 **읽기** 버튼을 제공합니다. 키보드로 입력한 내역은 예측 엔진에 학습되어, 자주 사용하는 단어가 다음 입력 시 우선적으로 추천됩니다.
 
-![`hello`가 입력된 Prism AAC 키보드, 예측 타일 및 읽기 버튼](../../docs/screenshots/keyboard-typing.png)
+![입력 대기 상태의 빈 Prism AAC 키보드, 예측 타일과 읽기 버튼 표시](../../docs/screenshots/2026-10/keyboard.png)
 
 **읽기 보조 기능 (Read & Write 지원 기능 포함)** — 읽기, 기억, 인지 도움이 필요한 사용자를 위한 기능:
 
@@ -486,7 +488,7 @@ AAC 사용자의 표현 방식에 맞춰 작동하는 기기 내 및 클라우�
 
 **실시간 번역 모드** — 앱 설정 언어와 출력 언어가 다를 경우(예: 포르투갈어로 입력하여 영어로 출력), 대화 내용이 스트리밍 상태로 번역 경로를 통과하여 단일 언어 모드와 동일한 속도로 응답을 받아볼 수 있습니다.
 
-![AI 채팅 패널 — AI 모드에서 예측 바가 숨겨지고 하단에 전체 키보드 사용 가능](../../docs/screenshots/panel-ai-chat-v2.png)
+![AI 채팅 패널 — AI 모드에서 예측 바가 숨겨지고 하단에 전체 키보드 사용 가능](../../docs/screenshots/2026-10/ai-chat.png)
 
 <details>
 <summary><strong>기능 및 기술 세부사항</strong></summary>
@@ -745,7 +747,7 @@ AAC 사용자의 표현 방식에 맞춰 작동하는 기기 내 및 클라우�
 ### 📨 메시지 전송 — 공급자 선택기
 연락처에 여러 전송 수단(예: 이메일과 SMS 모두)이 설정되어 있는 경우, 작성 영역 상단에 **"전송 방법"** 선택창이 표시됩니다. 패널을 벗어나지 않고 탭 한 번으로 전송 방식을 변경할 수 있습니다.
 
-![연락처 전송 수단 선택기 — 이메일이 녹색으로 강조되고 SMS도 선택 가능한 '전송 방법' 행](../../docs/screenshots/contact-provider-picker.png)
+![연락처가 설정되지 않은 AAC Chat 연락처 패널](../../docs/screenshots/2026-10/aac-chat.png)
 
 ---
 
@@ -856,7 +858,7 @@ AAC 사용자의 표현 방식에 맞춰 작동하는 기기 내 및 클라우�
 ### 🗓 일정
 일상 생활 및 일과 전환을 돕는 시각적 단계별 일정표입니다. 각 과정은 그림 타일과 설명 라벨로 표시되며, 단계를 완료하면 완료 알림음과 시각적 완료 표시가 켜집니다. 일정을 마치면 보상 샵(유료 플랜)을 이용할 수 있습니다.
 
-![단계별 일과 보드와 활동 목록이 배치된 일정 패널](../../docs/screenshots/panel-schedule.png)
+![단계별 일과 보드와 활동 목록이 배치된 일정 패널](../../docs/screenshots/2026-10/schedule.png)
 
 <details>
 <summary><strong>기능 및 기술 세부사항</strong></summary>
@@ -875,7 +877,7 @@ AAC 사용자의 표현 방식에 맞춰 작동하는 기기 내 및 클라우�
 ### 🎮 게임
 치료 기법에 기반한 12가지 AAC 전용 게임입니다. 단순한 재미가 아닌 **소통 능력 향상을 목적으로 개발**되었습니다. 각 게임은 발화 시도와 정확도를 기록하여 적응형 학습 엔진이 다음에 필요한 적절한 게임을 추천할 수 있도록 돕습니다.
 
-![9개 게임 타일이 포함된 게임 패널](../../docs/screenshots/panel-games.png)
+![12개 게임 타일이 포함된 게임 패널](../../docs/screenshots/2026-10/games.png)
 
 <details>
 <summary><strong>12가지 게임 및 기술 세부사항</strong></summary>
@@ -925,7 +927,7 @@ AAC 사용자의 표현 방식에 맞춰 작동하는 기기 내 및 클라우�
 ### 📄 PDF 리더
 PDF 문서를 불러오면 각 페이지가 하나의 타일로 전환되어, 탭 한 번으로 문서 내용을 설정된 음성으로 들어볼 수 있습니다. 학교 알림장, 유인물, 뉴스 기사 등 읽기 힘든 긴 글을 직접 읽는 대신 편하게 들을 수 있습니다. 별도의 PDF 프로그램이 필요 없으며 모든 과정이 브라우저 내에서 안전하게 처리됩니다.
 
-![PDF 리더 패널 — "+ PDF 열기" 안내가 있는 초기 화면](../../docs/screenshots/panel-pdf-reader.png)
+![PDF 리더 패널 — "+ PDF 열기" 안내가 있는 초기 화면](../../docs/screenshots/2026-10/pdf-reader.png)
 
 <details>
 <summary><strong>기능 및 기술 세부사항</strong></summary>
@@ -944,7 +946,7 @@ PDF 문서를 불러오면 각 페이지가 하나의 타일로 전환되어, �
 ### 👁 스크린샷 리더 (OCR)
 유인물 사진, 웹페이지 캡처, 교재 사진을 캡처하여 올리면 텍스트가 인식되어 이미지 옆에 추출됩니다. **▶ 읽기**를 눌러 소리로 듣거나 **↧ 메시지 바 전송**을 눌러 내용을 다듬은 후 소리로 들을 수 있습니다.
 
-![스크린샷 리더 (OCR) 패널 — "+ 이미지 열기" 안내가 있는 초기 화면](../../docs/screenshots/panel-ocr-capture.png)
+![스크린샷 리더 (OCR) 패널 — "+ 이미지 열기" 안내가 있는 초기 화면](../../docs/screenshots/2026-10/ocr-reader.png)
 
 <details>
 <summary><strong>기능 및 기술 세부사항</strong></summary>
@@ -1060,7 +1062,7 @@ Chrome 주소창에 `chrome://extensions`를 입력하고, 우측 상단 **개�
 
 추천 어구는 한국어를 포함해 12개 이상의 언어를 지원합니다 (영어, 스페인어, 프랑스어, 포르투갈어, 루마니아어, 우크라이나어, 러시아어, 독일어, 일본어, 중국어, 아랍어 등). 앱 설정 언어에 맞춰 어구가 자동 전환되어, 러시아어로 설정되어 있으면 "Water please" 대신 "Воды, пожалуйста"가 추천됩니다.
 
-![시각적 컨텍스트 — 식사 시간 장면 감지 모습](../../docs/screenshots/vision-mealtime.png)
+![설정 — 카메라 및 비전 옵션](../../docs/screenshots/2026-10/input-modes.png)
 
 <details>
 <summary><strong>작동 원리 (기술 세부사항)</strong></summary>
@@ -1120,12 +1122,12 @@ Chrome 주소창에 `chrome://extensions`를 입력하고, 우측 상단 **개�
 ### ⚙️ 설정
 25개 언어 / 28개 지역 지원, 테마 선택 (라이트 / 다크 / 고대비), 그리드 크기 조절 (4–20 타일), 운동 편의 기능 (수학 누름 시간 설정, 2회 탭 확대, 머리 추적 누름 시간, 제스처 민감도, 영점 이탈 자동 정지), 음성 선택기 (전체 무료 제공), 음성 캐시 설정 및 관리, AI 자동 보정 켜기/끄기, 알림 설정, 도구 모음 맞춤 구성, 역사 지역 선택, Cloud 요금제가 포함된 Synalux 계정 관리를 지원합니다.
 
-![설정 — 언어 선택기 및 테마 전환 버튼](../../docs/screenshots/panel-settings.png)
+![설정 — 카테고리, 격자 크기 및 테마 설정](../../docs/screenshots/2026-10/settings.png)
 
 <details>
 <summary><strong>수학 및 접근성 설정</strong></summary>
 
-![설정 — 수학 입력 유지 시간 및 2회 탭 확대 설정](../../docs/screenshots/panel-settings-math.png)
+![설정 — 수학 입력 유지 시간 및 2회 탭 확대 설정](../../docs/screenshots/2026-10/math-settings.png)
 
 - **수학 입력 유지 시간 설정** — 0–1500ms 조절 슬라이더 제공; 0 = 즉시 입력, 200–1500ms 설정 시 세밀한 손 움직임이 어려운 사용자를 위해 누르고 있는 동안 녹색 진행 링이 표시되며 확정됩니다.
 - **2회 탭 확대 기능** — 첫 번째 탭 시 선택된 수학 키가 확대 표시되고(1.4배 확대 + 녹색 테두리), 두 번째 탭 시 최종 입력됩니다. 2초 후 자동 해제됩니다. 입력 유지 시간과 함께 조합하여 사용할 수 있습니다.
@@ -1139,7 +1141,7 @@ Chrome 주소창에 `chrome://extensions`를 입력하고, 우측 상단 **개�
 <details>
 <summary><strong>입력 모드 — 음성, 제스처, AI 자동 보정</strong></summary>
 
-![설정 — 입력 모드 패널](../../docs/screenshots/panel-settings-input-modes.png)
+![설정 — 입력 모드 패널](../../docs/screenshots/2026-10/input-modes.png)
 
 - **음성 입력** — Web Speech API 기반, 언어 설정 연동; 무료 제공
 - **AI 자동 보정 및 완성** — 키 입력 정지 시 클라우드 보정 기능 실행 (Gemini 2.5 Flash-Lite 활용). 네트워크가 느린 환경을 고려해 기본 OFF 처리되어 있습니다.

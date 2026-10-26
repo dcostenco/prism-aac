@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-10-26T16:43:38.083Z",
+  "captureRun": "b069f865-1cb2-4006-8eca-146e1042a61b",
+  "testCase": "iphone-landscape picture board",
+  "surface": "web",
+  "url": "https://synalux.ai/prism-aac",
+  "viewport": {
+    "width": 844,
+    "height": 390
+  },
+  "dpr": 1,
+  "picturePackVersion": "294639f647b616cc5c1b4d7bff31f063dd1cc2ff9d889f369265cfdea538da6d",
+  "imageSha256": "fee89c603eeebedb0e2648c528efe1bbf220185aa1c677ff1d763ffa707667d3",
+  "criticalSelectors": [
+    "button[data-key=\"Q\"]",
+    "[data-testid=\"prediction-tile\"]"
+  ],
+  "pictureSource": "verified local Prism AAC picture pack"
+}

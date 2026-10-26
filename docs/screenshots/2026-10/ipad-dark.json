@@ -1,0 +1,21 @@
+{
+  "capturedAt": "2026-10-26T16:43:49.265Z",
+  "captureRun": "b069f865-1cb2-4006-8eca-146e1042a61b",
+  "testCase": "ipad-dark high contrast",
+  "surface": "web",
+  "url": "https://synalux.ai/prism-aac",
+  "viewport": {
+    "width": 1376,
+    "height": 1032
+  },
+  "dpr": 1,
+  "picturePackVersion": "294639f647b616cc5c1b4d7bff31f063dd1cc2ff9d889f369265cfdea538da6d",
+  "imageSha256": "678d580bded7e650edf84f5494fa99d18c96f13652ea1f18c1d00a7b5a174865",
+  "criticalSelectors": [
+    "[data-testid=\"phrase-tile-card\"] [data-testid=\"phrase-tile-label\"]",
+    "[data-testid=\"prediction-tile\"]",
+    "[data-testid=\"category-tile\"]",
+    "[data-testid=\"kb-cycle-btn\"]"
+  ],
+  "pictureSource": "verified local Prism AAC picture pack"
+}
