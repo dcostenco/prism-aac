@@ -199,6 +199,19 @@ describe('AAC account purchase settings', () => {
     expect(state.stripe).not.toHaveBeenCalled();
     expect(screen.getByText(/Boards, saved content, cached speech/)).toBeInTheDocument();
   });
+  it('while the paid-only policy is in force, never promises free use', async () => {
+    const { usePaidPlanStore } = await import('@/store/paidPlanStore');
+    usePaidPlanStore.setState({ active: true });
+    try {
+      state.native = true; state.nativePurchases = true;
+      state.product.mockResolvedValue({ id: free.offer.appleProductId, displayPrice: '€5.99' });
+      render(<CloudSubscriptionSettings />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Subscribe with Apple · €5.99/month' }));
+      expect(await screen.findByText('Waiting for Apple approval.')).toBeInTheDocument();
+      expect(screen.getByText(/A trial or subscription includes the whole app/)).toBeInTheDocument();
+      expect(document.body.textContent).not.toMatch(/remain free|remains free|stay available|stays available/);
+    } finally { usePaidPlanStore.setState({ active: false }); }
+  });
   it('suppresses payment prompts for verified beta access on iOS', async () => {
     state.native = true; state.nativePurchases = true;
     state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, betaExempt: true });

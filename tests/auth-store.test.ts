@@ -242,6 +242,21 @@ describe('authStore — clear()', () => {
     expect(useAuthStore.getState().profile).toBeNull();
   });
 
+  it('removes the offline paid-plan lease, so the next person cannot use it', () => {
+    localStorage.setItem('prism-aac-entitlement-lease', JSON.stringify({ lease: 'a.b.c', account: 'clear@example.invalid' }));
+    useAuthStore.getState().clear();
+    expect(localStorage.getItem('prism-aac-entitlement-lease')).toBeNull();
+  });
+
+  it('an account switch without a sign-out also drops the previous account\'s lease', async () => {
+    fetchProfileMock.mockResolvedValue({ tier: 'pro', email: 'first@example.invalid' });
+    await useAuthStore.getState().refresh();
+    localStorage.setItem('prism-aac-entitlement-lease', JSON.stringify({ lease: 'a.b.c', account: 'first@example.invalid' }));
+    fetchProfileMock.mockResolvedValue({ tier: 'free', email: 'second@example.invalid' });
+    await useAuthStore.getState().refresh();
+    expect(localStorage.getItem('prism-aac-entitlement-lease')).toBeNull();
+  });
+
   it('sets loaded to true after clear', () => {
     useAuthStore.getState().clear();
     expect(useAuthStore.getState().loaded).toBe(true);

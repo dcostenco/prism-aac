@@ -46,6 +46,7 @@ import { broadcastIntegrationEvent } from '@/services/integrationsService';
 import { registerConnectivityListener } from '@/services/emergencyService';
 import { recordFirstUse, checkDaysUsedReview } from '@/services/reviewPromptService';
 import { useT } from '@/engine/useT';
+import { usePaidPlanStore } from '@/store/paidPlanStore';
 import { getAacDeviceClass } from '@/lib/aacDeviceClass';
 import { watchPicturePack } from '@/services/bundledPicturePack';
 
@@ -487,6 +488,8 @@ export default function PrismApp() {
       // candidate is still provisional. Never append or prevent those events;
       // the focused composer owns the final committed input.
       if (e.isComposing || e.key === 'Process' || e.keyCode === 229) return;
+      // The board is covered by the paid-plan lock: keys never type into it.
+      if (usePaidPlanStore.getState().locked) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.key === 'Tab' || e.key === 'Escape') return;

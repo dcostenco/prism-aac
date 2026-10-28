@@ -9,11 +9,14 @@ import { fetchWebAccess, hasVerifiedLocalAccess, rememberVerifiedLocalAccess, cl
 import { rememberWebSignInDraft, recoverWebSignInDraft } from '@/services/webSignInDraft';
 import { reportWebGate, type WebGateOutcome } from '@/services/monetizationTelemetry';
 import { usePathname } from 'next/navigation';
+import EntitlementNotice from '@/components/EntitlementNotice';
+import PaidPlanLock from '@/components/PaidPlanLock';
 import { PRISM_AAC_TERMS_PATH, PRISM_AAC_TERMS_ROUTE } from '@/lib/appPaths';
 import { AacBillingRequestError, fetchAacBillingStatus } from '@/services/aacBillingService';
 import { useMessageStore } from '@/store/messageStore';
 import { acknowledgeNativeBillingDraft, clearNativeBillingDraft, hasNativeBillingDraft, nativeBillingDraftGeneration,
   observeNativeBillingDraft, recoverNativeBillingDraft } from '@/services/nativeBillingDraft';
+import { paidPlanKey, usePaidPlanStore } from '@/store/paidPlanStore';
 
 type AccessState = WebAccess['state'] | 'checking' | 'error';
 const SIGNED_IN_RECHECK_MS = 5 * 60_000;
@@ -31,6 +34,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
   const enabled = process.env.NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE === '1' && !publicTerms;
   const native = useSyncExternalStore(subscribeNative, nativeSnapshot, serverNativeSnapshot);
   const { t, rtl } = useT();
+  const paidPlan = usePaidPlanStore(s => s.active);
   const profile = useAuthStore(s => s.profile);
   const renderedDraftText = useMessageStore(s => s.text);
   const [state, setState] = useState<AccessState>('checking');
@@ -220,10 +224,12 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
       </p>}
       <p role="status" aria-live="polite" aria-atomic="true" data-testid="web-preview-warning"
         className={warning ? 'mt-1 font-semibold sm:mt-0' : undefined}>
-        {preview ? warning ? t('web_preview_warning') : '' : t('cloud_core_free')}
+        {preview ? warning ? t(paidPlanKey('web_preview_warning', paidPlan)) : '' : t(paidPlanKey('cloud_core_free', paidPlan))}
       </p>
       {state === 'error' && <p role="status" className="mt-1 sm:mt-0">{t('web_signin_network_error')}</p>}
     </div>}
+    <PaidPlanLock key="paid-plan-lock" />
+    <EntitlementNotice key="entitlement" />
     <div key="communication" className="aac-web-preview-body min-h-0 flex-1 overflow-hidden">{children}</div>
   </div>;
 }

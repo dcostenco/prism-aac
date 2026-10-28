@@ -609,3 +609,57 @@ private final class RecoveryWebView: WKWebView {
         completionHandler?(true, nil)
     }
 }
+
+/// The bundled offline page mirrors the web lock offline.
+final class OfflineAccessTests: XCTestCase {
+    func test_full_board_when_the_policy_was_never_seen_or_the_lease_is_valid() {
+        XCTAssertTrue(OfflineAccess(policySeen: false, leaseUntilMs: nil).fullBoard(nowMs: 1_000))
+        XCTAssertTrue(OfflineAccess(policySeen: true, leaseUntilMs: 2_000).fullBoard(nowMs: 1_000))
+    }
+
+    func test_safety_only_when_the_policy_was_seen_without_a_valid_lease() {
+        XCTAssertFalse(OfflineAccess(policySeen: true, leaseUntilMs: nil).fullBoard(nowMs: 1_000))
+        XCTAssertFalse(OfflineAccess(policySeen: true, leaseUntilMs: 1_000).fullBoard(nowMs: 1_000))
+    }
+
+    func test_nothing_recorded_keeps_the_full_board() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "offline-access-\(UUID().uuidString)"))
+        XCTAssertTrue(OfflineAccess.offlineFullBoard(defaults, nowMs: 1_000))
+        OfflineAccess(policySeen: true, leaseUntilMs: nil).save(defaults)
+        XCTAssertFalse(OfflineAccess.offlineFullBoard(defaults, nowMs: 1_000))
+    }
+
+    func test_reads_only_well_formed_messages() {
+        XCTAssertEqual(OfflineAccess(message: ["policySeen": true, "leaseUntil": 5.0]), OfflineAccess(policySeen: true, leaseUntilMs: 5))
+        XCTAssertEqual(OfflineAccess(message: ["policySeen": false, "leaseUntil": NSNull()]), OfflineAccess(policySeen: false, leaseUntilMs: nil))
+        XCTAssertNil(OfflineAccess(message: ["leaseUntil": 5.0]))
+        XCTAssertNil(OfflineAccess(message: ["policySeen": true, "leaseUntil": "soon"]))
+        XCTAssertNil(OfflineAccess(message: ["policySeen": true, "leaseUntil": -1.0]))
+    }
+
+    func test_the_decision_is_injected_before_the_page_script() {
+        let html = "<html><head><title>x</title></head><body><script>run()</script></body></html>"
+        let safety = OfflineAccess.offlineDocument(html, fullBoard: false)
+        XCTAssertTrue(safety.contains("window.prismOfflineAccess={fullBoard:false};</script></head>"))
+        XCTAssertLessThan(safety.range(of: "prismOfflineAccess")!.lowerBound, safety.range(of: "run()")!.lowerBound)
+        XCTAssertTrue(OfflineAccess.offlineDocument(html, fullBoard: true).contains("fullBoard:true"))
+    }
+
+    func test_the_bundled_offline_page_hides_all_but_help_needs_when_told_to() throws {
+        // Unit tests run hosted in the app, so the app bundle is Bundle.main.
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "offline", withExtension: "html"))
+        let page = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(page.contains("window.prismOfflineAccess.fullBoard===false"))
+        XCTAssertTrue(page.contains("c.n==='Help / Needs'"))
+        // Emergency is outside the category list, so it shows in both modes,
+        // speaks aloud, never counts toward a review prompt, and places no call.
+        XCTAssertTrue(page.contains("id=\"sos\""))
+        XCTAssertTrue(page.contains("speak(SOS,true)"))
+        // Normal speed, so the call for help finishes before it repeats; named
+        // for VoiceOver and switch access in both states.
+        XCTAssertTrue(page.contains("rate:emergency?1.0:0.4"))
+        XCTAssertTrue(page.contains("aria-label=\"Emergency: say the call for help aloud\""))
+        XCTAssertTrue(page.contains("'Stop the call for help'"))
+        XCTAssertFalse(page.contains("tel:"))
+    }
+}

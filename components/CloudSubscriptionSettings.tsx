@@ -10,9 +10,11 @@ import { firstOfferImpression, offerImpressionKey, reportCloudPlan, type CloudPl
 import { resumeCloudPrediction } from '@/services/predictionMemoryService';
 import { APPLE_STANDARD_EULA_URL, PRISM_AAC_SOURCE_URL } from '@/lib/appPaths';
 import TermsLink from '@/components/TermsLink';
+import { paidPlanKey, usePaidPlanStore } from '@/store/paidPlanStore';
 
 export default function CloudSubscriptionSettings() {
   const { t, lang } = useT();
+  const paidPlan = usePaidPlanStore(s => s.active);
   const profile = useAuthStore(s => s.profile);
   const account = profile?.email;
   // Keyed by the account it was fetched for. On a shared device the signed-in
@@ -119,8 +121,8 @@ export default function CloudSubscriptionSettings() {
         // Never apply one account's entitlement to another.
         if (useAuthStore.getState().profile?.email !== account) return;
         if (result.billing) setBilling(result.billing);
-        setNotice(t(outcome === 'purchase_pending' ? 'cloud_purchase_pending'
-          : outcome === 'purchase_undelivered' ? 'cloud_purchase_undelivered'
+        setNotice(t(outcome === 'purchase_pending' ? paidPlanKey('cloud_purchase_pending', paidPlan)
+          : outcome === 'purchase_undelivered' ? paidPlanKey('cloud_purchase_undelivered', paidPlan)
             : outcome === 'purchase_cancelled' ? 'cloud_purchase_cancelled'
               : outcome === 'purchase_complete' ? 'cloud_purchase_complete' : 'cloud_no_active_subscription'));
       } else {
@@ -172,11 +174,11 @@ export default function CloudSubscriptionSettings() {
       <p className="text-primary font-semibold text-sm">{t(summaryKey)}</p>
     </div>
     <p className="font-semibold text-sm text-primary">{t('cloud_plan_title')}</p>
-    <p className="text-xs text-muted">{t('cloud_core_free')}</p>
+    <p className="text-xs text-muted">{t(paidPlanKey('cloud_core_free', paidPlan))}</p>
     {billing?.betaExempt && <p role="status" className="text-sm text-primary">{t('cloud_beta_access')}</p>}
     {billing?.hasCloudAccess && !billing.betaExempt && <p role="status" className="text-sm text-primary">{t('cloud_access_active')}</p>}
     {billing?.hasCloudAccess && trialDate && <p className="text-xs text-muted" data-testid="cloud-trial-date">
-      {t(!native && billing.stripeTrial?.cancelsAtEnd ? 'cloud_trial_cancelled_date' : 'cloud_trial_end_date').replace('{date}', trialDate)}
+      {t(!native && billing.stripeTrial?.cancelsAtEnd ? paidPlanKey('cloud_trial_cancelled_date', paidPlan) : 'cloud_trial_end_date').replace('{date}', trialDate)}
     </p>}
     {billing?.transitionEndsAt && !billing.betaExempt && <p className="text-xs text-muted">
       {t('cloud_transition_ends').replace('{date}', new Date(billing.transitionEndsAt).toLocaleDateString())}
@@ -185,7 +187,7 @@ export default function CloudSubscriptionSettings() {
       {t('cloud_monthly_allowance').replace('{characters}', billing.offer.monthlySpeechCharacters.toLocaleString())
         .replace('{requests}', billing.offer.monthlyAiRequests.toLocaleString())}
     </p>}
-    {billing?.offer.allowanceReset === 'utc_calendar_month' && <p className="text-xs text-muted">{t('cloud_allowance_reset')}</p>}
+    {billing?.offer.allowanceReset === 'utc_calendar_month' && <p className="text-xs text-muted">{t(paidPlanKey('cloud_allowance_reset', paidPlan))}</p>}
     {canPurchase && <>
       <div data-testid="cloud-offer-terms" className="space-y-2 text-xs text-muted">
         {hasTrial && <p>{t('cloud_trial_offer').replace('{days}', String(trialDays))}</p>}
@@ -197,7 +199,7 @@ export default function CloudSubscriptionSettings() {
       </button>
     </>}
     {native && billing?.enabled && !hasNativePurchases() && !billing.betaExempt &&
-      <p className="text-xs text-muted">{t('cloud_update_ios')}</p>}
+      <p className="text-xs text-muted">{t(paidPlanKey('cloud_update_ios', paidPlan))}</p>}
     {native && hasNativePurchases() && billing && !billing.betaExempt && <button type="button" disabled={busy}
       className={button} onClick={() => void act('restore_failed', async () => {
         reportCloudPlan('restore_started', platform);
@@ -224,7 +226,7 @@ export default function CloudSubscriptionSettings() {
       {t('cloud_manage_subscription')}
     </button>}
     <button type="button" disabled={busy} className={button} onClick={() => void act('refresh_failed', refresh)}>{t('cloud_refresh_plan')}</button>
-    <p className="text-xs text-muted" data-testid="aac-legal-links"><a href="https://synalux.ai/legal/privacy" target="_blank" rel="noopener noreferrer">{t('cloud_privacy')}</a>
+    <p className="flex flex-wrap items-center text-xs text-muted [&_a]:inline-flex [&_a]:min-h-[44px] [&_a]:items-center" data-testid="aac-legal-links"><a href="https://synalux.ai/legal/privacy" target="_blank" rel="noopener noreferrer">{t('cloud_privacy')}</a>
       {' · '}<TermsLink>{t('cloud_terms')}</TermsLink>
       {' · '}<a href={APPLE_STANDARD_EULA_URL} target="_blank" rel="noopener noreferrer">{t('cloud_terms')} (Apple)</a>
       {/* AGPL-3.0: anyone running a modified copy owes its users the Corresponding

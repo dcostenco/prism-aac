@@ -21,3 +21,13 @@ export function isPrismBrowserShell(): boolean {
   const bridge = (window as { prismNativeBridge?: { navigateTo?: unknown } }).prismNativeBridge;
   return typeof bridge?.navigateTo === 'function';
 }
+
+/** Tells the app's bundled offline page what it may show: whether the
+ *  paid-only policy has been seen in force, and until when this device's
+ *  offline lease is valid (ms since 1970). Builds without the capability
+ *  ignore it, and their offline page stays as it was. */
+export function reportOfflineAccess(state: { policySeen: boolean; leaseUntil: number | null }): void {
+  if (typeof window === 'undefined') return;
+  const bridge = (window as { prismNativeBridge?: { offlineAccess?: (value: unknown) => void } }).prismNativeBridge;
+  if (typeof bridge?.offlineAccess === 'function') bridge.offlineAccess(state);
+}

@@ -13,6 +13,7 @@ import { resetMonetizationTelemetry } from '@/services/monetizationTelemetry';
 import { clearNativeBillingDraft } from '@/services/nativeBillingDraft';
 import { clearWebSignInDraft } from '@/services/webSignInDraft';
 import { speechAudioCache } from '@/services/speechAudioCache';
+import { clearLease } from '@/services/aacLease';
 
 interface AuthState {
   profile: SynaluxProfile | null;
@@ -58,7 +59,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
     const nextIdentity = profile?.email.toLowerCase() ?? null;
     if (previousIdentity !== nextIdentity) {
-      if (previousIdentity) { clearNativeBillingDraft(); clearWebSignInDraft(); }
+      if (previousIdentity) { clearNativeBillingDraft(); clearWebSignInDraft(); clearLease(); }
       set({ identityGeneration: get().identityGeneration + 1 });
       clearPredictionMemoryCache();
       destroyAacHrr();
@@ -75,6 +76,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     clearNativeBillingDraft();
     clearWebSignInDraft();
     clearVerifiedLocalAccess();
+    clearLease();
     // The next person on a shared device is a new visitor, and nothing about
     // the last one should survive the sign-out.
     resetMonetizationTelemetry();
