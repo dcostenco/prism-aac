@@ -489,5 +489,9 @@
   "cloud_trial_web": "የ{days} ቀን ሙከራ ጀምር · ከዚያ {price}/ወር",
   "cloud_trial_apple": "በApple የ{days} ቀን ሙከራ ጀምር · ከዚያ {price}/ወር",
   "cloud_trial_end_date": "ነፃ ሙከራው በ{date} ያበቃል። እድሳትን እና ስረዛን በምዝገባ አስተዳደር ይመልከቱ።",
-  "cloud_trial_cancelled_date": "ነፃ ሙከራው በ{date} ያበቃል። ስረዛ ተይዟል፤ ነፃ ግንኙነት ይቀጥላል።"
+  "cloud_trial_cancelled_date": "ነፃ ሙከራው በ{date} ያበቃል። ስረዛ ተይዟል፤ ነፃ ግንኙነት ይቀጥላል።",
+  "emergency_not_sent_title": "ማንቂያው አልተላከም",
+  "emergency_not_sent_no_contact": "ማንም አልተደወለም፤ የአደጋ ጊዜ ተጠሪ አልተዘጋጀም። በቅንብሮች ውስጥ የአሳዳጊ ተጠሪ ያክሉ። አደጋ ላይ ከሆኑ የአደጋ ጊዜ አገልግሎቶችን ይደውሉ።",
+  "emergency_not_sent_unreached": "የአደጋ ጊዜ ተጠሪዎን ማግኘት አልተቻለም። አደጋ ላይ ከሆኑ የአደጋ ጊዜ አገልግሎቶችን ይደውሉ።",
+  "emergency_not_sent_queued": "ማንቂያው አልተላከም፤ ቆጠራው ሲያበቃ መሣሪያው ተኝቶ ነበር። አደጋ ላይ ከሆኑ የአደጋ ጊዜ አገልግሎቶችን ይደውሉ።"
 }

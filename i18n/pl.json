@@ -489,5 +489,9 @@
   "cloud_trial_web": "Rozpocznij próbę na {days} dni · potem {price}/miesiąc",
   "cloud_trial_apple": "Próba na {days} dni z Apple · potem {price}/miesiąc",
   "cloud_trial_end_date": "Bezpłatny okres próbny kończy się {date}. Odnawianiem i anulowaniem zarządzisz w Zarządzaj subskrypcją.",
-  "cloud_trial_cancelled_date": "Bezpłatny okres próbny kończy się {date}. Anulowanie zaplanowano; bezpłatna komunikacja pozostaje dostępna."
+  "cloud_trial_cancelled_date": "Bezpłatny okres próbny kończy się {date}. Anulowanie zaplanowano; bezpłatna komunikacja pozostaje dostępna.",
+  "emergency_not_sent_title": "Alarm nie został wysłany",
+  "emergency_not_sent_no_contact": "Do nikogo nie zadzwoniono: nie ustawiono kontaktu alarmowego. Dodaj kontakt opiekuna w Ustawieniach. Jeśli grozi ci niebezpieczeństwo, zadzwoń po służby ratunkowe.",
+  "emergency_not_sent_unreached": "Nie udało się skontaktować z twoim kontaktem alarmowym. Jeśli grozi ci niebezpieczeństwo, zadzwoń po służby ratunkowe.",
+  "emergency_not_sent_queued": "Alarm nie został wysłany: urządzenie było uśpione, gdy skończyło się odliczanie. Jeśli grozi ci niebezpieczeństwo, zadzwoń po służby ratunkowe."
 }

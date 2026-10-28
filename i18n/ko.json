@@ -489,5 +489,9 @@
   "cloud_trial_web": "{days}일 체험 시작 · 이후 월 {price}",
   "cloud_trial_apple": "Apple로 {days}일 체험 · 이후 월 {price}",
   "cloud_trial_end_date": "무료 체험은 {date}에 종료됩니다. 갱신 및 취소는 구독 관리에서 확인하세요.",
-  "cloud_trial_cancelled_date": "무료 체험은 {date}에 종료됩니다. 취소가 예약되어 있으며 무료 의사소통 기능은 계속 사용할 수 있습니다."
+  "cloud_trial_cancelled_date": "무료 체험은 {date}에 종료됩니다. 취소가 예약되어 있으며 무료 의사소통 기능은 계속 사용할 수 있습니다.",
+  "emergency_not_sent_title": "알림을 보내지 못했어요",
+  "emergency_not_sent_no_contact": "아무에게도 전화하지 않았어요. 비상 연락처가 설정되어 있지 않아요. 설정에서 보호자 연락처를 추가하세요. 위험한 상황이라면 응급 서비스에 전화하세요.",
+  "emergency_not_sent_unreached": "비상 연락처에 연락하지 못했어요. 위험한 상황이라면 응급 서비스에 전화하세요.",
+  "emergency_not_sent_queued": "알림을 보내지 못했어요. 카운트다운이 끝날 때 기기가 잠자기 상태였어요. 위험한 상황이라면 응급 서비스에 전화하세요."
 }

@@ -489,5 +489,9 @@
   "cloud_trial_web": "Iniciar teste de {days} dias · depois {price}/mês",
   "cloud_trial_apple": "Teste de {days} dias com Apple · depois {price}/mês",
   "cloud_trial_end_date": "O teste gratuito termina em {date}. Consulte a renovação e o cancelamento em Gerir subscrição.",
-  "cloud_trial_cancelled_date": "O teste gratuito termina em {date}. O cancelamento está agendado; a comunicação gratuita continua disponível."
+  "cloud_trial_cancelled_date": "O teste gratuito termina em {date}. O cancelamento está agendado; a comunicação gratuita continua disponível.",
+  "emergency_not_sent_title": "Alerta não enviado",
+  "emergency_not_sent_no_contact": "Ninguém foi chamado: não há contato de emergência configurado. Adicione um contato de cuidador em Ajustes. Se você estiver em perigo, ligue para os serviços de emergência.",
+  "emergency_not_sent_unreached": "Não foi possível falar com seu contato de emergência. Se você estiver em perigo, ligue para os serviços de emergência.",
+  "emergency_not_sent_queued": "O alerta não foi enviado: o dispositivo estava em repouso quando a contagem terminou. Se você estiver em perigo, ligue para os serviços de emergência."
 }

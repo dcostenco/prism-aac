@@ -489,5 +489,9 @@
   "cloud_trial_web": "Essai de {days} jours · puis {price}/mois",
   "cloud_trial_apple": "Essai de {days} jours avec Apple · puis {price}/mois",
   "cloud_trial_end_date": "L’essai gratuit se termine le {date}. Consultez le renouvellement et la résiliation dans Gérer l’abonnement.",
-  "cloud_trial_cancelled_date": "L’essai gratuit se termine le {date}. La résiliation est prévue ; la communication gratuite reste disponible."
+  "cloud_trial_cancelled_date": "L’essai gratuit se termine le {date}. La résiliation est prévue ; la communication gratuite reste disponible.",
+  "emergency_not_sent_title": "Alerte non envoyée",
+  "emergency_not_sent_no_contact": "Personne n'a été appelé : aucun contact d'urgence n'est configuré. Ajoutez un contact aidant dans les Réglages. Si vous êtes en danger, appelez les secours.",
+  "emergency_not_sent_unreached": "Votre contact d'urgence n'a pas pu être joint. Si vous êtes en danger, appelez les secours.",
+  "emergency_not_sent_queued": "L'alerte n'a pas été envoyée : l'appareil était en veille à la fin du compte à rebours. Si vous êtes en danger, appelez les secours."
 }

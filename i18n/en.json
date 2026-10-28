@@ -489,5 +489,9 @@
   "cloud_trial_web": "Start {days}-day trial · {price}/month after",
   "cloud_trial_apple": "Start {days}-day trial with Apple · {price}/month after",
   "cloud_trial_end_date": "Free trial ends {date}. Review renewal and cancellation in Manage subscription.",
-  "cloud_trial_cancelled_date": "Free trial ends {date}. Cancellation is scheduled; free communication stays available."
+  "cloud_trial_cancelled_date": "Free trial ends {date}. Cancellation is scheduled; free communication stays available.",
+  "emergency_not_sent_title": "Alert not sent",
+  "emergency_not_sent_no_contact": "No one was called: no emergency contact is set up. Add a caregiver contact in Settings. If you are in danger, call emergency services.",
+  "emergency_not_sent_unreached": "Your emergency contact could not be reached. If you are in danger, call emergency services.",
+  "emergency_not_sent_queued": "The alert was not sent: the device was asleep when the countdown ended. If you are in danger, call emergency services."
 }

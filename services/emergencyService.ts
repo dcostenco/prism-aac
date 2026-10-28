@@ -7,7 +7,8 @@
  *   1. ALWAYS: Speaks the phrase aloud immediately (TTS, online or offline)
  *   2. ALWAYS: Shows a visual emergency alert with countdown
  *   3. IF ONLINE: Sends SMS/email to emergency contacts immediately
- *   4. IF ONLINE: Optionally initiates 911 call (configurable)
+ *   4. Calls the first emergency contact with a phone. It never calls
+ *      emergency services by itself: that call is left to a person.
  *   5. IF OFFLINE: Queues the alert, auto-sends when connectivity restores
  *
  * The countdown (default 10s) gives the user/caregiver time to cancel
@@ -29,6 +30,8 @@ import { useAuthStore } from '@/store/authStore';
 import { getAuthToken } from '@/services/aiService';
 import { useEmergencyStore } from '@/store/emergencyStore';
 import { useMessageStore } from '@/store/messageStore';
+import { useContactsStore } from '@/store/contactsStore';
+import { isPrismNativeShell } from '@/services/nativeShell';
 import { stopSpeech } from '@/services/speechService';
 
 /** Cap on best-effort 3rd-party response bodies (Nominatim reverse
@@ -73,6 +76,8 @@ const EMERGENCY_NUMBERS: Record<string, string> = {
 export interface EmergencyConfig {
   enabled: boolean;
   countdownSeconds: number;
+  /** Kept so stored configs still load. Ignored: the app never calls
+   *  emergency services by itself (see sendAlert, level 4). */
   autoCall911: boolean;
   contacts: EmergencyContact[];
   profile: UserMedicalProfile;
@@ -169,6 +174,12 @@ const EMERGENCY_PHRASES: Record<string, 'critical' | 'urgent' | 'medical'> = {
   'help me': 'urgent',
   'i need help': 'urgent',
   'i am scared': 'urgent',
+  // Contracted forms of the entries above, and the default bedside card
+  // "HELP — EMERGENCY" (dashes read as spaces in detectEmergency).
+  'i\'m scared': 'urgent',
+  'i\'m not safe': 'critical',
+  'i\'m lost': 'critical',
+  'help emergency': 'critical',
   'call my mom': 'urgent',
   'call my dad': 'urgent',
   'i want to go home': 'urgent',
@@ -231,7 +242,11 @@ const CONFIG_KEY = 'prism-aac-emergency-config';
  *  the first sendAlert resolves (e.g., device sleep/wake jitter). */
 let dispatchInProgress = false;
 /** Mutex: prevents concurrent sendAlert calls (e.g., flush + triggerEmergency racing). */
-let isSendInFlight = false;
+/** The dispatch running now, and the alert it is for. */
+let inFlightSend: { id: string; run: Promise<boolean> } | null = null;
+/** The alert a countdown on screen owns: the queue flush must not send it
+ *  behind the countdown's back (no cancel, and a duplicate dispatch). */
+let countdownAlertId: string | null = null;
 /** Tracks the severity of the currently active emergency countdown. Used by cancelEmergency
  *  to block programmatic cancellation of urgent/medical alerts without a PIN. */
 let _activeCountdownSeverity: 'critical' | 'urgent' | 'medical' | null = null;
@@ -517,7 +532,9 @@ function wordBoundaryMatch(text: string, phrase: string): boolean {
 }
 
 export function detectEmergency(text: string): { detected: boolean; severity: 'critical' | 'urgent' | 'medical' | null; phrase: string | null } {
-  const lower = text.toLowerCase().trim();
+  // Phone keyboards type curly apostrophes; em and en dashes separate words
+  // ("HELP — EMERGENCY"). Plain hyphens stay: some phrases contain them.
+  const lower = text.toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/\s*[\u2013\u2014]\s*/g, ' ').trim();
   for (const [phrase, severity] of Object.entries(EMERGENCY_PHRASES)) {
     if (wordBoundaryMatch(lower, phrase)) {
       return { detected: true, severity, phrase };
@@ -817,7 +834,7 @@ export function buildEmergencyScript(phrase: string, config: EmergencyConfig, lo
  *   1. Synalux Direct (VoIP) — staffed dispatch, trained on AAC users
  *   2. Emergency contacts (API → SMS/email via Synalux backend)
  *   3. Emergency contacts (VoIP call via Twilio — AI speaks on call)
- *   4. Native phone call (tel:// + TTS on speaker)
+ *   4. Native phone call to the first emergency contact with a phone (tel:)
  *   5. Offline queue + alarm (auto-sends on reconnect)
  *
  * DEVICE SUPPORT:
@@ -828,14 +845,66 @@ export function buildEmergencyScript(phrase: string, config: EmergencyConfig, lo
  *   - Apple Watch (phone in range): delegates to iPhone via WatchConnectivity
  *   - Android: all 5 levels
  */
-/** Exported for tests. */
-export async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<boolean> {
-  if (isSendInFlight) {
-    console.warn('[EMERGENCY] sendAlert: previous dispatch still in flight, dropping duplicate');
-    return false;
-  }
-  isSendInFlight = true;
-  try {
+/** The caregivers set up in Settings › Contacts, as emergency contacts: the
+ *  same people the toolbar alert and the Watch reach, in the caregiver's
+ *  order. Text and WhatsApp contacts give a phone, mail contacts an email. */
+export function caregiverEmergencyContacts(): EmergencyContact[] {
+  return [...useContactsStore.getState().contacts]
+    .sort((a, b) => a.order - b.order)
+    .flatMap((c): EmergencyContact[] => {
+      const recipient = c.recipientId?.trim();
+      if (!recipient) return [];
+      if (c.provider === 'sms' || c.provider === 'whatsapp') {
+        // As saved, as the toolbar alert sends it: guessing a missing country
+        // code would dial another country (3015551234 is not +30 15551234).
+        return [{ name: c.name, phone: recipient, relationship: 'caregiver', contactMethod: c.provider }];
+      }
+      if (c.provider === 'mail') return [{ name: c.name, email: recipient, relationship: 'caregiver' }];
+      return [];
+    });
+}
+
+/** The countdown ended and no one was reached: say so on the countdown
+ *  screen, as the Watch does, rather than calling emergency services. */
+function showNotSent(config: EmergencyConfig): void {
+  const noContact = config.contacts.length === 0 && caregiverEmergencyContacts().length === 0;
+  useEmergencyStore.getState().setNotSent(noContact ? 'no_contact' : 'unreached');
+}
+
+export interface SendOptions {
+  /** A retry from the queue on reconnect, with no one on screen: it goes to
+   *  the server only. In a browser, opening the caregiver's text, call and mail
+   *  links again on every reconnect, with no tap, would prompt over and over. */
+  retry?: boolean;
+}
+
+/** One dispatch at a time. The same alert asked for again while it is being
+ *  sent (the queue flush racing its countdown) shares that outcome, so it is
+ *  neither sent twice nor reported "not sent" while it is reaching someone. A
+ *  different alert waits its turn and is sent on its own.
+ *  Exported for tests. */
+export function sendAlert(alert: QueuedAlert, savedConfig: EmergencyConfig, options: SendOptions = {}): Promise<boolean> {
+  const current = inFlightSend;
+  if (current?.id === alert.id) return current.run;
+  if (current) return current.run.then(() => undefined, () => undefined).then(() => sendAlert(alert, savedConfig, options));
+  const run = deliverAlert(alert, savedConfig, options)
+    .finally(() => { if (inFlightSend?.run === run) inFlightSend = null; });
+  inFlightSend = { id: alert.id, run };
+  return run;
+}
+
+async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig, options: SendOptions): Promise<boolean> {
+  // Emergency contacts saved with the alert settings come first; without any,
+  // the caregivers from Settings › Contacts are the people to reach.
+  const config = savedConfig.contacts.length > 0 ? savedConfig
+    : { ...savedConfig, contacts: caregiverEmergencyContacts() };
+  // Links the page opens itself (mail, text, call) surely reach someone only in
+  // the app, which hands them to iOS. A browser may block them when no tap
+  // started them (the countdown ends on a timer), so there they are tried but
+  // never counted as sent: the screen then says no one was reached.
+  const deviceLinksDeliver = isPrismNativeShell();
+  // A retry from the queue opens device links only where they deliver (the app).
+  const openDeviceLinks = deviceLinksDeliver || !options.retry;
   const script = buildEmergencyScript(alert.phrase, config, alert.location);
 
   // Speak the emergency message on device speaker IMMEDIATELY regardless of call status
@@ -948,8 +1017,11 @@ export async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Pr
         body: JSON.stringify(minimalPayload),
         signal: t.signal,
       }) : null;
-      if (res?.ok) {
-        alert.sent = true;
+      // Sent only if the server answered for itself (JSON), as at level 1: a
+      // Wi-Fi sign-in page answers 200 to everything.
+      if (res?.ok && /application\/json/i.test(res.headers?.get('content-type') ?? '')) {
+        const result = await res.json().catch(() => undefined) as { success?: unknown } | null | undefined;
+        if (result === undefined || result?.success === true) alert.sent = true;
         // Continue to level 4 for phone call too — belt and suspenders
       }
     } catch {
@@ -971,7 +1043,7 @@ export async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Pr
     `Sent from PrismAAC`,
   ].filter(Boolean).join('\n');
 
-  if (navigator.onLine) {
+  if (navigator.onLine && openDeviceLinks) {
     const emailRecipients = config.contacts
       .map((c) => (c.email ? safeMailtoRecipient(c.email) : null))
       .filter((r): r is string => !!r);
@@ -979,14 +1051,10 @@ export async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Pr
       const subject = encodeURIComponent('EMERGENCY — PrismAAC Alert');
       const body = encodeURIComponent(safeScript);
       window.open(`mailto:${emailRecipients.join(',')}?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
-      alert.sent = true;
+      if (deviceLinksDeliver) alert.sent = true;
     }
   }
 
-  // ── LEVEL 4: Native phone call + speaker TTS ──
-  // Works on iPhone, iPad cellular, Android with cellular. Speaker TTS lets
-  // 911 or caregiver hear the AI message through the device speaker.
-  // On Apple Watch cellular (no paired phone), tel:// opens the watch dialer.
   // ── LEVEL 4: Native SMS/WhatsApp (works WITHOUT internet on cellular devices) ──
   // SMS body cap: many carriers silently truncate at ~1500 encoded chars.
   // Prioritise: GPS link (most critical for first responders) + phrase.
@@ -998,7 +1066,7 @@ export async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Pr
   const smsExtra = '';
   const smsScript = (smsCore + smsExtra).slice(0, 1500);
 
-  for (const contact of config.contacts) {
+  for (const contact of openDeviceLinks ? config.contacts : []) {
     if (contact.phone) {
       const safePhone = safePhoneForUri(contact.phone);
       if (!safePhone) continue;
@@ -1014,38 +1082,20 @@ export async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Pr
     }
   }
 
-  // ── LEVEL 5: Native phone call + speaker TTS ──
-  // Works on any device with cellular. Speaker TTS means 911/caregiver hears the message.
-  
-  // When autoCall911 is enabled, 911 takes priority over caregiver
-  if (config.autoCall911) {
-    const country = navigator.onLine
-      ? await getLocationAndCountry()
-      : { location: null, detectedCountry: null, detectedLanguage: null, emergencyNumber: EMERGENCY_NUMBERS[(config.profile.country?.toUpperCase() || 'US')] || '112' };
-    const emergencyNum = country.emergencyNumber
-      || EMERGENCY_NUMBERS[config.profile.country?.toUpperCase() || 'US']
-      || '112';
-    window.open(`tel:${emergencyNum}`, '_self');
-    alert.sent = true;
-  } else {
-    // autoCall911 is off — call caregiver instead
-    for (const contact of config.contacts) {
-      if (contact.phone) {
-        const safePhone = safePhoneForUri(contact.phone);
-        if (!safePhone) continue;
-        window.open(`tel:${safePhone}`, '_self');
-        alert.sent = true;
-        break;
-      }
+  // ── LEVEL 4b: Phone call to the first emergency contact with a phone ──
+  // The call goes to the person the family set up, never to emergency
+  // services: an automatic call to 911 from a stray tap or a misheard phrase
+  // is a false call. As on the Watch and the iPhone app, calling emergency
+  // services is left to a person; when no one could be reached, the countdown
+  // screen says so (phase 'not_sent').
+  for (const contact of openDeviceLinks ? config.contacts : []) {
+    if (contact.phone) {
+      const safePhone = safePhoneForUri(contact.phone);
+      if (!safePhone) continue;
+      window.open(`tel:${safePhone}`, '_self');
+      if (deviceLinksDeliver) alert.sent = true;
+      break;
     }
-  }
-
-  if (!alert.sent) {
-    // SAFETY NET: If no tel: link was successfully opened (contacts empty,
-    // all phones invalid), force a tel: link to the local emergency number.
-    const emergencyNumber = EMERGENCY_NUMBERS[(config.profile?.country?.toUpperCase() || 'US')] || '112';
-    window.open(`tel:${emergencyNumber}`, '_self');
-    alert.sent = true;
   }
 
   // ── LEVEL 5: Offline queue ──
@@ -1053,9 +1103,6 @@ export async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Pr
   // flushQueuedAlerts() fires automatically via the 'online' event listener
   // and retries from Level 1.
   return alert.sent;
-  } finally {
-    isSendInFlight = false;
-  }
 }
 
 /**
@@ -1150,6 +1197,7 @@ export async function triggerEmergency(
   dispatchInProgress = false;
 
   const alert = await queueAlert(phrase, severity);
+  if (alert) countdownAlertId = alert.id;
 
   // Dedup: same phrase already queued within 5 minutes — silently ignore
   if (!alert) {
@@ -1211,6 +1259,9 @@ export async function triggerEmergency(
         stopFlash();
         stopEmergencySpeaker();
         dispatchInProgress = false;
+        // Nothing was attempted: the alert stays queued for the flush.
+        countdownAlertId = null;
+        useEmergencyStore.getState().setNotSent('queued');
         onComplete(false, true); // queued, not dispatched
         return;
       }
@@ -1218,11 +1269,13 @@ export async function triggerEmergency(
       if (unregisterGesture) unregisterGesture();
       try {
         const sent = await sendAlert(alert, config);
+        countdownAlertId = null;
         stopAlarm();
         stopFlash();
         stopEmergencySpeaker();
         dispatchInProgress = false;
         if (!sent) {
+          showNotSent(config);
           onComplete(false, true);
         } else {
           const queue = getQueuedAlerts();
@@ -1231,10 +1284,12 @@ export async function triggerEmergency(
           onComplete(true, false);
         }
       } catch {
+        countdownAlertId = null;
         stopAlarm();
         stopFlash();
         stopEmergencySpeaker();
         dispatchInProgress = false;
+        showNotSent(config);
         onComplete(false, true);
       }
     }
@@ -1261,7 +1316,8 @@ export function cancelEmergency(alertId?: string): void {
   }
   // C1: Reset in-flight mutexes so a cancelled emergency doesn't permanently block
   // the next emergency trigger.
-  isSendInFlight = false;
+  inFlightSend = null;
+  countdownAlertId = null;
   dispatchInProgress = false;
   activeCancelFn = null;
   clearCountdown();
@@ -1281,7 +1337,8 @@ export function cancelEmergency(alertId?: string): void {
  * Do NOT call this directly — only EmergencyCountdownModal should call it after PIN check.
  */
 export function cancelEmergencyVerified(): void {
-  isSendInFlight = false;
+  inFlightSend = null;
+  countdownAlertId = null;
   dispatchInProgress = false;
   cancelCallback?.();
   cancelCallback = null;
@@ -1365,7 +1422,8 @@ async function _flushQueuedAlerts(): Promise<number> {
   const isStaleCritical = (a: QueuedAlert) => isCritical(a) && (now - a.timestamp) >= CRITICAL_DISPATCH_WINDOW_MS;
 
   // Non-critical: drop after 10 min. Critical: keep forever but downgrade after 30 min.
-  const unsent = queue.filter((a) => !a.sent && (!isExpired(a) || isCritical(a)));
+  // The alert a countdown on screen owns is sent by that countdown, not here.
+  const unsent = queue.filter((a) => !a.sent && a.id !== countdownAlertId && (!isExpired(a) || isCritical(a)));
 
   if (unsent.length === 0) {
     saveQueuedAlerts(queue.filter((a) => a.sent));
@@ -1387,7 +1445,7 @@ async function _flushQueuedAlerts(): Promise<number> {
         console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
         continue;
       }
-      const ok = await sendAlert(dispatchAlert, staleCriticalConfig);
+      const ok = await sendAlert(dispatchAlert, staleCriticalConfig, { retry: true });
       // dispatchAlert is a copy: mark the queued alert itself, or the re-drain
       // loop in flushQueuedAlerts sends the same alert again on every pass.
       if (ok) { alert.sent = true; sent++; }
@@ -1409,7 +1467,7 @@ async function _flushQueuedAlerts(): Promise<number> {
           console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
           continue;
         }
-        const ok = await sendAlert(alert, config);
+        const ok = await sendAlert(alert, config, { retry: true });
         if (ok) sent++;
       } else {
         alert.sent = true; // cancelled by caregiver
@@ -1422,7 +1480,7 @@ async function _flushQueuedAlerts(): Promise<number> {
         console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
         continue;
       }
-      const ok = await sendAlert(alert, config);
+      const ok = await sendAlert(alert, config, { retry: true });
       if (ok) sent++;
     }
   }

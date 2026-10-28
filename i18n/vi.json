@@ -489,5 +489,9 @@
   "cloud_trial_web": "Bắt đầu dùng thử {days} ngày · sau đó {price}/tháng",
   "cloud_trial_apple": "Dùng thử {days} ngày với Apple · sau đó {price}/tháng",
   "cloud_trial_end_date": "Dùng thử miễn phí kết thúc vào {date}. Xem gia hạn và hủy trong Quản lý gói đăng ký.",
-  "cloud_trial_cancelled_date": "Dùng thử miễn phí kết thúc vào {date}. Đã lên lịch hủy; giao tiếp miễn phí vẫn khả dụng."
+  "cloud_trial_cancelled_date": "Dùng thử miễn phí kết thúc vào {date}. Đã lên lịch hủy; giao tiếp miễn phí vẫn khả dụng.",
+  "emergency_not_sent_title": "Chưa gửi được cảnh báo",
+  "emergency_not_sent_no_contact": "Không gọi cho ai: chưa thiết lập liên hệ khẩn cấp. Hãy thêm liên hệ của người chăm sóc trong Cài đặt. Nếu bạn đang gặp nguy hiểm, hãy gọi dịch vụ khẩn cấp.",
+  "emergency_not_sent_unreached": "Không liên lạc được với người liên hệ khẩn cấp của bạn. Nếu bạn đang gặp nguy hiểm, hãy gọi dịch vụ khẩn cấp.",
+  "emergency_not_sent_queued": "Chưa gửi được cảnh báo: thiết bị đang ngủ khi đếm ngược kết thúc. Nếu bạn đang gặp nguy hiểm, hãy gọi dịch vụ khẩn cấp."
 }

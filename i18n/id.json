@@ -489,5 +489,9 @@
   "cloud_trial_web": "Mulai uji coba {days} hari · lalu {price}/bulan",
   "cloud_trial_apple": "Uji coba {days} hari dengan Apple · lalu {price}/bulan",
   "cloud_trial_end_date": "Uji coba gratis berakhir pada {date}. Tinjau perpanjangan dan pembatalan di Kelola langganan.",
-  "cloud_trial_cancelled_date": "Uji coba gratis berakhir pada {date}. Pembatalan dijadwalkan; komunikasi gratis tetap tersedia."
+  "cloud_trial_cancelled_date": "Uji coba gratis berakhir pada {date}. Pembatalan dijadwalkan; komunikasi gratis tetap tersedia.",
+  "emergency_not_sent_title": "Peringatan tidak terkirim",
+  "emergency_not_sent_no_contact": "Tidak ada yang ditelepon: belum ada kontak darurat. Tambahkan kontak pendamping di Pengaturan. Jika Anda dalam bahaya, hubungi layanan darurat.",
+  "emergency_not_sent_unreached": "Kontak darurat Anda tidak dapat dihubungi. Jika Anda dalam bahaya, hubungi layanan darurat.",
+  "emergency_not_sent_queued": "Peringatan tidak terkirim: perangkat sedang tidur saat hitung mundur selesai. Jika Anda dalam bahaya, hubungi layanan darurat."
 }

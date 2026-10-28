@@ -489,5 +489,9 @@
   "cloud_trial_web": "Simulan ang {days} araw na pagsubok · pagkatapos {price}/buwan",
   "cloud_trial_apple": "{days} araw na pagsubok sa Apple · pagkatapos {price}/buwan",
   "cloud_trial_end_date": "Matatapos ang libreng pagsubok sa {date}. Tingnan ang pag-renew at pagkansela sa Pamahalaan ang subscription.",
-  "cloud_trial_cancelled_date": "Matatapos ang libreng pagsubok sa {date}. Nakatakda ang pagkansela; mananatili ang libreng komunikasyon."
+  "cloud_trial_cancelled_date": "Matatapos ang libreng pagsubok sa {date}. Nakatakda ang pagkansela; mananatili ang libreng komunikasyon.",
+  "emergency_not_sent_title": "Hindi naipadala ang alerto",
+  "emergency_not_sent_no_contact": "Walang tinawagan: walang naka-set na emergency contact. Magdagdag ng contact ng tagapag-alaga sa Settings. Kung nasa panganib ka, tumawag sa emergency services.",
+  "emergency_not_sent_unreached": "Hindi makontak ang iyong emergency contact. Kung nasa panganib ka, tumawag sa emergency services.",
+  "emergency_not_sent_queued": "Hindi naipadala ang alerto: naka-sleep ang device nang matapos ang countdown. Kung nasa panganib ka, tumawag sa emergency services."
 }

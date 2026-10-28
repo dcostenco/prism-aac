@@ -489,5 +489,9 @@
   "cloud_trial_web": "Anza majaribio ya siku {days} · kisha {price}/mwezi",
   "cloud_trial_apple": "Majaribio ya siku {days} kwa Apple · kisha {price}/mwezi",
   "cloud_trial_end_date": "Majaribio ya bure yanaisha {date}. Angalia usasishaji na kughairi kwenye Dhibiti usajili.",
-  "cloud_trial_cancelled_date": "Majaribio ya bure yanaisha {date}. Kughairi kumepangwa; mawasiliano ya bure yanaendelea."
+  "cloud_trial_cancelled_date": "Majaribio ya bure yanaisha {date}. Kughairi kumepangwa; mawasiliano ya bure yanaendelea.",
+  "emergency_not_sent_title": "Tahadhari haikutumwa",
+  "emergency_not_sent_no_contact": "Hakuna aliyepigiwa simu: hakuna mwasiliani wa dharura aliyewekwa. Ongeza mwasiliani wa mlezi kwenye Mipangilio. Ukiwa hatarini, piga simu huduma za dharura.",
+  "emergency_not_sent_unreached": "Mwasiliani wako wa dharura hakupatikana. Ukiwa hatarini, piga simu huduma za dharura.",
+  "emergency_not_sent_queued": "Tahadhari haikutumwa: kifaa kilikuwa kimelala muda wa kuhesabu ulipoisha. Ukiwa hatarini, piga simu huduma za dharura."
 }

@@ -6,7 +6,7 @@ if (!['localhost', '127.0.0.1'].includes(target.hostname)) throw new Error('Web 
 
 export default defineConfig({
   testDir: process.env.AAC_BASELINE_TEST_DIR || './e2e',
-  testMatch: process.env.AAC_BASELINE_TEST_DIR ? '**/*.spec.ts' : ['web-signin-gate.spec.ts', 'web-preview-warning.spec.ts'],
+  testMatch: process.env.AAC_BASELINE_TEST_DIR ? '**/*.spec.ts' : ['web-signin-gate.spec.ts', 'web-preview-warning.spec.ts', 'emergency-no-auto-call.spec.ts'],
   outputDir: process.env.AAC_PREVIEW_EVIDENCE_DIR || './test-results/web-preview',
   fullyParallel: false, workers: 1, retries: 0, timeout: 60_000,
   reporter: [['list']],

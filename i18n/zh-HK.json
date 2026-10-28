@@ -489,5 +489,9 @@
   "cloud_trial_web": "開始 {days} 天試用 · 之後每月 {price}",
   "cloud_trial_apple": "透過 Apple 試用 {days} 天 · 之後每月 {price}",
   "cloud_trial_end_date": "免費試用將於 {date} 結束。請在「管理訂閱」中查看續訂及取消資訊。",
-  "cloud_trial_cancelled_date": "免費試用將於 {date} 結束。已安排取消；免費溝通功能仍可使用。"
+  "cloud_trial_cancelled_date": "免費試用將於 {date} 結束。已安排取消；免費溝通功能仍可使用。",
+  "emergency_not_sent_title": "警報未發送",
+  "emergency_not_sent_no_contact": "沒有致電任何人：尚未設定緊急聯絡人。請在設定中加入照顧者聯絡人。如你身處危險，請致電緊急服務。",
+  "emergency_not_sent_unreached": "未能聯絡你的緊急聯絡人。如你身處危險，請致電緊急服務。",
+  "emergency_not_sent_queued": "警報未發送：倒數結束時裝置處於休眠狀態。如你身處危險，請致電緊急服務。"
 }

@@ -33,7 +33,10 @@ beforeEach(() => {
   vi.spyOn(window, 'open').mockImplementation(openMock as unknown as typeof window.open);
   sessionStorage.clear();
 });
+/** The iPhone app's bridge: it hands mail, text and call links to iOS. */
+const inApp = () => { (window as unknown as { prismNativeBridge?: object }).prismNativeBridge = {}; };
 afterEach(() => {
+  delete (window as unknown as { prismNativeBridge?: object }).prismNativeBridge;
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   fetchMock.mockReset();
@@ -41,7 +44,8 @@ afterEach(() => {
 });
 
 describe('sendAlert — the Synalux line must have reached someone', () => {
-  it('falls back to texting and calling from the device when the server reached no one (OK, success:false)', async () => {
+  it('in the app, falls back to texting and calling from the device when the server reached no one (OK, success:false)', async () => {
+    inApp();
     fetchMock.mockImplementation(async (url: string) => (String(url).endsWith('/notify')
       ? json(404, {}) : json(200, { success: false, sms_sent: 0, calls_made: 0 })));
 
@@ -168,5 +172,142 @@ describe('the emergency announcement', () => {
     await sendAlert(alert(), config);
 
     expect(stopSpeech).toHaveBeenCalled();
+  });
+});
+
+describe('sendAlert — calls the emergency contact, never emergency services', () => {
+  afterEach(async () => {
+    const { useContactsStore } = await import('@/store/contactsStore');
+    useContactsStore.setState({ contacts: [] });
+  });
+  const offline = () => fetchMock.mockRejectedValue(new Error('offline'));
+  const noContacts = { ...config, contacts: [] } as Config;
+
+  it('with no contact anywhere, calls no one: no automatic call to 911 or any emergency number', async () => {
+    offline();
+    await expect(sendAlert(alert(), noContacts)).resolves.toBe(false);
+    expect(opened().filter(u => u.startsWith('tel:'))).toEqual([]);
+  });
+
+  it('a stored auto-call setting is ignored: the call goes to the contact', async () => {
+    offline();
+    await sendAlert(alert(), { ...config, autoCall911: true } as Config);
+    expect(opened().filter(u => u.startsWith('tel:'))).toEqual(['tel:+15550001111']);
+  });
+
+  it('in the app, reaches the caregivers from Settings › Contacts when no emergency contact is saved', async () => {
+    offline(); inApp();
+    const { useContactsStore } = await import('@/store/contactsStore');
+    useContactsStore.setState({ contacts: [
+      { id: 'b', name: 'Dad', provider: 'mail', recipientId: 'dad@example.invalid', order: 1 },
+      { id: 'a', name: 'Mom', provider: 'sms', recipientId: '+15550002222', order: 0 },
+    ] as never });
+    const sent = await sendAlert(alert(), noContacts);
+    expect(sent).toBe(true);
+    expect(opened().some(u => u.startsWith('sms:+15550002222'))).toBe(true);
+    expect(opened().some(u => u.startsWith('mailto:dad%40example.invalid'))).toBe(true);
+    expect(opened().filter(u => u.startsWith('tel:'))).toEqual(['tel:+15550002222']);
+  });
+});
+
+describe('triggerEmergency — when no one could be reached', () => {
+  afterEach(() => { vi.useRealTimers(); localStorage.clear(); });
+  it('the countdown ends on "not sent" (no contact set up), with no call placed', async () => {
+    const { triggerEmergency } = await import('@/services/emergencyService');
+    const { useEmergencyStore } = await import('@/store/emergencyStore');
+    fetchMock.mockRejectedValue(new Error('offline'));
+    Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: (_ok: unknown, fail: (e: unknown) => void) => fail(new Error('denied')) } });
+    vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] });
+    const done = vi.fn();
+    await triggerEmergency('Emergency', 'urgent', () => {}, done);
+    await vi.advanceTimersByTimeAsync(12_000);
+    expect(done).toHaveBeenCalledWith(false, true);
+    expect(useEmergencyStore.getState()).toMatchObject({ phase: 'not_sent', notSentReason: 'no_contact' });
+    expect(opened().filter(u => u.startsWith('tel:'))).toEqual([]);
+    useEmergencyStore.getState().reset();
+  });
+});
+
+describe('sendAlert — never reports a link the browser may have blocked as sent', () => {
+  it('in a browser, texting and calling links are still tried, but the alert is not counted as sent', async () => {
+    fetchMock.mockRejectedValue(new Error('offline'));
+    await expect(sendAlert(alert(), config)).resolves.toBe(false);
+    expect(opened().some(u => u.startsWith('sms:+15550001111'))).toBe(true);
+    expect(opened()).toContain('tel:+15550001111');
+  });
+
+  it('a 200 from the contacts endpoint that is not JSON (a Wi-Fi sign-in page) is not "sent"', async () => {
+    fetchMock.mockImplementation(async (url: string) => (String(url).endsWith('/notify')
+      ? response(200, 'text/html', async () => { throw new Error('not JSON'); }) : json(422, { success: false })));
+    await expect(sendAlert(alert(), config)).resolves.toBe(false);
+  });
+
+  it('a caregiver number is used as saved: no guessed country code (3015551234 is not Greece)', async () => {
+    const { caregiverEmergencyContacts } = await import('@/services/emergencyService');
+    const { useContactsStore } = await import('@/store/contactsStore');
+    useContactsStore.setState({ contacts: [{ id: 'a', name: 'Mom', provider: 'sms', recipientId: '3015551234', order: 0 }] as never });
+    expect(caregiverEmergencyContacts()[0].phone).toBe('3015551234');
+    useContactsStore.setState({ contacts: [] });
+  });
+
+  it('a retry from the queue in a browser goes to the server only: no text, call or mail links again', async () => {
+    fetchMock.mockRejectedValue(new Error('offline'));
+    await sendAlert(alert(), config, { retry: true });
+    expect(opened()).toEqual([]);
+  });
+
+  it('in the app, a retry still opens the links, which the app hands to iOS', async () => {
+    inApp();
+    fetchMock.mockRejectedValue(new Error('offline'));
+    await expect(sendAlert(alert(), config, { retry: true })).resolves.toBe(true);
+    expect(opened()).toContain('tel:+15550001111');
+  });
+});
+
+describe('sendAlert — one dispatch at a time', () => {
+  it('the same alert asked for again while it is being sent shares that outcome: sent once', async () => {
+    let release!: (r: unknown) => void;
+    fetchMock.mockImplementationOnce(() => new Promise(r => { release = r; }));
+    const first = sendAlert(alert(), config);
+    const again = sendAlert(alert(), config);
+    release(json(200, { success: true, sms_sent: 1, calls_made: 1 }));
+    await expect(first).resolves.toBe(true);
+    await expect(again).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('a different alert waits its turn and is sent on its own, never counted by the first', async () => {
+    let release!: (r: unknown) => void;
+    fetchMock.mockImplementationOnce(() => new Promise(r => { release = r; }));
+    fetchMock.mockResolvedValueOnce(json(422, { success: false }));
+    const first = sendAlert(alert(), config);
+    const other = sendAlert({ ...alert(), id: 'alert-2', phrase: "I can't breathe" }, config);
+    release(json(200, { success: true, sms_sent: 1, calls_made: 1 }));
+    await expect(first).resolves.toBe(true);
+    await expect(other).resolves.toBe(false);
+    const bodies = fetchMock.mock.calls.map(c => String((c[1] as { body?: string })?.body ?? ''));
+    expect(bodies.some(b => b.includes("I can't breathe"))).toBe(true);
+  });
+});
+
+describe('triggerEmergency — the queue flush never sends a countdown\'s alert', () => {
+  afterEach(() => { vi.useRealTimers(); localStorage.clear(); });
+  it('a flush during the countdown sends nothing; the countdown sends once, when it ends', async () => {
+    const { triggerEmergency, flushQueuedAlerts } = await import('@/services/emergencyService');
+    const { useEmergencyStore } = await import('@/store/emergencyStore');
+    fetchMock.mockResolvedValue(json(200, { success: true, sms_sent: 1, calls_made: 1 }));
+    Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: (_ok: unknown, fail: (e: unknown) => void) => fail(new Error('denied')) } });
+    vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] });
+    const done = vi.fn();
+    await triggerEmergency('Emergency', 'urgent', () => {}, done);
+    await vi.advanceTimersByTimeAsync(3_000);
+    await expect(flushQueuedAlerts()).resolves.toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(done).toHaveBeenCalledWith(true, false);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    useEmergencyStore.getState().reset();
   });
 });
