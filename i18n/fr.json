@@ -507,7 +507,7 @@
   "aac_lock_bedside": "Cartes de chevet",
   "aac_lock_update_app": "Mettez à jour Prism AAC depuis l’App Store pour continuer à l’utiliser.",
   "cloud_core_free_paid_plan": "Un essai ou un abonnement inclut toute l'application. Vos tableaux enregistrés restent sur cet appareil dans tous les cas.",
-  "cloud_allowance_reset_paid_plan": "Recharge le 1er du mois à 00h00 UTC.",
+  "cloud_allowance_reset_paid_plan": "Les quotas se réinitialisent le 1er de chaque mois à 00h00 UTC.",
   "cloud_update_ios_paid_plan": "Mettez à jour Prism AAC depuis l'App Store pour vous abonner.",
   "cloud_purchase_pending_paid_plan": "En attente de validation par Apple.",
   "cloud_purchase_undelivered_paid_plan": "Achat réussi. Confirmation Synalux en attente.",

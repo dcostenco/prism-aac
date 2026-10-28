@@ -507,7 +507,7 @@
   "aac_lock_bedside": "बेडसाइड कार्ड",
   "aac_lock_update_app": "Prism AAC इस्तेमाल करते रहने के लिए इसे App Store से अपडेट करें।",
   "cloud_core_free_paid_plan": "ट्रायल या सब्सक्रिप्शन में पूरा ऐप शामिल है। आपके सहेजे गए बोर्ड हर हाल में इसी डिवाइस पर रहते हैं।",
-  "cloud_allowance_reset_paid_plan": "लिमिट हर महीने की पहली तारीख को रीसेट होती है।",
+  "cloud_allowance_reset_paid_plan": "लिमिट हर महीने की पहली तारीख को 00:00 UTC पर रीसेट होती है।",
   "cloud_update_ios_paid_plan": "सब्सक्रिप्शन के लिए App Store से Prism AAC अपडेट करें।",
   "cloud_purchase_pending_paid_plan": "Apple की मंज़ूरी का इंतज़ार है।",
   "cloud_purchase_undelivered_paid_plan": "आपकी ख़रीद सफल रही। हम अभी Synalux से इसकी पुष्टि नहीं कर पाए।",
