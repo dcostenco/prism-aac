@@ -311,3 +311,33 @@ describe('triggerEmergency — the queue flush never sends a countdown\'s alert'
     useEmergencyStore.getState().reset();
   });
 });
+
+describe('sendAlert — the server gets the caregivers to reach, for every user', () => {
+  afterEach(async () => {
+    const { useContactsStore } = await import('@/store/contactsStore');
+    useContactsStore.setState({ contacts: [] });
+  });
+  const firstBody = () => JSON.parse(String((fetchMock.mock.calls[0][1] as { body: string }).body)) as Record<string, unknown>;
+
+  it('signed out or free: the alert carries caregivers\' names and phones, and nothing about the user', async () => {
+    fetchMock.mockResolvedValue(json(200, { success: true, sms_sent: 1, calls_made: 1 }));
+    const { useContactsStore } = await import('@/store/contactsStore');
+    useContactsStore.setState({ contacts: [
+      { id: 'a', name: 'Mom', provider: 'sms', recipientId: '+15550002222', order: 0 },
+      { id: 'b', name: 'Dad', provider: 'mail', recipientId: 'dad@example.invalid', order: 1 },
+    ] as never });
+    await expect(sendAlert(alert(), { ...config, contacts: [] } as Config)).resolves.toBe(true);
+    const body = firstBody();
+    expect(body.contacts).toEqual([{ name: 'Mom', phone: '+15550002222', relationship: 'caregiver' }]);
+    expect(JSON.stringify(body)).not.toContain('dad@example.invalid');
+    expect(body).not.toHaveProperty('profile');
+    expect(body).not.toHaveProperty('conversationHistory');
+  });
+
+  it('never more than the server accepts in one alert: the first five with a phone', async () => {
+    fetchMock.mockResolvedValue(json(200, { success: true, sms_sent: 5, calls_made: 1 }));
+    const many = Array.from({ length: 7 }, (_, i) => ({ name: `C${i}`, phone: `+1555000${1000 + i}`, relationship: 'caregiver' }));
+    await sendAlert(alert(), { ...config, contacts: many } as Config);
+    expect((firstBody().contacts as unknown[]).map(c => (c as { name: string }).name)).toEqual(['C0', 'C1', 'C2', 'C3', 'C4']);
+  });
+});

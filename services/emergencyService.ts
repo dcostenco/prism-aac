@@ -242,6 +242,9 @@ const CONFIG_KEY = 'prism-aac-emergency-config';
  *  the first sendAlert resolves (e.g., device sleep/wake jitter). */
 let dispatchInProgress = false;
 /** Mutex: prevents concurrent sendAlert calls (e.g., flush + triggerEmergency racing). */
+/** The most contacts the emergency endpoint accepts in one alert. */
+const MAX_SERVER_CONTACTS = 5;
+
 /** The dispatch running now, and the alert it is for. */
 let inFlightSend: { id: string; run: Promise<boolean> } | null = null;
 /** The alert a countdown on screen owns: the queue flush must not send it
@@ -924,13 +927,17 @@ async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig, op
   // sent to Level 1 (Synalux authenticated server endpoint). Levels 2–4 use a
   // minimal payload — phrase + script only — to avoid leaking medical profile
   // data and conversation history to contacts and to mailto:/sms: links.
+  // The server refuses an alert listing more than MAX_SERVER_CONTACTS: send the
+  // first ones with a phone, in the caregiver's order, rather than none at all.
+  const serverContacts = config.contacts.filter((c) => c.phone).slice(0, MAX_SERVER_CONTACTS);
+
   const fullPayload = {
     type: 'emergency',
     phrase: alert.phrase,
     script,
     timestamp: new Date(alert.timestamp).toISOString(),
     location: alert.location || null,
-    contacts: config.contacts,
+    contacts: serverContacts,
     profile: config.profile,
     language: config.language || 'en',
     conversationHistory: historyText,
@@ -941,6 +948,10 @@ async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig, op
     type: 'emergency',
     phrase: alert.phrase,
     script,
+    // Who to reach: the caregivers' names and phone numbers, so the server can
+    // text and call them for every user, signed in or not. Nothing else about
+    // them (no email), and nothing about the user (no profile, no history).
+    contacts: serverContacts.map((c) => ({ name: c.name, phone: c.phone, relationship: c.relationship })),
     geoScript: alert.location
       ? `https://maps.google.com/?q=${Number.isFinite(alert.location?.lat) ? alert.location.lat.toFixed(5) : 0},${Number.isFinite(alert.location?.lng) ? alert.location.lng.toFixed(5) : 0}`
       : undefined,
@@ -962,8 +973,10 @@ async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig, op
       const token = getAuthToken();
       // PHI gate: only authenticated paid-tier users receive the full payload
       // (medical profile + conversation history). Free-tier and anonymous users
-      // get minimalPayload — phrase + GPS only — to avoid transmitting PHI for
-      // users who have not opted into a paid plan with associated data handling.
+      // get minimalPayload — phrase, GPS and the caregivers to reach — to avoid
+      // transmitting PHI for users who have not opted into a paid plan with
+      // associated data handling. The caregivers' numbers are how the alert is
+      // delivered; without them the server could reach no one.
       // Only send full PHI payload (conversation history + medical profile) for authenticated paid-tier users.
       // Free-tier users get minimalPayload even when authenticated.
       const profile = useAuthStore.getState().profile;
