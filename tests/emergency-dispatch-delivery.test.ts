@@ -243,25 +243,51 @@ describe('sendAlert — never reports a link the browser may have blocked as sen
     await expect(sendAlert(alert(), config)).resolves.toBe(false);
   });
 
-  it('a caregiver number saved without the + is sent as a full international number', async () => {
+  it('a caregiver number is used as saved: no guessed country code (3015551234 is not Greece)', async () => {
     const { caregiverEmergencyContacts } = await import('@/services/emergencyService');
     const { useContactsStore } = await import('@/store/contactsStore');
-    useContactsStore.setState({ contacts: [{ id: 'a', name: 'Mom', provider: 'sms', recipientId: '15550002222', order: 0 }] as never });
-    expect(caregiverEmergencyContacts()[0].phone).toBe('+15550002222');
+    useContactsStore.setState({ contacts: [{ id: 'a', name: 'Mom', provider: 'sms', recipientId: '3015551234', order: 0 }] as never });
+    expect(caregiverEmergencyContacts()[0].phone).toBe('3015551234');
     useContactsStore.setState({ contacts: [] });
+  });
+
+  it('a retry from the queue in a browser goes to the server only: no text, call or mail links again', async () => {
+    fetchMock.mockRejectedValue(new Error('offline'));
+    await sendAlert(alert(), config, { retry: true });
+    expect(opened()).toEqual([]);
+  });
+
+  it('in the app, a retry still opens the links, which the app hands to iOS', async () => {
+    inApp();
+    fetchMock.mockRejectedValue(new Error('offline'));
+    await expect(sendAlert(alert(), config, { retry: true })).resolves.toBe(true);
+    expect(opened()).toContain('tel:+15550001111');
   });
 });
 
 describe('sendAlert — one dispatch at a time', () => {
-  it('a second request while one runs shares its outcome instead of reporting "not sent"', async () => {
+  it('the same alert asked for again while it is being sent shares that outcome: sent once', async () => {
     let release!: (r: unknown) => void;
     fetchMock.mockImplementationOnce(() => new Promise(r => { release = r; }));
     const first = sendAlert(alert(), config);
-    const second = sendAlert({ ...alert(), id: 'alert-2' }, config);
+    const again = sendAlert(alert(), config);
     release(json(200, { success: true, sms_sent: 1, calls_made: 1 }));
     await expect(first).resolves.toBe(true);
-    await expect(second).resolves.toBe(true);
+    await expect(again).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('a different alert waits its turn and is sent on its own, never counted by the first', async () => {
+    let release!: (r: unknown) => void;
+    fetchMock.mockImplementationOnce(() => new Promise(r => { release = r; }));
+    fetchMock.mockResolvedValueOnce(json(422, { success: false }));
+    const first = sendAlert(alert(), config);
+    const other = sendAlert({ ...alert(), id: 'alert-2', phrase: "I can't breathe" }, config);
+    release(json(200, { success: true, sms_sent: 1, calls_made: 1 }));
+    await expect(first).resolves.toBe(true);
+    await expect(other).resolves.toBe(false);
+    const bodies = fetchMock.mock.calls.map(c => String((c[1] as { body?: string })?.body ?? ''));
+    expect(bodies.some(b => b.includes("I can't breathe"))).toBe(true);
   });
 });
 

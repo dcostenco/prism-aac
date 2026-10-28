@@ -7,7 +7,8 @@
  *   1. ALWAYS: Speaks the phrase aloud immediately (TTS, online or offline)
  *   2. ALWAYS: Shows a visual emergency alert with countdown
  *   3. IF ONLINE: Sends SMS/email to emergency contacts immediately
- *   4. IF ONLINE: Optionally initiates 911 call (configurable)
+ *   4. Calls the first emergency contact with a phone. It never calls
+ *      emergency services by itself: that call is left to a person.
  *   5. IF OFFLINE: Queues the alert, auto-sends when connectivity restores
  *
  * The countdown (default 10s) gives the user/caregiver time to cancel
@@ -241,8 +242,8 @@ const CONFIG_KEY = 'prism-aac-emergency-config';
  *  the first sendAlert resolves (e.g., device sleep/wake jitter). */
 let dispatchInProgress = false;
 /** Mutex: prevents concurrent sendAlert calls (e.g., flush + triggerEmergency racing). */
-/** The dispatch running now, shared by any request made while it runs. */
-let inFlightSend: Promise<boolean> | null = null;
+/** The dispatch running now, and the alert it is for. */
+let inFlightSend: { id: string; run: Promise<boolean> } | null = null;
 /** The alert a countdown on screen owns: the queue flush must not send it
  *  behind the countdown's back (no cancel, and a duplicate dispatch). */
 let countdownAlertId: string | null = null;
@@ -854,10 +855,9 @@ export function caregiverEmergencyContacts(): EmergencyContact[] {
       const recipient = c.recipientId?.trim();
       if (!recipient) return [];
       if (c.provider === 'sms' || c.provider === 'whatsapp') {
-        // Contacts may be saved without the leading +; the server only calls
-        // and texts full international (E.164) numbers.
-        const phone = /^\d{8,15}$/.test(recipient) ? `+${recipient}` : recipient;
-        return [{ name: c.name, phone, relationship: 'caregiver', contactMethod: c.provider }];
+        // As saved, as the toolbar alert sends it: guessing a missing country
+        // code would dial another country (3015551234 is not +30 15551234).
+        return [{ name: c.name, phone: recipient, relationship: 'caregiver', contactMethod: c.provider }];
       }
       if (c.provider === 'mail') return [{ name: c.name, email: recipient, relationship: 'caregiver' }];
       return [];
@@ -871,18 +871,29 @@ function showNotSent(config: EmergencyConfig): void {
   useEmergencyStore.getState().setNotSent(noContact ? 'no_contact' : 'unreached');
 }
 
-/** One dispatch at a time. A request made while one runs (the queue flush
- *  racing a countdown) shares its outcome rather than dispatching twice, and
- *  never reports "not sent" while the first is still reaching someone.
+export interface SendOptions {
+  /** A retry from the queue on reconnect, with no one on screen: it goes to
+   *  the server only. In a browser, opening the caregiver's text, call and mail
+   *  links again on every reconnect, with no tap, would prompt over and over. */
+  retry?: boolean;
+}
+
+/** One dispatch at a time. The same alert asked for again while it is being
+ *  sent (the queue flush racing its countdown) shares that outcome, so it is
+ *  neither sent twice nor reported "not sent" while it is reaching someone. A
+ *  different alert waits its turn and is sent on its own.
  *  Exported for tests. */
-export function sendAlert(alert: QueuedAlert, savedConfig: EmergencyConfig): Promise<boolean> {
-  if (inFlightSend) return inFlightSend;
-  const run = deliverAlert(alert, savedConfig).finally(() => { if (inFlightSend === run) inFlightSend = null; });
-  inFlightSend = run;
+export function sendAlert(alert: QueuedAlert, savedConfig: EmergencyConfig, options: SendOptions = {}): Promise<boolean> {
+  const current = inFlightSend;
+  if (current?.id === alert.id) return current.run;
+  if (current) return current.run.then(() => undefined, () => undefined).then(() => sendAlert(alert, savedConfig, options));
+  const run = deliverAlert(alert, savedConfig, options)
+    .finally(() => { if (inFlightSend?.run === run) inFlightSend = null; });
+  inFlightSend = { id: alert.id, run };
   return run;
 }
 
-async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig): Promise<boolean> {
+async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig, options: SendOptions): Promise<boolean> {
   // Emergency contacts saved with the alert settings come first; without any,
   // the caregivers from Settings › Contacts are the people to reach.
   const config = savedConfig.contacts.length > 0 ? savedConfig
@@ -892,6 +903,8 @@ async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig): P
   // started them (the countdown ends on a timer), so there they are tried but
   // never counted as sent: the screen then says no one was reached.
   const deviceLinksDeliver = isPrismNativeShell();
+  // A retry from the queue opens device links only where they deliver (the app).
+  const openDeviceLinks = deviceLinksDeliver || !options.retry;
   const script = buildEmergencyScript(alert.phrase, config, alert.location);
 
   // Speak the emergency message on device speaker IMMEDIATELY regardless of call status
@@ -1030,7 +1043,7 @@ async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig): P
     `Sent from PrismAAC`,
   ].filter(Boolean).join('\n');
 
-  if (navigator.onLine) {
+  if (navigator.onLine && openDeviceLinks) {
     const emailRecipients = config.contacts
       .map((c) => (c.email ? safeMailtoRecipient(c.email) : null))
       .filter((r): r is string => !!r);
@@ -1053,7 +1066,7 @@ async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig): P
   const smsExtra = '';
   const smsScript = (smsCore + smsExtra).slice(0, 1500);
 
-  for (const contact of config.contacts) {
+  for (const contact of openDeviceLinks ? config.contacts : []) {
     if (contact.phone) {
       const safePhone = safePhoneForUri(contact.phone);
       if (!safePhone) continue;
@@ -1075,7 +1088,7 @@ async function deliverAlert(alert: QueuedAlert, savedConfig: EmergencyConfig): P
   // is a false call. As on the Watch and the iPhone app, calling emergency
   // services is left to a person; when no one could be reached, the countdown
   // screen says so (phase 'not_sent').
-  for (const contact of config.contacts) {
+  for (const contact of openDeviceLinks ? config.contacts : []) {
     if (contact.phone) {
       const safePhone = safePhoneForUri(contact.phone);
       if (!safePhone) continue;
@@ -1432,7 +1445,7 @@ async function _flushQueuedAlerts(): Promise<number> {
         console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
         continue;
       }
-      const ok = await sendAlert(dispatchAlert, staleCriticalConfig);
+      const ok = await sendAlert(dispatchAlert, staleCriticalConfig, { retry: true });
       // dispatchAlert is a copy: mark the queued alert itself, or the re-drain
       // loop in flushQueuedAlerts sends the same alert again on every pass.
       if (ok) { alert.sent = true; sent++; }
@@ -1454,7 +1467,7 @@ async function _flushQueuedAlerts(): Promise<number> {
           console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
           continue;
         }
-        const ok = await sendAlert(alert, config);
+        const ok = await sendAlert(alert, config, { retry: true });
         if (ok) sent++;
       } else {
         alert.sent = true; // cancelled by caregiver
@@ -1467,7 +1480,7 @@ async function _flushQueuedAlerts(): Promise<number> {
         console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
         continue;
       }
-      const ok = await sendAlert(alert, config);
+      const ok = await sendAlert(alert, config, { retry: true });
       if (ok) sent++;
     }
   }
