@@ -507,7 +507,7 @@
   "aac_lock_bedside": "Bedkaarten",
   "aac_lock_update_app": "Werk Prism AAC bij via de App Store om het te blijven gebruiken.",
   "cloud_core_free_paid_plan": "Een proefperiode of abonnement omvat de hele app. Je opgeslagen borden blijven in elk geval op dit apparaat.",
-  "cloud_allowance_reset_paid_plan": "Wisselgeld wordt elke eerste dag van de maand om 00:00 UTC gereset.",
+  "cloud_allowance_reset_paid_plan": "Tegoeden worden op de eerste dag van elke maand om 00:00 UTC gereset.",
   "cloud_update_ios_paid_plan": "Update Prism AAC in de App Store om een abonnement te kopen.",
   "cloud_purchase_pending_paid_plan": "Wachten op goedkeuring van Apple.",
   "cloud_purchase_undelivered_paid_plan": "Je aankoop is gelukt. De bevestiging via Synalux is er nog niet.",

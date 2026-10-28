@@ -508,7 +508,7 @@
   "aac_lock_update_app": "حدّث Prism AAC من App Store لمواصلة استخدامه.",
   "cloud_core_free_paid_plan": "تشمل الفترة التجريبية أو الاشتراك التطبيق بالكامل. تبقى لوحاتك المحفوظة على هذا الجهاز في كل الأحوال.",
   "cloud_allowance_reset_paid_plan": "يتجدد الرصيد في اليوم الأول من كل شهر الساعة 00:00 UTC.",
-  "cloud_update_ios_paid_plan": "حديث Prism AAC من App Store لشراء اشتراك.",
+  "cloud_update_ios_paid_plan": "حدّث Prism AAC من App Store لشراء اشتراك.",
   "cloud_purchase_pending_paid_plan": "بانتظار موافقة Apple.",
   "cloud_purchase_undelivered_paid_plan": "تم الشراء. لم نتمكن من التأكيد مع Synalux بعد.",
   "cloud_trial_cancelled_date_paid_plan": "تنتهي التجربة المجانية في {date}. تمت جدولة الإلغاء.",

@@ -514,10 +514,10 @@
   "cloud_trial_cancelled_date_paid_plan": "Majaribio ya bure yanaisha {date}. Kughairi kumepangwa.",
   "web_signin_free_account_paid_plan": "Prism AAC inahitaji akaunti yenye kipindi cha majaribio au usajili. Dharura, sentensi za shida na kadi za kitandani hufanya kazi kila wakati bila akaunti.",
   "core_aac_no_account_paid_plan": "Prism AAC inahitaji akaunti yenye kipindi cha majaribio au usajili. Dharura, sentensi za shida na kadi za kitandani hufanya kazi kila wakati bila akaunti.",
-  "web_preview_warning_paid_plan": "Onyesho la wingu linakaribia kuisha.",
+  "web_preview_warning_paid_plan": "Onyesho la awali la wingu linakaribia kuisha.",
   "emergency_not_sent_title": "Tahadhari haikutumwa",
-  "emergency_not_sent_no_contact": "Hakuna aliyepigiwa simu: hakuna mwasiliani wa dharura aliyewekwa. Ongeza mwasiliani wa mlezi kwenye Mipangilio. Ukiwa hatarini, piga simu huduma za dharura.",
-  "emergency_not_sent_unreached": "Mwasiliani wako wa dharura hakupatikana. Ukiwa hatarini, piga simu huduma za dharura.",
+  "emergency_not_sent_no_contact": "Hakuna aliyepigiwa simu: hakuna anwani ya dharura iliyowekwa. Ongeza anwani ya mlezi kwenye Mipangilio. Ukiwa hatarini, piga simu kwa huduma za dharura.",
+  "emergency_not_sent_unreached": "Anwani yako ya dharura haikupatikana. Ukiwa hatarini, piga simu kwa huduma za dharura.",
   "aac_lock_browser_subscribe": "Prism AAC inahitaji kipindi cha majaribio au usajili. Anza kwenye programu ya Prism AAC, kisha ingia hapa kwa akaunti ileile.",
-  "emergency_not_sent_queued": "Tahadhari haikutumwa: kifaa kilikuwa kimelala muda wa kuhesabu ulipoisha. Ukiwa hatarini, piga simu huduma za dharura."
+  "emergency_not_sent_queued": "Tahadhari haikutumwa: kifaa kilikuwa kimelala wakati hesabu ya kurudi nyuma ilipoisha. Ukiwa hatarini, piga simu kwa huduma za dharura."
 }

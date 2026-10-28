@@ -507,7 +507,7 @@
   "aac_lock_bedside": "ベッドサイドカード",
   "aac_lock_update_app": "引き続き使うには、App Store で Prism AAC をアップデートしてください。",
   "cloud_core_free_paid_plan": "トライアルまたはサブスクリプションでアプリのすべてを使えます。保存したボードはどちらの場合もこの端末に残ります。",
-  "cloud_allowance_reset_paid_plan": "利用枠は毎月1日の00:00 UTCにリセットされます。クラウドAIはサーバーで処理されます。",
+  "cloud_allowance_reset_paid_plan": "利用枠は毎月1日の00:00 UTCにリセットされます。",
   "cloud_update_ios_paid_plan": "サブスクリプションを購入するには、App StoreからPrism AACをアップデートしてください。",
   "cloud_purchase_pending_paid_plan": "Appleの承認を待っています。",
   "cloud_purchase_undelivered_paid_plan": "購入が完了しました。Synaluxでの確認はまだできていません。",
@@ -516,7 +516,7 @@
   "core_aac_no_account_paid_plan": "Prism AACにはトライアルまたはサブスクリプションのあるアカウントが必要です。緊急通報、危機フレーズ、ベッドサイドカードはアカウントがなくても常に使えます。",
   "web_preview_warning_paid_plan": "クラウドプレビューはまもなく終了します。",
   "emergency_not_sent_title": "アラートは送信されませんでした",
-  "emergency_not_sent_no_contact": "誰にも電話されませんでした。緊急連絡先が設定されていません。設定で介助者の連絡先を追加してください。危険な状態の場合は、緊急通報してください。",
+  "emergency_not_sent_no_contact": "誰にも電話はかけられていません。緊急連絡先が設定されていません。設定で介助者の連絡先を追加してください。危険な状態の場合は、緊急通報してください。",
   "emergency_not_sent_unreached": "緊急連絡先に連絡できませんでした。危険な状態の場合は、緊急通報してください。",
   "aac_lock_browser_subscribe": "Prism AACにはトライアルまたはサブスクリプションが必要です。Prism AACアプリで開始してから、同じアカウントでここにサインインしてください。",
   "emergency_not_sent_queued": "アラートは送信されませんでした。カウントダウン終了時に端末がスリープしていました。危険な状態の場合は、緊急通報してください。"
