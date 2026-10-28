@@ -160,3 +160,60 @@ final class AACSubscriptionStore {
         ["transactionId": String(transaction.id), "jws": result.jwsRepresentation]
     }
 }
+
+/// What the bundled offline page may show, as the web app last learned it.
+///
+/// The web lock reports after each answer from the server: whether the
+/// paid-only policy has been seen in force, and until when this device's
+/// offline lease is valid. The offline page then mirrors the web lock offline:
+/// the full offline board when the policy was never seen or the lease is still
+/// valid; otherwise only the Help / Needs safety phrases, which stay usable in
+/// every state. With nothing recorded the page stays full.
+struct OfflineAccess: Codable, Equatable {
+    var policySeen: Bool
+    /// Lease expiry in milliseconds since 1970, or nil when there is no lease.
+    var leaseUntilMs: Double?
+
+    static let defaultsKey = "prism-aac-offline-access"
+
+    func fullBoard(nowMs: Double) -> Bool {
+        if !policySeen { return true }
+        guard let until = leaseUntilMs else { return false }
+        return until > nowMs
+    }
+
+    /// Reads the bridge message body; nil when malformed.
+    init?(message state: [String: Any]) {
+        guard let seen = state["policySeen"] as? Bool else { return nil }
+        policySeen = seen
+        if let until = state["leaseUntil"] as? Double, until.isFinite, until > 0 { leaseUntilMs = until }
+        else if state["leaseUntil"] == nil || state["leaseUntil"] is NSNull { leaseUntilMs = nil }
+        else { return nil }
+    }
+
+    init(policySeen: Bool, leaseUntilMs: Double?) {
+        self.policySeen = policySeen
+        self.leaseUntilMs = leaseUntilMs
+    }
+
+    static func load(_ defaults: UserDefaults = .standard) -> OfflineAccess? {
+        guard let data = defaults.data(forKey: defaultsKey) else { return nil }
+        return try? JSONDecoder().decode(OfflineAccess.self, from: data)
+    }
+
+    func save(_ defaults: UserDefaults = .standard) {
+        if let data = try? JSONEncoder().encode(self) { defaults.set(data, forKey: Self.defaultsKey) }
+    }
+
+    /// Whether the offline page shows the full board right now.
+    static func offlineFullBoard(_ defaults: UserDefaults = .standard, nowMs: Double = Date().timeIntervalSince1970 * 1000) -> Bool {
+        load(defaults)?.fullBoard(nowMs: nowMs) ?? true
+    }
+
+    /// The offline document with the decision injected before its own script.
+    static func offlineDocument(_ html: String, fullBoard: Bool) -> String {
+        let script = "<script>window.prismOfflineAccess={fullBoard:\(fullBoard ? "true" : "false")};</script>"
+        guard let range = html.range(of: "</head>") else { return script + html }
+        return html.replacingCharacters(in: range, with: script + "</head>")
+    }
+}

@@ -301,3 +301,19 @@ describe('Prediction bar visibility — sidePanel=categories matches sidePanel=n
     expect(pred).toBeInTheDocument();
   });
 });
+
+describe('Paid-plan lock over the board', () => {
+  it('hardware keys never type into the covered message bar while the lock is up', async () => {
+    const { useMessageStore } = await import('@/store/messageStore');
+    const { usePaidPlanStore } = await import('@/store/paidPlanStore');
+    useMessageStore.setState({ text: '' });
+    render(<PrismApp />);
+    await screen.findByTestId('panel-toolbar');
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+    expect(useMessageStore.getState().text).toBe('a');
+    usePaidPlanStore.setState({ locked: true });
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true }));
+    expect(useMessageStore.getState().text).toBe('a');
+    usePaidPlanStore.setState({ locked: false });
+  });
+});

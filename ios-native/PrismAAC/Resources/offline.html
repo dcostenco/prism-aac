@@ -19,6 +19,8 @@ body{background:#14161d;color:#fff;font-family:-apple-system,sans-serif;padding:
 .tile{background:#1e2030;border-radius:12px;padding:12px 6px;text-align:center;font-size:15px;cursor:pointer;border:none;color:#fff;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .tile:active{background:#2a3050}
 .tile .e{font-size:28px}
+.sos{display:block;width:calc(100% - 24px);margin:6px 12px;min-height:56px;background:#dc2626;color:#fff;border:none;border-radius:12px;font-size:20px;font-weight:700;cursor:pointer}
+.note{margin:4px 12px;padding:10px 12px;border-radius:10px;background:#3a2a10;color:#ffd58a;font-size:14px;line-height:1.35}
 .foot{text-align:center;padding:8px;font-size:12px;opacity:0.35}
 .foot button{background:#2a3050;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;margin-bottom:4px}
 @media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
@@ -30,6 +32,8 @@ body{background:#14161d;color:#fff;font-family:-apple-system,sans-serif;padding:
   <span id="msg" style="opacity:0.5">Tap a phrase to speak</span>
   <button class="speak" onclick="speakBar()">Speak ▶</button>
 </div>
+<button class="sos" id="sos" aria-label="Emergency: say the call for help aloud" onclick="toggleSos()">🚨 Emergency</button>
+<div class="note" id="note" hidden>Prism AAC needs a trial or subscription. The Help / Needs phrases always work. Your boards come back when you reconnect.</div>
 <div class="tabs" id="tabs"></div>
 <div class="grid" id="grid"></div>
 <div class="foot">
@@ -104,6 +108,13 @@ var C=[
 ['🚗','Car'],['🚌','Bus'],['🚂','Train'],['✈️','Airplane'],['🚲','Bicycle'],['🚶','Walk'],
 ['🚕','Taxi'],['🚢','Boat'],['🏍️','Motorcycle'],['🛴','Scooter'],['🚑','Ambulance'],['🚒','Fire truck']]}
 ];
+// The app injects window.prismOfflineAccess before this script. Without a
+// trial or subscription this device may use offline, only the Help / Needs
+// safety phrases are shown; they work in every state.
+if(window.prismOfflineAccess&&window.prismOfflineAccess.fullBoard===false){
+  C=C.filter(function(c){return c.n==='Help / Needs'});
+  document.getElementById('note').hidden=false;
+}
 var cur='',ci=0;
 function render(){
   var tb=document.getElementById('tabs'),gr=document.getElementById('grid');
@@ -124,25 +135,39 @@ function render(){
   });
   tb.children[ci].scrollIntoView({inline:'center',behavior:'smooth'});
 }
-function say(t){
-  cur+=(cur?' ':'')+t;
-  var m=document.getElementById('msg');
-  m.textContent=cur;m.style.opacity='1';
+function speak(t,emergency){
+  // The call for help speaks at normal speed so it finishes before it repeats.
   if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.prismNative){
-    window.webkit.messageHandlers.prismNative.postMessage({action:'speak',text:t,lang:'en-US',rate:0.4});
+    window.webkit.messageHandlers.prismNative.postMessage({action:'speak',text:t,lang:'en-US',rate:emergency?1.0:0.4,emergency:!!emergency});
   }else if(window.speechSynthesis){
     window.speechSynthesis.cancel();
     var u=new SpeechSynthesisUtterance(t);u.rate=0.8;window.speechSynthesis.speak(u);
   }
 }
+function say(t){
+  cur+=(cur?' ':'')+t;
+  var m=document.getElementById('msg');
+  m.textContent=cur;m.style.opacity='1';
+  speak(t);
+}
 function speakBar(){
   if(!cur)return;
-  if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.prismNative){
-    window.webkit.messageHandlers.prismNative.postMessage({action:'speak',text:cur,lang:'en-US',rate:0.4});
-  }else if(window.speechSynthesis){
-    window.speechSynthesis.cancel();
-    var u=new SpeechSynthesisUtterance(cur);u.rate=0.8;window.speechSynthesis.speak(u);
+  speak(cur);
+}
+// Emergency works offline in every state: it says the call for help aloud,
+// again every few seconds, so people nearby hear it. It places no call.
+var sosTimer=null,SOS='Emergency. I need help. Please help me.';
+function toggleSos(){
+  var b=document.getElementById('sos');
+  if(sosTimer){
+    clearInterval(sosTimer);sosTimer=null;b.textContent='🚨 Emergency';b.setAttribute('aria-label','Emergency: say the call for help aloud');
+    if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.prismNative){
+      window.webkit.messageHandlers.prismNative.postMessage({action:'stopSpeech'});
+    }else if(window.speechSynthesis){window.speechSynthesis.cancel();}
+    return;
   }
+  speak(SOS,true);sosTimer=setInterval(function(){speak(SOS,true)},8000);
+  b.textContent='■ Stop';b.setAttribute('aria-label','Stop the call for help');
 }
 render();
 </script>

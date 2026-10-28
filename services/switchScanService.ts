@@ -178,6 +178,9 @@ function discoverElements(): Element[] {
   if (typeof document === 'undefined') return [];
   const raw = document.querySelectorAll(INTERACTIVE_SELECTOR);
   const elements: Element[] = [];
+  // The paid-plan lock covers the board: scan the lock and any alert drawn
+  // above it (the emergency countdown), never the covered tiles beneath.
+  const lock = document.querySelector('[data-testid="aac-paid-lock"]');
 
   for (let i = 0; i < raw.length; i++) {
     const el = raw[i];
@@ -187,6 +190,7 @@ function discoverElements(): Element[] {
       if (el.hasAttribute('disabled')) continue;
       if (el.getAttribute('aria-hidden') === 'true') continue;
       if (el.tabIndex === -1) continue;
+      if (lock && !lock.contains(el) && !el.closest('[role="alertdialog"],[role="dialog"]')) continue;
       elements.push(el);
     }
   }

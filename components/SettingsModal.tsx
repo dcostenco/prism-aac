@@ -8,6 +8,7 @@ import {
   speechFeedbackFlags,
 } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
+import { copyBoardExport } from '@/services/boardExport';
 import { useAuthStore } from '@/store/authStore';
 import { synaluxSignInUrl, synaluxSignOutUrl, signInWithAppleNative, isNativeiOS, signOutOfPrismAac } from '@/services/aiService';
 import { LANG_META, SupportedLanguage } from '@/engine/i18n';
@@ -31,6 +32,7 @@ import CloudSubscriptionSettings from './CloudSubscriptionSettings';
 import CaregiverContactsSettings from './CaregiverContactsSettings';
 import PinPad from './PinPad';
 import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
+import { paidPlanKey, usePaidPlanStore } from '@/store/paidPlanStore';
 
 // ── Accordion section ────────────────────────────────────────────────────────
 function Section({
@@ -150,6 +152,7 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
   const mathTwoHitMagnify = useSettingsStore(s => s.mathTwoHitMagnify);
   const showHandCalibration = useSettingsStore(s => s.showHandCalibration);
   const { t } = useT();
+  const paidPlan = usePaidPlanStore(s => s.active);
   const [pinVerified, setPinVerified] = useState(false);
   const pinJustSet = useRef(false);
   const caregiverPinHash = useSettingsStore(s => s.caregiverPinHash);
@@ -603,15 +606,7 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
               <button
                 onClick={() => {
                   tapFeedback();
-                  const data = {
-                    version: 1,
-                    categories: useCategoryStore.getState().customCategories,
-                    phrases: useCategoryStore.getState().customPhrases.filter(p => !p.deletedAt),
-                    hiddenCategories: useCategoryStore.getState().hiddenCategoryIds,
-                    hiddenPhrases: useCategoryStore.getState().hiddenPhraseIds,
-                    settings: { gridSize: gridSize, activeVocabSet: activeVocabSet },
-                  };
-                  navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+                  void copyBoardExport();
                 }}
                 className="aac-btn rounded-xl px-4 py-3 font-semibold border border-theme surface-key text-primary text-sm"
               >
@@ -711,7 +706,7 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
                   {t('sign_in_with_synalux')}
                 </a>
                 <p className="text-dim text-xs mt-2">{t(!isNativeiOS() && process.env.NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE === '1'
-                  ? 'web_signin_free_account' : 'core_aac_no_account')}</p>
+                  ? paidPlanKey('web_signin_free_account', paidPlan) : paidPlanKey('core_aac_no_account', paidPlan))}</p>
                 <p className="text-xs text-muted" data-testid="aac-guest-legal-links">
                   <TermsLink className="underline">{t('cloud_terms')}</TermsLink>
                   {' · '}<a href={APPLE_STANDARD_EULA_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">{t('cloud_terms')} (Apple)</a>

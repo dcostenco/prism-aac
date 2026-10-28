@@ -171,6 +171,16 @@ describe('nonblocking web cloud-preview status', () => {
     expect(screen.getByTestId('web-preview-warning')).toHaveTextContent('Cloud preview ends soon.');
   });
 
+  it('with the paid-only policy in force, never promises the board stays available after the preview', async () => {
+    const { usePaidPlanStore } = await import('@/store/paidPlanStore');
+    usePaidPlanStore.setState({ active: true });
+    try {
+      mocks.access.mockResolvedValue({ state: 'preview', remainingMs: 30_000 });
+      render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+      expect(screen.getByTestId('web-preview-warning')).toHaveTextContent(/^Cloud preview ends soon\.$/);
+    } finally { usePaidPlanStore.setState({ active: false }); }
+  });
+
   it.each(['checking', 'sign_in_required', 'error'] as const)('keeps free controls available while access is %s', async state => {
     if (state === 'checking') mocks.access.mockImplementation(() => new Promise(() => {}));
     else if (state === 'error') mocks.access.mockRejectedValue(new Error('Offline'));

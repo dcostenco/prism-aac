@@ -185,10 +185,19 @@ struct PrismWebView: UIViewRepresentable {
     // MARK: - Native bridge JS
 
     private func nativeBridgeScript() -> String {
-        """
+        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0")
+            .filter { $0.isNumber || $0 == "." }
+        return """
         // Prism Native Bridge — injected before page load.
         // Intercepts AAC speak calls and routes to AVSpeechSynthesizer via WKScriptMessageHandler.
         window.prismNativeBridge = {
+            // The app version and what this build's bridge can do, so the web
+            // app can tell an older build from a newer one.
+            version: '\(version)',
+            capabilities: ['subscription', 'offlineAccess'],
+            offlineAccess: function(state) {
+                window.webkit.messageHandlers.prismNative.postMessage({ action: 'offlineAccess', state: state });
+            },
             speak: function(text, lang, rate) {
                 window.webkit.messageHandlers.prismNative.postMessage({
                     action: 'speak', text: text, lang: lang || 'en-US', rate: rate || 0.5
@@ -467,7 +476,8 @@ struct PrismWebView: UIViewRepresentable {
                 let lang = BridgeSecurityPolicy.isValidLang(rawLang) ? rawLang : "en-US"
                 let webSpeechRate = Float(body["rate"] as? Double ?? 1.0)
                 tts.speak(text, language: lang, webSpeechRate: webSpeechRate)
-                maybeRequestAppStoreReview()
+                // Never ask for an App Store review in the middle of an emergency.
+                if body["emergency"] as? Bool != true { maybeRequestAppStoreReview() }
             case "stopSpeech":
                 tts.stop()
             case "emergency":
@@ -599,6 +609,14 @@ struct PrismWebView: UIViewRepresentable {
                       message.frameInfo.isMainFrame else { return }
                 activeWebView = message.webView
                 performSignInWithApple()
+            case "offlineAccess":
+                // What the bundled offline page may show; only the AAC main frame may say.
+                guard let webView = message.webView,
+                      BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: webView.url,
+                        frameURL: message.frameInfo.request.url, isMainFrame: message.frameInfo.isMainFrame),
+                      let state = body["state"] as? [String: Any],
+                      let access = OfflineAccess(message: state) else { return }
+                access.save()
             case "billingDraft":
                 guard let webView = message.webView,
                       BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: webView.url,
@@ -1071,7 +1089,8 @@ struct PrismWebView: UIViewRepresentable {
             communicationNavigation = true
             if let url = Bundle.main.url(forResource: "offline", withExtension: "html"),
                let html = try? String(contentsOf: url, encoding: .utf8) {
-                webView.loadHTMLString(html, baseURL: url.deletingLastPathComponent())
+                webView.loadHTMLString(OfflineAccess.offlineDocument(html, fullBoard: OfflineAccess.offlineFullBoard()),
+                                       baseURL: url.deletingLastPathComponent())
             } else {
                 onUnavailable?({ [weak self, weak webView] in
                     guard let self, let webView else { return }

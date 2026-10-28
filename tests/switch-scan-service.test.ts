@@ -677,3 +677,19 @@ describe('switchScanService — keyboard input routing', () => {
     expect(getState().phase).toBe('idle');
   });
 });
+
+describe('switchScanService — paid-plan lock', () => {
+  afterEach(() => { stopScan(); document.body.innerHTML = ''; });
+  it('scans the lock and an alert above it, never the covered board', () => {
+    document.body.innerHTML = `
+      <button id="board-tile" style="position:fixed">Board tile</button>
+      <div data-testid="aac-paid-lock"><button id="lock-emergency" style="position:fixed">Emergency</button></div>
+      <div role="alertdialog"><button id="countdown-cancel" style="position:fixed">Cancel</button></div>`;
+    const seen: (string | null)[] = [];
+    startScan({ enabled: true, groupScan: false, mode: 'manual' }, { onHighlight: el => seen.push(el?.id ?? null) });
+    for (let i = 0; i < 4; i++) document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    const ids = new Set(seen.filter(Boolean));
+    expect(ids.has('board-tile')).toBe(false);
+    expect(ids.has('lock-emergency')).toBe(true);
+  });
+});
