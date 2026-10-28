@@ -112,3 +112,20 @@ describe('EmergencyService — Emergency Script', () => {
     expect(script).toContain('needs help');
   });
 });
+
+describe('detectEmergency: contractions, curly apostrophes and the bedside card', () => {
+  it.each([
+    ['HELP — EMERGENCY', 'critical'],
+    ['help – emergency', 'critical'],
+    ["I'm scared", 'urgent'],
+    ['I’m scared', 'urgent'],
+    ['I’m not safe', 'critical'],
+    ["I'm lost", 'critical'],
+    ['I can’t breathe', 'critical'],
+  ])('%s is detected as %s', (text, severity) => {
+    expect(detectEmergency(text)).toMatchObject({ detected: true, severity });
+  });
+  it.each(['The emergency room is busy', 'Help with this', 'I am lostful'])('ordinary text stays quiet: %s', text => {
+    expect(detectEmergency(text).detected).toBe(false);
+  });
+});

@@ -489,5 +489,9 @@
   "cloud_trial_web": "Începeți proba de {days} zile · apoi {price}/lună",
   "cloud_trial_apple": "Probă de {days} zile cu Apple · apoi {price}/lună",
   "cloud_trial_end_date": "Proba gratuită se încheie la {date}. Verificați reînnoirea și anularea în Gestionați abonamentul.",
-  "cloud_trial_cancelled_date": "Proba gratuită se încheie la {date}. Anularea este programată; comunicarea gratuită rămâne disponibilă."
+  "cloud_trial_cancelled_date": "Proba gratuită se încheie la {date}. Anularea este programată; comunicarea gratuită rămâne disponibilă.",
+  "emergency_not_sent_title": "Alerta nu a fost trimisă",
+  "emergency_not_sent_no_contact": "Nu a fost apelat nimeni: nu este setat niciun contact de urgență. Adaugă un contact de îngrijitor în Setări. Dacă ești în pericol, sună la serviciile de urgență.",
+  "emergency_not_sent_unreached": "Contactul tău de urgență nu a putut fi contactat. Dacă ești în pericol, sună la serviciile de urgență.",
+  "emergency_not_sent_queued": "Alerta nu a fost trimisă: dispozitivul era în repaus când s-a terminat numărătoarea inversă. Dacă ești în pericol, sună la serviciile de urgență."
 }

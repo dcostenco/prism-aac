@@ -14,7 +14,7 @@ import { verifyPin } from '@/lib/pinCrypto';
 import { useT } from '@/engine/useT';
 
 export default function EmergencyCountdownModal() {
-    const { phase, phrase, severity, countdown, reset } = useEmergencyStore();
+    const { phase, phrase, severity, countdown, reset, notSentReason } = useEmergencyStore();
     const [pinInput, setPinInput] = useState('');
     const [pinError, setPinError] = useState(false);
     const [pinAttempts, setPinAttempts] = useState(0);
@@ -103,6 +103,13 @@ export default function EmergencyCountdownModal() {
                     </div>
                 )}
 
+                {phase === 'not_sent' && (
+                    <div className="mb-6" role="alert" data-testid="emergency-not-sent">
+                        <div className="text-[#dc2626] font-semibold mb-2">{t('emergency_not_sent_title')}</div>
+                        <div className="text-sm text-primary">{t(`emergency_not_sent_${notSentReason}`)}</div>
+                    </div>
+                )}
+
                 {phase === 'dispatched' && (
                     <div className="mb-6">
                         <div className="text-4xl">✓</div>
@@ -151,7 +158,7 @@ export default function EmergencyCountdownModal() {
                             {tx('cancel', 'Cancel')}
                         </button>
                     )}
-                    {phase === 'dispatched' && (
+                    {(phase === 'dispatched' || phase === 'not_sent') && (
                         <button
                             onClick={() => reset()}
                             className="aac-btn min-h-[52px] px-7 rounded-xl bg-[#16a34a] text-white text-lg font-semibold"

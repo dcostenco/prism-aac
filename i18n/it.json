@@ -489,5 +489,9 @@
   "cloud_trial_web": "Prova di {days} giorni · poi {price}/mese",
   "cloud_trial_apple": "Prova di {days} giorni con Apple · poi {price}/mese",
   "cloud_trial_end_date": "La prova gratuita termina il {date}. Controlla rinnovo e disdetta in Gestisci abbonamento.",
-  "cloud_trial_cancelled_date": "La prova gratuita termina il {date}. La disdetta è programmata; la comunicazione gratuita resta disponibile."
+  "cloud_trial_cancelled_date": "La prova gratuita termina il {date}. La disdetta è programmata; la comunicazione gratuita resta disponibile.",
+  "emergency_not_sent_title": "Avviso non inviato",
+  "emergency_not_sent_no_contact": "Non è stato chiamato nessuno: non è impostato alcun contatto di emergenza. Aggiungi un contatto di chi ti assiste nelle Impostazioni. Se sei in pericolo, chiama i servizi di emergenza.",
+  "emergency_not_sent_unreached": "Non è stato possibile raggiungere il tuo contatto di emergenza. Se sei in pericolo, chiama i servizi di emergenza.",
+  "emergency_not_sent_queued": "L'avviso non è stato inviato: il dispositivo era in stop quando il conto alla rovescia è finito. Se sei in pericolo, chiama i servizi di emergenza."
 }

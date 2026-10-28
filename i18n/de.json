@@ -489,5 +489,9 @@
   "cloud_trial_web": "{days} Tage testen · danach {price}/Monat",
   "cloud_trial_apple": "{days} Tage mit Apple testen · danach {price}/Monat",
   "cloud_trial_end_date": "Die kostenlose Testphase endet am {date}. Prüfe Verlängerung und Kündigung unter Abonnement verwalten.",
-  "cloud_trial_cancelled_date": "Die kostenlose Testphase endet am {date}. Die Kündigung ist vorgemerkt; kostenlose Kommunikation bleibt verfügbar."
+  "cloud_trial_cancelled_date": "Die kostenlose Testphase endet am {date}. Die Kündigung ist vorgemerkt; kostenlose Kommunikation bleibt verfügbar.",
+  "emergency_not_sent_title": "Alarm nicht gesendet",
+  "emergency_not_sent_no_contact": "Niemand wurde angerufen: Es ist kein Notfallkontakt eingerichtet. Füge in den Einstellungen einen Kontakt einer Betreuungsperson hinzu. Wenn du in Gefahr bist, ruf den Notruf an.",
+  "emergency_not_sent_unreached": "Dein Notfallkontakt konnte nicht erreicht werden. Wenn du in Gefahr bist, ruf den Notruf an.",
+  "emergency_not_sent_queued": "Der Alarm wurde nicht gesendet: Das Gerät war im Ruhezustand, als der Countdown endete. Wenn du in Gefahr bist, ruf den Notruf an."
 }

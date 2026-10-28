@@ -16,6 +16,7 @@ const mockEmergency = {
   phrase: '',
   severity: 'standard' as string,
   countdown: 10,
+  notSentReason: 'unreached',
   reset: vi.fn(),
 };
 
@@ -286,5 +287,30 @@ describe('EmergencyCountdownModal — accessibility', () => {
     setPhase('countdown', 'critical');
     render(<EmergencyCountdownModal />);
     expect(screen.getByText(/Sending emergency alert/i)).toBeInTheDocument();
+  });
+});
+
+describe('EmergencyCountdownModal — not sent', () => {
+  it('says no one was called when no contact is set up, and can be closed', () => {
+    setPhase('not_sent', 'urgent'); mockEmergency.notSentReason = 'no_contact';
+    render(<EmergencyCountdownModal />);
+    expect(screen.getByTestId('emergency-not-sent')).toHaveTextContent('Alert not sent');
+    expect(screen.getByTestId('emergency-not-sent')).toHaveTextContent('No one was called: no emergency contact is set up.');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(mockEmergency.reset).toHaveBeenCalled();
+    mockEmergency.notSentReason = 'unreached';
+  });
+
+  it('says the contact could not be reached when one is set up', () => {
+    setPhase('not_sent', 'critical'); mockEmergency.notSentReason = 'unreached';
+    render(<EmergencyCountdownModal />);
+    expect(screen.getByTestId('emergency-not-sent')).toHaveTextContent('Your emergency contact could not be reached.');
+  });
+
+  it('says a slept-through countdown sent nothing, not that no one could be reached', () => {
+    setPhase('not_sent', 'urgent'); mockEmergency.notSentReason = 'queued';
+    render(<EmergencyCountdownModal />);
+    expect(screen.getByTestId('emergency-not-sent')).toHaveTextContent('the device was asleep when the countdown ended');
+    mockEmergency.notSentReason = 'unreached';
   });
 });

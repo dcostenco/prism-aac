@@ -489,5 +489,9 @@
   "cloud_trial_web": "开始 {days} 天试用 · 之后每月 {price}",
   "cloud_trial_apple": "通过 Apple 试用 {days} 天 · 之后每月 {price}",
   "cloud_trial_end_date": "免费试用将于 {date} 结束。请在“管理订阅”中查看续订和取消信息。",
-  "cloud_trial_cancelled_date": "免费试用将于 {date} 结束。已安排取消；免费沟通功能仍可使用。"
+  "cloud_trial_cancelled_date": "免费试用将于 {date} 结束。已安排取消；免费沟通功能仍可使用。",
+  "emergency_not_sent_title": "警报未发送",
+  "emergency_not_sent_no_contact": "未拨打任何电话：尚未设置紧急联系人。请在设置中添加照护者联系人。如果你身处危险，请拨打紧急服务电话。",
+  "emergency_not_sent_unreached": "无法联系到你的紧急联系人。如果你身处危险，请拨打紧急服务电话。",
+  "emergency_not_sent_queued": "警报未发送：倒计时结束时设备处于休眠状态。如果你身处危险，请拨打紧急服务电话。"
 }

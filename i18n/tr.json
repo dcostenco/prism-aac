@@ -489,5 +489,9 @@
   "cloud_trial_web": "{days} günlük denemeyi başlat · sonra {price}/ay",
   "cloud_trial_apple": "Apple ile {days} günlük deneme · sonra {price}/ay",
   "cloud_trial_end_date": "Ücretsiz deneme {date} tarihinde biter. Yenileme ve iptal bilgilerini Aboneliği yönet bölümünde inceleyin.",
-  "cloud_trial_cancelled_date": "Ücretsiz deneme {date} tarihinde biter. İptal planlandı; ücretsiz iletişim kullanılabilir kalır."
+  "cloud_trial_cancelled_date": "Ücretsiz deneme {date} tarihinde biter. İptal planlandı; ücretsiz iletişim kullanılabilir kalır.",
+  "emergency_not_sent_title": "Uyarı gönderilmedi",
+  "emergency_not_sent_no_contact": "Kimse aranmadı: acil durum kişisi ayarlanmamış. Ayarlar'dan bir bakım veren kişi ekleyin. Tehlikedeyseniz acil servisleri arayın.",
+  "emergency_not_sent_unreached": "Acil durum kişinize ulaşılamadı. Tehlikedeyseniz acil servisleri arayın.",
+  "emergency_not_sent_queued": "Uyarı gönderilmedi: geri sayım bittiğinde cihaz uykudaydı. Tehlikedeyseniz acil servisleri arayın."
 }
