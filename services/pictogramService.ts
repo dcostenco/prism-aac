@@ -179,8 +179,8 @@ async function cachePut(key: string, blob: Blob): Promise<void> {
 // tile or a tap still goes straight through, so a recovered portal is used at
 // once); it only tells waiting tiles how long to wait, and consecutive busy,
 // rate-limited or failed answers double that wait for all of them (1 s, 2 s,
-// 4 s ... 60 s), never shorter than the server's Retry-After. Any proper answer
-// resets it. A flat 1 s per tile sent a request wave every second during an
+// 4 s ... 60 s), never shorter than the server's Retry-After. A delivered
+// picture resets it. A flat 1 s per tile sent a request wave every second during an
 // outage once board and search tiles retried as well.
 let transientFailures = 0;
 
@@ -191,7 +191,9 @@ async function fetchSynaluxAI(phrase: string, lang: string, cacheOnly: boolean, 
     const backoff = Math.min(PICTURE_MAX_RETRY_DELAY_MS, PICTURE_RETRY_DELAY_MS * 2 ** (transientFailures - 1));
     return { ...result, retryAfterMs: Math.max(result.retryAfterMs ?? PICTURE_RETRY_DELAY_MS, backoff) };
   }
-  if (result.kind !== 'unavailable') transientFailures = 0;
+  // Only a delivered picture resets it: a cache miss or a "being drawn" answer
+  // is a step toward a picture, and generation or polling can still be failing.
+  if (result.kind === 'image') transientFailures = 0;
   return result;
 }
 

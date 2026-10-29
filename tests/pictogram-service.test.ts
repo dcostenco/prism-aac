@@ -380,6 +380,35 @@ describe('getPictogramUrl — caching', () => {
     expect(await waitOf('outage-e')).toBe(1_000);
   });
 
+  it('keeps doubling the wait when the cache answers "not cached" but generation keeps failing', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('cacheOnly=1')
+      ? new Response(JSON.stringify({ styleVersion: 3 }), { status: 404, headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3' } })
+      : new Response('down', { status: 503 })));
+    const waitOf = async (word: string) => (await service.getPictogramUrl(word, 'en', 'symbols-ai').catch(error => error)).retryAfterMs;
+    expect(await waitOf('gen-outage-a')).toBe(1_000);
+    expect(await waitOf('gen-outage-b')).toBe(2_000);
+    expect(await waitOf('gen-outage-c')).toBe(4_000);
+  });
+
+  it('keeps doubling the wait when the portal answers "being drawn" but polling keeps failing', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    let probes = 0;
+    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}'));
+      if (body.pollToken) return new Response('down', { status: 503 });
+      probes += 1;
+      return new Response(JSON.stringify({ pollToken: `token-${probes}` }), { status: 202, headers: { 'Content-Type': 'application/json' } });
+    }));
+    const waitOf = async (word: string) => (await service.getPictogramUrl(word, 'en', 'symbols-ai').catch(error => error)).retryAfterMs;
+    // Each "being drawn" answer is followed by one failed poll (0.5 s apart).
+    expect(await waitOf('poll-outage-a')).toBe(1_000);
+    expect(await waitOf('poll-outage-b')).toBe(2_000);
+    expect(probes).toBe(2);
+  });
+
   it('frees the space of pictures saved before the redraw when the device database upgrades', async () => {
     await resetDb();
     const service = await import('@/services/pictogramService');
