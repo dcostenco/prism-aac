@@ -640,7 +640,13 @@ export default function PredictionBar() {
     const words = text.trim().split(/\s+/).filter(Boolean);
     const partial = predictionTokenParts(words.at(-1) ?? '');
     const midWord = text.length > 0 && !/\s$/u.test(text) && !partial.trailing;
-    const isCompletion = midWord && !!partial.word && matchesPredictionPrefix(word, partial.word, language);
+    // When nothing completed the typed word, the engine completed a shorter
+    // prefix ("рыби" -> рыба); tapping such a tile still replaces the typed word.
+    const backoff = usePredictionStore.getState().completionBackoff;
+    const backedOffCompletion = !!backoff && !!partial.word
+      && normalizePredictionSpelling(partial.word, language) === backoff.partialWord
+      && matchesPredictionPrefix(word, backoff.completionPrefix, language);
+    const isCompletion = midWord && !!partial.word && (matchesPredictionPrefix(word, partial.word, language) || backedOffCompletion);
 
     // For trigram learning we need the two committed words BEFORE the new tap.
     // If the user is completing a partial word, the in-progress word doesn't count as committed,

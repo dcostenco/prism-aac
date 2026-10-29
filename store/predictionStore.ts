@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WordFreqEntry } from '@/types';
-import { getPredictions, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergePredictionBaselines, mergePredictionContextBaselines, mergeUserNgramsWithBoost } from '@/engine/predictionEngine';
+import { getPredictions, type PredictionCompletionInfo, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergePredictionBaselines, mergePredictionContextBaselines, mergeUserNgramsWithBoost } from '@/engine/predictionEngine';
 import { normalizePredictionSpelling } from '@/engine/predictionSpellings';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
@@ -334,6 +334,10 @@ interface PredictionState {
   // frequency) can still surface. Computed externally by MessageBar from
   // the autocorrect/completion suggestion and pushed in via setAiCompletion.
   aiCompletion: string | null;
+  // The typed partial word and the shorter prefix the bar completed when
+  // nothing completed the word as typed ("рыби" -> "рыб"); null otherwise.
+  // A tap on such a tile replaces the typed word instead of appending.
+  completionBackoff: { partialWord: string; completionPrefix: string } | null;
   wordFreq: Record<string, WordFreqEntry>;
   bigrams: Record<string, WordFreqEntry>;
   trigrams: Record<string, WordFreqEntry>;
@@ -355,6 +359,7 @@ export const usePredictionStore = create<PredictionState>()(
     (set, get) => ({
       predictions: getPredictionsForLanguage(activeStorageLanguage),
       aiCompletion: null,
+      completionBackoff: null,
       ...predictionMapsForIdentity(activeStorageScope, activeStorageLanguage),
       personalizationScope: activeStorageScope,
       personalizationLanguage: activeStorageLanguage,
@@ -383,6 +388,7 @@ export const usePredictionStore = create<PredictionState>()(
           personalizationLanguage: language,
           predictions: getPredictionsForLanguage(language),
           aiCompletion: null,
+          completionBackoff: null,
         });
       },
 
@@ -429,8 +435,12 @@ export const usePredictionStore = create<PredictionState>()(
         const fallback = getPredictionsForLanguage(lang);
         const alwaysCapitalized = lang === 'en' ? undefined : new Set<string>();
         const scriptFilter = SCRIPT_FILTER[lang];
-        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, mergedTg, fallback, alwaysCapitalized, scriptFilter, lang);
-        set({ predictions });
+        const info: PredictionCompletionInfo = {};
+        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, mergedTg, fallback, alwaysCapitalized, scriptFilter, lang, info);
+        const completionBackoff = info.partialWord && info.completionPrefix && info.completionPrefix !== info.partialWord
+          ? { partialWord: info.partialWord, completionPrefix: info.completionPrefix }
+          : null;
+        set({ predictions, completionBackoff });
       },
 
       setAiCompletion: (word) => {
