@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getPictogramUrl, pictureModeForProfile, typedWordPicturesEnabled } from '@/services/pictogramService';
+import { PicturePendingError } from '@/services/pictogramQueue';
 import { builtInPhraseSymbolUrl, isBuiltInPhraseId } from '@/lib/builtInSymbols';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
@@ -42,16 +43,24 @@ export default function PhraseTile({ phrase, englishPhrase, builtInPhraseId, cus
   const wantsGenerated = !customImageUrl && !builtIn && typedWordPicturesEnabled(pictureMode);
   const requestKey = JSON.stringify([generatedFor, phrase, language, pictureMode]);
   const [generated, setGenerated] = useState<{ key: string; url: string | null } | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const { elementRef, isNearViewport } = useNearViewport<HTMLButtonElement>(wantsGenerated);
 
   useEffect(() => {
     if (!wantsGenerated || !isNearViewport) return;
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     getPictogramUrl(generatedFor, 'en', pictureMode, { text: phrase, lang: language }).then((url) => {
       if (!cancelled) setGenerated({ key: requestKey, url });
-    }).catch(() => { if (!cancelled) setGenerated({ key: requestKey, url: null }); });
-    return () => { cancelled = true; };
-  }, [generatedFor, phrase, wantsGenerated, pictureMode, language, isNearViewport, requestKey]);
+    }).catch((error) => {
+      if (cancelled) return;
+      // A busy or rate-limited portal is not a final answer: ask again after
+      // its wait, as prediction tiles do, instead of leaving a text tile.
+      if (error instanceof PicturePendingError) retryTimer = setTimeout(() => setRetryAttempt(value => value + 1), error.retryAfterMs);
+      else setGenerated({ key: requestKey, url: null });
+    });
+    return () => { cancelled = true; clearTimeout(retryTimer); };
+  }, [generatedFor, phrase, wantsGenerated, pictureMode, language, isNearViewport, requestKey, retryAttempt]);
 
   let picture: Picture;
   if (customImageUrl) {

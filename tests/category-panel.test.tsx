@@ -678,6 +678,36 @@ describe('CategoryPanel — symbols for built-in phrases', () => {
     expect(result('Buckle up tight').querySelector('img')).toBeNull();
   });
 
+  it('on a paid plan, asks again for a search picture after a rate-limited answer', async () => {
+    // After the device picture cache was reset, a first request can meet a 429;
+    // the icon must not stay empty for the rest of the session.
+    const { useAuthStore } = await import('@/store/authStore');
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (!String(input).includes('/prism-aac/pictogram')) return new Response('', { status: 404 });
+      calls += 1;
+      return calls === 1
+        ? new Response(JSON.stringify({ error: 'rate limited' }), { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '1' } })
+        : new Response(new ArrayBuffer(8), { status: 200, headers: { 'Content-Type': 'image/png' } });
+    }));
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: () => 'blob:search-after-wait' });
+    mocks.mockPhrases.push({ id: 'custom-retry', text: 'my blue kite', isCustom: true });
+    useAuthStore.setState({ profile: { plan: 'pro' } as never });
+    try {
+      render(<CategoryPanel />);
+      fireEvent.click(screen.getByRole('button', { name: /search/i }));
+      fireEvent.change(screen.getByRole('textbox', { name: /search all vocabulary/i }), { target: { value: 'blue kite' } });
+      await waitFor(() => expect(screen.getAllByText('my blue kite').length).toBeGreaterThan(0));
+      const result = () => screen.getAllByText('my blue kite')[0].closest('button')!;
+      await waitFor(() => expect(result().querySelector('img')).toHaveAttribute('src', 'blob:search-after-wait'), { timeout: 4000 });
+      expect(calls).toBeGreaterThanOrEqual(2);
+    } finally {
+      useAuthStore.setState({ profile: null });
+      mocks.mockPhrases.pop();
+      vi.unstubAllGlobals();
+    }
+  }, 10_000);
+
   it('on a paid plan, never asks to generate a search picture for a phrase listed in the board language', async () => {
     // Search pictures are requested in English; Swahili "tako" (buttock) is listed only in Swahili.
     const { useAuthStore } = await import('@/store/authStore');

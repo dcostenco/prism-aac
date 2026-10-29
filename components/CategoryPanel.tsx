@@ -21,6 +21,7 @@ import { usesNativeImeKeyboard } from '@/constants/keyboardLayouts';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
 import { getPictogramUrl, pictureModeForProfile, typedWordPicturesEnabled } from '@/services/pictogramService';
+import { PicturePendingError } from '@/services/pictogramQueue';
 import { builtInCategorySymbolUrl, builtInPhraseSymbolUrl, isBuiltInPhraseId } from '@/lib/builtInSymbols';
 import { useAuthStore } from '@/store/authStore';
 import { useNearViewport } from '@/hooks/useNearViewport';
@@ -184,16 +185,23 @@ function SearchResultIcon({ phrase, builtInPhraseId, language }: { phrase: strin
   const wantsGenerated = !builtIn && typedWordPicturesEnabled(pictureMode);
   const requestKey = JSON.stringify([phrase, language, pictureMode, builtInPhraseId]);
   const [generated, setGenerated] = useState<{ key: string; url: string | null } | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const { elementRef, isNearViewport } = useNearViewport<HTMLSpanElement>(wantsGenerated);
   useEffect(() => {
     if (!wantsGenerated || !isNearViewport) return;
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const controller = new AbortController();
     getPictogramUrl(phrase, 'en', pictureMode, { text: phrase, lang: language }, { signal: controller.signal })
       .then(url => { if (!cancelled) setGenerated({ key: requestKey, url }); })
-      .catch(() => { if (!cancelled) setGenerated({ key: requestKey, url: null }); });
-    return () => { cancelled = true; controller.abort(); };
-  }, [phrase, wantsGenerated, pictureMode, language, isNearViewport, requestKey]);
+      .catch(error => {
+        if (cancelled) return;
+        // Busy or rate-limited: ask again after the portal's wait, not a final miss.
+        if (error instanceof PicturePendingError) retryTimer = setTimeout(() => setRetryAttempt(value => value + 1), error.retryAfterMs);
+        else setGenerated({ key: requestKey, url: null });
+      });
+    return () => { cancelled = true; clearTimeout(retryTimer); controller.abort(); };
+  }, [phrase, wantsGenerated, pictureMode, language, isNearViewport, requestKey, retryAttempt]);
   const requestedUrl = builtIn ? builtInPhraseSymbolUrl(builtInPhraseId)
     : wantsGenerated && generated?.key === requestKey ? generated.url : null;
   const image = useRecoverablePicture(requestedUrl, requestKey);

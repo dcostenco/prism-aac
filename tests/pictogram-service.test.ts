@@ -303,27 +303,57 @@ describe('getPictogramUrl — caching', () => {
     expect(second).not.toHaveBeenCalled();
   });
 
-  it('does not show a picture saved before cache version 5; it asks the portal for the redrawn one', async () => {
-    // Pictures drawn before the neutral-figure rule (children, unsafe or lettered
-    // pictures) were retired on the server; a device copy must not outlive that.
-    const meaning = 'retired-picture-word';
-    const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))))
-      .map((b) => b.toString(16).padStart(2, '0')).join('');
-    const oldKey = await digest(JSON.stringify([4, 3, 'en', 'symbols-ai', meaning]));
-    await new Promise<void>((resolve, reject) => {
-      const open = indexedDB.open('prism-aac-generated-pictures', 1);
-      open.onupgradeneeded = () => { if (!open.result.objectStoreNames.contains('blobs')) open.result.createObjectStore('blobs'); };
-      open.onsuccess = () => {
-        const tx = open.result.transaction('blobs', 'readwrite');
-        tx.objectStore('blobs').put(new Blob([new Uint8Array(200)], { type: 'image/png' }), oldKey);
-        tx.oncomplete = () => { open.result.close(); resolve(); };
-        tx.onerror = () => reject(tx.error);
-      };
-      open.onerror = () => reject(open.error);
-    });
+  // Pictures drawn before the neutral-figure rule (children, unsafe or lettered
+  // pictures) were retired on the server; a device copy must not outlive that.
+  const DB = 'prism-aac-generated-pictures';
+  const resetDb = () => new Promise<void>((resolve, reject) => {
+    const del = indexedDB.deleteDatabase(DB);
+    del.onsuccess = () => resolve(); del.onerror = () => reject(del.error); del.onblocked = () => resolve();
+  });
+  const seed = (dbVersion: number, key: string) => new Promise<void>((resolve, reject) => {
+    const open = indexedDB.open(DB, dbVersion);
+    open.onupgradeneeded = () => { if (!open.result.objectStoreNames.contains('blobs')) open.result.createObjectStore('blobs'); };
+    open.onsuccess = () => {
+      const tx = open.result.transaction('blobs', 'readwrite');
+      tx.objectStore('blobs').put(new Blob([new Uint8Array(200)], { type: 'image/png' }), key);
+      tx.oncomplete = () => { open.result.close(); resolve(); };
+      tx.onerror = () => reject(tx.error);
+    };
+    open.onerror = () => reject(open.error);
+  });
+
+  it('does not show a picture saved under cache version 4; it asks the portal for the redrawn one', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    await seed(service.DB_VERSION, await service.pictureCacheKey('retired-picture-word', 'en', 'symbols-ai', 4));
     const fetchSpy = stubAI();
-    const { getPictogramUrl } = await import('@/services/pictogramService');
-    expect(await getPictogramUrl(meaning, 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(await service.getPictogramUrl('retired-picture-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads from the network instead of waiting when an older tab blocks the database upgrade', async () => {
+    await resetDb();
+    // An older tab: version 1 open, with no handler that would close it on request.
+    const held = await new Promise<IDBDatabase>((resolve, reject) => {
+      const open = indexedDB.open(DB, 1);
+      open.onupgradeneeded = () => open.result.createObjectStore('blobs');
+      open.onsuccess = () => resolve(open.result); open.onerror = () => reject(open.error);
+    });
+    try {
+      const service = await import('@/services/pictogramService');
+      const fetchSpy = stubAI();
+      expect(await service.getPictogramUrl('blocked-upgrade-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    } finally { held.close(); }
+  });
+
+  it('frees the space of pictures saved before the redraw when the device database upgrades', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    // Even an entry under the current key is gone after the upgrade from database version 1.
+    await seed(1, await service.pictureCacheKey('upgrade-cleared-word', 'en', 'symbols-ai'));
+    const fetchSpy = stubAI();
+    expect(await service.getPictogramUrl('upgrade-cleared-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 });
