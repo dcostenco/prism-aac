@@ -302,6 +302,30 @@ describe('getPictogramUrl — caching', () => {
     expect(await fresh.getPictogramUrl('persisted-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
     expect(second).not.toHaveBeenCalled();
   });
+
+  it('does not show a picture saved before cache version 5; it asks the portal for the redrawn one', async () => {
+    // Pictures drawn before the neutral-figure rule (children, unsafe or lettered
+    // pictures) were retired on the server; a device copy must not outlive that.
+    const meaning = 'retired-picture-word';
+    const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))))
+      .map((b) => b.toString(16).padStart(2, '0')).join('');
+    const oldKey = await digest(JSON.stringify([4, 3, 'en', 'symbols-ai', meaning]));
+    await new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open('prism-aac-generated-pictures', 1);
+      open.onupgradeneeded = () => { if (!open.result.objectStoreNames.contains('blobs')) open.result.createObjectStore('blobs'); };
+      open.onsuccess = () => {
+        const tx = open.result.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').put(new Blob([new Uint8Array(200)], { type: 'image/png' }), oldKey);
+        tx.oncomplete = () => { open.result.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+      open.onerror = () => reject(open.error);
+    });
+    const fetchSpy = stubAI();
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl(meaning, 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ── cache left by earlier versions ─────────────────────────────────────────

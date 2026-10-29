@@ -45,7 +45,10 @@ export function typedWordPicturesEnabled(mode: PictureMode): boolean {
 const STYLE_VERSION = 3;
 // Part of the cache key. Version 3 started a new database: everything cached
 // before it, including third-party pictograms, stays out of the lookup.
-const CACHE_VERSION = 4;
+// Version 5 (2026-10-29): generated pictures drawn before the neutral-figure
+// rule (children, unsafe or lettered pictures) were retired on the server and
+// are redrawn; devices must ask again instead of showing their saved copies.
+const CACHE_VERSION = 5;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB cap — prevents OOM from oversized blobs
 // Large enough to hold a full vocabulary board without eviction.
 // We do NOT revoke on eviction — a PhraseTile component may still hold
