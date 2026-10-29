@@ -302,6 +302,122 @@ describe('getPictogramUrl — caching', () => {
     expect(await fresh.getPictogramUrl('persisted-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
     expect(second).not.toHaveBeenCalled();
   });
+
+  // Pictures drawn before the neutral-figure rule (children, unsafe or lettered
+  // pictures) were retired on the server; a device copy must not outlive that.
+  const DB = 'prism-aac-generated-pictures';
+  const resetDb = () => new Promise<void>((resolve, reject) => {
+    const del = indexedDB.deleteDatabase(DB);
+    del.onsuccess = () => resolve(); del.onerror = () => reject(del.error); del.onblocked = () => resolve();
+  });
+  const seed = (dbVersion: number, key: string) => new Promise<void>((resolve, reject) => {
+    const open = indexedDB.open(DB, dbVersion);
+    open.onupgradeneeded = () => { if (!open.result.objectStoreNames.contains('blobs')) open.result.createObjectStore('blobs'); };
+    open.onsuccess = () => {
+      const tx = open.result.transaction('blobs', 'readwrite');
+      tx.objectStore('blobs').put(new Blob([new Uint8Array(200)], { type: 'image/png' }), key);
+      tx.oncomplete = () => { open.result.close(); resolve(); };
+      tx.onerror = () => reject(tx.error);
+    };
+    open.onerror = () => reject(open.error);
+  });
+
+  it('does not show a picture saved under cache version 4; it asks the portal for the redrawn one', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    await seed(service.DB_VERSION, await service.pictureCacheKey('retired-picture-word', 'en', 'symbols-ai', 4));
+    const fetchSpy = stubAI();
+    expect(await service.getPictogramUrl('retired-picture-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads from the network instead of waiting when an older tab blocks the database upgrade', async () => {
+    await resetDb();
+    // An older tab: version 1 open, with no handler that would close it on request.
+    const held = await new Promise<IDBDatabase>((resolve, reject) => {
+      const open = indexedDB.open(DB, 1);
+      open.onupgradeneeded = () => open.result.createObjectStore('blobs');
+      open.onsuccess = () => resolve(open.result); open.onerror = () => reject(open.error);
+    });
+    try {
+      const service = await import('@/services/pictogramService');
+      const fetchSpy = stubAI();
+      expect(await service.getPictogramUrl('blocked-upgrade-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    } finally { held.close(); }
+  });
+
+  it('after a version-4 picture is ignored, a 429 reports the portal wait and the retry shows the redrawn picture', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    await seed(service.DB_VERSION, await service.pictureCacheKey('rate-limited-word', 'en', 'symbols-ai', 4));
+    let calls = 0;
+    stubAI(() => (++calls === 1
+      ? new Response(JSON.stringify({ error: 'Rate limit exceeded', retryAfter: 60 }), { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } })
+      : pngResponse()));
+    const first = await service.getPictogramUrl('rate-limited-word', 'en', 'symbols-ai').catch(error => error);
+    expect(first).toBeInstanceOf(service.PicturePendingError);
+    expect(first.retryAfterMs).toBe(60_000);
+    // The tile's retry after that wait gets the redrawn picture, not the version-4 copy.
+    expect(await service.getPictogramUrl('rate-limited-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(calls).toBe(2);
+  });
+
+  it('doubles the reported wait across words after each consecutive failure and resets it on success', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    let failing = true;
+    stubAI(() => (failing ? new Response('down', { status: 503 }) : pngResponse()));
+    const waitOf = async (word: string) => (await service.getPictogramUrl(word, 'en', 'symbols-ai').catch(error => error)).retryAfterMs;
+    // Different words share one backoff, so waiting tiles spread out instead of
+    // all asking again every second.
+    expect(await waitOf('outage-a')).toBe(1_000);
+    expect(await waitOf('outage-b')).toBe(2_000);
+    expect(await waitOf('outage-c')).toBe(4_000);
+    failing = false;
+    expect(await service.getPictogramUrl('outage-d', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    failing = true;
+    expect(await waitOf('outage-e')).toBe(1_000);
+  });
+
+  it('keeps doubling the wait when the cache answers "not cached" but generation keeps failing', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('cacheOnly=1')
+      ? new Response(JSON.stringify({ styleVersion: 3 }), { status: 404, headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3' } })
+      : new Response('down', { status: 503 })));
+    const waitOf = async (word: string) => (await service.getPictogramUrl(word, 'en', 'symbols-ai').catch(error => error)).retryAfterMs;
+    expect(await waitOf('gen-outage-a')).toBe(1_000);
+    expect(await waitOf('gen-outage-b')).toBe(2_000);
+    expect(await waitOf('gen-outage-c')).toBe(4_000);
+  });
+
+  it('keeps doubling the wait when the portal answers "being drawn" but polling keeps failing', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    let probes = 0;
+    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}'));
+      if (body.pollToken) return new Response('down', { status: 503 });
+      probes += 1;
+      return new Response(JSON.stringify({ pollToken: `token-${probes}` }), { status: 202, headers: { 'Content-Type': 'application/json' } });
+    }));
+    const waitOf = async (word: string) => (await service.getPictogramUrl(word, 'en', 'symbols-ai').catch(error => error)).retryAfterMs;
+    // Each "being drawn" answer is followed by one failed poll (0.5 s apart).
+    expect(await waitOf('poll-outage-a')).toBe(1_000);
+    expect(await waitOf('poll-outage-b')).toBe(2_000);
+    expect(probes).toBe(2);
+  });
+
+  it('frees the space of pictures saved before the redraw when the device database upgrades', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    // Even an entry under the current key is gone after the upgrade from database version 1.
+    await seed(1, await service.pictureCacheKey('upgrade-cleared-word', 'en', 'symbols-ai'));
+    const fetchSpy = stubAI();
+    expect(await service.getPictogramUrl('upgrade-cleared-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ── cache left by earlier versions ─────────────────────────────────────────

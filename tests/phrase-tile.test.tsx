@@ -10,6 +10,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import PhraseTile from '@/components/PhraseTile';
+import { PicturePendingError } from '@/services/pictogramQueue';
 
 // ── service / store mocks ─────────────────────────────────────────────────────
 
@@ -179,6 +180,26 @@ describe('PhraseTile — custom phrases', () => {
     expect(card()).toHaveAttribute('data-picture', 'pending');
     expect(icon()).toBeInTheDocument();
     expect(image()).toBeNull();
+  });
+
+  it('asks again after a busy or rate-limited answer instead of becoming a text tile', async () => {
+    // After the device picture cache was reset, a tile's first request can meet a
+    // 429; the portal's wait is not a final answer.
+    pictureMode = 'symbols-ai';
+    getPictogramUrlMock.mockRejectedValueOnce(new PicturePendingError(5)).mockResolvedValueOnce('blob:after-wait');
+    render(<PhraseTile phrase="My red bike" onClick={vi.fn()} />);
+    await waitFor(() => expect(image()).toHaveAttribute('src', 'blob:after-wait'));
+    expect(getPictogramUrlMock).toHaveBeenCalledTimes(2);
+    expect(card()).toHaveAttribute('data-picture', 'generated');
+  });
+
+  it('still becomes a text tile on a final failure, without asking again', async () => {
+    pictureMode = 'symbols-ai';
+    getPictogramUrlMock.mockRejectedValueOnce(new Error('provider unavailable'));
+    render(<PhraseTile phrase="My red bike" onClick={vi.fn()} />);
+    await waitFor(() => expect(card()).toHaveAttribute('data-picture', 'text'));
+    await new Promise(resolve => setTimeout(resolve, 30));
+    expect(getPictogramUrlMock).toHaveBeenCalledTimes(1);
   });
 
   it('becomes a text tile when no picture can be generated', async () => {

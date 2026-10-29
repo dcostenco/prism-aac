@@ -45,7 +45,10 @@ export function typedWordPicturesEnabled(mode: PictureMode): boolean {
 const STYLE_VERSION = 3;
 // Part of the cache key. Version 3 started a new database: everything cached
 // before it, including third-party pictograms, stays out of the lookup.
-const CACHE_VERSION = 4;
+// Version 5 (2026-10-29): generated pictures drawn before the neutral-figure
+// rule (children, unsafe or lettered pictures) were retired on the server and
+// are redrawn; devices must ask again instead of showing their saved copies.
+const CACHE_VERSION = 5;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB cap — prevents OOM from oversized blobs
 // Large enough to hold a full vocabulary board without eviction.
 // We do NOT revoke on eviction — a PhraseTile component may still hold
@@ -94,25 +97,52 @@ function words(phrase: string): string[] {
     .filter(Boolean);
 }
 
+/** The device cache key of a generated picture; `cacheVersion` is for tests of older keys only. */
+export function pictureCacheKey(meaning: string, lang: string, mode: PictureMode, cacheVersion = CACHE_VERSION): Promise<string> {
+  return sha256(JSON.stringify([cacheVersion, STYLE_VERSION, lang, mode, meaning]));
+}
+
 // ── IndexedDB cache ─────────────────────────────────────────────────────────
 
 const DB_NAME = 'prism-aac-generated-pictures';
+export const DB_VERSION = 2;
 const STORE = 'blobs';
 let dbPromise: Promise<IDBDatabase> | null = null;
+// True while an older tab blocks the upgrade: a second open would queue behind
+// the blocked one and wait forever, so the cache is skipped until it resolves.
+let openBlocked = false;
 
 function openDb(): Promise<IDBDatabase> {
   if (typeof window === 'undefined') return Promise.reject(new Error('no window'));
+  if (openBlocked) return Promise.reject(new Error('picture cache upgrade blocked'));
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (event) => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
         db.createObjectStore(STORE);
+      } else if (event.oldVersion < 2) {
+        // Version 2 goes with CACHE_VERSION 5: pictures saved before the
+        // server redraw can never be read again, so free their space once.
+        req.transaction?.objectStore(STORE).clear();
       }
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    let settled = false;
+    req.onsuccess = () => {
+      const db = req.result;
+      // The blocked upgrade finished once the older tab let go: the next lookup opens normally.
+      if (settled) { db.close(); openBlocked = false; return; }
+      settled = true;
+      // Another tab upgrading the database must not wait for this one.
+      db.onversionchange = () => { db.close(); dbPromise = null; };
+      resolve(db);
+    };
+    req.onerror = () => { if (settled) { openBlocked = false; return; } settled = true; reject(req.error); };
+    // A tab still running an older version holds the database open: work
+    // without the device cache (pictures come from the network) instead of
+    // waiting, and try again on the next lookup.
+    req.onblocked = () => { if (settled) return; settled = true; openBlocked = true; dbPromise = null; reject(new Error('picture cache upgrade blocked')); };
   });
   return dbPromise;
 }
@@ -145,7 +175,29 @@ async function cachePut(key: string, blob: Blob): Promise<void> {
 
 // ── Synalux AI ──────────────────────────────────────────────────────────────
 
+// One backoff shared by every tile. The service never refuses a request (a new
+// tile or a tap still goes straight through, so a recovered portal is used at
+// once); it only tells waiting tiles how long to wait, and consecutive busy,
+// rate-limited or failed answers double that wait for all of them (1 s, 2 s,
+// 4 s ... 60 s), never shorter than the server's Retry-After. A delivered
+// picture resets it. A flat 1 s per tile sent a request wave every second during an
+// outage once board and search tiles retried as well.
+let transientFailures = 0;
+
 async function fetchSynaluxAI(phrase: string, lang: string, cacheOnly: boolean, pollToken?: string): Promise<CloudPicture> {
+  const result = await fetchSynaluxAIOnce(phrase, lang, cacheOnly, pollToken);
+  if (result.kind === 'unavailable' && result.transient) {
+    transientFailures += 1;
+    const backoff = Math.min(PICTURE_MAX_RETRY_DELAY_MS, PICTURE_RETRY_DELAY_MS * 2 ** (transientFailures - 1));
+    return { ...result, retryAfterMs: Math.max(result.retryAfterMs ?? PICTURE_RETRY_DELAY_MS, backoff) };
+  }
+  // Only a delivered picture resets it: a cache miss or a "being drawn" answer
+  // is a step toward a picture, and generation or polling can still be failing.
+  if (result.kind === 'image') transientFailures = 0;
+  return result;
+}
+
+async function fetchSynaluxAIOnce(phrase: string, lang: string, cacheOnly: boolean, pollToken?: string): Promise<CloudPicture> {
   const t = timeoutSignal(cacheOnly ? 10_000 : 60_000);
   try {
     const res = await fetch(`${SYNALUX_API}/prism-aac/pictogram/v3${cacheOnly ? '?cacheOnly=1' : ''}`, {
@@ -234,7 +286,7 @@ export async function getPictogramUrl(
   if (!words(phrase).length || options?.signal?.aborted) return null;
   const meaning = phrase.normalize('NFC').trim().toLowerCase().replace(/\s+/gu, ' ').slice(0, 100);
 
-  const key = await sha256(JSON.stringify([CACHE_VERSION, STYLE_VERSION, lang, mode, meaning]));
+  const key = await pictureCacheKey(meaning, lang, mode);
   if (options?.signal?.aborted) return null;
   let flight = IN_FLIGHT.get(key);
   if (!flight) {
