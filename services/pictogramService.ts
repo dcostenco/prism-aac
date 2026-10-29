@@ -175,7 +175,27 @@ async function cachePut(key: string, blob: Blob): Promise<void> {
 
 // ── Synalux AI ──────────────────────────────────────────────────────────────
 
+// One backoff shared by every tile. The service never refuses a request (a new
+// tile or a tap still goes straight through, so a recovered portal is used at
+// once); it only tells waiting tiles how long to wait, and consecutive busy,
+// rate-limited or failed answers double that wait for all of them (1 s, 2 s,
+// 4 s ... 60 s), never shorter than the server's Retry-After. Any proper answer
+// resets it. A flat 1 s per tile sent a request wave every second during an
+// outage once board and search tiles retried as well.
+let transientFailures = 0;
+
 async function fetchSynaluxAI(phrase: string, lang: string, cacheOnly: boolean, pollToken?: string): Promise<CloudPicture> {
+  const result = await fetchSynaluxAIOnce(phrase, lang, cacheOnly, pollToken);
+  if (result.kind === 'unavailable' && result.transient) {
+    transientFailures += 1;
+    const backoff = Math.min(PICTURE_MAX_RETRY_DELAY_MS, PICTURE_RETRY_DELAY_MS * 2 ** (transientFailures - 1));
+    return { ...result, retryAfterMs: Math.max(result.retryAfterMs ?? PICTURE_RETRY_DELAY_MS, backoff) };
+  }
+  if (result.kind !== 'unavailable') transientFailures = 0;
+  return result;
+}
+
+async function fetchSynaluxAIOnce(phrase: string, lang: string, cacheOnly: boolean, pollToken?: string): Promise<CloudPicture> {
   const t = timeoutSignal(cacheOnly ? 10_000 : 60_000);
   try {
     const res = await fetch(`${SYNALUX_API}/prism-aac/pictogram/v3${cacheOnly ? '?cacheOnly=1' : ''}`, {

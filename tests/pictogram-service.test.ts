@@ -347,6 +347,39 @@ describe('getPictogramUrl — caching', () => {
     } finally { held.close(); }
   });
 
+  it('after a version-4 picture is ignored, a 429 reports the portal wait and the retry shows the redrawn picture', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    await seed(service.DB_VERSION, await service.pictureCacheKey('rate-limited-word', 'en', 'symbols-ai', 4));
+    let calls = 0;
+    stubAI(() => (++calls === 1
+      ? new Response(JSON.stringify({ error: 'Rate limit exceeded', retryAfter: 60 }), { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } })
+      : pngResponse()));
+    const first = await service.getPictogramUrl('rate-limited-word', 'en', 'symbols-ai').catch(error => error);
+    expect(first).toBeInstanceOf(service.PicturePendingError);
+    expect(first.retryAfterMs).toBe(60_000);
+    // The tile's retry after that wait gets the redrawn picture, not the version-4 copy.
+    expect(await service.getPictogramUrl('rate-limited-word', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    expect(calls).toBe(2);
+  });
+
+  it('doubles the reported wait across words after each consecutive failure and resets it on success', async () => {
+    await resetDb();
+    const service = await import('@/services/pictogramService');
+    let failing = true;
+    stubAI(() => (failing ? new Response('down', { status: 503 }) : pngResponse()));
+    const waitOf = async (word: string) => (await service.getPictogramUrl(word, 'en', 'symbols-ai').catch(error => error)).retryAfterMs;
+    // Different words share one backoff, so waiting tiles spread out instead of
+    // all asking again every second.
+    expect(await waitOf('outage-a')).toBe(1_000);
+    expect(await waitOf('outage-b')).toBe(2_000);
+    expect(await waitOf('outage-c')).toBe(4_000);
+    failing = false;
+    expect(await service.getPictogramUrl('outage-d', 'en', 'symbols-ai')).toBe(MOCK_BLOB_URL);
+    failing = true;
+    expect(await waitOf('outage-e')).toBe(1_000);
+  });
+
   it('frees the space of pictures saved before the redraw when the device database upgrades', async () => {
     await resetDb();
     const service = await import('@/services/pictogramService');
