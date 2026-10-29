@@ -243,6 +243,46 @@ describe('predictionStore — fresh user prefix completion', () => {
     expect(hasCyrillic).toBe(true);
   });
 
+  // Regression 2026-10-29 (owner screenshot): typing "рыби" dropped the bar to
+  // the core words (Я / Ты / Ещё / Хочу / Помоги) because no seed word starts
+  // with "рыби". An incomplete word must not fail: back off to "рыб".
+  it('an incomplete Russian word with no completion backs off a letter instead of failing', async () => {
+    const store = await withCorpus('ru');
+    store.getState().updatePredictions('рыби', 'ru');
+    const lower = store.getState().predictions.map(p => p.toLowerCase());
+    expect(lower.length).toBeGreaterThanOrEqual(3);
+    expect(lower.every(w => w.startsWith('рыб'))).toBe(true);
+    expect(lower).toContain('рыба');
+    expect(lower).not.toContain('рыби');
+  });
+
+  it('a typed prefix that has completions is used as typed, without backing off', async () => {
+    const store = await withCorpus('ru');
+    store.getState().updatePredictions('рыба', 'ru');
+    const lower = store.getState().predictions.map(p => p.toLowerCase());
+    // "рыба" itself is complete; its own completions (рыбак, рыбаков) start with "рыба".
+    expect(lower.filter(w => w.startsWith('рыб')).every(w => w.startsWith('рыба'))).toBe(true);
+  });
+
+  it('an English typo past the end of a known word backs off the same way', async () => {
+    const store = await withCorpus('en');
+    store.getState().updatePredictions('wate', 'en');
+    const before = store.getState().predictions.map(p => p.toLowerCase());
+    store.getState().updatePredictions('watex', 'en');
+    const lower = store.getState().predictions.map(p => p.toLowerCase());
+    expect(before.some(w => w.startsWith('wate'))).toBe(true);
+    expect(lower.length).toBeGreaterThan(0);
+    expect(lower.every(w => w.startsWith('wat'))).toBe(true);
+  });
+
+  it('the back-off stops at two letters and keeps the bar in the right language', async () => {
+    const store = await withCorpus('ru');
+    store.getState().updatePredictions('ъъъъ', 'ru');
+    const preds = store.getState().predictions;
+    expect(preds.length).toBeGreaterThan(0);
+    expect(preds.every(p => /[а-яё]/i.test(p))).toBe(true);
+  });
+
   it('empty Russian input never produces English-looking predictions', async () => {
     const store = await withCorpus('ru');
     store.getState().updatePredictions('', 'ru');

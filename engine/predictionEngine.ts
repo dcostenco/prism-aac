@@ -90,6 +90,64 @@ const ARTIFACTS_BY_LANG: Record<string, Set<string>> = {
   pt: new Set(['d']),
 };
 
+/** What getPredictions completed: the typed word and the prefix it used. */
+export interface PredictionCompletionInfo {
+  partialWord?: string;
+  completionPrefix?: string;
+}
+
+// Languages written without spaces: the "partial word" is the whole run of
+// text, so dropping letters would offer words the user already typed.
+const UNSEGMENTED_LANGS = new Set(['zh', 'ja']);
+// A backed-off prefix keeps at least this many letters and drops at most
+// BACKOFF_MAX_DROP: typo tolerance, not a dictionary dump for names.
+const BACKOFF_MIN_PREFIX = 3;
+const BACKOFF_MAX_DROP = 2;
+
+/**
+ * The prefix to complete for a typed partial word (already normalized, as
+ * getPredictions derives it). Returns the partial itself unless nothing in
+ * the dictionary completes it and it is not a word itself; then the longest
+ * prefix, at most BACKOFF_MAX_DROP letters shorter and at least
+ * BACKOFF_MIN_PREFIX long, that something does complete.
+ */
+export function predictionCompletionPrefix(
+  partialWord: string,
+  wordFreq: Record<string, WordFreqEntry>,
+  lang = 'en',
+): string {
+  const letters = [...partialWord];
+  if (letters.length <= BACKOFF_MIN_PREFIX || UNSEGMENTED_LANGS.has(lang.split('-')[0])) return partialWord;
+  const typedKey = predictionWordKey(partialWord, lang);
+  if (wordFreq[typedKey] || getReviewedBasicWords(lang).has(typedKey)) return partialWord;
+  // Longest first. A word whose key IS the typed word also matches it as a
+  // prefix (ro "esti" = ești), so one match on the full word means "no
+  // back-off" whether it is a completion or the word itself. One pass: most
+  // words fail the shortest prefix and cost a single check.
+  const prefixes = [partialWord];
+  for (let drop = 1; drop <= BACKOFF_MAX_DROP && letters.length - drop >= BACKOFF_MIN_PREFIX; drop++) {
+    prefixes.push(letters.slice(0, letters.length - drop).join(''));
+  }
+  const shortest = prefixes[prefixes.length - 1];
+  // The gate assumes a word matching a longer prefix matches the shortest.
+  // A shortest prefix that is a spelling alias (ro "esti" = ești, de "weiss"
+  // = weiß) only matches its standard form, so it cannot gate "estimat".
+  const normalizedShortest = normalizePredictionSpelling(shortest, lang);
+  const gated = predictionWordKey(normalizedShortest, lang) === normalizedShortest;
+  let best = prefixes.length;
+  for (const word of Object.keys(wordFreq)) {
+    if (gated && !matchesPredictionPrefix(word, shortest, lang)) continue;
+    for (let i = 0; i < best; i++) {
+      if (matchesPredictionPrefix(word, prefixes[i], lang)) {
+        if (i === 0) return partialWord;
+        best = i;
+        break;
+      }
+    }
+  }
+  return best === prefixes.length ? partialWord : prefixes[best];
+}
+
 export function isConfidentCompleteWord(
   value: string,
   wordFreq: Record<string, WordFreqEntry>,
@@ -227,6 +285,7 @@ export function getPredictions(
   alwaysCapitalized: Set<string> = ALWAYS_CAPITALIZED_EN,
   scriptFilter?: RegExp,
   lang?: string,
+  out?: PredictionCompletionInfo,
 ): string[] {
   // Strip punctuation from context tokens before any n-gram lookup.
   //
@@ -342,6 +401,20 @@ export function getPredictions(
     }
   }
 
+  // An incomplete word must not drop the bar to unrelated core words. When no
+  // dictionary word starts with what was typed (ru "рыби": the seed has рыба,
+  // рыбы, рыбу but nothing in "рыби"), complete a slightly shorter prefix
+  // instead ("рыб" -> рыба, рыбы, рыбу). The typed word itself still drives
+  // context, the complete-word check and the "never suggest what was typed"
+  // rule. Backed-off candidates are never shorter than what was typed.
+  const completionPrefix = predictionCompletionPrefix(partialWord, wordFreq, lang);
+  const backedOff = completionPrefix !== partialWord;
+  const typedLength = [...partialWord].length;
+  if (out) {
+    out.partialWord = partialWord;
+    out.completionPrefix = completionPrefix;
+  }
+
   // Prefix matching — if user is mid-word, surface completions, weighted by
   // each candidate's overall frequency so common words like "main"/"make"
   // outrank obscure prefix neighbors.
@@ -353,17 +426,17 @@ export function getPredictions(
   // ~17K) only enter the pool when we look further down the frequency
   // curve. Longer partials (3+ chars) naturally narrow the candidate
   // count, so a smaller pool is fine.
-  if (partialWord && partialWord.length >= 1) {
+  if (completionPrefix) {
     const prefixCands: Array<{ word: string; count: number }> = [];
     for (const word of Object.keys(wordFreq)) {
-      if (matchesPredictionPrefix(word, partialWord, lang) && predictionWordKey(word, lang) !== predictionWordKey(partialWord, lang)) {
+      if (matchesPredictionPrefix(word, completionPrefix, lang) && predictionWordKey(word, lang) !== predictionWordKey(partialWord, lang)) {
         prefixCands.push({ word, count: wordFreq[word].count });
       }
     }
     prefixCands.sort((a, b) => b.count - a.count);
     const poolSize =
-      partialWord.length === 1 ? 300 :
-      partialWord.length === 2 ? 150 :
+      completionPrefix.length === 1 ? 300 :
+      completionPrefix.length === 2 ? 150 :
       TUNING.prefixPoolSize;
     const topPrefix = prefixCands.slice(0, poolSize);
     const maxPrefix = topPrefix.length > 0 ? topPrefix[0].count : 1;
@@ -440,7 +513,8 @@ export function getPredictions(
       // surfaces via "to|be" bigram alongside "together"/"top". Without
       // this exception, AAC users typing common short words only see
       // prefix completions, never useful next-word continuations.
-      if (partialWord && !matchesPredictionPrefix(lc, partialWord, lang) && !(c.hasContext && partialIsCompleteWord)) return false;
+      if (partialWord && !matchesPredictionPrefix(lc, completionPrefix, lang) && !(c.hasContext && partialIsCompleteWord)) return false;
+      if (backedOff && [...lc].length < typedLength) return false;
       // Drop wrong-script words. Necessary because the store's initial
       // wordFreq state seeds with English DEFAULT_PHRASES, which leak into
       // non-English sessions (e.g. "I" appearing for a Russian user).
@@ -480,9 +554,9 @@ export function getPredictions(
       // Never produce a key shorter than the user-typed prefix — otherwise
       // a stem like "ду" would collapse all ду* words into one bucket and
       // the user couldn't see alternative continuations they're aiming at.
-      return stem.length >= partialWord.length ? stem : normalized.slice(0, partialWord.length + 1);
+      return stem.length >= completionPrefix.length ? stem : normalized.slice(0, completionPrefix.length + 1);
     }
-    return normalizePredictionSpelling(w, lang).slice(0, partialWord.length + 1);
+    return normalizePredictionSpelling(w, lang).slice(0, completionPrefix.length + 1);
   };
   // Cap forms per stem at MAX_PER_STEM. Strict 1-per-stem was too
   // aggressive for noun declensions where different forms ARE different
