@@ -1,3 +1,4 @@
+import { sharedWordFreq } from '@/lib/sharedWords';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WordFreqEntry } from '@/types';
@@ -410,6 +411,7 @@ export const usePredictionStore = create<PredictionState>()(
           corpus?.wordFreq ?? {},
           seed.wordFreq,
           clinical,
+          sharedWordFreq(lang),
         );
         const baselineBg = mergePredictionContextBaselines(
           corpus?.bigrams ?? {},

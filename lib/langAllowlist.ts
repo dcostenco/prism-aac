@@ -38,6 +38,7 @@ import { getPhraseText, hasPhraseTranslation } from '@/constants/phraseTranslati
 import type { SupportedLanguage } from '@/engine/i18n';
 import { normalizePredictionSpelling } from '@/engine/predictionSpellings';
 import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
+import { sharedWordKey, sharedWordsFor } from '@/lib/sharedWords';
 
 /** The words of the app's own authored phrases for a language (its built-in tiles' translated text; a phrase with no
  *  translation is skipped, so English fallbacks never count). Whole words only: "c'est" is one word here, never the
@@ -165,6 +166,19 @@ const LATIN_LANGS = ['en', 'ro', 'es', 'fr', 'de', 'pt', 'it', 'pl', 'nl', 'tr',
  *  in EN mode), preload that competing lang's seed too.
  */
 /**
+ * True when any dictionary already has the word: the language's authored
+ * vocabulary, any loaded corpus, or the shared vocabulary. Unlike
+ * isAllowedInLang, this never accepts a word for its script or diacritics
+ * alone ("геронтология" in Russian, "estimată" in Romanian).
+ */
+export function isKnownWord(word: string, lang: string): boolean {
+  const w = normalizePredictionSpelling(word, lang).trim();
+  if (!w) return true;
+  if (authoredVocabulary(lang).has(w) || sharedWordsFor(lang).has(sharedWordKey(w))) return true;
+  return SUPPORTED_SEED_LANGS.some((seedLang) => (getCachedPredictionSeed(seedLang)?.wordFreq[w]?.count ?? 0) > 0);
+}
+
+/**
  * `allowUnknown`: also keep a word no loaded corpus has. Only for the AI
  * completion, which exists to supply the words the 20k-word dictionaries lack
  * (en "geria" -> geriatric); a word another language's corpus claims is still
@@ -208,6 +222,10 @@ export function isAllowedInLang(word: string, lang: string, options: { allowUnkn
   // comparable across languages, so the dominance check below must only judge words nobody authored: the leaks the gate
   // exists to stop (Romanian "eu" or "ce" in the English bar, "main" in the Romanian one) are not authored there.
   if (authoredVocabulary(lang).has(w)) return true;
+
+  // A shared word was added for this language after several users typed it
+  // and an AI check called it an ordinary word of the language.
+  if (sharedWordsFor(lang).has(sharedWordKey(w))) return true;
 
   const langCorpus = getCachedPredictionSeed(lang);
   const langFreq = langCorpus?.wordFreq[w]?.count ?? 0;
