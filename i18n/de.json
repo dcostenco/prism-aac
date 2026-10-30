@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Niemand wurde angerufen: Es ist kein Notfallkontakt eingerichtet. Füge in den Einstellungen einen Kontakt einer Betreuungsperson hinzu. Wenn du in Gefahr bist, ruf den Notruf an.",
   "emergency_not_sent_unreached": "Dein Notfallkontakt konnte nicht erreicht werden. Wenn du in Gefahr bist, ruf den Notruf an.",
   "aac_lock_browser_subscribe": "Prism AAC benötigt eine Testphase oder ein Abo. Starte es in der Prism AAC-App und melde dich dann hier mit demselben Konto an.",
-  "emergency_not_sent_queued": "Der Alarm wurde nicht gesendet: Das Gerät war im Ruhezustand, als der Countdown endete. Wenn du in Gefahr bist, ruf den Notruf an."
+  "emergency_not_sent_queued": "Der Alarm wurde nicht gesendet: Das Gerät war im Ruhezustand, als der Countdown endete. Wenn du in Gefahr bist, ruf den Notruf an.",
+  "user_guide": "Benutzerhandbuch"
 }

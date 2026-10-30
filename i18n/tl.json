@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Walang tinawagan: walang naka-set na emergency contact. Magdagdag ng contact ng tagapag-alaga sa Settings. Kung nasa panganib ka, tumawag sa emergency services.",
   "emergency_not_sent_unreached": "Hindi makontak ang iyong emergency contact. Kung nasa panganib ka, tumawag sa emergency services.",
   "aac_lock_browser_subscribe": "Kailangan ng Prism AAC ng trial o subscription. Simulan ito sa Prism AAC app, saka mag-sign in dito gamit ang parehong account.",
-  "emergency_not_sent_queued": "Hindi naipadala ang alerto: naka-sleep ang device nang matapos ang countdown. Kung nasa panganib ka, tumawag sa emergency services."
+  "emergency_not_sent_queued": "Hindi naipadala ang alerto: naka-sleep ang device nang matapos ang countdown. Kung nasa panganib ka, tumawag sa emergency services.",
+  "user_guide": "Gabay sa paggamit"
 }

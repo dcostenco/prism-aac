@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Personne n'a été appelé : aucun contact d'urgence n'est configuré. Ajoutez un contact aidant dans les Réglages. Si vous êtes en danger, appelez les secours.",
   "emergency_not_sent_unreached": "Votre contact d'urgence n'a pas pu être joint. Si vous êtes en danger, appelez les secours.",
   "aac_lock_browser_subscribe": "Prism AAC nécessite un essai ou un abonnement. Démarrez-le dans l'app Prism AAC, puis connectez-vous ici avec le même compte.",
-  "emergency_not_sent_queued": "L'alerte n'a pas été envoyée : l'appareil était en veille à la fin du compte à rebours. Si vous êtes en danger, appelez les secours."
+  "emergency_not_sent_queued": "L'alerte n'a pas été envoyée : l'appareil était en veille à la fin du compte à rebours. Si vous êtes en danger, appelez les secours.",
+  "user_guide": "Guide d’utilisation"
 }

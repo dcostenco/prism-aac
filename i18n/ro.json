@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Nu a fost apelat nimeni: nu este setat niciun contact de urgență. Adaugă un contact de îngrijitor în Setări. Dacă ești în pericol, sună la serviciile de urgență.",
   "emergency_not_sent_unreached": "Contactul tău de urgență nu a putut fi contactat. Dacă ești în pericol, sună la serviciile de urgență.",
   "aac_lock_browser_subscribe": "Prism AAC are nevoie de o perioadă de probă sau un abonament. Începe-l în aplicația Prism AAC, apoi conectează-te aici cu același cont.",
-  "emergency_not_sent_queued": "Alerta nu a fost trimisă: dispozitivul era în repaus când s-a terminat numărătoarea inversă. Dacă ești în pericol, sună la serviciile de urgență."
+  "emergency_not_sent_queued": "Alerta nu a fost trimisă: dispozitivul era în repaus când s-a terminat numărătoarea inversă. Dacă ești în pericol, sună la serviciile de urgență.",
+  "user_guide": "Ghid de utilizare"
 }

@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "沒有撥打任何電話：尚未設定緊急聯絡人。請在設定中新增照顧者聯絡人。如果你身處危險，請撥打緊急服務電話。",
   "emergency_not_sent_unreached": "無法聯絡你的緊急聯絡人。如果你身處危險，請撥打緊急服務電話。",
   "aac_lock_browser_subscribe": "Prism AAC 需要試用或訂閱。請在 Prism AAC App 中開始，然後在這裡用同一帳號登入。",
-  "emergency_not_sent_queued": "警報未傳送：倒數結束時裝置處於睡眠狀態。如果你身處危險，請撥打緊急服務電話。"
+  "emergency_not_sent_queued": "警報未傳送：倒數結束時裝置處於睡眠狀態。如果你身處危險，請撥打緊急服務電話。",
+  "user_guide": "使用者指南"
 }

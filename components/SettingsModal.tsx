@@ -21,7 +21,7 @@ import { tapFeedback } from '@/services/feedback';
 import HeadTrackingSettings from './HeadTrackingSettings';
 import LocalAISettings from './LocalAISettings';
 import { SYMBOL_BASE_PATH } from '@/lib/pictogramSources';
-import { APPLE_STANDARD_EULA_URL, PRISM_AAC_SOURCE_URL } from '@/lib/appPaths';
+import { APPLE_STANDARD_EULA_URL, PRISM_AAC_SOURCE_URL, PRISM_AAC_USER_GUIDE_URL } from '@/lib/appPaths';
 import TermsLink from '@/components/TermsLink';
 import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
@@ -240,7 +240,13 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-theme shrink-0">
           <h2 className="text-primary font-bold text-lg">⚙️ {t('settings')}</h2>
-          <button onClick={toggleSettings} aria-label={t('close_settings')} className="text-muted hover:text-primary text-xl px-1">✕</button>
+          <div className="flex items-center gap-2">
+            <a href={PRISM_AAC_USER_GUIDE_URL} target="_blank" rel="noopener noreferrer" data-testid="settings-user-guide"
+              className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[#2563eb] hover:underline">
+              📘 {t('user_guide')} <span aria-hidden="true">↗</span>
+            </a>
+            <button onClick={toggleSettings} aria-label={t('close_settings')} className="text-muted hover:text-primary text-xl px-1">✕</button>
+          </div>
         </div>
 
         {/* Scrollable sections */}

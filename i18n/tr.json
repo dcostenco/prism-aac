@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Kimse aranmadı: acil durum kişisi ayarlanmamış. Ayarlar'dan bir bakım veren kişi ekleyin. Tehlikedeyseniz acil servisleri arayın.",
   "emergency_not_sent_unreached": "Acil durum kişinize ulaşılamadı. Tehlikedeyseniz acil servisleri arayın.",
   "aac_lock_browser_subscribe": "Prism AAC deneme veya abonelik gerektirir. Prism AAC uygulamasında başlatın, ardından burada aynı hesapla oturum açın.",
-  "emergency_not_sent_queued": "Uyarı gönderilmedi: geri sayım bittiğinde cihaz uykudaydı. Tehlikedeyseniz acil servisleri arayın."
+  "emergency_not_sent_queued": "Uyarı gönderilmedi: geri sayım bittiğinde cihaz uykudaydı. Tehlikedeyseniz acil servisleri arayın.",
+  "user_guide": "Kullanım kılavuzu"
 }

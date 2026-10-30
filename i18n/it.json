@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Non è stato chiamato nessuno: non è impostato alcun contatto di emergenza. Aggiungi un contatto di chi ti assiste nelle Impostazioni. Se sei in pericolo, chiama i servizi di emergenza.",
   "emergency_not_sent_unreached": "Non è stato possibile raggiungere il tuo contatto di emergenza. Se sei in pericolo, chiama i servizi di emergenza.",
   "aac_lock_browser_subscribe": "Prism AAC richiede una prova o un abbonamento. Avvialo nell'app Prism AAC, poi accedi qui con lo stesso account.",
-  "emergency_not_sent_queued": "L'avviso non è stato inviato: il dispositivo era in stop quando il conto alla rovescia è finito. Se sei in pericolo, chiama i servizi di emergenza."
+  "emergency_not_sent_queued": "L'avviso non è stato inviato: il dispositivo era in stop quando il conto alla rovescia è finito. Se sei in pericolo, chiama i servizi di emergenza.",
+  "user_guide": "Guida utente"
 }

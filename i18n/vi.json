@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Không gọi cho ai: chưa thiết lập liên hệ khẩn cấp. Hãy thêm liên hệ của người chăm sóc trong Cài đặt. Nếu bạn đang gặp nguy hiểm, hãy gọi dịch vụ khẩn cấp.",
   "emergency_not_sent_unreached": "Không liên lạc được với người liên hệ khẩn cấp của bạn. Nếu bạn đang gặp nguy hiểm, hãy gọi dịch vụ khẩn cấp.",
   "aac_lock_browser_subscribe": "Prism AAC cần dùng thử hoặc gói đăng ký. Hãy bắt đầu trong ứng dụng Prism AAC, rồi đăng nhập tại đây bằng cùng tài khoản.",
-  "emergency_not_sent_queued": "Chưa gửi được cảnh báo: thiết bị đang ngủ khi đếm ngược kết thúc. Nếu bạn đang gặp nguy hiểm, hãy gọi dịch vụ khẩn cấp."
+  "emergency_not_sent_queued": "Chưa gửi được cảnh báo: thiết bị đang ngủ khi đếm ngược kết thúc. Nếu bạn đang gặp nguy hiểm, hãy gọi dịch vụ khẩn cấp.",
+  "user_guide": "Hướng dẫn sử dụng"
 }

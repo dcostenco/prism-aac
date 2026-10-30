@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Er is niemand gebeld: er is geen noodcontact ingesteld. Voeg in Instellingen een contact van een verzorger toe. Ben je in gevaar, bel dan de hulpdiensten.",
   "emergency_not_sent_unreached": "Je noodcontact kon niet worden bereikt. Ben je in gevaar, bel dan de hulpdiensten.",
   "aac_lock_browser_subscribe": "Prism AAC heeft een proefperiode of abonnement nodig. Start er een in de Prism AAC-app en log hier daarna in met hetzelfde account.",
-  "emergency_not_sent_queued": "De melding is niet verzonden: het apparaat sliep toen het aftellen eindigde. Ben je in gevaar, bel dan de hulpdiensten."
+  "emergency_not_sent_queued": "De melding is niet verzonden: het apparaat sliep toen het aftellen eindigde. Ben je in gevaar, bel dan de hulpdiensten.",
+  "user_guide": "Gebruikershandleiding"
 }

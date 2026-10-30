@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Do nikogo nie zadzwoniono: nie ustawiono kontaktu alarmowego. Dodaj kontakt opiekuna w Ustawieniach. Jeśli grozi ci niebezpieczeństwo, zadzwoń po służby ratunkowe.",
   "emergency_not_sent_unreached": "Nie udało się skontaktować z twoim kontaktem alarmowym. Jeśli grozi ci niebezpieczeństwo, zadzwoń po służby ratunkowe.",
   "aac_lock_browser_subscribe": "Prism AAC wymaga okresu próbnego lub subskrypcji. Rozpocznij go w aplikacji Prism AAC, a potem zaloguj się tutaj na to samo konto.",
-  "emergency_not_sent_queued": "Alarm nie został wysłany: urządzenie było uśpione, gdy skończyło się odliczanie. Jeśli grozi ci niebezpieczeństwo, zadzwoń po służby ratunkowe."
+  "emergency_not_sent_queued": "Alarm nie został wysłany: urządzenie było uśpione, gdy skończyło się odliczanie. Jeśli grozi ci niebezpieczeństwo, zadzwoń po służby ratunkowe.",
+  "user_guide": "Instrukcja obsługi"
 }

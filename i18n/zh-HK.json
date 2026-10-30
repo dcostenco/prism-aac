@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "沒有致電任何人：尚未設定緊急聯絡人。請在設定中加入照顧者聯絡人。如你身處危險，請致電緊急服務。",
   "emergency_not_sent_unreached": "未能聯絡你的緊急聯絡人。如你身處危險，請致電緊急服務。",
   "aac_lock_browser_subscribe": "Prism AAC 需要試用或訂閱。請在 Prism AAC 應用程式中開始，然後在這裡以同一帳戶登入。",
-  "emergency_not_sent_queued": "警報未發送：倒數結束時裝置處於休眠狀態。如你身處危險，請致電緊急服務。"
+  "emergency_not_sent_queued": "警報未發送：倒數結束時裝置處於休眠狀態。如你身處危險，請致電緊急服務。",
+  "user_guide": "用戶指南"
 }

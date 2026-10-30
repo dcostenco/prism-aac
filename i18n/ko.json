@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "아무에게도 전화하지 않았어요. 비상 연락처가 설정되어 있지 않아요. 설정에서 보호자 연락처를 추가하세요. 위험한 상황이라면 응급 서비스에 전화하세요.",
   "emergency_not_sent_unreached": "비상 연락처에 연락하지 못했어요. 위험한 상황이라면 응급 서비스에 전화하세요.",
   "aac_lock_browser_subscribe": "Prism AAC를 사용하려면 체험 또는 구독이 필요해요. Prism AAC 앱에서 시작한 다음 같은 계정으로 여기에 로그인하세요.",
-  "emergency_not_sent_queued": "알림을 보내지 못했어요. 카운트다운이 끝날 때 기기가 잠자기 상태였어요. 위험한 상황이라면 응급 서비스에 전화하세요."
+  "emergency_not_sent_queued": "알림을 보내지 못했어요. 카운트다운이 끝날 때 기기가 잠자기 상태였어요. 위험한 상황이라면 응급 서비스에 전화하세요.",
+  "user_guide": "사용자 가이드"
 }

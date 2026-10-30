@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "Tidak ada yang ditelepon: belum ada kontak darurat. Tambahkan kontak pendamping di Pengaturan. Jika Anda dalam bahaya, hubungi layanan darurat.",
   "emergency_not_sent_unreached": "Kontak darurat Anda tidak dapat dihubungi. Jika Anda dalam bahaya, hubungi layanan darurat.",
   "aac_lock_browser_subscribe": "Prism AAC memerlukan uji coba atau langganan. Mulai di aplikasi Prism AAC, lalu masuk di sini dengan akun yang sama.",
-  "emergency_not_sent_queued": "Peringatan tidak terkirim: perangkat sedang tidur saat hitung mundur selesai. Jika Anda dalam bahaya, hubungi layanan darurat."
+  "emergency_not_sent_queued": "Peringatan tidak terkirim: perangkat sedang tidur saat hitung mundur selesai. Jika Anda dalam bahaya, hubungi layanan darurat.",
+  "user_guide": "Panduan pengguna"
 }

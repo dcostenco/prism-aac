@@ -389,6 +389,15 @@ describe('SettingsModal — accessibility toggles', () => {
     expect(mocks.settingsState.update).toHaveBeenCalledWith(expect.objectContaining({ highContrast: true }));
   });
 
+  it('links the Synalux user guide from the Settings header, in a new tab', () => {
+    render(<SettingsModal />);
+    const link = screen.getByTestId('settings-user-guide');
+    expect(link).toHaveAttribute('href', 'https://synalux.ai/docs/telehealth/prism-aac');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(link).toHaveTextContent(/user_guide|User guide/);
+  });
+
   it('AI Autocorrect toggle calls update with toggled value', () => {
     mocks.settingsState.aiAutocorrectEnabled = true;
     render(<SettingsModal />);

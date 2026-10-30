@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "No se llamó a nadie: no hay ningún contacto de emergencia configurado. Agrega un contacto de cuidador en Ajustes. Si estás en peligro, llama a los servicios de emergencia.",
   "emergency_not_sent_unreached": "No se pudo contactar con tu contacto de emergencia. Si estás en peligro, llama a los servicios de emergencia.",
   "aac_lock_browser_subscribe": "Prism AAC necesita una prueba o una suscripción. Iníciala en la app Prism AAC y luego inicia sesión aquí con la misma cuenta.",
-  "emergency_not_sent_queued": "La alerta no se envió: el dispositivo estaba en reposo cuando terminó la cuenta atrás. Si estás en peligro, llama a los servicios de emergencia."
+  "emergency_not_sent_queued": "La alerta no se envió: el dispositivo estaba en reposo cuando terminó la cuenta atrás. Si estás en peligro, llama a los servicios de emergencia.",
+  "user_guide": "Guía de usuario"
 }

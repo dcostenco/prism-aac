@@ -519,5 +519,6 @@
   "emergency_not_sent_no_contact": "未拨打任何电话：尚未设置紧急联系人。请在设置中添加照护者联系人。如果你身处危险，请拨打紧急服务电话。",
   "emergency_not_sent_unreached": "无法联系到你的紧急联系人。如果你身处危险，请拨打紧急服务电话。",
   "aac_lock_browser_subscribe": "Prism AAC 需要试用或订阅。请在 Prism AAC 应用中开始，然后在这里用同一账户登录。",
-  "emergency_not_sent_queued": "警报未发送：倒计时结束时设备处于休眠状态。如果你身处危险，请拨打紧急服务电话。"
+  "emergency_not_sent_queued": "警报未发送：倒计时结束时设备处于休眠状态。如果你身处危险，请拨打紧急服务电话。",
+  "user_guide": "用户指南"
 }
