@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import SettingsModal from '@/components/SettingsModal';
+import { HELP_TOPICS } from '@/constants/helpTopics';
 
 // ── vi.hoisted: create mocks before vi.mock() factories run ───────────────────
 
@@ -389,13 +390,44 @@ describe('SettingsModal — accessibility toggles', () => {
     expect(mocks.settingsState.update).toHaveBeenCalledWith(expect.objectContaining({ highContrast: true }));
   });
 
-  it('links the Synalux user guide from the Settings header, in a new tab', () => {
+  it('opens Help from the Settings header, over Settings, and returns to Settings on close', () => {
     render(<SettingsModal />);
-    const link = screen.getByTestId('settings-user-guide');
-    expect(link).toHaveAttribute('href', 'https://synalux.ai/docs/telehealth/prism-aac');
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-    expect(link).toHaveTextContent(/user_guide|User guide/);
+    expect(screen.queryByTestId('help-modal')).toBeNull();
+    fireEvent.click(screen.getByTestId('settings-user-guide'));
+    expect(screen.getByTestId('help-modal')).toBeInTheDocument();
+    // Every topic is listed and opens to its body.
+    for (const topic of HELP_TOPICS) {
+      fireEvent.click(screen.getByTestId(`help-topic-${topic.id}`));
+      expect(screen.getByTestId(`help-body-${topic.id}`)).toHaveTextContent(`help_${topic.id}_body`);
+    }
+    const guide = screen.getByTestId('help-full-guide');
+    expect(guide).toHaveAttribute('href', 'https://synalux.ai/docs/telehealth/prism-aac');
+    expect(guide).toHaveAttribute('target', '_blank');
+    expect(guide).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(screen.getByTestId('help-support')).toHaveAttribute('href', 'mailto:support@synalux.ai');
+    fireEvent.click(screen.getByRole('button', { name: 'help_close' }));
+    expect(screen.queryByTestId('help-modal')).toBeNull();
+    expect(screen.getByTestId('settings-user-guide')).toBeInTheDocument();
+  });
+
+  it('filters Help topics by search and says when nothing matches', () => {
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByTestId('settings-user-guide'));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'help_search' }), { target: { value: 'help_alert' } });
+    expect(screen.getAllByTestId(/^help-topic-/)).toHaveLength(1);
+    // A single match opens by itself.
+    expect(screen.getByTestId('help-body-alert')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'help_search' }), { target: { value: 'zzz-nothing' } });
+    expect(screen.queryAllByTestId(/^help-topic-/)).toHaveLength(0);
+    expect(screen.getByText('help_no_results')).toBeInTheDocument();
+  });
+
+  it('every Settings section a Help topic names still exists', () => {
+    render(<SettingsModal />);
+    const sections = new Set(HELP_TOPICS.flatMap(topic => topic.settingsSections ?? []));
+    for (const section of sections) {
+      expect(screen.getAllByRole('button', { name: new RegExp(section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).length, section).toBeGreaterThan(0);
+    }
   });
 
   it('AI Autocorrect toggle calls update with toggled value', () => {
