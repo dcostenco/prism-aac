@@ -18,18 +18,18 @@ import { startVisionPredictionBridge } from '@/services/visionPredictionBridge';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
 import { useSettingsStore } from '@/store/settingsStore';
 
-async function learnedFor(language: string): Promise<string[]> {
+async function learnedFor(language: string, label = 'toilet'): Promise<string[]> {
   useSettingsStore.setState({ language } as never);
   const learnWord = vi.fn();
   const stop = startVisionPredictionBridge({ setAiCompletion: vi.fn(), learnWord, aiCompletion: null }, { text: '' });
-  const ctx = { stableObjects: ['toilet'], timestamp: Date.now() } as unknown as VisionContext;
+  const ctx = { stableObjects: [label], timestamp: Date.now() } as unknown as VisionContext;
   for (let i = 0; i < 3; i++) vision.listener?.(ctx);
   stop();
   return learnWord.mock.calls.map(call => call[0]);
 }
 
 beforeEach(async () => {
-  for (const lang of ['en', 'fr', 'es']) await loadPredictionSeed(lang);
+  for (const lang of ['en', 'fr', 'es', 'it', 'pt', 'ro', 'de']) await loadPredictionSeed(lang);
 });
 
 describe('object words learned from the camera', () => {
@@ -39,7 +39,9 @@ describe('object words learned from the camera', () => {
     expect(learned).not.toContain('toilet');
   });
 
-  it('still learns the language\'s own object words', async () => {
+  it('still learns the language\'s own object words, even ones another dictionary counts higher', async () => {
     expect(await learnedFor('es')).toContain('baño');
+    // "lavabo" is in the Spanish list; the strict filter rejected it (other corpora count it higher).
+    expect(await learnedFor('es', 'sink')).toContain('lavabo');
   });
 });

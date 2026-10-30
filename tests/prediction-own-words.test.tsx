@@ -80,8 +80,10 @@ describe('the bar shows words no dictionary has', () => {
     expect(tiles()[0], JSON.stringify(tiles()) + JSON.stringify(usePredictionStore.getState().predictions)).toBe('geriatric');
   });
 
-  it('does not offer an unknown word typed only once (a motor slip)', async () => {
+  it('does not offer an unknown word from one spoken message (a motor slip)', async () => {
     usePredictionStore.getState().updatePredictions('x', 'en');
+    // One message learns a word twice: once on space (Keyboard), once on Speak (MessageBar).
+    usePredictionStore.getState().learnWord('geriatrc');
     usePredictionStore.getState().learnWord('geriatrc');
     useMessageStore.setState({ text: 'geri' } as never);
     render(<PredictionBar />);

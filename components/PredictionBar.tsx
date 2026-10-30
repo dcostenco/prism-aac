@@ -206,9 +206,11 @@ interface DisplayedPredictionState {
   admitted?: string[];
 }
 
-// A word no dictionary has counts as the user's own only after two uses (typed
-// or tapped): a single motor slip ("geriatrc") must not become a lasting tile.
-const OWN_WORD_MIN_USES = 2;
+// A word no dictionary has counts as the user's own only after three uses. One
+// spoken message counts a word up to twice (space after it, then Speak), so a
+// single motor slip ("geriatrc") in one message never becomes a lasting tile;
+// a real word clears it on its second message.
+const OWN_WORD_MIN_USES = 3;
 function isOwnLearnedWord(wordFreq: Record<string, { count: number }>, word: string, language: string): boolean {
   const key = predictionWordKey(word, language);
   return Object.prototype.hasOwnProperty.call(wordFreq, key) && wordFreq[key].count >= OWN_WORD_MIN_USES;
@@ -624,19 +626,23 @@ export default function PredictionBar() {
       ? prevRef.current.tiles
       : langDefaults;
     let final: string[];
+    let merged: string[];
 
     // The user's own learned words may be words no dictionary has
     // ("geriatric", a name); the engine ranked them, so the bar keeps them.
     // Memory suggestions are filtered strictly before they get here.
     const isOwnWord = (word: string) => isOwnLearnedWord(learnedWords, word, language);
     if (!text.trim()) {
-      final = mergeAiCompletion(langDefaults, aiCompletion, language, isOwnWord);
+      merged = mergeAiCompletion(langDefaults, aiCompletion, language, isOwnWord);
+      final = merged;
     } else {
       const withMemory = mergeAdvisoryPredictions(predictions, memoryWords, language, (word) => isOwnWord(word));
-      const merged = mergeAiCompletion(withMemory, aiCompletion, language, isOwnWord);
+      merged = mergeAiCompletion(withMemory, aiCompletion, language, isOwnWord);
       final = computeStableSlots(previous, merged, language);
     }
-    const admitted = final.filter(word => !isAllowedInLang(word, language)).map(word => predictionWordKey(word, language));
+    // From the merge's decision, not the stabilised slots: a tile carried over
+    // from an earlier render was not judged now and must not be laundered.
+    const admitted = merged.filter(word => !isAllowedInLang(word, language)).map(word => predictionWordKey(word, language));
 
     // This state intentionally preserves tile positions for switch scanning.
     // Commit after the effect body and cancel superseded commits so rapid text
