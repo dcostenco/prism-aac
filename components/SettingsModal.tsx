@@ -474,7 +474,7 @@ export default function SettingsModal({ onRestoreBrowserTiles }: {
             <label className="flex items-center justify-between py-1.5">
               <div>
                 <span className="text-primary text-sm">AI Autocorrect</span>
-                <p className="text-muted text-[10px]">Suggests corrections while typing</p>
+                <p className="text-muted text-[10px]">Suggests corrections while typing. When signed in, new words you speak help build a shared word list (stored as hashes).</p>
               </div>
               <Toggle on={aiAutocorrectEnabled} label="AI Autocorrect"
                 onToggle={() => update({ aiAutocorrectEnabled: !aiAutocorrectEnabled })} />

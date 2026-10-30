@@ -397,6 +397,12 @@ describe('SettingsModal — accessibility toggles', () => {
     expect(mocks.settingsState.update).toHaveBeenCalledWith(expect.objectContaining({ aiAutocorrectEnabled: false }));
   });
 
+  it('AI Autocorrect discloses that new spoken words help build the shared word list', () => {
+    render(<SettingsModal />);
+    openAccessibility();
+    expect(screen.getByText(/Suggests corrections while typing\. When signed in, new words you speak help build a shared word list \(stored as hashes\)\./)).toBeInTheDocument();
+  });
+
   it('cloud memory predictions are separately disclosed and opt-in', () => {
     mocks.settingsState.cloudPredictionEnabled = false;
     mocks.authState.profile = {
