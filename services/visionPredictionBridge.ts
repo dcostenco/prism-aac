@@ -4,6 +4,7 @@ import { subscribeVisionContext, type VisionContext } from './objectDetectionSer
 import { inferScene, type SceneType } from './sceneInference';
 import { getVisionPhrases } from '@/constants/visionPhrases';
 import { getObjectWords } from '@/constants/objectVocabulary';
+import { isAllowedInLang } from '@/lib/langAllowlist';
 import { useVisionStore } from '@/store/visionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -91,7 +92,10 @@ export function startVisionPredictionBridge(
     for (const label of ctx.stableObjects) {
       const words = getObjectWords(label, lang);
       for (const word of words) {
-        if (!boostTimestamps.has(word)) {
+        // An object word comes from a per-language list with an English
+        // fallback; never teach the user's dictionary a word this language's
+        // filter rejects ("potty" in the French bar).
+        if (!boostTimestamps.has(word) && isAllowedInLang(word, lang)) {
           predictionStore.learnWord(word);
           boostTimestamps.set(word, now);
         }

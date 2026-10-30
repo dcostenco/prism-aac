@@ -79,4 +79,24 @@ describe('the bar shows words no dictionary has', () => {
     await settle();
     expect(tiles()[0], JSON.stringify(tiles()) + JSON.stringify(usePredictionStore.getState().predictions)).toBe('geriatric');
   });
+
+  it('does not offer an unknown word typed only once (a motor slip)', async () => {
+    usePredictionStore.getState().updatePredictions('x', 'en');
+    usePredictionStore.getState().learnWord('geriatrc');
+    useMessageStore.setState({ text: 'geri' } as never);
+    render(<PredictionBar />);
+    await settle();
+    expect(tiles()).not.toContain('geriatrc');
+  });
+
+  it('still drops an English word learned in the Romanian bar', async () => {
+    useSettingsStore.setState({ language: 'ro', outputLanguage: 'ro' } as never);
+    await ensureLangCorpusLoaded('ro');
+    usePredictionStore.getState().updatePredictions('x', 'ro');
+    for (let i = 0; i < 3; i++) usePredictionStore.getState().learnWord('house');
+    useMessageStore.setState({ text: 'hou' } as never);
+    render(<PredictionBar />);
+    await settle();
+    expect(tiles()).not.toContain('house');
+  });
 });

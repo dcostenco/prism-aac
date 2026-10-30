@@ -145,8 +145,8 @@ export function mergeAdvisoryPredictions(
   advisory: string[],
   language: string,
   // A word no dictionary has may still be shown when it is the user's own
-  // (learned from their messages or memory) or the AI completion; a word
-  // another language's dictionary claims never is.
+  // learned word or the AI completion; a word another language's dictionary
+  // claims never is.
   mayBeUnknown: (word: string, advisory: boolean) => boolean = () => false,
 ): string[] {
   const merged: string[] = [];
@@ -200,6 +200,18 @@ function sameTiles(left: string[], right: string[]): boolean {
 interface DisplayedPredictionState {
   language: string;
   tiles: string[];
+  // Keys of tiles no dictionary has that the merge admitted (the AI completion
+  // or the user's own word). The final filter keeps them as decided rather than
+  // re-judging with a live AI completion that may already be cleared.
+  admitted?: string[];
+}
+
+// A word no dictionary has counts as the user's own only after two uses (typed
+// or tapped): a single motor slip ("geriatrc") must not become a lasting tile.
+const OWN_WORD_MIN_USES = 2;
+function isOwnLearnedWord(wordFreq: Record<string, { count: number }>, word: string, language: string): boolean {
+  const key = predictionWordKey(word, language);
+  return Object.prototype.hasOwnProperty.call(wordFreq, key) && wordFreq[key].count >= OWN_WORD_MIN_USES;
 }
 
 const PredictionTile = memo(function PredictionTile({ word, color, onTap, visionBoosted }: { word: string; color: string; onTap: (w: string) => void; visionBoosted?: boolean }) {
@@ -613,17 +625,18 @@ export default function PredictionBar() {
       : langDefaults;
     let final: string[];
 
-    // The user's own words: learned from their messages (wordFreq) or their
-    // memory suggestions. These may be words no dictionary has ("geriatric",
-    // a name); the engine ranked them, so the bar must not drop them.
-    const isOwnWord = (word: string) => Object.prototype.hasOwnProperty.call(learnedWords, predictionWordKey(word, language));
+    // The user's own learned words may be words no dictionary has
+    // ("geriatric", a name); the engine ranked them, so the bar keeps them.
+    // Memory suggestions are filtered strictly before they get here.
+    const isOwnWord = (word: string) => isOwnLearnedWord(learnedWords, word, language);
     if (!text.trim()) {
       final = mergeAiCompletion(langDefaults, aiCompletion, language, isOwnWord);
     } else {
-      const withMemory = mergeAdvisoryPredictions(predictions, memoryWords, language, (word, advisory) => advisory || isOwnWord(word));
+      const withMemory = mergeAdvisoryPredictions(predictions, memoryWords, language, (word) => isOwnWord(word));
       const merged = mergeAiCompletion(withMemory, aiCompletion, language, isOwnWord);
       final = computeStableSlots(previous, merged, language);
     }
+    const admitted = final.filter(word => !isAllowedInLang(word, language)).map(word => predictionWordKey(word, language));
 
     // This state intentionally preserves tile positions for switch scanning.
     // Commit after the effect body and cancel superseded commits so rapid text
@@ -631,6 +644,7 @@ export default function PredictionBar() {
     if (
       displayedState.language === language
       && sameTiles(displayedState.tiles, final)
+      && sameTiles(displayedState.admitted ?? [], admitted)
     ) {
       prevRef.current = { language, tiles: final };
       return;
@@ -641,10 +655,11 @@ export default function PredictionBar() {
       if (cancelled) return;
       prevRef.current = { language, tiles: scheduledTiles };
       setDisplayedState((current) => {
-        if (current.language === language && sameTiles(current.tiles, scheduledTiles)) {
+        if (current.language === language && sameTiles(current.tiles, scheduledTiles)
+          && sameTiles(current.admitted ?? [], admitted)) {
           return current;
         }
-        return { language, tiles: scheduledTiles };
+        return { language, tiles: scheduledTiles, admitted };
       });
     });
     return () => {
@@ -739,11 +754,10 @@ export default function PredictionBar() {
   // (useMemo after a conditional return violates Rules of Hooks → React #300 crash
   // when sidePanel toggles between 'aac-chat' and anything else.)
   const finalTiles = useMemo(() => {
-    // The same allowance as the merge: the user's own words and the AI completion.
-    const own = (word: string) => Object.prototype.hasOwnProperty.call(learnedWords, predictionWordKey(word, language))
-      || (!!aiCompletion && predictionWordKey(aiCompletion, language) === predictionWordKey(word, language));
-    return dropForeignTiles(displayed, language, langDefaults, own);
-  }, [displayed, language, langDefaults, corpusRevision, learnedWords, aiCompletion]);
+    // Keep what the merge admitted for these tiles (see DisplayedPredictionState.admitted).
+    const admitted = new Set(displayedState.language === language ? displayedState.admitted ?? [] : []);
+    return dropForeignTiles(displayed, language, langDefaults, word => admitted.has(predictionWordKey(word, language)));
+  }, [displayed, displayedState, language, langDefaults, corpusRevision]);
 
   // All hooks MUST be called before any early return — React error #300.
   const activeScene = useVisionStore((s) => s.activeScene);
