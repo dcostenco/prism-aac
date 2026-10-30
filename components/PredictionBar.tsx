@@ -21,6 +21,7 @@ import {
 } from '@/services/predictionMemoryService';
 
 import { isAllowedInLang, ensureLangCorpusLoaded } from '@/lib/langAllowlist';
+import { loadSharedWords } from '@/services/sharedWordsService';
 import { isAgeBlocked } from '@/engine/ageBlocklist';
 import { useVisionStore } from '@/store/visionStore';
 import type { SceneType } from '@/services/sceneInference';
@@ -477,6 +478,18 @@ export default function PredictionBar() {
     });
     return () => { cancelled = true; };
   }, [language, outputLanguage, updatePredictions]);
+
+  // Shared words: ones several users typed that no built-in dictionary has,
+  // added for everyone by Synalux. Reload on language or account change.
+  useEffect(() => {
+    let cancelled = false;
+    void loadSharedWords(language).then((changed) => {
+      if (cancelled || !changed || useSettingsStore.getState().language !== language) return;
+      updatePredictions(useMessageStore.getState().text, language);
+      setCorpusRevision((revision) => revision + 1);
+    }).catch(() => { /* shared words are optional */ });
+    return () => { cancelled = true; };
+  }, [language, authProfile, updatePredictions]);
 
   // Ask the prediction store to refine non-empty text. Empty text is handled
   // directly by the display calculation below.

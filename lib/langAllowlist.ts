@@ -38,6 +38,7 @@ import { getPhraseText, hasPhraseTranslation } from '@/constants/phraseTranslati
 import type { SupportedLanguage } from '@/engine/i18n';
 import { normalizePredictionSpelling } from '@/engine/predictionSpellings';
 import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
+import { sharedWordKey, sharedWordsFor } from '@/lib/sharedWords';
 
 /** The words of the app's own authored phrases for a language (its built-in tiles' translated text; a phrase with no
  *  translation is skipped, so English fallbacks never count). Whole words only: "c'est" is one word here, never the
@@ -208,6 +209,10 @@ export function isAllowedInLang(word: string, lang: string, options: { allowUnkn
   // comparable across languages, so the dominance check below must only judge words nobody authored: the leaks the gate
   // exists to stop (Romanian "eu" or "ce" in the English bar, "main" in the Romanian one) are not authored there.
   if (authoredVocabulary(lang).has(w)) return true;
+
+  // A shared word was added for this language after several users typed it
+  // and an AI check called it an ordinary word of the language.
+  if (sharedWordsFor(lang).has(sharedWordKey(w))) return true;
 
   const langCorpus = getCachedPredictionSeed(lang);
   const langFreq = langCorpus?.wordFreq[w]?.count ?? 0;

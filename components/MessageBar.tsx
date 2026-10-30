@@ -1,4 +1,5 @@
 'use client';
+import { contributeSharedWords } from '@/services/sharedWordsService';
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { useMessageStore, setLatestTranslated } from '@/store/messageStore';
 import {
@@ -479,6 +480,8 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     // pair/triple. We learn from the SOURCE-language text (what the user
     // typed), not the translation, since that's what they'll type next.
     learnUtterance(toSpeak);
+    // New words (in no built-in dictionary) count toward the shared vocabulary.
+    void contributeSharedWords(toSpeak, language);
 
     // Pre-mark trailing word so silence-detect doesn't re-speak it after
     // correction/translation effects re-run.
