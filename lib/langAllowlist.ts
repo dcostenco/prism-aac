@@ -164,7 +164,13 @@ const LATIN_LANGS = ['en', 'ro', 'es', 'fr', 'de', 'pt', 'it', 'pl', 'nl', 'tr',
  *  strict. To pin against a specific competing lang (e.g. RO leak
  *  in EN mode), preload that competing lang's seed too.
  */
-export function isAllowedInLang(word: string, lang: string): boolean {
+/**
+ * `allowUnknown`: also keep a word no loaded corpus has. Only for the AI
+ * completion, which exists to supply the words the 20k-word dictionaries lack
+ * (en "geria" -> geriatric); a word another language's corpus claims is still
+ * dropped.
+ */
+export function isAllowedInLang(word: string, lang: string, options: { allowUnknown?: boolean } = {}): boolean {
   if (!word) return true;
   const w = normalizePredictionSpelling(word, lang).trim();
   if (!w) return true;
@@ -183,9 +189,9 @@ export function isAllowedInLang(word: string, lang: string): boolean {
     if (parts.length === 0) return true;
     const significant = parts.filter((p) => p.length > 2);
     if (significant.length === 0) {
-      return parts.every((p) => isAllowedInLang(p, lang));
+      return parts.every((p) => isAllowedInLang(p, lang, options));
     }
-    return significant.every((p) => isAllowedInLang(p, lang));
+    return significant.every((p) => isAllowedInLang(p, lang, options));
   }
 
   // Non-Latin single words: pure-script check is sufficient.
@@ -248,5 +254,5 @@ export function isAllowedInLang(word: string, lang: string): boolean {
   // Without diacritic evidence, drop conservatively. The diacritic
   // carve-out above already preserved real proper nouns with accents.
   if (foundInAnyCorpus) return false;
-  return false;
+  return options.allowUnknown === true;
 }

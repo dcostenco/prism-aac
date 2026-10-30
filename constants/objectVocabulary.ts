@@ -40,3 +40,9 @@ export function getObjectWords(label: string, lang: SupportedLanguage): string[]
   if (!entry) return [];
   return entry[lang] ?? entry['en'] ?? [];
 }
+
+/** True when the label has no word list of its own for this language (English is used). */
+export function objectWordsFallBackToEnglish(label: string, lang: SupportedLanguage): boolean {
+  const entry = OBJECT_WORDS[label.toLowerCase()];
+  return !!entry && lang !== 'en' && !entry[lang];
+}

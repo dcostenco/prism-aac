@@ -130,23 +130,33 @@ function mergeAiCompletion(
   corpusPreds: string[],
   ai: string | null,
   language: string,
+  isOwnWord: (word: string) => boolean = () => false,
 ): string[] {
   // The AI completion skips the engine's filter, so the word lists apply here too.
-  if (!ai || !isAllowedInLang(ai, language) || isAgeBlocked(ai, language)) return corpusPreds;
-  return mergeAdvisoryPredictions(corpusPreds, [ai], language);
+  // It may be a word no dictionary has: that is what it is for (en "geria" ->
+  // geriatric, while the bar can only offer "ger" words). A word another
+  // language's corpus claims is still dropped.
+  if (!ai || !isAllowedInLang(ai, language, { allowUnknown: true }) || isAgeBlocked(ai, language)) return corpusPreds;
+  return mergeAdvisoryPredictions(corpusPreds, [ai], language, (word, advisory) => advisory || isOwnWord(word));
 }
 
 export function mergeAdvisoryPredictions(
   baseline: string[],
   advisory: string[],
   language: string,
+  // A word no dictionary has may still be shown when it is the user's own
+  // learned word or the AI completion; a word another language's dictionary
+  // claims never is.
+  mayBeUnknown: (word: string, advisory: boolean) => boolean = () => false,
 ): string[] {
   const merged: string[] = [];
   const seen = new Set<string>();
-  for (const candidate of [...advisory, ...baseline]) {
+  const advisoryCount = advisory.length;
+  for (const [index, candidate] of [...advisory, ...baseline].entries()) {
     const word = preferredPredictionSpelling(candidate.trim(), language);
     const key = predictionWordKey(word, language);
-    if (!word || seen.has(key) || !isAllowedInLang(word, language) || isAgeBlocked(normalizePredictionSpelling(word, language), language)) continue;
+    const allowUnknown = !!word && mayBeUnknown(word, index < advisoryCount);
+    if (!word || seen.has(key) || !isAllowedInLang(word, language, { allowUnknown }) || isAgeBlocked(normalizePredictionSpelling(word, language), language)) continue;
     seen.add(key);
     merged.push(word);
     if (merged.length === 5) break;
@@ -166,13 +176,15 @@ function dropForeignTiles(
   displayed: string[],
   language: string,
   langDefaults: string[],
+  mayBeUnknown: (word: string) => boolean = () => false,
 ): string[] {
   // Curated AAC core defaults are authoritative for their language. Some are
   // shared across languages ("Tu" is valid Romanian and Spanish), so a
   // cross-corpus frequency comparison must never evict them.
   const trustedDefaults = new Set(langDefaults.map((word) => predictionWordKey(word, language)));
   const cleaned = displayed.filter(
-    (word) => trustedDefaults.has(predictionWordKey(word, language)) || isAllowedInLang(word, language),
+    (word) => trustedDefaults.has(predictionWordKey(word, language))
+      || isAllowedInLang(word, language, { allowUnknown: mayBeUnknown(word) }),
   );
   if (cleaned.length === displayed.length) return displayed;
   const filler = langDefaults.filter(
@@ -188,6 +200,20 @@ function sameTiles(left: string[], right: string[]): boolean {
 interface DisplayedPredictionState {
   language: string;
   tiles: string[];
+  // Keys of tiles no dictionary has that the merge admitted (the AI completion
+  // or the user's own word). The final filter keeps them as decided rather than
+  // re-judging with a live AI completion that may already be cleared.
+  admitted?: string[];
+}
+
+// A word no dictionary has counts as the user's own only after three uses. One
+// spoken message counts a word up to twice (space after it, then Speak), so a
+// single motor slip ("geriatrc") in one message never becomes a lasting tile;
+// a real word clears it on its second message.
+const OWN_WORD_MIN_USES = 3;
+function isOwnLearnedWord(wordFreq: Record<string, { count: number }>, word: string, language: string): boolean {
+  const key = predictionWordKey(word, language);
+  return Object.prototype.hasOwnProperty.call(wordFreq, key) && wordFreq[key].count >= OWN_WORD_MIN_USES;
 }
 
 const PredictionTile = memo(function PredictionTile({ word, color, onTap, visionBoosted }: { word: string; color: string; onTap: (w: string) => void; visionBoosted?: boolean }) {
@@ -372,6 +398,7 @@ export default function PredictionBar() {
   const clearAll = useMessageStore((s) => s.clearAll);
   const predictions = usePredictionStore((s) => s.predictions);
   const aiCompletion = usePredictionStore((s) => s.aiCompletion);
+  const learnedWords = usePredictionStore((s) => s.wordFreq);
   const updatePredictions = usePredictionStore((s) => s.updatePredictions);
   const learnWord = usePredictionStore((s) => s.learnWord);
   const speechRate = useSettingsStore((s) => s.speechRate);
@@ -599,14 +626,23 @@ export default function PredictionBar() {
       ? prevRef.current.tiles
       : langDefaults;
     let final: string[];
+    let merged: string[];
 
+    // The user's own learned words may be words no dictionary has
+    // ("geriatric", a name); the engine ranked them, so the bar keeps them.
+    // Memory suggestions are filtered strictly before they get here.
+    const isOwnWord = (word: string) => isOwnLearnedWord(learnedWords, word, language);
     if (!text.trim()) {
-      final = mergeAiCompletion(langDefaults, aiCompletion, language);
+      merged = mergeAiCompletion(langDefaults, aiCompletion, language, isOwnWord);
+      final = merged;
     } else {
-      const withMemory = mergeAdvisoryPredictions(predictions, memoryWords, language);
-      const merged = mergeAiCompletion(withMemory, aiCompletion, language);
+      const withMemory = mergeAdvisoryPredictions(predictions, memoryWords, language, (word) => isOwnWord(word));
+      merged = mergeAiCompletion(withMemory, aiCompletion, language, isOwnWord);
       final = computeStableSlots(previous, merged, language);
     }
+    // From the merge's decision, not the stabilised slots: a tile carried over
+    // from an earlier render was not judged now and must not be laundered.
+    const admitted = merged.filter(word => !isAllowedInLang(word, language)).map(word => predictionWordKey(word, language));
 
     // This state intentionally preserves tile positions for switch scanning.
     // Commit after the effect body and cancel superseded commits so rapid text
@@ -614,6 +650,7 @@ export default function PredictionBar() {
     if (
       displayedState.language === language
       && sameTiles(displayedState.tiles, final)
+      && sameTiles(displayedState.admitted ?? [], admitted)
     ) {
       prevRef.current = { language, tiles: final };
       return;
@@ -624,16 +661,17 @@ export default function PredictionBar() {
       if (cancelled) return;
       prevRef.current = { language, tiles: scheduledTiles };
       setDisplayedState((current) => {
-        if (current.language === language && sameTiles(current.tiles, scheduledTiles)) {
+        if (current.language === language && sameTiles(current.tiles, scheduledTiles)
+          && sameTiles(current.admitted ?? [], admitted)) {
           return current;
         }
-        return { language, tiles: scheduledTiles };
+        return { language, tiles: scheduledTiles, admitted };
       });
     });
     return () => {
       cancelled = true;
     };
-  }, [predictions, memoryWords, aiCompletion, text, language, langDefaults, displayedState, corpusRevision]);
+  }, [predictions, memoryWords, aiCompletion, text, language, langDefaults, displayedState, corpusRevision, learnedWords]);
 
   const handleTap = useCallback((word: string) => {
     tapFeedback();
@@ -721,10 +759,11 @@ export default function PredictionBar() {
   // Must be computed before any early returns — hooks must be called unconditionally.
   // (useMemo after a conditional return violates Rules of Hooks → React #300 crash
   // when sidePanel toggles between 'aac-chat' and anything else.)
-  const finalTiles = useMemo(
-    () => dropForeignTiles(displayed, language, langDefaults),
-    [displayed, language, langDefaults, corpusRevision],
-  );
+  const finalTiles = useMemo(() => {
+    // Keep what the merge admitted for these tiles (see DisplayedPredictionState.admitted).
+    const admitted = new Set(displayedState.language === language ? displayedState.admitted ?? [] : []);
+    return dropForeignTiles(displayed, language, langDefaults, word => admitted.has(predictionWordKey(word, language)));
+  }, [displayed, displayedState, language, langDefaults, corpusRevision]);
 
   // All hooks MUST be called before any early return — React error #300.
   const activeScene = useVisionStore((s) => s.activeScene);

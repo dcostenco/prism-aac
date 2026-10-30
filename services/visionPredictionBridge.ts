@@ -3,7 +3,8 @@
 import { subscribeVisionContext, type VisionContext } from './objectDetectionService';
 import { inferScene, type SceneType } from './sceneInference';
 import { getVisionPhrases } from '@/constants/visionPhrases';
-import { getObjectWords } from '@/constants/objectVocabulary';
+import { getObjectWords, objectWordsFallBackToEnglish } from '@/constants/objectVocabulary';
+import { isAllowedInLang } from '@/lib/langAllowlist';
 import { useVisionStore } from '@/store/visionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -90,8 +91,12 @@ export function startVisionPredictionBridge(
     const now = Date.now();
     for (const label of ctx.stableObjects) {
       const words = getObjectWords(label, lang);
+      // A language without its own list for this object gets the English
+      // words; never teach the user's dictionary one this language's filter
+      // rejects ("potty" in the French bar). Curated words are always learned.
+      const fallback = objectWordsFallBackToEnglish(label, lang);
       for (const word of words) {
-        if (!boostTimestamps.has(word)) {
+        if (!boostTimestamps.has(word) && (!fallback || isAllowedInLang(word, lang))) {
           predictionStore.learnWord(word);
           boostTimestamps.set(word, now);
         }
