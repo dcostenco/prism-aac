@@ -15,6 +15,14 @@ export default function HelpModal({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   const sections = useRef(new Map<string, HTMLElement>());
+  const dialog = useRef<HTMLDivElement>(null);
+  // Take focus so Escape closes Help, not Settings beneath it, and hand it
+  // back to the control that opened Help.
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.current?.focus();
+    return () => opener?.focus();
+  }, []);
   // On a phone an opened topic's text starts below the fold; bring the topic
   // to the top of the list so its text is visible without scrolling.
   useEffect(() => {
@@ -29,11 +37,12 @@ export default function HelpModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={dialog}
       role="dialog"
       aria-modal="true"
       aria-labelledby="help-title"
       data-testid="help-modal"
-      className="modal-backdrop fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
+      className="modal-backdrop fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 focus:outline-none"
       onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } }}
       tabIndex={-1}
     >

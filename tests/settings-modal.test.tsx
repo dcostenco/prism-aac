@@ -410,6 +410,19 @@ describe('SettingsModal — accessibility toggles', () => {
     expect(screen.getByTestId('settings-user-guide')).toBeInTheDocument();
   });
 
+  it('Escape closes only Help, keeps Settings open, and returns focus to the User guide button', () => {
+    render(<SettingsModal />);
+    const opener = screen.getByTestId('settings-user-guide');
+    opener.focus();
+    fireEvent.click(opener);
+    const help = screen.getByTestId('help-modal');
+    expect(document.activeElement).toBe(help);
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    expect(screen.queryByTestId('help-modal')).toBeNull();
+    expect(mocks.uiState.toggleSettings).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(opener);
+  });
+
   it('scrolls an opened Help topic to the top so its text is visible on a phone', () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
