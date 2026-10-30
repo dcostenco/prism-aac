@@ -13,7 +13,9 @@ it('picture lookup additions preserve ordinary completions of a pictured noun pr
   await Promise.resolve();
   usePredictionStore.getState().updatePredictions('were bee', 'en');
   const words = usePredictionStore.getState().predictions.filter(word => isAllowedInLang(word, 'en')).slice(0, 5);
-  for (const word of ['been', 'beer', 'beef', 'bees', 'beers']) {
+  // "beers" is no longer expected: the bar shows one form per stem, so it
+  // yields its slot to a distinct word (see prediction-stem-dedupe.test.ts).
+  for (const word of ['been', 'beer', 'beef', 'bees']) {
     expect(words, word).toContain(word);
     expect(resolveVocabularyPicture(word, 'en').url, word).toBeTruthy();
   }
