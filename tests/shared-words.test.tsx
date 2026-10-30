@@ -107,6 +107,16 @@ describe('contributing after Speak', () => {
   });
 });
 
+describe('contributing never breaks Speak', () => {
+  it('resolves when the send throws, and retries the words later', async () => {
+    signIn();
+    portal.fetch.mockRejectedValueOnce(new Error('network'));
+    await expect(contributeSharedWords('geriatric', 'en')).resolves.toBeUndefined();
+    await contributeSharedWords('geriatric', 'en');
+    expect(portal.fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('loading the shared list', () => {
   it('loads the list, caches it for a day, and lets shared words through the language filter', async () => {
     signIn();

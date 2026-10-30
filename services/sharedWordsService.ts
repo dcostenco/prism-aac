@@ -44,15 +44,20 @@ export function newWordsIn(message: string, lang: string): string[] {
     && !containsBlockedSuggestion(word, lang));
 }
 
-/** Fire-and-forget after Speak; never throws. */
+/** Fire-and-forget after Speak; never throws or rejects (Speak must not depend on it). */
 export async function contributeSharedWords(message: string, lang: string): Promise<void> {
-  if (!signedIn() || !useSettingsStore.getState().aiAutocorrectEnabled) return;
-  const words = newWordsIn(message, lang).filter(word => !sentThisSession.has(`${lang}|${word}`)).slice(0, WORDS_PER_REQUEST);
-  if (words.length === 0) return;
-  for (const word of words) sentThisSession.add(`${lang}|${word}`);
-  const result = await portalFetch({ path: '/prism-aac/words', method: 'POST', body: { lang, words }, timeoutMs: 5_000 });
-  // A failed send may be retried on a later message.
-  if (!result.ok) for (const word of words) sentThisSession.delete(`${lang}|${word}`);
+  let words: string[] = [];
+  try {
+    if (!signedIn() || !useSettingsStore.getState().aiAutocorrectEnabled) return;
+    words = newWordsIn(message, lang).filter(word => !sentThisSession.has(`${lang}|${word}`)).slice(0, WORDS_PER_REQUEST);
+    if (words.length === 0) return;
+    for (const word of words) sentThisSession.add(`${lang}|${word}`);
+    const result = await portalFetch({ path: '/prism-aac/words', method: 'POST', body: { lang, words }, timeoutMs: 5_000 });
+    // A failed send may be retried on a later message.
+    if (!result.ok) for (const word of words) sentThisSession.delete(`${lang}|${word}`);
+  } catch {
+    for (const word of words) sentThisSession.delete(`${lang}|${word}`);
+  }
 }
 
 function readCache(lang: string): { at: number; words: string[] } | null {
