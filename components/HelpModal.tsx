@@ -5,7 +5,7 @@
  * UI strings, so they work offline and in the user's language; the footer
  * links the full web guide and support.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/engine/useT';
 import { HELP_TOPICS, SUPPORT_EMAIL, helpBodyKey, helpTitleKey } from '@/constants/helpTopics';
 import { PRISM_AAC_USER_GUIDE_URL } from '@/lib/appPaths';
@@ -14,6 +14,12 @@ export default function HelpModal({ onClose }: { onClose: () => void }) {
   const { t } = useT();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);
+  const sections = useRef(new Map<string, HTMLElement>());
+  // On a phone an opened topic's text starts below the fold; bring the topic
+  // to the top of the list so its text is visible without scrolling.
+  useEffect(() => {
+    if (open) sections.current.get(open)?.scrollIntoView?.({ block: 'start' });
+  }, [open]);
   const topics = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
     return HELP_TOPICS
@@ -52,7 +58,8 @@ export default function HelpModal({ onClose }: { onClose: () => void }) {
           {topics.map(topic => {
             const expanded = open === topic.id || (query.trim() !== '' && topics.length === 1);
             return (
-              <section key={topic.id} className="rounded-xl border border-theme">
+              <section key={topic.id} className="rounded-xl border border-theme scroll-mt-2"
+                ref={(element) => { if (element) sections.current.set(topic.id, element); else sections.current.delete(topic.id); }}>
                 <button
                   onClick={() => setOpen(expanded ? null : topic.id)}
                   aria-expanded={expanded}
