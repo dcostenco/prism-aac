@@ -12,6 +12,15 @@ const DEFAULT_CONFIG: PredictionConfig = {
   recencyWindowMs: 600_000,
 };
 
+// English plural endings that make a second same-stem tile a duplicate of
+// the first ("german / germans"). English only: in French and Spanish "-s"
+// marks forms a user needs next to each other ("enfant / enfants", "je
+// prends"), and other languages' endings change case or definiteness.
+// Contractions ("that's") are not plurals and keep their slot.
+const TRIVIAL_PLURAL_SUFFIXES = new Set(['s', 'es']);
+// English words that end in "s" but are not the plural of the shorter word.
+const EN_STANDALONE_S_WORDS = new Set(['thanks', 'news', 'towards', 'besides', 'sometimes', 'afterwards', 'upstairs', 'downstairs', 'indoors', 'outdoors', 'glasses', 'pants', 'shorts', 'scissors', 'clothes', 'stairs', 'jeans']);
+
 // All algorithm-internal tuning lives here so it can be audited in one place.
 // Every value carries a justification — no arbitrary magic numbers scattered
 // through the code. Anything derived from CONTEXT (e.g. stem-grouping length)
@@ -561,11 +570,25 @@ export function getPredictions(
   // Cap forms per stem at MAX_PER_STEM. Strict 1-per-stem was too
   // aggressive for noun declensions where different forms ARE different
   // communicative content: ro "timp" (time, indef.) and "timpul" (the
-  // time, def.) both belong on the bar. 2 strikes a balance — Russian
-  // conjugation families (думать/думал/думают/думаю/думающий) still
-  // collapse to 2 representatives instead of 5; Romanian/English noun
-  // declensions surface bare + definite forms together.
+  // time, def.) both belong on the bar; ru "вод" must keep "вода" next to
+  // "воды". 2 strikes a balance — Russian conjugation families still
+  // collapse to 2 representatives instead of 5.
   const MAX_PER_STEM = 2;
+  // The second form is not worth a slot when it is only an already-shown
+  // word plus a plural or possessive ending: "german / germans",
+  // "beer / beers", "germany / germany's" read as the same tile twice
+  // (owner, 2026-10-30, after "geri" gave german / germany / germans /
+  // gerald / gerard). Inflections that change the word ("вода / воды",
+  // "timp / timpul", "play / playing") still get their second slot.
+  const twinsApply = (lang ?? '').split('-')[0] === 'en';
+  const isSuffixedTwin = (word: string, shown: string): boolean => {
+    if (!twinsApply) return false;
+    const a = normalizePredictionSpelling(word, lang);
+    const b = normalizePredictionSpelling(shown, lang);
+    const [long, short] = a.length >= b.length ? [a, b] : [b, a];
+    return long !== short && long.startsWith(short) && !EN_STANDALONE_S_WORDS.has(long)
+      && TRIVIAL_PLURAL_SUFFIXES.has(long.slice(short.length));
+  };
   // When the partial is ALREADY a complete word ("can", count 785), the user
   // has most likely finished it and wants to know what comes next. Words that
   // merely share its letters ("can't", "cannot", "candy") are still worth one
@@ -577,7 +600,7 @@ export function getPredictions(
   const MAX_BARE_PREFIX_WHEN_COMPLETE = 1;
   const taken: typeof filtered = [];
   if (partialWord) {
-    const stemCounts = new Map<string, number>();
+    const stemForms = new Map<string, string[]>();
     let barePrefixTaken = 0;
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
@@ -591,9 +614,10 @@ export function getPredictions(
       }
       const key = groupKey(c.word);
       if (key === null) { taken.push(c); continue; }
-      const count = stemCounts.get(key) ?? 0;
-      if (count >= MAX_PER_STEM) continue;
-      stemCounts.set(key, count + 1);
+      const forms = stemForms.get(key) ?? [];
+      if (forms.length >= MAX_PER_STEM) continue;
+      if (forms.some(shown => isSuffixedTwin(c.word, shown))) continue;
+      stemForms.set(key, [...forms, c.word]);
       taken.push(c);
     }
   }
@@ -605,7 +629,11 @@ export function getPredictions(
   // remaining candidates, so they would all flow straight back in. Any slots
   // still empty after this pass are filled from the language's curated AAC core
   // words by the `fallback` loop below, which is the better thing to show.
-  if (taken.length < config.maxResults) {
+  //
+  // Two passes: plural twins of a shown word ("love / loves") come last, so
+  // they appear only when nothing else matches ("germ" → germs, germans).
+  for (const allowTwins of [false, true]) {
+    if (taken.length >= config.maxResults) break;
     const takenWords = new Set(taken.map(c => c.word));
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
@@ -616,6 +644,8 @@ export function getPredictions(
         && !c.hasContext
         && matchesPredictionPrefix(c.word, partialWord, lang)
       ) continue;
+      if (!allowTwins && taken.some(t => isSuffixedTwin(c.word, t.word))) continue;
+      takenWords.add(c.word);
       taken.push(c);
     }
   }
