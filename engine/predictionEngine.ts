@@ -1,7 +1,7 @@
 import { WordFreqEntry, PredictionConfig } from '@/types';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { getStemmer, type Stemmer } from '@/engine/stemmers';
-import { normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts } from '@/engine/predictionSpellings';
+import { isPluralTwin, normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts } from '@/engine/predictionSpellings';
 import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
 
 const DEFAULT_CONFIG: PredictionConfig = {
@@ -11,15 +11,6 @@ const DEFAULT_CONFIG: PredictionConfig = {
   maxResults: 5,
   recencyWindowMs: 600_000,
 };
-
-// English plural endings that make a second same-stem tile a duplicate of
-// the first ("german / germans"). English only: in French and Spanish "-s"
-// marks forms a user needs next to each other ("enfant / enfants", "je
-// prends"), and other languages' endings change case or definiteness.
-// Contractions ("that's") are not plurals and keep their slot.
-const TRIVIAL_PLURAL_SUFFIXES = new Set(['s', 'es']);
-// English words that end in "s" but are not the plural of the shorter word.
-const EN_STANDALONE_S_WORDS = new Set(['thanks', 'news', 'towards', 'besides', 'sometimes', 'afterwards', 'upstairs', 'downstairs', 'indoors', 'outdoors', 'glasses', 'pants', 'shorts', 'scissors', 'clothes', 'stairs', 'jeans']);
 
 // All algorithm-internal tuning lives here so it can be audited in one place.
 // Every value carries a justification — no arbitrary magic numbers scattered
@@ -580,15 +571,7 @@ export function getPredictions(
   // (owner, 2026-10-30, after "geri" gave german / germany / germans /
   // gerald / gerard). Inflections that change the word ("вода / воды",
   // "timp / timpul", "play / playing") still get their second slot.
-  const twinsApply = (lang ?? '').split('-')[0] === 'en';
-  const isSuffixedTwin = (word: string, shown: string): boolean => {
-    if (!twinsApply) return false;
-    const a = normalizePredictionSpelling(word, lang);
-    const b = normalizePredictionSpelling(shown, lang);
-    const [long, short] = a.length >= b.length ? [a, b] : [b, a];
-    return long !== short && long.startsWith(short) && !EN_STANDALONE_S_WORDS.has(long)
-      && TRIVIAL_PLURAL_SUFFIXES.has(long.slice(short.length));
-  };
+  const isSuffixedTwin = (word: string, shown: string): boolean => isPluralTwin(word, shown, lang);
   // When the partial is ALREADY a complete word ("can", count 785), the user
   // has most likely finished it and wants to know what comes next. Words that
   // merely share its letters ("can't", "cannot", "candy") are still worth one

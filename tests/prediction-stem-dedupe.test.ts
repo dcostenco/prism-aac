@@ -13,6 +13,7 @@
 import { describe, expect, it } from 'vitest';
 import { getPredictions } from '@/engine/predictionEngine';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
+import { isPluralTwin } from '@/engine/predictionSpellings';
 
 async function predict(lang: string, text: string): Promise<string[]> {
   const seed = await loadPredictionSeed(lang);
@@ -86,5 +87,29 @@ describe('prediction bar: real inflections keep their second slot', () => {
     const words = await predict('ro', 'tim');
     expect(words).toContain('timp');
     expect(words).toContain('timpul');
+  });
+});
+
+describe('isPluralTwin: an English plural, not a different word', () => {
+  it.each([['german', 'germans'], ['dog', 'dogs'], ['bus', 'buses'], ['box', 'boxes'], ['potato', 'potatoes'], ['photo', 'photos'], ['buzz', 'buzzes'], ['church', 'churches'], ['dish', 'dishes'], ['stomach', 'stomachs'], ['tech', 'techs'], ['GERMAN', 'Germans']])(
+    'en: %s / %s are twins', (short, long) => {
+      expect(isPluralTwin(long, short, 'en')).toBe(true);
+      expect(isPluralTwin(long, short, 'EN-US')).toBe(true);
+    });
+
+  it.each([['I', 'is'], ['a', 'as'], ['hi', 'his'], ['his', 'hiss'], ['not', 'notes'], ['tap', 'tapes'], ['bus', 'buss'],
+    ['your', 'yours'], ['mean', 'means'], ['good', 'goods'], ['manner', 'manners'], ['custom', 'customs'], ['spirit', 'spirits'],
+    ['economic', 'economics'], ['wood', 'woods'], ['paper', 'papers'], ['time', 'times'], ['thank', 'thanks'], ['glass', 'glasses'], ['green', 'greens'], ['sweet', 'sweets'], ['wish', 'wishs']])(
+    'en: %s / %s are different words', (short, long) => {
+      expect(isPluralTwin(long, short, 'en')).toBe(false);
+    });
+
+  it('other languages never have twins', () => {
+    expect(isPluralTwin('enfants', 'enfant', 'fr')).toBe(false);
+    expect(isPluralTwin('niños', 'niño', 'es')).toBe(false);
+  });
+
+  it.each(['where ', 'today ', 'next ', 'friend '])('en "%s": the engine offers "I" (it is not "is" without the s)', async (text) => {
+    expect((await predict('en', text)).map(w => w.toLowerCase())).toContain('i');
   });
 });
