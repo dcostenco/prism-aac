@@ -544,5 +544,5 @@
   "help_offline_title": "Prism AAC 오프라인 사용",
   "help_offline_body": "인터넷에 연결된 상태에서 앱을 열고 의사소통 사용자에게 필요한 판, 언어, 음성을 불러옵니다.\n그런 다음 연결을 해제하고 이 기기에서 테스트 문구를 입력하고 말해보세요.\n입력, 저장된 판, 기기 내장 음성은 오프라인에서 작동합니다. 동기화, 클라우드 기능 및 메시지 전송에는 인터넷 연결이 필요합니다.",
   "help_privacy_title": "개인정보 보호 및 AI 기능",
-  "help_privacy_body": "AI Autocorrect 기능이 켜져 있고(설정 → 접근성 & Input Modes) 로그인된 상태에서 입력한 텍스트는 추천 단어를 제공하기 위해 Synalux 및 Google Gemini로 전송됩니다. 말하기 버튼을 누르면 메시지에 포함된 새로운 단어가 공유 단어 목록을 만드는 데 사용됩니다.\n중단하려면 AI Autocorrect 기능을 끄거나 로그아웃하세요. 음성으로 받아쓰는 텍스트는 AI Autocorrect 기능이 꺼져 있어도 로그인되어 있으면 언제나 교정됩니다. 자세한 내용은 synalux.ai/legal/privacy의 개인정보 처리방침에서 확인하실 수 있습니다."
+  "help_privacy_body": "로그인한 상태에서 AI Autocorrect가 켜져 있으면(설정 → 접근성 & Input Modes), 입력한 텍스트가 맞춤 제안을 위해 Synalux 및 Google Gemini로 전송됩니다. 말하기 버튼을 누르면 메시지에 포함된 새로운 단어가 공유 단어 목록을 만드는 데 활용됩니다.\n중단하려면 AI Autocorrect를 끄거나 로그아웃하세요. 음성으로 받아쓰는 텍스트는 AI Autocorrect가 꺼져 있더라도 로그인되어 있으면 항상 교정됩니다. 클라우드 메모리 예측가 켜져 있으면 완료된 문장도 개인 맞춤 단어 제안을 위해 Synalux로 전송됩니다. 해당 기능은 같은 섹션에서 끌 수 있습니다. 자세한 내용은 synalux.ai/legal/privacy의 개인정보 처리방침을 확인하세요."
 }

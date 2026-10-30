@@ -544,5 +544,5 @@
   "help_offline_title": "离线使用 Prism AAC",
   "help_offline_body": "在联网状态下打开应用程序，并加载使用者需要的图板、语言和声音。\n然后断开网络连接，在此设备上输入并朗读测试短语。\n输入、已保存的图板和设备自带声音均可离线工作。同步、云端功能和消息发送则需要网络连接。",
   "help_privacy_title": "隐私与 AI 功能",
-  "help_privacy_body": "开启 AI Autocorrect（设置 → 无障碍 & Input Modes）并在登录状态下，您输入的文本将发送给 Synalux 和 Google Gemini 以获取建议。在您按 说话 后，消息中的新词汇将有助于构建共享词汇列表。\n如需停止，请关闭 AI Autocorrect 或退出登录。只要您处于登录状态，即使关闭了 AI Autocorrect，您通过语音听写的文本也会被自动更正。有关详细信息，请参阅 synalux.ai/legal/privacy 上的隐私政策。"
+  "help_privacy_body": "在开启 AI Autocorrect（设置 → 无障碍 & Input Modes）并已登录的情况下，您输入的文本会发送至 Synalux 和 Google Gemini 以获取建议。当您按下 说话 后，消息中的新词汇将用于构建共享词汇列表。\n如需停止，请关闭 AI Autocorrect 或退出登录。只要您处于登录状态，即使关闭了 AI Autocorrect，您通过语音听写的文本也会被自动纠正。如果开启了 云端记忆预测，已完成的短语也会发送至 Synalux，用于提供个性化词汇建议；您可以在同一区域将其关闭。有关详情，请参阅 synalux.ai/legal/privacy 上的隐私政策。"
 }

@@ -423,6 +423,20 @@ describe('SettingsModal — accessibility toggles', () => {
     expect(document.activeElement).toBe(opener);
   });
 
+  it('Escape in a Help search with text clears the search; a second Escape closes Help', () => {
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByTestId('settings-user-guide'));
+    const search = screen.getByRole('searchbox', { name: 'help_search' });
+    fireEvent.change(search, { target: { value: 'zzz-no-match' } });
+    expect(screen.getByText('help_no_results')).toBeInTheDocument();
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(search).toHaveValue('');
+    expect(screen.getByTestId('help-modal')).toBeInTheDocument();
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(screen.queryByTestId('help-modal')).toBeNull();
+    expect(mocks.uiState.toggleSettings).not.toHaveBeenCalled();
+  });
+
   it('scrolls an opened Help topic to the top so its text is visible on a phone', () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;

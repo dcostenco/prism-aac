@@ -43,7 +43,13 @@ export default function HelpModal({ onClose }: { onClose: () => void }) {
       aria-labelledby="help-title"
       data-testid="help-modal"
       className="modal-backdrop fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 focus:outline-none"
-      onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } }}
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return;
+        e.stopPropagation();
+        // Escape in a search with text clears it first, as search fields do.
+        if (e.target instanceof HTMLInputElement && e.target.type === 'search' && query !== '') setQuery('');
+        else onClose();
+      }}
       tabIndex={-1}
     >
       {/* Like Settings, only ✕ closes Help: dwell-click drift must not. */}
