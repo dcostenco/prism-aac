@@ -14,7 +14,8 @@ const shared = new Map<string, ReadonlySet<string>>();
 const asFreq = new Map<string, Record<string, WordFreqEntry>>();
 const EMPTY: ReadonlySet<string> = new Set();
 
-export const sharedWordKey = (word: string) => word.normalize('NFC').trim().toLowerCase();
+// A typographic apostrophe is the same word ("aujourd’hui").
+export const sharedWordKey = (word: string) => word.normalize('NFC').trim().toLowerCase().replace(/’/g, "'");
 
 export function sharedWordsFor(lang: string): ReadonlySet<string> {
   return shared.get(lang) ?? EMPTY;

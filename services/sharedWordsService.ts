@@ -8,20 +8,23 @@
  * them only as keyed hashes until 5 different users have used a word, then an
  * AI check decides whether it joins the shared list.
  *
- * Loading: the shared list for the language is cached on the device for a day.
+ * Loading: the shared list for the language is cached on the device for 6
+ * hours, so a word pulled on the server leaves devices within that time.
  */
 import { portalFetch } from '@/services/portalClient';
-import { isAllowedInLang } from '@/lib/langAllowlist';
+import { isAllowedInLang, isKnownWord } from '@/lib/langAllowlist';
+import { getCachedPredictionSeed } from '@/constants/predictionSeeds';
 import { containsBlockedSuggestion } from '@/engine/ageBlocklist';
 import { setSharedWords, sharedWordKey, sharedWordsFor } from '@/lib/sharedWords';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
 const WORDS_PER_REQUEST = 20;
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const CACHE_PREFIX = 'prism-aac-shared-words:';
 // One word: letters and combining marks, with inner apostrophes or hyphens.
-const WORD = /^[\p{L}\p{M}]+(?:['’-][\p{L}\p{M}]+)*$/u;
+const WORD = /^[\p{L}\p{M}]+(?:['-][\p{L}\p{M}]+)*$/u;
+const isSharedWordShape = (word: string) => word.length >= 2 && word.length <= 40 && WORD.test(word);
 
 const sentThisSession = new Set<string>();
 const loading = new Map<string, Promise<boolean>>();
@@ -30,13 +33,14 @@ const signedIn = () => useAuthStore.getState().profile !== null;
 
 /** The words of a message worth contributing: shaped like a word, in no dictionary, never blocked. */
 export function newWordsIn(message: string, lang: string): string[] {
+  // Without the language's own dictionary nothing can be judged new.
+  if (!getCachedPredictionSeed(lang)) return [];
   const words = message.split(/\s+/u)
     .map(token => sharedWordKey(token.replace(/^[^\p{L}\p{M}]+|[^\p{L}\p{M}]+$/gu, '')))
-    .filter(word => word.length >= 2 && word.length <= 40 && WORD.test(word));
+    .filter(isSharedWordShape);
   return [...new Set(words)].filter(word =>
-    !sharedWordsFor(lang).has(word)
-    // In no loaded dictionary, and not a word another language's dictionary claims.
-    && !isAllowedInLang(word, lang) && isAllowedInLang(word, lang, { allowUnknown: true })
+    // In no dictionary, written in this language's script, never blocked.
+    !isKnownWord(word, lang) && isAllowedInLang(word, lang, { allowUnknown: true })
     && !containsBlockedSuggestion(word, lang));
 }
 
@@ -56,7 +60,7 @@ function readCache(lang: string): { at: number; words: string[] } | null {
     const raw = localStorage.getItem(CACHE_PREFIX + lang);
     const parsed = raw ? JSON.parse(raw) as { at?: unknown; words?: unknown } : null;
     if (!parsed || typeof parsed.at !== 'number' || !Array.isArray(parsed.words)) return null;
-    return { at: parsed.at, words: parsed.words.filter((word): word is string => typeof word === 'string') };
+    return { at: parsed.at, words: parsed.words.filter((word): word is string => typeof word === 'string' && isSharedWordShape(word)) };
   } catch {
     return null;
   }
@@ -81,7 +85,7 @@ export function loadSharedWords(lang: string): Promise<boolean> {
       path: `/prism-aac/words?lang=${encodeURIComponent(lang)}`, method: 'GET', timeoutMs: 8_000,
     });
     if (!result.ok || result.data.lang !== lang || !Array.isArray(result.data.words)) return changed;
-    const words = result.data.words.filter((word): word is string => typeof word === 'string');
+    const words = result.data.words.filter((word): word is string => typeof word === 'string' && isSharedWordShape(word));
     try { localStorage.setItem(CACHE_PREFIX + lang, JSON.stringify({ at: Date.now(), words })); } catch { /* storage full: memory only */ }
     const before = sharedWordsFor(lang);
     setSharedWords(lang, words);

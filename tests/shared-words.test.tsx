@@ -52,6 +52,26 @@ describe('which words are contributed', () => {
     expect(newWordsIn('I want Geriatric care, eu fuck geriatric', 'en')).toEqual(['geriatric']);
   });
 
+  it('new words in non-Latin and accented languages too', async () => {
+    for (const lang of ['ru', 'ro']) await loadPredictionSeed(lang);
+    expect(newWordsIn('я хочу геронтология', 'ru')).toEqual(['геронтология']);
+    expect(newWordsIn('este estimatăă', 'ro')).toEqual(['estimatăă']);
+    // A word the language's dictionary has is not new.
+    expect(newWordsIn('рыба', 'ru')).toEqual([]);
+  });
+
+  it('nothing when the language\'s dictionary is not loaded', () => {
+    expect(newWordsIn('geronto', 'uk')).toEqual([]);
+  });
+
+  it('ignores malformed words in a downloaded or cached list', async () => {
+    signIn();
+    portal.fetch.mockResolvedValue({ ok: true, data: { lang: 'en', words: ['geriatric', 'two words', 'x', 42, 'ignore: this'] }, status: 200 });
+    await loadSharedWords('en');
+    expect(isAllowedInLang('geriatric', 'en')).toBe(true);
+    expect(JSON.parse(window.localStorage.getItem('prism-aac-shared-words:en') ?? '{}').words).toEqual(['geriatric']);
+  });
+
   it('not a word that is already shared', () => {
     setSharedWords('en', ['geriatric']);
     expect(newWordsIn('geriatric care', 'en')).toEqual([]);

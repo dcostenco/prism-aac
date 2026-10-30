@@ -166,6 +166,19 @@ const LATIN_LANGS = ['en', 'ro', 'es', 'fr', 'de', 'pt', 'it', 'pl', 'nl', 'tr',
  *  in EN mode), preload that competing lang's seed too.
  */
 /**
+ * True when any dictionary already has the word: the language's authored
+ * vocabulary, any loaded corpus, or the shared vocabulary. Unlike
+ * isAllowedInLang, this never accepts a word for its script or diacritics
+ * alone ("геронтология" in Russian, "estimată" in Romanian).
+ */
+export function isKnownWord(word: string, lang: string): boolean {
+  const w = normalizePredictionSpelling(word, lang).trim();
+  if (!w) return true;
+  if (authoredVocabulary(lang).has(w) || sharedWordsFor(lang).has(sharedWordKey(w))) return true;
+  return SUPPORTED_SEED_LANGS.some((seedLang) => (getCachedPredictionSeed(seedLang)?.wordFreq[w]?.count ?? 0) > 0);
+}
+
+/**
  * `allowUnknown`: also keep a word no loaded corpus has. Only for the AI
  * completion, which exists to supply the words the 20k-word dictionaries lack
  * (en "geria" -> geriatric); a word another language's corpus claims is still
