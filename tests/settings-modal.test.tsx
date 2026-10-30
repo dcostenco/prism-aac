@@ -410,6 +410,20 @@ describe('SettingsModal — accessibility toggles', () => {
     expect(screen.getByTestId('settings-user-guide')).toBeInTheDocument();
   });
 
+  it('scrolls an opened Help topic to the top so its text is visible on a phone', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      render(<SettingsModal />);
+      fireEvent.click(screen.getByTestId('settings-user-guide'));
+      fireEvent.click(screen.getByTestId('help-topic-alert'));
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+      expect(scrollIntoView.mock.contexts.at(-1)).toContainElement(screen.getByTestId('help-body-alert'));
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
   it('filters Help topics by search and says when nothing matches', () => {
     render(<SettingsModal />);
     fireEvent.click(screen.getByTestId('settings-user-guide'));
