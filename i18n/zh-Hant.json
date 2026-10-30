@@ -528,13 +528,13 @@
   "help_full_guide": "開啟完整指南",
   "help_support": "傳送電子郵件給支援團隊",
   "help_getting_started_title": "新手入門",
-  "help_getting_started_body": "1. 使用工具列中的兩個語言按鈕選擇輸入與輸出語言。\n2. 輸入或輕觸詞彙，然後按下 說話 測試聲音。在 設定 → 語音 中選擇語音。\n3. 在 設定 中，選擇溝通者能穩定點擊的 格線大小，以及淺色或深色 主題。\n4. 開啟 設定 → Categories → Open Category Manager，並顯示最需要的類別。\n5. 在使用 警示 或 傳送訊息 之前，請先設定聯絡人或主要照顧者。\n6. 若觸控不是主要的選擇方式，請在 設定 → 無障礙 & Input Modes 中設定並校準輸入方式。\n7. 在不連線的情況下使用此裝置前，請先離線測試應用程式。",
+  "help_getting_started_body": "1. 使用工具列中的兩個語言按鈕選擇輸入與輸出語言。\n2. 打字或點擊詞彙，然後按下 說話 測試語音。可在 設定 → 語音 中選擇語音。\n3. 在 設定 中，為溝通者選擇能穩定點擊的 格線大小，以及淺色或深色 主題。\n4. 開啟 設定 → Categories → Open Category Manager，顯示最需要的類別。\n5. 在依賴 警示 或 傳送訊息 功能之前，請先設定好聯絡人或主要照護者。\n6. 若觸控不是主要的選擇方式，請在 設定 → 無障礙 & Input Modes 中設定並校正輸入方式。\n7. 在無網路環境下使用前，請先關閉網路連線並在此裝置上測試應用程式。",
   "help_message_title": "組合與播放訊息",
   "help_message_body": "輕觸圖示、預測圖塊或按鍵，在訊息列中組合訊息。\n按下 說話 大聲播放。\n↩ 按鈕可復原上一次的變更。輕觸紅色的刪除按鈕可刪除最後一個詞彙；長按則可清除整條訊息。",
   "help_categories_title": "類別與常用語板",
   "help_categories_body": "從工具列開啟 類別 以檢視常用語板。\n某些類別包含引導式的常用語順序，例如在餐廳點餐；請使用 下一步 和 上一個 順序切換。\n如需選擇要顯示的類別，請開啟 設定 → Categories。數量較少且較大的圖塊（設定 → 格線大小）較容易點擊。",
   "help_predictions_title": "預測圖塊與圖片",
-  "help_predictions_body": "鍵盤上方的圖塊列會推薦下一個詞彙，或補全正在輸入的詞彙。輕觸圖塊即可使用。\n常用的詞彙會往前移，使用幾次後新詞彙也會出現。\n內建詞彙會顯示其圖片。當您登入 Synalux Enterprise 或 Prism AAC 雲端訂閱（目前也包含 Synalux Standard 與 Advanced）時，其他詞彙可以獲得生成的圖片。每張圖片都會先經過語意檢查；無圖片但通過檢查的詞彙將以純文字顯示。",
+  "help_predictions_body": "鍵盤上方的一排圖塊會預測下一個詞彙或補全正在輸入的詞彙。點擊圖塊即可使用。\n常用的詞彙會移到前面，而您使用的新詞彙在使用幾次後也會顯示於此。\n內建詞彙會顯示其專屬圖片。當您登入 Synalux Enterprise 或 Prism AAC 雲端訂閱（目前亦支援 Synalux Standard 與 Advanced）時，其他詞彙可取得自動生成的圖片。每張圖片都會先經過語意檢查，若無合適圖片通過檢查，該詞彙將以文字顯示。",
   "help_languages_title": "語言與翻譯",
   "help_languages_body": "工具列中的兩個語言按鈕可用來設定您輸入的語言以及播放的語言。\n當兩者不同時，訊息會在播放前先進行翻譯，因此播放前請確認這兩個按鈕。\n翻譯與部分建議功能需要帳號或網路連線；輸入功能與已儲存的面板在沒有網路時仍可繼續使用。",
   "help_access_title": "開關掃描、頭部追蹤與其他存取方式",
@@ -544,5 +544,5 @@
   "help_offline_title": "離線使用 Prism AAC",
   "help_offline_body": "在連線狀態下開啟應用程式，並載入溝通者所需的面板、語言與語音。\n隨後斷開網路，並在此裝置上輸入與播放測試語句。\n輸入功能、已儲存的面板和裝置語音皆可在離線時運作。同步、雲端功能與訊息傳送則需要網路連線。",
   "help_privacy_title": "隱私權與 AI 功能",
-  "help_privacy_body": "開啟 AI Autocorrect（設定 → 無障礙 & Input Modes）並登入時，您輸入的文字會傳送到 Synalux 與 Google Gemini 以提供建議。當您按下 說話 後，訊息中的新詞彙有助於建立共用字詞清單。\n若要停止，請關閉 AI Autocorrect 或登出。只要您處於登入狀態，即使關閉 AI Autocorrect，您語音聽寫的文字仍會進行更正。若開啟 雲端記憶預測，完成的句型也會傳送到 Synalux 以提供個人化的字詞建議；您可以於同一分頁中將其關閉。詳細資訊請參閱 synalux.ai/legal/privacy 的隱私權政策。"
+  "help_privacy_body": "開啟 AI Autocorrect（設定 → 無障礙 & Input Modes）並登入時，您輸入的文字會傳送到 Synalux 與 Google Gemini 以提供建議。當您按下 說話 後，訊息中的新詞彙有助於建立共用字詞清單。\n若要停止，請關閉 AI Autocorrect 或登出。只要您處於登入狀態，即使關閉 AI Autocorrect，您語音聽寫的文字仍會進行更正。若開啟 雲端記憶預測，完成的短語也會傳送到 Synalux 以提供個人化的字詞建議；您可以於同一區段中將其關閉。詳細資訊請參閱 synalux.ai/legal/privacy 的隱私權政策。"
 }
