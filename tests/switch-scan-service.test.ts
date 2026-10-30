@@ -693,3 +693,31 @@ describe('switchScanService — paid-plan lock', () => {
     expect(ids.has('lock-emergency')).toBe(true);
   });
 });
+
+describe('switchScanService — dialog over a dialog', () => {
+  afterEach(() => { stopScan(); document.body.innerHTML = ''; });
+  it('scans Help opened over Settings, never the covered Settings controls', () => {
+    document.body.innerHTML = `
+      <div role="dialog" aria-modal="true">
+        <button id="settings-toggle" style="position:fixed">Settings toggle</button>
+        <div role="dialog" aria-modal="true"><button id="help-topic" style="position:fixed">Help topic</button></div>
+      </div>
+      <div role="alertdialog" aria-modal="true"><button id="alert-cancel" style="position:fixed">Cancel</button></div>`;
+    const seen: (string | null)[] = [];
+    startScan({ enabled: true, groupScan: false, mode: 'manual' }, { onHighlight: el => seen.push(el?.id ?? null) });
+    for (let i = 0; i < 4; i++) document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    const ids = new Set(seen.filter(Boolean));
+    expect(ids.has('settings-toggle')).toBe(false);
+    expect(ids.has('help-topic')).toBe(true);
+    expect(ids.has('alert-cancel')).toBe(true);
+  });
+
+  it('still scans a single open dialog', () => {
+    document.body.innerHTML = `
+      <div role="dialog" aria-modal="true"><button id="settings-toggle" style="position:fixed">Settings toggle</button></div>`;
+    const seen: (string | null)[] = [];
+    startScan({ enabled: true, groupScan: false, mode: 'manual' }, { onHighlight: el => seen.push(el?.id ?? null) });
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(seen).toContain('settings-toggle');
+  });
+});

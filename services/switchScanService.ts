@@ -191,6 +191,10 @@ function discoverElements(): Element[] {
       if (el.getAttribute('aria-hidden') === 'true') continue;
       if (el.tabIndex === -1) continue;
       if (lock && !lock.contains(el) && !el.closest('[role="alertdialog"],[role="dialog"]')) continue;
+      // A dialog opened from inside another (Help over Settings) covers the
+      // outer one: skip the outer dialog's own controls, scan the inner one.
+      const dialog = el.closest('[aria-modal="true"]');
+      if (dialog && dialog.querySelector('[aria-modal="true"]')) continue;
       elements.push(el);
     }
   }

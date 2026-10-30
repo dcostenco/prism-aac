@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import SettingsModal from '@/components/SettingsModal';
+import { HELP_TOPICS } from '@/constants/helpTopics';
 
 // ── vi.hoisted: create mocks before vi.mock() factories run ───────────────────
 
@@ -387,6 +388,87 @@ describe('SettingsModal — accessibility toggles', () => {
     openAccessibility();
     fireEvent.click(screen.getByRole('button', { name: /high_contrast/i }));
     expect(mocks.settingsState.update).toHaveBeenCalledWith(expect.objectContaining({ highContrast: true }));
+  });
+
+  it('opens Help from the Settings header, over Settings, and returns to Settings on close', () => {
+    render(<SettingsModal />);
+    expect(screen.queryByTestId('help-modal')).toBeNull();
+    fireEvent.click(screen.getByTestId('settings-user-guide'));
+    expect(screen.getByTestId('help-modal')).toBeInTheDocument();
+    // Every topic is listed and opens to its body.
+    for (const topic of HELP_TOPICS) {
+      fireEvent.click(screen.getByTestId(`help-topic-${topic.id}`));
+      expect(screen.getByTestId(`help-body-${topic.id}`)).toHaveTextContent(`help_${topic.id}_body`);
+    }
+    const guide = screen.getByTestId('help-full-guide');
+    expect(guide).toHaveAttribute('href', 'https://synalux.ai/docs/telehealth/prism-aac');
+    expect(guide).toHaveAttribute('target', '_blank');
+    expect(guide).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(screen.getByTestId('help-support')).toHaveAttribute('href', 'mailto:support@synalux.ai');
+    fireEvent.click(screen.getByRole('button', { name: 'help_close' }));
+    expect(screen.queryByTestId('help-modal')).toBeNull();
+    expect(screen.getByTestId('settings-user-guide')).toBeInTheDocument();
+  });
+
+  it('Escape closes only Help, keeps Settings open, and returns focus to the User guide button', () => {
+    render(<SettingsModal />);
+    const opener = screen.getByTestId('settings-user-guide');
+    opener.focus();
+    fireEvent.click(opener);
+    const help = screen.getByTestId('help-modal');
+    expect(document.activeElement).toBe(help);
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    expect(screen.queryByTestId('help-modal')).toBeNull();
+    expect(mocks.uiState.toggleSettings).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('Escape in a Help search with text clears the search; a second Escape closes Help', () => {
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByTestId('settings-user-guide'));
+    const search = screen.getByRole('searchbox', { name: 'help_search' });
+    fireEvent.change(search, { target: { value: 'zzz-no-match' } });
+    expect(screen.getByText('help_no_results')).toBeInTheDocument();
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(search).toHaveValue('');
+    expect(screen.getByTestId('help-modal')).toBeInTheDocument();
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(screen.queryByTestId('help-modal')).toBeNull();
+    expect(mocks.uiState.toggleSettings).not.toHaveBeenCalled();
+  });
+
+  it('scrolls an opened Help topic to the top so its text is visible on a phone', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      render(<SettingsModal />);
+      fireEvent.click(screen.getByTestId('settings-user-guide'));
+      fireEvent.click(screen.getByTestId('help-topic-alert'));
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+      expect(scrollIntoView.mock.contexts.at(-1)).toContainElement(screen.getByTestId('help-body-alert'));
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
+  it('filters Help topics by search and says when nothing matches', () => {
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByTestId('settings-user-guide'));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'help_search' }), { target: { value: 'help_alert' } });
+    expect(screen.getAllByTestId(/^help-topic-/)).toHaveLength(1);
+    // A single match opens by itself.
+    expect(screen.getByTestId('help-body-alert')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'help_search' }), { target: { value: 'zzz-nothing' } });
+    expect(screen.queryAllByTestId(/^help-topic-/)).toHaveLength(0);
+    expect(screen.getByText('help_no_results')).toBeInTheDocument();
+  });
+
+  it('every Settings section a Help topic names still exists', () => {
+    render(<SettingsModal />);
+    const sections = new Set(HELP_TOPICS.flatMap(topic => topic.settingsSections ?? []));
+    for (const section of sections) {
+      expect(screen.getAllByRole('button', { name: new RegExp(section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).length, section).toBeGreaterThan(0);
+    }
   });
 
   it('AI Autocorrect toggle calls update with toggled value', () => {

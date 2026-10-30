@@ -3,6 +3,8 @@ export const PRISM_AAC_TERMS_ROUTE = '/terms';
 export const PRISM_AAC_TERMS_PATH = `${PRISM_AAC_BASE_PATH}${PRISM_AAC_TERMS_ROUTE}`;
 export const APPLE_STANDARD_EULA_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 export const PRISM_AAC_SOURCE_URL = 'https://github.com/dcostenco/prism-aac';
+// The Synalux user guide for Prism AAC, linked from the Settings header.
+export const PRISM_AAC_USER_GUIDE_URL = 'https://synalux.ai/docs/telehealth/prism-aac';
 export const PRISM_AAC_MANIFEST_PATH = `${PRISM_AAC_BASE_PATH}/manifest.json`;
 export const PRISM_AAC_STATIC_PATH = `${PRISM_AAC_BASE_PATH}/_next/static/`;
 export const PRISM_AAC_SERVICE_WORKER_PATH = `${PRISM_AAC_BASE_PATH}/sw.js`;
