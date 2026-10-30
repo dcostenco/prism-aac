@@ -24,7 +24,7 @@ vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
 
 import PredictionBar from '@/components/PredictionBar';
 import { contributeSharedWords, loadSharedWords, newWordsIn, _resetSharedWordsServiceForTests } from '@/services/sharedWordsService';
-import { _resetSharedWordsForTests, setSharedWords } from '@/lib/sharedWords';
+import { _resetSharedWordsForTests, setSharedWords, sharedWordKey } from '@/lib/sharedWords';
 import { ensureLangCorpusLoaded, isAllowedInLang } from '@/lib/langAllowlist';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
 import { useAuthStore } from '@/store/authStore';
@@ -58,6 +58,11 @@ describe('which words are contributed', () => {
     expect(newWordsIn('este estimatăă', 'ro')).toEqual(['estimatăă']);
     // A word the language's dictionary has is not new.
     expect(newWordsIn('рыба', 'ru')).toEqual([]);
+  });
+
+  it('matches a shared Turkish word typed with a capital İ', () => {
+    setSharedWords('tr', ['istanbullu']);
+    expect(sharedWordKey('İstanbullu')).toBe('istanbullu');
   });
 
   it('nothing when the language\'s dictionary is not loaded', () => {

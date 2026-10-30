@@ -15,7 +15,8 @@ const asFreq = new Map<string, Record<string, WordFreqEntry>>();
 const EMPTY: ReadonlySet<string> = new Set();
 
 // A typographic apostrophe is the same word ("aujourd’hui").
-export const sharedWordKey = (word: string) => word.normalize('NFC').trim().toLowerCase().replace(/’/g, "'");
+// Turkish capital İ lower-cases to i + combining dot; it is the letter i.
+export const sharedWordKey = (word: string) => word.normalize('NFC').trim().toLowerCase().replace(/’/g, "'").replace(/i\u0307/g, 'i');
 
 export function sharedWordsFor(lang: string): ReadonlySet<string> {
   return shared.get(lang) ?? EMPTY;
