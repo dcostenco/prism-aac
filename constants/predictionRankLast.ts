@@ -82,6 +82,12 @@ export const PREDICTION_RANK_LAST: Readonly<Record<string, readonly string[]>> =
     'willard', 'william', 'williams', 'willis', 'winston', 'wyatt', 'xavier', 'xiao', 'yong',
     'yun', 'yuri', 'zack', 'zoe',
   ],
+  // Owner report 2026-10-31: "мед" showed the surname медведев between
+  // медали and медленно. Only this reviewed surname (and its feminine form);
+  // a full Russian name list is planned separately and must keep real words
+  // such as вера, надежда, любовь, роза and лев. "медведь" (bear) and its
+  // forms (медведи, медведей) are not listed.
+  ru: ['медведев', 'медведева'],
 };
 
 const sets = new Map<string, ReadonlySet<string>>();

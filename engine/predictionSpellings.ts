@@ -31,6 +31,30 @@ export function preferredPredictionSpelling(value: string, lang = 'en'): string 
   return aliases && Object.prototype.hasOwnProperty.call(aliases, key) ? aliases[key] : value;
 }
 
+/**
+ * Russian words usually written without the dots on ё ("мед" for "мёд"):
+ * typing the plain spelling offers the ё word first (owner report
+ * 2026-10-31: "мед" showed медали / медведев / медаль / медленно / медведь
+ * and no honey). Reviewed: each is the same word with or without the dots,
+ * and each is in the Russian seed (tests check both). Pairs that are two
+ * different words are never listed (все / всё, небо / нёбо).
+ * Not a spelling alias: the two spellings stay separate words, so "мед"
+ * still completes to медаль and an explicitly typed ё stays exact.
+ */
+export const RU_YO_TWINS: readonly string[] = ['мёд', 'ещё', 'её', 'лёд', 'самолёт', 'чёрный', 'зелёный', 'идём', 'пойдём', 'ребёнок'];
+
+/** The reviewed ё word the typed Russian word spells without its dots, or null. */
+export function ruYoTwinOf(typed: string): string | null {
+  const plain = normalizePredictionSpelling(typed, 'ru');
+  if (!plain || plain.includes('ё')) return null;
+  const letters = [...plain];
+  return RU_YO_TWINS.find(word => {
+    const target = [...word];
+    return target.length === letters.length
+      && letters.every((letter, index) => target[index] === letter || (letter === 'е' && target[index] === 'ё'));
+  }) ?? null;
+}
+
 /** Reviewed alternate spellings complete the same word; distinct accented words stay separate. */
 export function matchesPredictionPrefix(word: string, prefix: string, lang = 'en'): boolean {
   const candidate = normalizePredictionSpelling(word, lang);
