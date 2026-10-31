@@ -1,7 +1,7 @@
 import { WordFreqEntry, PredictionConfig } from '@/types';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { getStemmer, type Stemmer } from '@/engine/stemmers';
-import { isPluralTwin, normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts } from '@/engine/predictionSpellings';
+import { isPluralTwin, normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts, ruYoTwinOf } from '@/engine/predictionSpellings';
 import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
 
 const DEFAULT_CONFIG: PredictionConfig = {
@@ -605,11 +605,22 @@ export function getPredictions(
   // "go / see / do" belonged.
   const MAX_BARE_PREFIX_WHEN_COMPLETE = 1;
   const taken: typeof filtered = [];
+  // Russian typed without the dots on ё ("мед"): the reviewed ё word it
+  // spells ("мёд") takes the first slot, ahead of web-frequent completions
+  // and outside the stem and look-alike caps, since it is the word itself.
+  const yoTwin = lang === 'ru' && partialWord ? ruYoTwinOf(partialWord) : null;
+  const yoTwinShown = yoTwin && wordFreq[yoTwin] && !isAgeBlocked(yoTwin, lang) ? yoTwin : null;
+  if (yoTwinShown) taken.push({ word: yoTwinShown, total: Infinity, hasContext: false });
   if (partialWord) {
     const stemForms = new Map<string, string[]>();
+    if (yoTwinShown) {
+      const key = groupKey(yoTwinShown);
+      if (key !== null) stemForms.set(key, [yoTwinShown]);
+    }
     let barePrefixTaken = 0;
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
+      if (c.word === yoTwinShown) continue;
       if (
         partialIsCompleteWord
         && !c.hasContext

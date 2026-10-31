@@ -20,6 +20,33 @@ describe('Keyboard layouts — getLetterRows', () => {
     expect(rows[2][0]).toBe('Я');
   });
 
+  // Owner report 2026-10-31: мёд (honey), подъезд and объяснить could not be typed.
+  it('offers all 33 Russian letters, with Ъ after Х and Ё last on the bottom row', () => {
+    const rows = getLetterRows('ru');
+    expect(rows).toEqual([
+      ['Й', 'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х', 'Ъ'],
+      ['Ф', 'Ы', 'В', 'А', 'П', 'Р', 'О', 'Л', 'Д', 'Ж', 'Э'],
+      ['Я', 'Ч', 'С', 'М', 'И', 'Т', 'Ь', 'Б', 'Ю', 'Ё'],
+    ]);
+    const alphabet = [...'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'];
+    expect(alphabet).toHaveLength(33);
+    expect(new Set(rows.flat())).toEqual(new Set(alphabet));
+    expect(rows.flat()).toHaveLength(33);
+  });
+
+  it('keeps every Russian letter on a phone, in order, with the new letters on the continuation row', () => {
+    const rows = buildKeyboardRows(getLetterRows('ru'), true);
+    expect(rows.map(row => row.keys)).toEqual([
+      ['Й', 'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З'],
+      ['Ф', 'Ы', 'В', 'А', 'П', 'Р', 'О', 'Л', 'Д', 'Ж'],
+      ['Я', 'Ч', 'С', 'М', 'И', 'Т', 'Ь'],
+      ['Х', 'Ъ', 'Э', 'Б', 'Ю', 'Ё'],
+    ]);
+    expect(rows.map(row => row.util)).toEqual([false, false, true, false]);
+    expect(rows[3].continuation).toBe(true);
+    expect(new Set(rows.flatMap(row => row.keys)).size).toBe(33);
+  });
+
   it('returns Romanian layout with diacritics', () => {
     const rows = getLetterRows('ro');
     expect(rows).toHaveLength(3);
