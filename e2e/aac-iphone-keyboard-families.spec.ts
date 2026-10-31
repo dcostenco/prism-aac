@@ -376,3 +376,45 @@ for (const family of KEYBOARD_FAMILIES) {
     }
   });
 }
+
+// The narrowest phone in use (iPhone SE, 375px) has its own breakpoint risk:
+// 36.2px was the narrowest Russian key there before Ъ and Ё were added
+// (2026-10-31); they go to the continuation row, so no key may shrink.
+test('keyboard family: cyrillic-ru at 375px keeps every key at its measured width', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.addInitScript(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    sessionStorage.setItem('prism-greeting-dismissed', '1');
+    localStorage.setItem('prism-cat-kb-open', 'true');
+    localStorage.setItem('prism-kb-max', 'true');
+    localStorage.setItem('prism-aac-settings', JSON.stringify({
+      state: { language: 'ru', outputLanguage: 'ru', theme: 'light', gridSize: 12, cloudPredictionEnabled: false, aiAutocorrectEnabled: false },
+      version: 20,
+    }));
+    localStorage.setItem('prism-aac-message', JSON.stringify({ state: { text: '', autoSpeak: false, soundEnabled: false }, version: 3 }));
+  });
+  await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('keyboard-shell')).toBeVisible({ timeout: 20_000 });
+  const root = page.locator('[data-scan-group="keyboard"]');
+  await expect(root).toHaveAttribute('data-language', 'ru');
+  for (const key of ['Й', 'Ъ', 'Ё']) await expect(root.locator(`button[data-key="${key}"]`).first()).toBeVisible();
+  const metrics = await page.evaluate(() => {
+    const keys = [...document.querySelectorAll<HTMLElement>('[data-scan-group="keyboard"] [data-key-row="letters"] button[data-key]')];
+    const rects = keys.map((key) => key.getBoundingClientRect());
+    return {
+      keyCount: keys.length,
+      minimumWidth: Math.min(...rects.map((rect) => rect.width)),
+      minimumHeight: Math.min(...rects.map((rect) => rect.height)),
+      offscreen: rects.filter((rect) => rect.left < -1 || rect.right > innerWidth + 1 || rect.bottom > innerHeight + 1).length,
+      overflowX: document.documentElement.scrollWidth - innerWidth,
+    };
+  });
+  await safeScreenshot(page, 'cyrillic-ru-375.png');
+  expect(metrics.keyCount).toBe(33);
+  // 0.1px tolerance for sub-pixel rounding of the 36.2px baseline.
+  expect(metrics.minimumWidth, 'narrowest Russian key at 375px').toBeGreaterThanOrEqual(36.1);
+  expect(metrics.minimumHeight, 'Russian key height at 375px').toBeGreaterThanOrEqual(60);
+  expect(metrics.offscreen).toBe(0);
+  expect(metrics.overflowX).toBeLessThanOrEqual(1);
+});
