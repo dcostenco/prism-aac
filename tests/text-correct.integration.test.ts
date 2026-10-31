@@ -5,9 +5,8 @@
  * Two suites:
  *   1. correctText (live portal)   — runs against synalux.ai/api/v1/text/correct
  *      (Gemini 2.5 Flash). Set RUN_LIVE_CORRECT=1.
- *   2. correctText (offline)       — runs against local Ollama prism-coder:14b
- *      (the offline fallback path). Set RUN_LOCAL_CORRECT=1, requires
- *      `ollama serve` running and `prism-coder:14b` pulled.
+ *   2. correctText (offline) — RUN_LOCAL_CORRECT=1 uses the explicitly
+ *      assigned Ollama coder from `prism local status`; other backends skip.
  *
  * Lives in its own file with `@vitest-environment node` so we get
  * undici's real network fetch (jsdom blocks localhost / requires CORS
@@ -21,11 +20,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { configuredOllamaTests } from './helpers/prismLiveBackend';
 
 const LIVE = process.env.RUN_LIVE_CORRECT === '1';
-const LOCAL = process.env.RUN_LOCAL_CORRECT === '1';
+const local = configuredOllamaTests({ enabled: process.env.RUN_LOCAL_CORRECT === '1' });
+const LOCAL = local.enabled;
 const SYNALUX = process.env.SYNALUX_API || 'https://synalux.ai/api/v1';
-const OLLAMA = process.env.OLLAMA_URL || 'http://localhost:11434';
+const OLLAMA = local.url;
 
 const liveCases: Array<{ input: string; mustContain: string[] | string }> = [
   // Voice mis-segmentation — Web Speech API output for "bowl of rice"
@@ -88,16 +89,17 @@ describe.skipIf(!LIVE)('correctText (live portal — Gemini 2.5 Flash)', () => {
   }, 20_000);
 });
 
-describe.skipIf(!LOCAL)('correctText (offline — prism-coder:14b)', () => {
+describe.skipIf(!LOCAL)('correctText (offline — configured Prism Ollama coder)', () => {
   it.each(liveCases)('"$input" → prism-coder corrected utterance contains the right keywords', async ({ input, mustContain }) => {
     const res = await fetch(`${OLLAMA}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'prism-coder:14b',
+        model: local.model,
         system: LOCAL_SYSTEM,
         prompt: `Language: en. Input: "${input}"`,
         stream: false,
+        keep_alive: 0,
         options: { temperature: 0.0, num_predict: 80 },
       }),
     });
