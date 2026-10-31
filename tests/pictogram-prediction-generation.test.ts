@@ -68,7 +68,8 @@ describe('cache-first generated predictions', () => {
     await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
     controller.abort();
     expect(await request).toBeNull();
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Past the whole one-second delay: the paid request still never starts.
+    await new Promise(resolve => setTimeout(resolve, 1_100));
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
@@ -149,6 +150,74 @@ describe('cache-first generated predictions', () => {
     const { getPictogramUrl } = await import('@/services/pictogramService');
     expect(await getPictogramUrl('within-provider-deadline-fixture', 'en', 'symbols-ai')).toBe('blob:generated-fixture');
     expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  // The portal answers a word that failed recently with a final "no picture
+  // for now" (404, generation:false) on the drawing request or a poll too, not
+  // only on the cache probe. Each answer must keep the word off the paid path
+  // for GENERATION_OFF_MISS_TTL_MS, not for the 30-second plain-miss time.
+  const v3Miss = () => new Response('', { status: 404, headers: { 'X-AAC-Picture-Version': '3' } });
+  const finalMiss = () => new Response(JSON.stringify({ styleVersion: 3, generation: false, retryAt: Date.now() + 259_200_000 }), {
+    status: 404, headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3', 'X-AAC-Picture-Generation': 'off' },
+  });
+  it.each([
+    ['the drawing request', (url: string, calls: number) => url.includes('cacheOnly=1') ? v3Miss() : finalMiss()],
+    ['a poll after pending', (_url: string, calls: number) => calls === 1 ? v3Miss()
+      : calls === 2 ? Response.json({ pollToken: 'final-miss-poll-fixture' }, { status: 202 }) : finalMiss()],
+  ])('remembers a final miss from %s for the long time, so the word is not asked (or paid for) again', async (_label, answer) => {
+    let now = Date.now(); vi.spyOn(Date, 'now').mockImplementation(() => now);
+    let calls = 0;
+    const fetcher = vi.fn(async (url: string) => answer(String(url), ++calls)); vi.stubGlobal('fetch', fetcher);
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('final-miss-fixture', 'ro', 'symbols-ai')).toBeNull();
+    const asked = fetcher.mock.calls.length;
+    now += 31_000; // past the plain-miss time, well inside the final-miss time
+    expect(await getPictogramUrl('final-miss-fixture', 'ro', 'symbols-ai')).toBeNull();
+    expect(fetcher, 'a remembered final miss must not reach the portal again').toHaveBeenCalledTimes(asked);
+    now += 30 * 60_000; // and once that time passes, the word is asked again
+    await getPictogramUrl('final-miss-fixture', 'ro', 'symbols-ai');
+    expect(fetcher.mock.calls.length).toBeGreaterThan(asked);
+  });
+
+  it('remembers a plain miss from the drawing request only briefly', async () => {
+    let now = Date.now(); vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const fetcher = vi.fn(async (url: string) => url.includes('cacheOnly=1') ? v3Miss() : Response.json({ error: 'pictogram unavailable' }, { status: 422 }));
+    vi.stubGlobal('fetch', fetcher);
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('plain-miss-fixture', 'ro', 'symbols-ai')).toBeNull();
+    const asked = fetcher.mock.calls.length;
+    now += 31_000;
+    await getPictogramUrl('plain-miss-fixture', 'ro', 'symbols-ai');
+    expect(fetcher.mock.calls.length).toBeGreaterThan(asked);
+  });
+
+  it('waits a full second of the word staying on screen before any paid drawing is asked for', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const { PictogramQueue } = await import('@/services/pictogramQueue');
+      const queue = new PictogramQueue();
+      const draw = vi.fn(async () => 'drawn');
+      const job = queue.enqueue(draw, () => true);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(draw, 'no drawing before one second').not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(draw).toHaveBeenCalledOnce();
+      expect(await job.promise).toBe('drawn');
+      // A word that left the screen during that second is never drawn, even long after.
+      const gone = vi.fn(async () => 'drawn');
+      const cancelled = queue.enqueue(gone, () => true);
+      await vi.advanceTimersByTimeAsync(500);
+      expect(cancelled.cancel()).toBe(true);
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(gone).not.toHaveBeenCalled();
+      expect(await cancelled.promise).toBeNull();
+      // Nor is a word no tile wants any more when the second ends.
+      const unwanted = vi.fn(async () => 'drawn');
+      const left = queue.enqueue(unwanted, () => false);
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(unwanted).not.toHaveBeenCalled();
+      expect(await left.promise).toBeNull();
+    } finally { vi.useRealTimers(); }
   });
 
   it('retries immediately after an initial cache-probe transport failure without poisoning the cache', async () => {

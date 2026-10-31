@@ -57,8 +57,9 @@ const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB cap — prevents OOM from oversi
 // when the page unloads; the memory cost is negligible.
 const MAX_MEM_CACHE = 600;
 const MISS_CACHE_TTL_MS = 30_000;
-// The portal answers "no new pictures" while generation is switched off; a
-// word that misses then stays a word for this long before it is asked again.
+// The portal answers "no new pictures" while generation is switched off, or
+// for a word that failed recently (it is not paid for again); the word then
+// stays a word for this long before it is asked again.
 const GENERATION_OFF_MISS_TTL_MS = 30 * 60_000;
 const MEM_CACHE = new Map<string, { url: string | null; expiresAt: number }>();
 type Flight = { promise: Promise<string | null>; consumers: Set<symbol>; cancelQueued?: () => boolean; discarded?: boolean };
@@ -68,6 +69,16 @@ const POLL_INTERVAL_MS = 500;
 const POLL_TIMEOUT_MS = 35_000;
 type CloudPicture = { kind: 'image'; blob: Blob } | { kind: 'pending'; pollToken?: string }
   | { kind: 'miss'; generationOff?: boolean } | { kind: 'unavailable'; transient?: boolean; retryAfterMs?: number };
+/**
+ * How a picture lookup ended: a picture; the portal's final "no picture for
+ * now" (generation off, or this word failed recently and is not paid for
+ * again), remembered for GENERATION_OFF_MISS_TTL_MS; or null, a plain miss
+ * remembered for MISS_CACHE_TTL_MS. The final answer can come from the cache
+ * probe, the generation request or a poll, and means the same from each.
+ */
+const FINAL_MISS = 'final-miss' as const;
+type PictureResult = { blob: Blob } | typeof FINAL_MISS | null;
+const finalMiss = (picture: CloudPicture) => picture.kind === 'miss' && picture.generationOff === true;
 
 function memCacheSet(key: string, value: string | null, missTtlMs = MISS_CACHE_TTL_MS) {
   if (MEM_CACHE.size >= MAX_MEM_CACHE) {
@@ -341,39 +352,40 @@ async function resolvePictogramUrl(phrase: string, lang: string, key: string, fl
   if (!flight.consumers.size) return null;
   const probe = await fetchSynaluxAI(phrase, lang, true);
   if (probe.kind === 'unavailable' && probe.transient) throw new PicturePendingError(probe.retryAfterMs);
-  if (probe.kind === 'miss' && probe.generationOff) {
-    if (!flight.discarded && flight.consumers.size) memCacheSet(key, null, GENERATION_OFF_MISS_TTL_MS);
-    return null;
-  }
-  let blob: Blob | null = null;
-  if (probe.kind === 'image') blob = probe.blob;
-  else if (probe.kind === 'pending') blob = await awaitSharedPicture(phrase, lang, probe.pollToken);
+  let result: PictureResult = null;
+  if (probe.kind === 'image') result = { blob: probe.blob };
+  else if (finalMiss(probe)) result = FINAL_MISS;
+  else if (probe.kind === 'pending') result = await awaitSharedPicture(phrase, lang, probe.pollToken);
   else if (probe.kind === 'miss' && flight.consumers.size) {
-    const queued = GENERATION_QUEUE.enqueue(async () => {
+    const queued = GENERATION_QUEUE.enqueue(async (): Promise<PictureResult> => {
       const generated = await fetchSynaluxAI(phrase, lang, false);
-      if (generated.kind === 'image') return generated.blob;
+      if (generated.kind === 'image') return { blob: generated.blob };
+      if (finalMiss(generated)) return FINAL_MISS;
       if (generated.kind === 'unavailable' && generated.transient) throw new PicturePendingError(generated.retryAfterMs);
       return generated.kind === 'pending' ? awaitSharedPicture(phrase, lang, generated.pollToken) : null;
     }, () => flight.consumers.size > 0);
     flight.cancelQueued = queued.cancel;
-    blob = await queued.promise;
+    result = await queued.promise;
   }
-  if (!blob) {
-    if (!flight.discarded && flight.consumers.size) memCacheSet(key, null);
+  if (result === null || result === FINAL_MISS) {
+    if (!flight.discarded && flight.consumers.size) {
+      memCacheSet(key, null, result === FINAL_MISS ? GENERATION_OFF_MISS_TTL_MS : MISS_CACHE_TTL_MS);
+    }
     return null;
   }
-  await cachePut(key, blob);
-  const url = URL.createObjectURL(blob);
+  await cachePut(key, result.blob);
+  const url = URL.createObjectURL(result.blob);
   memCacheSet(key, url);
   return url;
 }
 
-async function awaitSharedPicture(phrase: string, lang: string, pollToken?: string): Promise<Blob | null> {
+async function awaitSharedPicture(phrase: string, lang: string, pollToken?: string): Promise<PictureResult> {
   const end = Date.now() + POLL_TIMEOUT_MS;
   while (Date.now() < end) {
     await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
     const picture = await fetchSynaluxAI(phrase, lang, true, pollToken);
-    if (picture.kind === 'image') return picture.blob;
+    if (picture.kind === 'image') return { blob: picture.blob };
+    if (finalMiss(picture)) return FINAL_MISS;
     if (picture.kind === 'unavailable' && picture.transient) throw new PicturePendingError(picture.retryAfterMs);
     if (picture.kind !== 'pending') return null;
     pollToken = picture.pollToken ?? pollToken;
