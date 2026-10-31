@@ -119,6 +119,13 @@ describe('the ё word in the engine itself', () => {
     if (budget) expect(words[0]).toBe('мёд');
   });
 
+  it('fills the rest of the bar from the fallback words, without repeating the ё word', () => {
+    const sparse = { мёд: { count: 3, lastUsed: 0 }, мед: { count: 30, lastUsed: 0 } };
+    const words = getPredictions('мед', sparse, {}, config(5), {}, ['мёд', 'я', 'ты', 'хочу', 'помоги', 'ещё'], new Set<string>(), undefined, 'ru');
+    expect(words).toEqual(['мёд', 'я', 'ты', 'хочу', 'помоги']);
+    expect(words.filter(word => word === 'мёд')).toHaveLength(1);
+  });
+
   it('never offers the ё word a script filter rejects', () => {
     expect(predict('мед', 5, /^[а-я'-]+$/)).not.toContain('мёд');
   });

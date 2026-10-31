@@ -26,6 +26,8 @@ type CustomFamily = {
   samples: string[];
   minimumFont: number;
   minimumKeyHeight?: number;
+  /** A measured baseline: adding letters must not make the narrowest key smaller. */
+  minimumKeyWidth?: number;
   rtl?: boolean;
 };
 
@@ -42,7 +44,9 @@ const KEYBOARD_FAMILIES: Array<CustomFamily | NativeFamily> = [
   { slug: 'latin-diacritics-ro', label: 'Latin with diacritics', language: 'ro', kind: 'custom', expectedKeyCount: 31, samples: ['Ă', 'Ș', 'Ț'], minimumFont: 36, minimumKeyHeight: 64 },
   { slug: 'latin-dense-tr', label: 'Dense Latin', language: 'tr', kind: 'custom', expectedKeyCount: 32, samples: ['Ğ', 'Ü', 'Ş', 'İ', 'Ö', 'Ç'], minimumFont: 36, minimumKeyHeight: 64 },
   { slug: 'cyrillic-uk', label: 'Cyrillic', language: 'uk', kind: 'custom', expectedKeyCount: 33, samples: ['Й', 'І', 'Ї', 'Ґ'], minimumFont: 32 },
-  { slug: 'cyrillic-ru', label: 'Cyrillic Russian', language: 'ru', kind: 'custom', expectedKeyCount: 33, samples: ['Й', 'Ъ', 'Ё'], minimumFont: 32 },
+  // 37.7px was the narrowest Russian key at 390px before Ъ and Ё were added
+  // (2026-10-31); they go to the continuation row, so it must not shrink.
+  { slug: 'cyrillic-ru', label: 'Cyrillic Russian', language: 'ru', kind: 'custom', expectedKeyCount: 33, samples: ['Й', 'Ъ', 'Ё'], minimumFont: 32, minimumKeyWidth: 37.6 },
   { slug: 'arabic-ar', label: 'Arabic RTL', language: 'ar', kind: 'custom', expectedKeyCount: 33, samples: ['ض', 'ا', 'ة'], minimumFont: 32, rtl: true },
   { slug: 'hebrew-he', label: 'Hebrew RTL', language: 'he', kind: 'custom', expectedKeyCount: 27, samples: ['ק', 'א', 'ת'], minimumFont: 32, rtl: true },
   { slug: 'devanagari-hi', label: 'Devanagari', language: 'hi', kind: 'custom', expectedKeyCount: 29, samples: ['ौ', 'क', 'म'], minimumFont: 32 },
@@ -271,7 +275,7 @@ for (const family of KEYBOARD_FAMILIES) {
 
     expect(metrics.keyCount, `${family.label}: missing or duplicate keys`).toBe(family.expectedKeyCount);
     expect(metrics.minimumFont, `${family.label}: key font`).toBeGreaterThanOrEqual(family.minimumFont);
-    expect(metrics.minimumWidth, `${family.label}: key width`).toBeGreaterThanOrEqual(24);
+    expect(metrics.minimumWidth, `${family.label}: key width`).toBeGreaterThanOrEqual(family.minimumKeyWidth ?? 24);
     // A 44px generic web target is not sufficient for a child using an AAC
     // device with impaired fine motor control. Dense Japanese keeps a lower
     // bound because seven total rows must coexist with predictions; every
