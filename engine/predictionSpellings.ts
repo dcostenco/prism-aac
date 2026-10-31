@@ -67,3 +67,36 @@ export function matchesPredictionContext(key: string, prefix: string, lang = 'en
     ? matchesPredictionPrefix(words[index], part, lang)
     : predictionWordKey(words[index], lang) === predictionWordKey(part, lang));
 }
+
+// English plural endings that make a second same-stem tile a duplicate of
+// the first ("german / germans"). English only: in French and Spanish "-s"
+// marks forms a user needs next to each other ("enfant / enfants", "je
+// prends"), and other languages' endings change case or definiteness.
+// Contractions ("that's") are not plurals and keep their slot.
+const ES_PLURAL_AFTER = /(?:s|x|z|ch|sh|o)$/;
+// Words ending in these take "-es", never a plain "-s" (bus / buses). Not
+// "ch": hard-ch words take "-s" (stomach / stomachs), soft-ch words "-es".
+const SIBILANT_END = /(?:s|x|z|sh)$/;
+// English words that end in "s" but are not the plural of the shorter word.
+const EN_STANDALONE_S_WORDS = new Set(['thanks', 'news', 'towards', 'besides', 'sometimes', 'afterwards', 'upstairs', 'downstairs', 'indoors', 'outdoors', 'glasses', 'pants', 'shorts', 'scissors', 'clothes', 'stairs', 'jeans', 'hers', 'ours', 'yours', 'theirs', 'means', 'goods', 'manners', 'customs', 'spirits', 'economics', 'politics', 'physics', 'mathematics', 'woods', 'papers', 'times', 'greens', 'sweets']);
+// Below three letters the "plural" is another word: I / is, a / as, hi / his.
+const MIN_TWIN_STEM_LENGTH = 3;
+
+/**
+ * True when one word is only the other plus an English plural ending
+ * ("german" / "germans"), so the two on one bar read as the same tile twice.
+ * English only, and never for standalone words that end in "s" ("thanks").
+ */
+export function isPluralTwin(word: string, shown: string, lang?: string): boolean {
+  if ((lang ?? '').split('-')[0].toLowerCase() !== 'en') return false;
+  const a = normalizePredictionSpelling(word, lang);
+  const b = normalizePredictionSpelling(shown, lang);
+  const [long, short] = a.length >= b.length ? [a, b] : [b, a];
+  if (long === short || short.length < MIN_TWIN_STEM_LENGTH || !long.startsWith(short) || EN_STANDALONE_S_WORDS.has(long)) return false;
+  const suffix = long.slice(short.length);
+  // "-es" makes a plural only after s, x, z, ch, sh or o (bus / buses,
+  // box / boxes, potato / potatoes); "not" / "notes" and "tap" / "tapes"
+  // are different words. After s, x, z or sh a plain "-s" is never a
+  // plural ("his" / "hiss").
+  return (suffix === 's' && !SIBILANT_END.test(short)) || (suffix === 'es' && ES_PLURAL_AFTER.test(short));
+}
