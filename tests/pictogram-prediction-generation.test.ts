@@ -151,6 +151,50 @@ describe('cache-first generated predictions', () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  // The portal answers a word that failed recently with a final "no picture
+  // for now" (404, generation:false) on the drawing request or a poll too, not
+  // only on the cache probe. Each answer must keep the word off the paid path
+  // for GENERATION_OFF_MISS_TTL_MS, not for the 30-second plain-miss time.
+  const v3Miss = () => new Response('', { status: 404, headers: { 'X-AAC-Picture-Version': '3' } });
+  const finalMiss = () => new Response(JSON.stringify({ styleVersion: 3, generation: false, retryAt: Date.now() + 259_200_000 }), {
+    status: 404, headers: { 'Content-Type': 'application/json', 'X-AAC-Picture-Version': '3', 'X-AAC-Picture-Generation': 'off' },
+  });
+  it.each([
+    ['the drawing request', (url: string, calls: number) => url.includes('cacheOnly=1') ? v3Miss() : finalMiss()],
+    ['a poll after pending', (_url: string, calls: number) => calls === 1 ? v3Miss()
+      : calls === 2 ? Response.json({ pollToken: 'final-miss-poll-fixture' }, { status: 202 }) : finalMiss()],
+  ])('remembers a final miss from %s for the long time, so the word is not asked (or paid for) again', async (_label, answer) => {
+    let now = Date.now(); vi.spyOn(Date, 'now').mockImplementation(() => now);
+    let calls = 0;
+    const fetcher = vi.fn(async (url: string) => answer(String(url), ++calls)); vi.stubGlobal('fetch', fetcher);
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('final-miss-fixture', 'ro', 'symbols-ai')).toBeNull();
+    const asked = fetcher.mock.calls.length;
+    now += 31_000; // past the plain-miss time, well inside the final-miss time
+    expect(await getPictogramUrl('final-miss-fixture', 'ro', 'symbols-ai')).toBeNull();
+    expect(fetcher, 'a remembered final miss must not reach the portal again').toHaveBeenCalledTimes(asked);
+    now += 30 * 60_000; // and once that time passes, the word is asked again
+    await getPictogramUrl('final-miss-fixture', 'ro', 'symbols-ai');
+    expect(fetcher.mock.calls.length).toBeGreaterThan(asked);
+  });
+
+  it('remembers a plain miss from the drawing request only briefly', async () => {
+    let now = Date.now(); vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const fetcher = vi.fn(async (url: string) => url.includes('cacheOnly=1') ? v3Miss() : Response.json({ error: 'pictogram unavailable' }, { status: 422 }));
+    vi.stubGlobal('fetch', fetcher);
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+    expect(await getPictogramUrl('plain-miss-fixture', 'ro', 'symbols-ai')).toBeNull();
+    const asked = fetcher.mock.calls.length;
+    now += 31_000;
+    await getPictogramUrl('plain-miss-fixture', 'ro', 'symbols-ai');
+    expect(fetcher.mock.calls.length).toBeGreaterThan(asked);
+  });
+
+  it('waits a full second of the word staying on screen before any paid drawing is asked for', async () => {
+    const { PICTURE_DEBOUNCE_MS } = await import('@/services/pictogramQueue');
+    expect(PICTURE_DEBOUNCE_MS).toBe(1_000);
+  });
+
   it('retries immediately after an initial cache-probe transport failure without poisoning the cache', async () => {
     const fetcher = vi.fn().mockRejectedValueOnce(new TypeError('initial fixture network interruption')).mockResolvedValueOnce(picture());
     vi.stubGlobal('fetch', fetcher);

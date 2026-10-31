@@ -1,5 +1,10 @@
-/** Only cache misses enter this queue. Cache reads never wait for a slot. */
-export const PICTURE_DEBOUNCE_MS = 250;
+/**
+ * Only cache misses enter this queue. Cache reads never wait for a slot.
+ * A drawing starts only if its tile still wants it after this delay: while a
+ * word is typed the bar changes on every key, and a drawing once started is
+ * paid for even if its tile is gone (owner, 2026-10-31: do not overpay).
+ */
+export const PICTURE_DEBOUNCE_MS = 1_000;
 export const MAX_CONCURRENT_PICTURES = 5;
 export const PICTURE_RETRY_DELAY_MS = 1_000;
 export const PICTURE_MAX_RETRY_DELAY_MS = 60_000;
