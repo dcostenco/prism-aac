@@ -40,10 +40,9 @@ describe('Russian ё words typed without the dots', () => {
     expect(new Set(words).size).toBe(words.length);
     // The plain spelling is the typed word itself, so it is not offered.
     expect(words).not.toContain('мед');
-    // Trade-off: мёд takes a slot, so медаль (fifth before) leaves the "мед"
-    // bar; it is the first completion one letter later.
-    expect(words).not.toContain('медаль');
-    expect(shown('меда')).toContain('медаль');
+    // The surname медведев ranks last (owner report), so медаль keeps its slot.
+    expect(words).toContain('медаль');
+    expect(words).not.toContain('медведев');
   });
 
   it('an explicitly typed мёд is not offered again on the bar', () => {
@@ -68,6 +67,11 @@ describe('Russian ё words typed without the dots', () => {
     expect(ruYoTwinOf('мёд')).toBeNull();
     expect(matchesPredictionPrefix('мёд', 'мед', 'ru')).toBe(true);
     expect(matchesPredictionPrefix('мед', 'мёд', 'ru')).toBe(false);
+  });
+
+  it('the surname медведев ranks last but still shows when it is what matches, and the bear stays', () => {
+    expect(shown('медведе')).toContain('медведев');
+    expect(shown('медв')).toContain('медведь');
   });
 
   it('applies to Russian only', () => {
@@ -127,7 +131,8 @@ describe('the ё word in the engine itself', () => {
     expect(predict('мед', 5, undefined, 'uk')[0]).not.toBe('мёд');
   });
 
-  it('keeps the case of a capitalized sentence start on the ё word', () => {
-    expect(predict('Мед')[0].toLowerCase()).toBe('мёд');
+  it('offers the ё word in the case the bar uses for every completion', () => {
+    expect(predict('Мед')[0]).toBe('мёд');
+    expect(predict('мед')[0]).toBe('мёд');
   });
 });
