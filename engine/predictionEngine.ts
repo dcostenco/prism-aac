@@ -518,6 +518,14 @@ export function getPredictions(
   // score components so the filter can distinguish "this matches because
   // we predicted the next word" (bigram/trigram score) from "this matches
   // because letters happen to overlap" (freq/recency only).
+  // A word the bar may show at all, whatever ranked it: not age-blocked, not
+  // a corpus artifact, and in the language's script. Shared by the ranked
+  // candidates and the first-slot ё word below.
+  // Drop wrong-script words. Necessary because the store's initial
+  // wordFreq state seeds with English DEFAULT_PHRASES, which leak into
+  // non-English sessions (e.g. "I" appearing for a Russian user).
+  const showable = (lc: string): boolean => !isAgeBlocked(lc, lang) && !artifacts.has(lc)
+    && (!scriptFilter || scriptFilter.test(lc));
   const filtered = [...candidateMap.entries()]
     .map(([word, s]) => ({
       word,
@@ -526,8 +534,7 @@ export function getPredictions(
     }))
     .filter((c) => {
       const lc = normalizePredictionSpelling(c.word, lang);
-      if (isAgeBlocked(lc, lang)) return false;
-      if (artifacts.has(lc)) return false;
+      if (!showable(lc)) return false;
       if (predictionWordKey(lc, lang) === predictionWordKey(lastWord, lang) || predictionWordKey(lc, lang) === predictionWordKey(partialWord, lang)) return false;
       // Mid-typing rule: surface candidates that complete the partial word.
       // EXCEPTION — if (a) the partial is itself a confidently complete
@@ -538,10 +545,6 @@ export function getPredictions(
       // prefix completions, never useful next-word continuations.
       if (partialWord && !matchesPredictionPrefix(lc, completionPrefix, lang) && !(c.hasContext && partialIsCompleteWord)) return false;
       if (backedOff && [...lc].length < typedLength) return false;
-      // Drop wrong-script words. Necessary because the store's initial
-      // wordFreq state seeds with English DEFAULT_PHRASES, which leak into
-      // non-English sessions (e.g. "I" appearing for a Russian user).
-      if (scriptFilter && !scriptFilter.test(lc)) return false;
       return true;
     })
     .sort((a, b) => b.total - a.total)
@@ -609,7 +612,9 @@ export function getPredictions(
   // spells ("мёд") takes the first slot, ahead of web-frequent completions
   // and outside the stem and look-alike caps, since it is the word itself.
   const yoTwin = lang === 'ru' && partialWord ? ruYoTwinOf(partialWord) : null;
-  const yoTwinShown = yoTwin && wordFreq[yoTwin] && !isAgeBlocked(yoTwin, lang) ? yoTwin : null;
+  // The same eligibility as every other candidate, and only when the bar
+  // has a slot to give.
+  const yoTwinShown = yoTwin && config.maxResults > 0 && wordFreq[yoTwin] && showable(yoTwin) ? yoTwin : null;
   if (yoTwinShown) taken.push({ word: yoTwinShown, total: Infinity, hasContext: false });
   if (partialWord) {
     const stemForms = new Map<string, string[]>();

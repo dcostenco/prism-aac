@@ -42,6 +42,7 @@ const KEYBOARD_FAMILIES: Array<CustomFamily | NativeFamily> = [
   { slug: 'latin-diacritics-ro', label: 'Latin with diacritics', language: 'ro', kind: 'custom', expectedKeyCount: 31, samples: ['Ă', 'Ș', 'Ț'], minimumFont: 36, minimumKeyHeight: 64 },
   { slug: 'latin-dense-tr', label: 'Dense Latin', language: 'tr', kind: 'custom', expectedKeyCount: 32, samples: ['Ğ', 'Ü', 'Ş', 'İ', 'Ö', 'Ç'], minimumFont: 36, minimumKeyHeight: 64 },
   { slug: 'cyrillic-uk', label: 'Cyrillic', language: 'uk', kind: 'custom', expectedKeyCount: 33, samples: ['Й', 'І', 'Ї', 'Ґ'], minimumFont: 32 },
+  { slug: 'cyrillic-ru', label: 'Cyrillic Russian', language: 'ru', kind: 'custom', expectedKeyCount: 33, samples: ['Й', 'Ъ', 'Ё'], minimumFont: 32 },
   { slug: 'arabic-ar', label: 'Arabic RTL', language: 'ar', kind: 'custom', expectedKeyCount: 33, samples: ['ض', 'ا', 'ة'], minimumFont: 32, rtl: true },
   { slug: 'hebrew-he', label: 'Hebrew RTL', language: 'he', kind: 'custom', expectedKeyCount: 27, samples: ['ק', 'א', 'ת'], minimumFont: 32, rtl: true },
   { slug: 'devanagari-hi', label: 'Devanagari', language: 'hi', kind: 'custom', expectedKeyCount: 29, samples: ['ौ', 'क', 'म'], minimumFont: 32 },
@@ -140,7 +141,9 @@ for (const family of KEYBOARD_FAMILIES) {
 
     const root = page.locator('[data-scan-group="keyboard"]');
     await expect(root).toHaveAttribute('data-language', family.language);
-    const appDirection = await page.locator('.h-svh').getAttribute('dir');
+    // The app now nests its safe-area viewport inside an outer .h-svh shell;
+    // the direction lives on the viewport.
+    const appDirection = await page.getByTestId('aac-safe-viewport').getAttribute('dir');
     expect(appDirection).toBe(family.rtl ? 'rtl' : 'ltr');
 
     if (family.kind === 'native-ime') {
