@@ -181,6 +181,29 @@ export function mergeUserNgramsWithBoost(
 }
 
 /**
+ * Give words the bar should rank last (constants/predictionRankLast) a count
+ * below every seed word (whose minimum is 1), so they never outrank or tie
+ * other completions but still show when they are what matches. A word the user has used keeps its count, so a
+ * learned name ranks as before. Mutates and returns `merged`, which must be a
+ * fresh copy (mergeUserNgramsWithBoost returns one); the seed itself is never
+ * touched because the language gate reads its counts.
+ */
+/** Below the seed's minimum count of 1, so a ranked-last word never ties an ordinary rare word. */
+const RANK_LAST_COUNT = 0.5;
+
+export function rankLastUnlessUsed(
+  merged: Record<string, WordFreqEntry>,
+  rankLast: ReadonlySet<string>,
+  user: Record<string, WordFreqEntry>,
+): Record<string, WordFreqEntry> {
+  for (const word of rankLast) {
+    const entry = merged[word];
+    if (entry && entry.count > RANK_LAST_COUNT && !user[word]) merged[word] = { ...entry, count: RANK_LAST_COUNT };
+  }
+  return merged;
+}
+
+/**
  * Merge read-only prediction sources without allowing a weaker source to
  * erase stronger evidence from an earlier one.
  *

@@ -2,7 +2,7 @@ import { sharedWordFreq } from '@/lib/sharedWords';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WordFreqEntry } from '@/types';
-import { getPredictions, type PredictionCompletionInfo, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergePredictionBaselines, mergePredictionContextBaselines, mergeUserNgramsWithBoost } from '@/engine/predictionEngine';
+import { getPredictions, type PredictionCompletionInfo, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergePredictionBaselines, mergePredictionContextBaselines, mergeUserNgramsWithBoost, rankLastUnlessUsed } from '@/engine/predictionEngine';
 import { normalizePredictionSpelling } from '@/engine/predictionSpellings';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
 import { getPredictionSessionScope } from '@/services/predictionMemoryService';
+import { rankLastWords } from '@/constants/predictionRankLast';
 import {
   loadPredictionSeed,
   getCachedPredictionSeed,
@@ -428,7 +429,9 @@ export const usePredictionStore = create<PredictionState>()(
         // baseline filter creates new object identities that change
         // mergeUserNgramsWithBoost's tie-breaking. Single source of
         // truth: the render layer.
-        const mergedWf = mergeUserNgramsWithBoost(baselineWf, userWf);
+        // First names from the web word list rank last (they crowded short
+        // prefixes with look-alike tiles); a name the user has used does not.
+        const mergedWf = rankLastUnlessUsed(mergeUserNgramsWithBoost(baselineWf, userWf), rankLastWords(lang), userWf);
         const mergedBg = mergeUserNgramsWithBoost(baselineBg, userBg);
         const mergedTg = mergeUserNgramsWithBoost(baselineTg, userTg);
         // Pass language-specific fallback, no always-capitalized for non-EN,
