@@ -2,22 +2,23 @@
  * Cascade LIVE integration test.
  *
  * Actually calls Ollama with real models — not mocked.
- * Requires: ollama running with prism-coder:1b7 and prism-coder:14b loaded.
+ * Requires: PRISM_LIVE_LOCAL_TESTS=1 and an explicit Ollama assignment in Prism.
  *
- * Tests the end-to-end cascade on the exact prompts that caused
+ * Exercises the configured models with the prompts that caused
  * production failures in May 2026 (AAC hallucination, save silent drop,
  * know/smem confusion). Proves the cascade catches what individual
  * models miss.
  *
- * Run: npx vitest run tests/cascade-live.test.ts
+ * Run: PRISM_LIVE_LOCAL_TESTS=1 npx vitest run tests/cascade-live.test.ts
  * Skip in CI: these require local Ollama with GPU models loaded.
  */
 import { describe, it, expect } from 'vitest';
+import { configuredOllamaTests } from './helpers/prismLiveBackend';
 
-const OLLAMA_URL = 'http://localhost:11434';
-// Quality-first cascade: 14B (fast, good) → 32B (slower, best local). Cloud is the final tier.
-// Matches production LOCAL_MODELS in aiService.ts exactly.
-const MODELS = ['prism-coder:14b', 'prism-coder:32b'];
+const live = configuredOllamaTests();
+const OLLAMA_URL = live.url;
+const MODELS = live.models;
+if (!live.enabled) console.info(live.reason);
 
 // MUST match benchmark.py SYSTEM_PROMPT exactly — models are trained on this prompt.
 // Any deviation causes routing mismatches. Last verified: 2026-05-16 (13 rules).
@@ -89,6 +90,7 @@ async function routeWithModel(prompt: string, model: string): Promise<string> {
       model,
       prompt: buildRawPrompt(prompt),
       stream: false,
+      keep_alive: 0,
       raw: true,
       options: { temperature: 0, num_predict: 160 },
     }),
@@ -162,20 +164,7 @@ const PLAIN_TEXT = [
   { prompt: 'What is a GGUF file?', expected: null, label: 'ML term' },
 ];
 
-describe.skipIf(!await ollamaAvailable())('Cascade LIVE — Ollama integration', () => {
-
-  // Immediately unload models after tests to prevent OOM.
-  // Without this, Ollama keeps both 14B (~8GB) + 32B (~18GB) resident for
-  // 5 minutes — consuming ~28GB of unified memory and starving the system.
-  afterAll(async () => {
-    for (const model of MODELS) {
-      await fetch(`${OLLAMA_URL}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, keep_alive: 0, prompt: '' }),
-      }).catch(() => {});
-    }
-  });
+describe.skipIf(!live.enabled || !await ollamaAvailable())('Cascade LIVE — configured Prism Ollama roles', () => {
 
   describe('AAC life-critical path (MUST be 100%)', () => {
     for (const { prompt, expected, label } of AAC_CRITICAL) {

@@ -1,31 +1,36 @@
 /**
- * LocalAISettings unit tests
- * Tests Ollama detection, model pull, cancel, and delete flows.
- * Run: npx jest tests/local-ai-settings.test.ts
+ * Model-management contracts use fixtures. Live generation requires
+ * PRISM_LIVE_LOCAL_TESTS=1 and an explicit Ollama assignment in Prism.
  */
 
-const OLLAMA_URL = 'http://localhost:11434';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { configuredOllamaTests } from './helpers/prismLiveBackend';
 
-// Skip all tests when Ollama is not reachable. These are live integration
-// tests that require a running Ollama instance — they are not meant for CI.
+const live = configuredOllamaTests();
+const OLLAMA_URL = live.url;
+const TAG = live.model;
+if (!live.enabled) console.info(live.reason);
+
+// Only the explicitly enabled live suites need a reachable Ollama instance.
+// Request-contract fixtures below run without a server.
 // The catch is load-bearing: with nothing listening, fetch REJECTS with
 // ECONNREFUSED rather than resolving a non-ok response, so this top-level await
 // threw at import and failed the whole file instead of skipping it.
-const ollamaUp = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) })
+const ollamaUp = live.enabled && await fetch(`${OLLAMA_URL}/api/tags`, { redirect: 'error', signal: AbortSignal.timeout(3000) })
   .then(r => r.ok)
   .catch(() => false);
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-async function getOllamaTags(): Promise<string[]> {
-  const r = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
+async function getOllamaTags(url = OLLAMA_URL): Promise<string[]> {
+  const r = await fetch(`${url}/api/tags`, { redirect: 'error', signal: AbortSignal.timeout(3000) });
   if (!r.ok) return [];
   const data = await r.json() as { models?: Array<{ name: string }> };
   return (data.models ?? []).map(m => m.name);
 }
 
-async function pullModel(tag: string): Promise<boolean> {
-  const r = await fetch(`${OLLAMA_URL}/api/pull`, {
+async function pullModel(tag: string, url = OLLAMA_URL): Promise<boolean> {
+  const r = await fetch(`${url}/api/pull`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: tag, stream: false }),
@@ -34,8 +39,8 @@ async function pullModel(tag: string): Promise<boolean> {
   return r.ok;
 }
 
-async function deleteModel(tag: string): Promise<boolean> {
-  const r = await fetch(`${OLLAMA_URL}/api/delete`, {
+async function deleteModel(tag: string, url = OLLAMA_URL): Promise<boolean> {
+  const r = await fetch(`${url}/api/delete`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: tag }),
@@ -58,20 +63,11 @@ describe.skipIf(!ollamaUp)('LocalAI — Ollama connectivity', () => {
   }, 5000);
 });
 
-describe.skipIf(!ollamaUp)('LocalAI — prism-coder:2b (2.3 GB — used in tests)', () => {
-  const TAG = 'dcostenco/prism-coder:2b';
-
-  test('model is already installed or can be pulled', async () => {
+describe.skipIf(!ollamaUp)('LocalAI — configured Prism Ollama coder', () => {
+  test('the configured model is already installed', async () => {
     const tags = await getOllamaTags();
-    const installed = tags.some(t => t.includes('prism-coder:2b') || t === TAG);
-    if (!installed) {
-      console.log('Not installed, pulling 2b…');
-      const ok = await pullModel(TAG);
-      expect(ok).toBe(true);
-    } else {
-      expect(installed).toBe(true);
-    }
-  }, 300_000);
+    expect(tags).toContain(TAG);
+  }, 5000);
 
   test('generates a response with v19 system prompt', async () => {
     const r = await fetch(`${OLLAMA_URL}/api/generate`, {
@@ -82,6 +78,7 @@ describe.skipIf(!ollamaUp)('LocalAI — prism-coder:2b (2.3 GB — used in tests
         prompt: 'Load context for prism-mcp',
         system: 'When a tool is needed respond ONLY with: <|tool_call|>\n{"name":"tool_name","arguments":{}}\n<|tool_call_end|>\nTOOL ROUTING: load/fetch context for X -> session_load_context(project=X)',
         stream: false,
+        keep_alive: 0,
         options: { num_predict: 100, temperature: 0 },
       }),
       signal: AbortSignal.timeout(30_000),
@@ -90,7 +87,7 @@ describe.skipIf(!ollamaUp)('LocalAI — prism-coder:2b (2.3 GB — used in tests
     const data = await r.json() as { response: string };
     expect(typeof data.response).toBe('string');
     expect(data.response.length).toBeGreaterThan(0);
-    console.log('2b response:', data.response.slice(0, 100));
+    console.log('Configured model response:', data.response.slice(0, 100));
   }, 30_000);
 
   test('correctly routes session_load_context', async () => {
@@ -119,6 +116,7 @@ load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_c
         prompt: rawPrompt,
         stream: false,
         raw: true,
+        keep_alive: 0,
         options: { num_predict: 200, temperature: 0 },
       }),
       signal: AbortSignal.timeout(30_000),
@@ -136,6 +134,7 @@ load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_c
         prompt: 'What time is it in Tokyo right now?',
         system: 'When a tool is needed respond ONLY with: <|tool_call|>\n{"name":"tool_name","arguments":{}}\n<|tool_call_end|>\nIf no tool needed respond in plain text.\ncurrent time / weather -> respond in plain text',
         stream: false,
+        keep_alive: 0,
         options: { num_predict: 200, temperature: 0 },
       }),
       signal: AbortSignal.timeout(30_000),
@@ -145,21 +144,29 @@ load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_c
   }, 30_000);
 });
 
-describe.skipIf(!ollamaUp)('LocalAI — model management API', () => {
+describe('LocalAI — model management request contracts (fixtures)', () => {
+  const URL = 'http://localhost:11434';
+  const MODEL = 'fixture/local-model:test';
+  const request = vi.fn<typeof fetch>();
+  beforeEach(() => { request.mockReset(); vi.stubGlobal('fetch', request); });
+  afterEach(() => vi.unstubAllGlobals());
+
+  test('model inventory reads the supplied endpoint', async () => {
+    request.mockResolvedValue(new Response(JSON.stringify({ models: [{ name: MODEL }] })));
+    expect(await getOllamaTags(URL)).toEqual([MODEL]);
+    expect(request).toHaveBeenCalledWith(`${URL}/api/tags`, expect.objectContaining({ redirect: 'error' }));
+  });
+
   test('DELETE /api/delete returns ok for non-existent model (404 acceptable)', async () => {
-    const ok = await deleteModel('dcostenco/prism-coder:nonexistent-test');
+    request.mockResolvedValue(new Response(null, { status: 404 }));
+    const ok = await deleteModel(MODEL, URL);
     expect(ok).toBe(true);
+    expect(request).toHaveBeenCalledWith(`${URL}/api/delete`, expect.objectContaining({ method: 'DELETE', body: JSON.stringify({ name: MODEL }) }));
   }, 5000);
 
-  test('Ollama pull API returns streaming NDJSON for valid model', async () => {
-    // Just verify the endpoint accepts the request format — don't actually download
-    const r = await fetch(`${OLLAMA_URL}/api/pull`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'dcostenco/prism-coder:2b', stream: true }),
-      signal: AbortSignal.timeout(5000),
-    });
-    // Should start streaming (200) or indicate already cached
-    expect([200, 304].includes(r.status) || r.ok).toBe(true);
-  }, 10_000);
+  test('model pull constructs its request without downloading weights', async () => {
+    request.mockResolvedValue(new Response('{}'));
+    expect(await pullModel(MODEL, URL)).toBe(true);
+    expect(request).toHaveBeenCalledWith(`${URL}/api/pull`, expect.objectContaining({ method: 'POST', body: JSON.stringify({ name: MODEL, stream: false }) }));
+  });
 });
