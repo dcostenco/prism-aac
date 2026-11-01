@@ -10,7 +10,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { buildKeyboardRows, getLetterRows } from '@/constants/keyboardLayouts';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
-import { matchesPredictionPrefix } from '@/engine/predictionSpellings';
+import { isArabicHamzaSpellingOf, matchesPredictionPrefix } from '@/engine/predictionSpellings';
 import { getPredictions } from '@/engine/predictionEngine';
 import { ensureLangCorpusLoaded, isAllowedInLang } from '@/lib/langAllowlist';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -71,6 +71,16 @@ describe('a typed ا completes أ إ آ', () => {
     expect(matchesPredictionPrefix('أشاهِد', 'اشاهد', 'ar')).toBe(true);
     expect(matchesPredictionPrefix('آمنًا', 'امنا', 'ar')).toBe(true);
     expect(matchesPredictionPrefix('أنا', 'انَا', 'ar')).toBe(true);
+  });
+
+  it('recognises the typed word itself written with hamza, and nothing longer', () => {
+    expect(isArabicHamzaSpellingOf('أريد', 'اريد')).toBe(true);
+    expect(isArabicHamzaSpellingOf('أشاهِد', 'اشاهد')).toBe(true);
+    expect(isArabicHamzaSpellingOf('أريدك', 'اريد')).toBe(false);
+    expect(isArabicHamzaSpellingOf('اريد', 'اريد')).toBe(false);
+    // An explicitly typed hamza stays exact even where another ا folds.
+    expect(isArabicHamzaSpellingOf('أإبا', 'أابا')).toBe(true);
+    expect(isArabicHamzaSpellingOf('إابا', 'أابا')).toBe(false);
   });
 
   it('does not fold alef in other languages', () => {
@@ -153,6 +163,36 @@ describe('folded Arabic matches on the bar (engine rules)', () => {
   it("a complete typed word's own hamza spelling is still offered, beside a word that matches as typed", () => {
     const shown = predict('اريد', { 'اريد': 200, 'أريد': 450, 'اريدها': 300 });
     expect(shown).toEqual(expect.arrayContaining(['أريد', 'اريدها']));
+  });
+
+  // Sol review round 3: the typed word's own hamza spelling is the word
+  // itself, so a full stem group of words that fit the context (أريدك,
+  // أريده after أنا) must not push it off the bar.
+  it("the typed word's own hamza spelling is kept when its stem group is full", () => {
+    const shown = predict('أنا اريد', { 'أنا': 500, 'اريد': 200, 'أريد': 100, 'أريدك': 40, 'أريده': 40 },
+      { 'أنا|أريدك': 50, 'أنا|أريده': 50 });
+    expect(shown).toEqual(expect.arrayContaining(['أريدك', 'أريده', 'أريد']));
+  });
+
+  // Sol review round 3: with no word that matches as typed, the slot goes
+  // to the folded completion instead of staying empty, on both sides of the
+  // count that makes "اسم" a complete word.
+  it('a complete typed word with no completion as typed offers its folded completion', () => {
+    for (const count of [99, 100, 500]) {
+      expect(predict('اسم', { 'اسم': count, 'أسماء': 400 }), `اسم count ${count}`).toContain('أسماء');
+    }
+  });
+
+  // The two folded slots are counted only for words shown. The Arabic
+  // stemmer puts اسماء and أسماء in one group, so after the two bare forms
+  // fill it the folded أسماء / أسمائي are refused; أسماك must still be shown.
+  it('folded words refused by the stem limit do not use up the two folded slots', () => {
+    const shown = predict('اسما', {
+      'اسماء': 1000, 'اسمائي': 990, 'أسماء': 980, 'أسمائي': 970, 'أسماك': 960, 'اسمار': 50, 'اسمال': 50, 'اسماح': 50,
+    });
+    expect(shown).toHaveLength(5);
+    expect(shown).toContain('أسماك');
+    expect(shown).not.toContain('أسماء');
   });
 
   // Sol review round 2: أسماء and أسمع are refused (the complete word's

@@ -629,9 +629,14 @@ export function getPredictions(
     // match as typed ("اسم" → اسمع, listen!), so they get at most two slots
     // here, counted only once shown; the backfill below still uses them when
     // nothing else matches. When the typed word is already complete, the one
-    // look-alike slot goes to a word that matches as typed, never a folded
-    // one, except the typed word's own hamza spelling, which is the word itself.
+    // look-alike slot goes to a word that matches as typed if there is one,
+    // else to a folded one; the typed word's own hamza spelling is the word
+    // itself and is outside both limits.
     let foldedTaken = 0;
+    // Whether a word that matches as typed is waiting for that slot; when
+    // none is, a folded completion may have it rather than leave it empty.
+    const literalLookAlike = lang === 'ar' && partialIsCompleteWord && filtered.some(c => !c.hasContext
+      && matchesPredictionPrefix(c.word, partialWord, lang) && !isFoldedArabicMatch(c.word, completionPrefix));
     const take = (c: typeof filtered[number], folded: boolean) => {
       taken.push(c);
       if (folded) foldedTaken++;
@@ -648,12 +653,18 @@ export function getPredictions(
         && !hamzaSpelling
         && matchesPredictionPrefix(c.word, partialWord, lang)
       ) {
-        if (folded) continue;
+        if (folded && literalLookAlike) continue;
         if (barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE) continue;
         barePrefixTaken++;
       }
       const countsAsFolded = folded && !hamzaSpelling;
       const key = groupKey(c.word);
+      // The typed word's own hamza spelling is the word itself: no stem limit.
+      if (hamzaSpelling) {
+        if (key !== null) stemForms.set(key, [...(stemForms.get(key) ?? []), c.word]);
+        take(c, false);
+        continue;
+      }
       if (key === null) { take(c, countsAsFolded); continue; }
       const forms = stemForms.get(key) ?? [];
       if (forms.length >= MAX_PER_STEM) continue;
