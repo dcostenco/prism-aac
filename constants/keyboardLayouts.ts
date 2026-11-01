@@ -32,12 +32,13 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
   ],
   // French: every accented letter of the alphabet (owner report 2026-10-31:
   // à, où, hôpital and cœur could not be typed). Rows 1-3 are unchanged;
-  // the letters that were missing get a row of their own.
+  // the letters that were missing get a row of their own, most common
+  // first, so a phone's first wrapped row holds the frequent ones.
   fr: [
     ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
     ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'],
     ['W', 'X', 'C', 'V', 'B', 'N', 'É', 'È', 'Ê', 'Ç'],
-    ['À', 'Â', 'Æ', 'Ë', 'Î', 'Ï', 'Ô', 'Œ', 'Ù', 'Û', 'Ü', 'Ÿ'],
+    ['À', 'Â', 'Î', 'Ô', 'Ù', 'Û', 'Œ', 'Ë', 'Ï', 'Æ', 'Ü', 'Ÿ'],
   ],
   // Spanish: Ñ where a Spanish keyboard has it. Rows 1-3 are unchanged; the
   // accented vowels (está, sí, qué, mamá) get a row of their own.
@@ -369,7 +370,7 @@ export function buildKeyboardRows(rows: string[][], narrow: boolean): KeyboardRo
     }
     return [
       { keys: keys.slice(0, UTIL_ROW_BASE_KEYS), util, continuation: false },
-      { keys: keys.slice(UTIL_ROW_BASE_KEYS), util: false, continuation: true },
+      ...continuationRows(keys.slice(UTIL_ROW_BASE_KEYS)),
     ];
   });
 }

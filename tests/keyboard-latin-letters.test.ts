@@ -65,8 +65,8 @@ describe('Latin keyboards carry their whole alphabet', () => {
   it('French on a phone: sixteen accented letters in two rows, ten then six, the old four first', () => {
     const wrapped = buildKeyboardRows(getLetterRows('fr'), true).filter(row => row.continuation);
     expect(wrapped.map(row => row.keys)).toEqual([
-      ['É', 'È', 'Ê', 'Ç', 'À', 'Â', 'Æ', 'Ë', 'Î', 'Ï'],
-      ['Ô', 'Œ', 'Ù', 'Û', 'Ü', 'Ÿ'],
+      ['É', 'È', 'Ê', 'Ç', 'À', 'Â', 'Î', 'Ô', 'Ù', 'Û'],
+      ['Œ', 'Ë', 'Ï', 'Æ', 'Ü', 'Ÿ'],
     ]);
   });
 
@@ -87,14 +87,22 @@ describe('the language check accepts words with the new letters', () => {
   });
 });
 
-// A word typed with the new letters is learned and completes like any other.
+// A word typed with each new letter is learned and completes like any other.
+// Together the words of a language contain every letter in EXTRA (checked below).
 const WORDS: Array<[SupportedLanguage, string[]]> = [
-  ['fr', ['où', 'hôpital', 'cœur', 'naïve', 'noël', 'cæcum', 'piqûre', 'aiguë']],
-  ['es', ['está', 'qué', 'pingüino', 'canción']],
-  ['pt', ['você', 'água', 'avó', 'avô', 'também', 'médico']],
-  ['nl', ['één', 'ideeën', 'reünie', 'coördinatie', 'café']],
+  ['fr', ['voilà', 'pâte', 'cæcum', 'garçon', 'été', 'très', 'fête', 'noël', 'île', 'naïve', 'hôpital', 'cœur', 'où', 'piqûre', 'capharnaüm', 'aÿant']],
+  ['es', ['está', 'qué', 'sí', 'canción', 'tú', 'pingüino', 'niño']],
+  ['pt', ['água', 'voltà', 'câmera', 'médico', 'você', 'saída', 'avó', 'avô', 'saúde', 'mãe', 'põe', 'coração']],
+  ['nl', ['dát', 'kärcher', 'één', 'ideeën', 'híj', 'naïef', 'vóór', 'coördinatie', 'zúlke', 'reünie']],
   ['tl', ['niño']],
 ];
+
+it('the sample words cover every added letter', () => {
+  for (const [lang, words] of WORDS) {
+    const seen = new Set(words.join('').toLocaleUpperCase(lang));
+    for (const letter of EXTRA[lang]!) expect(seen.has(letter), `${lang} ${letter}`).toBe(true);
+  }
+});
 
 describe.each(WORDS)('%s words with the new letters reach the bar', (lang, words) => {
   beforeAll(async () => {
