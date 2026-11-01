@@ -177,6 +177,30 @@ describe('folded Arabic matches on the bar (engine rules)', () => {
     expect(new Set(shown).size).toBe(shown.length);
   });
 
+  // Sol review round 5: when no word that matches as typed takes the
+  // look-alike slot, the folded one keeps its ranked place; lower-ranked
+  // words must not use up the folded slots, the bar or its stem group first.
+  it('a folded look-alike keeps its place ahead of lower-ranked folded words', () => {
+    const shown = predict('يا اسم', { 'يا': 500, 'اسم': 500, 'أسماء': 800, 'إسماعيل': 1, 'أسماك': 1 },
+      { 'يا|إسماعيل': 1, 'يا|أسماك': 1 });
+    expect(shown[0]).toBe('أسماء');
+    expect(shown).toContain('إسماعيل');
+  });
+
+  it('a folded look-alike keeps its place when next words would fill the bar', () => {
+    const next = ['جميل', 'طويل', 'جديد', 'قديم', 'كبير'];
+    const shown = predict('اسم', { 'اسم': 500, 'أسماء': 800, ...Object.fromEntries(next.map(w => [w, 1])) },
+      Object.fromEntries(next.map(w => [`اسم|${w}`, 1])));
+    expect(shown).toHaveLength(5);
+    expect(shown[0]).toBe('أسماء');
+  });
+
+  it('a folded look-alike keeps its place in its stem group', () => {
+    const shown = predict('يا اسم', { 'يا': 500, 'اسم': 500, 'أسماء': 800, 'أسمائي': 1, 'أسمائه': 1 },
+      { 'يا|أسمائي': 1, 'يا|أسمائه': 1 });
+    expect(shown[0]).toBe('أسماء');
+  });
+
   // Sol review round 4: a word that matches as typed but is refused by the
   // stem limit (اسمي, after the contextual اسمك / اسمه fill the group) must
   // not keep the look-alike slot: the folded أسماء takes it.

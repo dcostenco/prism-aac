@@ -618,58 +618,57 @@ export function getPredictions(
   const yoTwinShown = yoTwin && config.maxResults > 0 && wordFreq[yoTwin] && showable(yoTwin) ? yoTwin : null;
   if (yoTwinShown) taken.push({ word: yoTwinShown, total: Infinity, hasContext: false });
   if (partialWord) {
-    const stemForms = new Map<string, string[]>();
-    if (yoTwinShown) {
-      const key = groupKey(yoTwinShown);
-      if (key !== null) stemForms.set(key, [yoTwinShown]);
-    }
-    // A look-alike counts against its cap only once it is on the bar, so a
-    // candidate refused by the stem limit does not use the slot up.
-    let barePrefixTaken = 0;
     // Arabic: a typed ا also completes أ إ آ. Those folded matches are often
     // the word meant ("اريد" → أريد) but must not crowd out the words that
     // match as typed ("اسم" → اسمع, listen!), so they get at most two slots
-    // here, counted only once shown; the backfill below still uses them when
-    // nothing else matches. When the typed word is already complete, the one
-    // look-alike slot goes to a word that matches as typed; a folded one waits
-    // and takes it only if none got it. The typed word's own hamza spelling
-    // is the word itself and is outside every limit.
-    let foldedTaken = 0;
-    const waitingFolded: typeof filtered = [];
-    const admit = (c: typeof filtered[number], folded: boolean, lookAlike: boolean): boolean => {
-      const key = groupKey(c.word);
-      if (key !== null) {
-        const forms = stemForms.get(key) ?? [];
-        if (forms.length >= MAX_PER_STEM) return false;
-        if (forms.some(shown => isSuffixedTwin(c.word, shown))) return false;
-        stemForms.set(key, [...forms, c.word]);
+    // here; the backfill below still uses them when nothing else matches.
+    // When the typed word is already complete, its one look-alike slot goes
+    // to a word that matches as typed. Only if none can take it is the bar
+    // filled again with folded look-alikes allowed, so every word keeps its
+    // ranked place. The typed word's own hamza spelling is the word itself
+    // and is outside every limit. Caps count a word only once it is shown.
+    const fill = (foldedLookAlikes: boolean) => {
+      const chosen = [...taken];
+      const stemForms = new Map<string, string[]>();
+      if (yoTwinShown) {
+        const key = groupKey(yoTwinShown);
+        if (key !== null) stemForms.set(key, [yoTwinShown]);
       }
-      taken.push(c);
-      if (folded) foldedTaken++;
-      if (lookAlike) barePrefixTaken++;
-      return true;
-    };
-    for (const c of filtered) {
-      if (taken.length >= config.maxResults) break;
-      if (c.word === yoTwinShown) continue;
-      const folded = lang === 'ar' && isFoldedArabicMatch(c.word, completionPrefix);
-      const hamzaSpelling = folded && isArabicHamzaSpellingOf(c.word, partialWord);
-      if (hamzaSpelling) {
+      let barePrefixTaken = 0;
+      let foldedTaken = 0;
+      let literalLookAlikeShown = false;
+      let foldedLookAlikeSkipped = false;
+      for (const c of filtered) {
+        if (chosen.length >= config.maxResults) break;
+        if (c.word === yoTwinShown) continue;
+        const folded = lang === 'ar' && isFoldedArabicMatch(c.word, completionPrefix);
+        const hamzaSpelling = folded && isArabicHamzaSpellingOf(c.word, partialWord);
         const key = groupKey(c.word);
-        if (key !== null) stemForms.set(key, [...(stemForms.get(key) ?? []), c.word]);
-        taken.push(c);
-        continue;
+        if (hamzaSpelling) {
+          if (key !== null) stemForms.set(key, [...(stemForms.get(key) ?? []), c.word]);
+          chosen.push(c);
+          continue;
+        }
+        if (folded && foldedTaken >= MAX_FOLDED_ARABIC) continue;
+        const lookAlike = partialIsCompleteWord && !c.hasContext && matchesPredictionPrefix(c.word, partialWord, lang);
+        if (lookAlike && barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE) continue;
+        if (lookAlike && folded && !foldedLookAlikes) { foldedLookAlikeSkipped = true; continue; }
+        if (key !== null) {
+          const forms = stemForms.get(key) ?? [];
+          if (forms.length >= MAX_PER_STEM) continue;
+          if (forms.some(shown => isSuffixedTwin(c.word, shown))) continue;
+          stemForms.set(key, [...forms, c.word]);
+        }
+        chosen.push(c);
+        if (folded) foldedTaken++;
+        if (lookAlike) barePrefixTaken++;
+        if (lookAlike && !folded) literalLookAlikeShown = true;
       }
-      if (folded && foldedTaken >= MAX_FOLDED_ARABIC) continue;
-      const lookAlike = partialIsCompleteWord && !c.hasContext && matchesPredictionPrefix(c.word, partialWord, lang);
-      if (lookAlike && barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE) continue;
-      if (lookAlike && folded) { waitingFolded.push(c); continue; }
-      admit(c, folded, lookAlike);
-    }
-    for (const c of waitingFolded) {
-      if (taken.length >= config.maxResults || barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE || foldedTaken >= MAX_FOLDED_ARABIC) break;
-      admit(c, true, true);
-    }
+      return { chosen, retry: !literalLookAlikeShown && foldedLookAlikeSkipped };
+    };
+    const first = fill(false);
+    const { chosen } = first.retry ? fill(true) : first;
+    taken.splice(0, taken.length, ...chosen);
   }
   // Backfill — second pass without the stem-diversity constraint when we
   // couldn't reach maxResults using unique stems. Never under-fill the bar.
