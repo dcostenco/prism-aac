@@ -10,15 +10,25 @@ import type { SupportedLanguage } from '@/engine/i18n';
 
 test.use({ serviceWorkers: 'block' });
 
-// Letters each keyboard gained, and the narrowest key measured after the
-// change at 375px and 390px portrait (2026-10-31, before → after unchanged
-// in width; French and Portuguese phones gained a row, 67.5 → 61.5px tall).
-const CASES: Array<{ language: SupportedLanguage; added: string[]; minWidth: Record<number, number>; minHeight: number }> = [
-  { language: 'fr', added: [...'ÀÂÎÔÙÛŒËÏÆÜŸ'], minWidth: { 375: 36.1, 390: 37.6 }, minHeight: 61 },
-  { language: 'es', added: [...'ÁÉÍÓÚÜ'], minWidth: { 375: 36.1, 390: 37.6 }, minHeight: 66 },
-  { language: 'pt', added: [...'ÁÀÂÉÊÍÓÔÚ'], minWidth: { 375: 36.1, 390: 37.6 }, minHeight: 61 },
-  { language: 'nl', added: [...'ÁÄÉËÍÏÓÖÚÜ'], minWidth: { 375: 35.2, 390: 37.0 }, minHeight: 66 },
-  { language: 'tl', added: [...'Ñ'], minWidth: { 375: 36.1, 390: 37.6 }, minHeight: 66 },
+// Letters each keyboard gained, a word that uses some of them, and the
+// smallest key measured after the change (2026-10-31), per viewport, as
+// [width, height]. Phones in portrait keep their key widths; French and
+// Portuguese gain a row (67.5 → 61.5px tall). A phone in landscape folds the
+// added row into rows 1-3, so keys keep their 46.7px height. The owner
+// approved these sizes after before/after mockups.
+const VIEWPORTS = { phoneSE: [375, 667], phone: [390, 844], landscape: [844, 390], tablet: [1032, 1376] } as const;
+type Floors = Record<keyof typeof VIEWPORTS, [number, number]>;
+const CASES: Array<{ language: SupportedLanguage; added: string[]; word: string; floors: Floors }> = [
+  { language: 'fr', added: [...'ÀÂÎÔÙÛŒËÏÆÜŸ'], word: 'piqûre',
+    floors: { phoneSE: [36.1, 61], phone: [37.6, 61], landscape: [55, 46.6], tablet: [76.9, 202] } },
+  { language: 'es', added: [...'ÁÉÍÓÚÜ'], word: 'canción',
+    floors: { phoneSE: [36.1, 66], phone: [37.6, 66], landscape: [69, 46.6], tablet: [92.5, 202] } },
+  { language: 'pt', added: [...'ÁÀÂÉÊÍÓÔÚ'], word: 'avô',
+    floors: { phoneSE: [36.1, 61], phone: [37.6, 61], landscape: [59, 46.6], tablet: [88.9, 202] } },
+  { language: 'nl', added: [...'ÁÄÉËÍÏÓÖÚÜ'], word: 'reünie',
+    floors: { phoneSE: [35.2, 66], phone: [37.0, 66], landscape: [63.6, 46.6], tablet: [92.5, 202] } },
+  { language: 'tl', added: [...'Ñ'], word: 'niño',
+    floors: { phoneSE: [36.1, 66], phone: [37.6, 66], landscape: [83, 46.6], tablet: [92.5, 253] } },
 ];
 
 test.beforeEach(async ({}, testInfo) => {
@@ -46,9 +56,9 @@ async function open(page: Page, language: SupportedLanguage, width: number, heig
   await expect(page.locator('[data-scan-group="keyboard"]')).toHaveAttribute('data-language', language);
 }
 
-for (const { language, added, minWidth, minHeight } of CASES) {
-  for (const [width, height] of [[375, 667], [390, 844]] as const) {
-    test(`${language} at ${width}px: every key inside the keyboard, none smaller than measured`, async ({ page }) => {
+for (const { language, added, word, floors } of CASES) {
+  for (const [name, [width, height]] of Object.entries(VIEWPORTS) as Array<[keyof typeof VIEWPORTS, readonly [number, number]]>) {
+    test(`${language} on ${name} (${width}x${height}): every key inside the keyboard, none smaller than measured`, async ({ page }) => {
       await open(page, language, width, height);
       const metrics = await page.evaluate(() => {
         const root = document.querySelector<HTMLElement>('[data-scan-group="keyboard"]')!.getBoundingClientRect();
@@ -64,8 +74,8 @@ for (const { language, added, minWidth, minHeight } of CASES) {
       });
       for (const letter of added) expect(metrics.keys, `${language} ${letter}`).toContain(letter);
       expect(metrics.outside, 'keys outside the keyboard').toBe(0);
-      expect(metrics.minWidth, 'narrowest key').toBeGreaterThanOrEqual(minWidth[width]);
-      expect(metrics.minHeight, 'shortest key').toBeGreaterThanOrEqual(minHeight);
+      expect(metrics.minWidth, 'narrowest key').toBeGreaterThanOrEqual(floors[name][0]);
+      expect(metrics.minHeight, 'shortest key').toBeGreaterThanOrEqual(floors[name][1]);
       expect(metrics.overflowX).toBeLessThanOrEqual(1);
     });
   }
@@ -77,8 +87,29 @@ for (const { language, added, minWidth, minHeight } of CASES) {
     for (const letter of added) await keyboard.locator(`button[data-key="${letter}"]`).first().click();
     const lower = added.map(letter => letter.toLocaleLowerCase(language)).join('');
     await expect(message).toContainText(lower);
-    await page.getByTestId('shift-key').click();
-    await keyboard.locator(`button[data-key="${added[0]}"]`).first().click();
-    await expect(message).toContainText(lower + added[0]);
+    // Shift is one-shot: each added letter in turn gives its capital.
+    for (const letter of added) {
+      await page.getByTestId('shift-key').click();
+      await keyboard.locator(`button[data-key="${letter}"]`).first().click();
+    }
+    await expect(message).toContainText(lower + added.join(''));
+  });
+
+  test(`${language}: "${word}" typed on the keyboard is learned and offered again on the bar`, async ({ page }) => {
+    await open(page, language, 390, 844);
+    const keyboard = page.locator('[data-scan-group="keyboard"]');
+    const message = page.getByTestId('message-text');
+    const tap = (letter: string) => keyboard.locator(`button[data-key="${letter.toLocaleUpperCase(language)}"]`).first().click();
+    for (const letter of word) await tap(letter);
+    await keyboard.locator('button[data-action="space"]').click();
+    await expect(message).toContainText(word);
+    for (let i = 0; i <= [...word].length; i += 1) await keyboard.locator('button[data-action="backspace"]').first().click();
+    await expect(message).not.toContainText(word);
+    const prefix = [...word].slice(0, -1).join('');
+    for (const letter of prefix) await tap(letter);
+    const tile = page.getByTestId('prediction-label').filter({ hasText: new RegExp(`^${word}$`, 'i') });
+    await expect(tile).toBeVisible();
+    await tile.click();
+    await expect(message).toContainText(word);
   });
 }

@@ -70,6 +70,27 @@ describe('Latin keyboards carry their whole alphabet', () => {
     ]);
   });
 
+  it('on a short wide screen (a phone in landscape) folds the fourth row into rows 1-3, in order', () => {
+    const rows = buildKeyboardRows(getLetterRows('fr'), false, true);
+    expect(rows.map(row => row.keys)).toEqual([
+      ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'À', 'Â', 'Î', 'Ô', 'Ù'],
+      ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'Û', 'Œ', 'Ë', 'Ï', 'Æ'],
+      ['W', 'X', 'C', 'V', 'B', 'N', 'É', 'È', 'Ê', 'Ç', 'Ü', 'Ÿ'],
+    ]);
+    expect(rows.map(row => row.util)).toEqual([false, false, true]);
+    for (const lang of ['es', 'pt', 'nl', 'pl', 'vi'] as SupportedLanguage[]) {
+      const folded = buildKeyboardRows(getLetterRows(lang), false, true);
+      expect(folded, lang).toHaveLength(3);
+      expect(folded.flatMap(row => row.keys).sort()).toEqual(getLetterRows(lang).flat().sort());
+    }
+    // A tall wide screen keeps the fourth row; a phone in portrait wraps instead.
+    expect(buildKeyboardRows(getLetterRows('fr'), false, false)).toHaveLength(4);
+    expect(buildKeyboardRows(getLetterRows('fr'), true, true).filter(row => row.continuation).length).toBe(2);
+    // Three-row and non-Latin layouts are untouched.
+    expect(buildKeyboardRows(getLetterRows('en'), false, true).map(row => row.keys)).toEqual(getLetterRows('en'));
+    expect(buildKeyboardRows(getLetterRows('am'), false, true).map(row => row.keys)).toEqual(getLetterRows('am'));
+  });
+
   it('offers ¿ and ¡ on the Spanish symbols page only', () => {
     expect(getSymbolRows('es').flat()).toEqual(expect.arrayContaining(['¿', '¡']));
     expect(getSymbolRows('en').flat()).not.toContain('¿');

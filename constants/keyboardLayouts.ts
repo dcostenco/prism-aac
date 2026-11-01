@@ -312,7 +312,33 @@ function continuationRows(keys: string[]): KeyboardRow[] {
   return out;
 }
 
-export function buildKeyboardRows(rows: string[][], narrow: boolean): KeyboardRow[] {
+/**
+ * A short screen (a phone in landscape: wide, at most 500px tall) has the
+ * width but not the height for a fourth letter row; one would make every key
+ * about 37px tall. Fold that row's letters into the ends of rows 1-3, each to
+ * the row with the fewest targets (Shift and Backspace count), in order.
+ */
+function foldFourthRow(rows: string[][]): string[][] {
+  const base = rows.slice(0, 3).map(row => [...row]);
+  // How many go to each row: one at a time to the row with the fewest targets.
+  const counts = base.map(() => 0);
+  const targets = (index: number) => base[index].length + counts[index] + (index === UTIL_ROW_INDEX ? 2 : 0);
+  for (let added = 0; added < rows[3].length; added += 1) {
+    let shortest = 0;
+    for (let index = 1; index < base.length; index += 1) if (targets(index) < targets(shortest)) shortest = index;
+    counts[shortest] += 1;
+  }
+  // Then hand them out in their authored order, row 1 first.
+  let next = 0;
+  return base.map((row, index) => {
+    const share = rows[3].slice(next, next + counts[index]);
+    next += counts[index];
+    return [...row, ...share];
+  });
+}
+
+export function buildKeyboardRows(rows: string[][], narrow: boolean, short = false): KeyboardRow[] {
+  if (short && !narrow && rows.length === 4 && isLatinKeyboardLayout(rows)) rows = foldFourthRow(rows);
   const isLatinLayout = isLatinKeyboardLayout(rows);
   const localizedLatinKeys = isLatinLayout
     ? rows.flatMap((keys) => keys.filter((key) => !BASIC_LATIN_KEY.test(key)))
