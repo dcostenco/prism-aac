@@ -558,8 +558,9 @@ export default function Keyboard({ browserMode, onBrowserGo, sayControl }: {
                 data-display={displayChar}
                 className={`${kc} ${letterSize} hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb] ${
                   // A wrapped remainder keeps base key width instead of
-                  // stretching four diacritics across the whole screen.
-                  row.continuation ? 'flex-none basis-[calc(100%/10)]' : 'flex-1'
+                  // stretching four diacritics across the whole screen. Ten
+                  // keys and their nine 1px gaps fill exactly one row.
+                  row.continuation ? 'flex-none basis-[calc((100%_-_9px)/10)]' : 'flex-1'
                 }`}
               >
                 {displayChar}
