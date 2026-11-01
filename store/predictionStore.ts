@@ -205,7 +205,7 @@ const SCRIPT_FILTER: Partial<Record<SupportedLanguage, RegExp>> = {
   // Latin-script European and other langs
   en: /^[a-z'\-]+$/,
   es: /^[a-zñáéíóúü'\-]+$/,
-  fr: /^[a-zàâäçéèêëîïôœùûüÿ'\-]+$/,
+  fr: /^[a-zàâäæçéèêëîïôœùûüÿ'\-]+$/,
   de: /^[a-zäöüß'\-]+$/,
   pt: /^[a-záàâãçéêíóôõú'\-]+$/,
   ro: /^[a-zăâîșțşţ'\-]+$/,

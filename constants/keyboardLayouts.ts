@@ -30,20 +30,31 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ö', 'Ä'],
     ['Y', 'X', 'C', 'V', 'B', 'N', 'M', 'ß'],
   ],
+  // French: every accented letter of the alphabet (owner report 2026-10-31:
+  // à, où, hôpital and cœur could not be typed). Rows 1-3 are unchanged;
+  // the letters that were missing get a row of their own, most common
+  // first, so a phone's first wrapped row holds the frequent ones.
   fr: [
     ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
     ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'],
     ['W', 'X', 'C', 'V', 'B', 'N', 'É', 'È', 'Ê', 'Ç'],
+    ['À', 'Â', 'Î', 'Ô', 'Ù', 'Û', 'Œ', 'Ë', 'Ï', 'Æ', 'Ü', 'Ÿ'],
   ],
+  // Spanish: Ñ where a Spanish keyboard has it. Rows 1-3 are unchanged; the
+  // accented vowels (está, sí, qué, mamá) get a row of their own.
   es: [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ñ'],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+    ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ü'],
   ],
+  // Portuguese: every accented letter (é, você, água, avó, avô). Rows 1-3
+  // are unchanged; the letters that were missing get a row of their own.
   pt: [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ç'],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Ã', 'Õ'],
+    ['Á', 'À', 'Â', 'É', 'Ê', 'Í', 'Ó', 'Ô', 'Ú'],
   ],
   it: [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -58,10 +69,13 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
     ['Ą', 'Ć', 'Ę', 'Ł', 'Ń', 'Ó', 'Ś', 'Ź', 'Ż'],
   ],
+  // Dutch: the accented and diaeresis vowels (één, ideeën, café), on their
+  // own row.
   nl: [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'IJ'],
+    ['Á', 'Ä', 'É', 'Ë', 'Í', 'Ï', 'Ó', 'Ö', 'Ú', 'Ü'],
   ],
   tr: [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Ğ', 'Ü'],
@@ -84,11 +98,11 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
     ['ש', 'ד', 'ג', 'כ', 'ע', 'י', 'ח', 'ל', 'ך', 'ף'],
     ['ז', 'ס', 'ב', 'ה', 'נ', 'מ', 'צ', 'ת', 'ץ'],
   ],
-  // Filipino/Tagalog uses standard QWERTY (Latin alphabet, no extra
-  // diacritics in modern usage). Indonesian likewise.
+  // Filipino/Tagalog: QWERTY plus Ñ, which the Filipino alphabet includes
+  // (Niño, Santo Niño); Ng needs no key of its own. Indonesian is QWERTY.
   tl: [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ñ'],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
   ],
   id: [
@@ -285,31 +299,62 @@ export interface KeyboardRow {
  * and Backspace stay on row three.
  */
 export function isLatinKeyboardLayout(rows: string[][]): boolean {
-  return rows.length === 3
+  return (rows.length === 3 || rows.length === 4)
     && rows.flat().every((key) => LATIN_SCRIPT_KEY.test(key));
 }
 
-export function buildKeyboardRows(rows: string[][], narrow: boolean): KeyboardRow[] {
+/** Wrap overflow keys into continuation rows of at most NARROW_ROW_TARGETS, in order. */
+function continuationRows(keys: string[]): KeyboardRow[] {
+  const out: KeyboardRow[] = [];
+  for (let start = 0; start < keys.length; start += NARROW_ROW_TARGETS) {
+    out.push({ keys: keys.slice(start, start + NARROW_ROW_TARGETS), util: false, continuation: true });
+  }
+  return out;
+}
+
+/**
+ * A short screen (a phone in landscape: wide, at most 500px tall) has the
+ * width but not the height for a fourth letter row; one would make every key
+ * about 37px tall. Fold that row's letters into the ends of rows 1-3, each to
+ * the row with the fewest targets (Shift and Backspace count), in order.
+ */
+function foldFourthRow(rows: string[][]): string[][] {
+  const base = rows.slice(0, 3).map(row => [...row]);
+  // How many go to each row: one at a time to the row with the fewest targets.
+  const counts = base.map(() => 0);
+  const targets = (index: number) => base[index].length + counts[index] + (index === UTIL_ROW_INDEX ? 2 : 0);
+  for (let added = 0; added < rows[3].length; added += 1) {
+    let shortest = 0;
+    for (let index = 1; index < base.length; index += 1) if (targets(index) < targets(shortest)) shortest = index;
+    counts[shortest] += 1;
+  }
+  // Then hand them out in their authored order, row 1 first.
+  let next = 0;
+  return base.map((row, index) => {
+    const share = rows[3].slice(next, next + counts[index]);
+    next += counts[index];
+    return [...row, ...share];
+  });
+}
+
+export function buildKeyboardRows(rows: string[][], narrow: boolean, short = false): KeyboardRow[] {
+  if (short && !narrow && rows.length === 4 && isLatinKeyboardLayout(rows)) rows = foldFourthRow(rows);
   const isLatinLayout = isLatinKeyboardLayout(rows);
   const localizedLatinKeys = isLatinLayout
     ? rows.flatMap((keys) => keys.filter((key) => !BASIC_LATIN_KEY.test(key)))
     : [];
 
   if (narrow && localizedLatinKeys.length > 0) {
-    const baseRows = rows.map((keys, index): KeyboardRow => ({
-      keys: keys.filter((key) => BASIC_LATIN_KEY.test(key)),
-      util: index === UTIL_ROW_INDEX,
-      continuation: false,
-    }));
+    // A fourth authored row holds only locale letters, so it adds no base row.
+    const baseRows = rows
+      .map((keys, index): KeyboardRow => ({
+        keys: keys.filter((key) => BASIC_LATIN_KEY.test(key)),
+        util: index === UTIL_ROW_INDEX,
+        continuation: false,
+      }))
+      .filter((row, index) => index < 3 || row.keys.length > 0);
 
-    return [
-      ...baseRows,
-      {
-        keys: localizedLatinKeys,
-        util: false,
-        continuation: true,
-      },
-    ];
+    return [...baseRows, ...continuationRows(localizedLatinKeys)];
   }
 
   /* Three-row non-Latin alphabets often author 11 letters per row. Keeping
@@ -339,10 +384,7 @@ export function buildKeyboardRows(rows: string[][], narrow: boolean): KeyboardRo
     });
 
     if (continuationKeys.length > 0) {
-      return [
-        ...baseRows,
-        { keys: continuationKeys, util: false, continuation: true },
-      ];
+      return [...baseRows, ...continuationRows(continuationKeys)];
     }
   }
 
@@ -354,7 +396,7 @@ export function buildKeyboardRows(rows: string[][], narrow: boolean): KeyboardRo
     }
     return [
       { keys: keys.slice(0, UTIL_ROW_BASE_KEYS), util, continuation: false },
-      { keys: keys.slice(UTIL_ROW_BASE_KEYS), util: false, continuation: true },
+      ...continuationRows(keys.slice(UTIL_ROW_BASE_KEYS)),
     ];
   });
 }
@@ -377,13 +419,18 @@ export function getLocalizedPunctuation(lang: SupportedLanguage): { comma: strin
     : { comma: ',', question: '?' };
 }
 
+/** Spanish opens questions and exclamations with ¿ and ¡. */
+const EXTRA_SYMBOLS: Partial<Record<SupportedLanguage, string[]>> = { es: ['¿', '¡'] };
+
 export function getSymbolRows(lang: SupportedLanguage): string[][] {
   const punctuation = getLocalizedPunctuation(lang);
-  return SYMBOLS_ROWS.map((row) => row.map((key) => {
+  const rows = SYMBOLS_ROWS.map((row) => row.map((key) => {
     if (key === ',') return punctuation.comma;
     if (key === '?') return punctuation.question;
     return key;
   }));
+  const extra = EXTRA_SYMBOLS[lang];
+  return extra ? rows.map((row, index) => index === rows.length - 1 ? [...row, ...extra] : row) : rows;
 }
 
 // AAC core vocabulary lookup — see constants/aacCore/index.ts.
