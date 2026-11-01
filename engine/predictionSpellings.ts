@@ -8,6 +8,23 @@ const VIETNAMESE_TONE_MARKS = /[\u0300\u0301\u0303\u0309\u0323]/g;
 // An explicitly typed أ إ آ stays exact. Bare-alef words are not merged into
 // their hamza look-alikes: "انظر" (look!) and "أنظر" (I look) are different words.
 const AR_HAMZA_ALEFS = new Set(['أ', 'إ', 'آ']);
+// Short vowels and other marks some seed words carry ("أشاهِد"). The keyboard
+// types none, so they are skipped when Arabic is compared letter by letter.
+const AR_MARKS = /[\u064B-\u0652\u0670]/g;
+
+function arabicPrefixMatch(word: string, prefix: string, fold: boolean): boolean {
+  const candidate = [...word.replace(AR_MARKS, '')];
+  const typed = [...prefix.replace(AR_MARKS, '')];
+  return candidate.length >= typed.length && typed.every((letter, index) => candidate[index] === letter ||
+    (fold && letter === 'ا' && AR_HAMZA_ALEFS.has(candidate[index])));
+}
+
+/** True when an Arabic word completes the typed prefix only because a typed ا stood for أ إ آ. */
+export function isFoldedArabicMatch(word: string, prefix: string): boolean {
+  const candidate = normalizePredictionSpelling(word, 'ar');
+  const typed = normalizePredictionSpelling(prefix, 'ar');
+  return !arabicPrefixMatch(candidate, typed, false) && arabicPrefixMatch(candidate, typed, true);
+}
 
 /** Keep edge punctuation separate so prediction and selection agree on the token. */
 export function predictionTokenParts(value: string): { leading: string; word: string; trailing: string } {
@@ -81,10 +98,7 @@ export function matchesPredictionPrefix(word: string, prefix: string, lang = 'en
     return [...typed].every((letter, index) => candidate[index] === letter ||
       candidate[index].normalize('NFD').replace(VIETNAMESE_TONE_MARKS, '') === letter.normalize('NFD'));
   }
-  if (lang === 'ar' && candidate.length >= typed.length) {
-    return [...typed].every((letter, index) => candidate[index] === letter ||
-      (letter === 'ا' && AR_HAMZA_ALEFS.has(candidate[index])));
-  }
+  if (lang === 'ar') return arabicPrefixMatch(candidate, typed, true);
   if (lang !== 'ru' || candidate.length < typed.length) return false;
   // Omitted ё is tolerated; explicitly typed ё remains precise.
   return [...typed].every((letter, index) => candidate[index] === letter ||

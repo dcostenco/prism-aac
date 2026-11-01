@@ -66,6 +66,12 @@ describe('a typed ا completes أ إ آ', () => {
     expect(matchesPredictionPrefix('آخر', 'أخ', 'ar')).toBe(false);
   });
 
+  it('skips the vowel marks some seed words carry', () => {
+    expect(matchesPredictionPrefix('أشاهِد', 'اشاهد', 'ar')).toBe(true);
+    expect(matchesPredictionPrefix('آمنًا', 'امنا', 'ar')).toBe(true);
+    expect(matchesPredictionPrefix('أنا', 'انَا', 'ar')).toBe(true);
+  });
+
   it('does not fold alef in other languages', () => {
     expect(matchesPredictionPrefix('أنا', 'ان', 'fa')).toBe(false);
   });
@@ -101,7 +107,25 @@ describe('Arabic predictions typed with a bare alef', () => {
     expect(shown('انظ')).toEqual(expect.arrayContaining(['انظر', 'أنظر']));
   });
 
-  it('an explicitly typed أ offers no bare-alef word', () => {
-    expect(shown('أن').some(word => word.startsWith('ان'))).toBe(false);
+  it('an explicitly typed أ offers أنا and no bare-alef word', () => {
+    const words = shown('أن');
+    expect(words).toContain('أنا');
+    expect(words.some(word => word.startsWith('ان'))).toBe(false);
+  });
+
+  // Sol review 2026-11-01: folded matches must not crowd out the words that
+  // match as typed. They get at most two slots while those words remain.
+  it('"اسم" keeps اسمع (listen!) and اسمي next to the folded أسماء / أسمع', () => {
+    const words = shown('اسم');
+    expect(words).toEqual(expect.arrayContaining(['اسمع', 'اسمي']));
+    expect(words.filter(word => !word.startsWith('اسم'))).toHaveLength(2);
+  });
+
+  it('"اذه" offers both اذهب (go!) and أذهب (I go)', () => {
+    expect(shown('اذه')).toEqual(expect.arrayContaining(['اذهب', 'أذهب']));
+  });
+
+  it('"اكل" fills the bar with folded words when nothing matches as typed', () => {
+    expect(shown('اكل')).toEqual(expect.arrayContaining(['أكل', 'آكل', 'أكلت']));
   });
 });

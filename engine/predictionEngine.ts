@@ -1,7 +1,7 @@
 import { WordFreqEntry, PredictionConfig } from '@/types';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { getStemmer, type Stemmer } from '@/engine/stemmers';
-import { isPluralTwin, normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts, ruYoTwinOf } from '@/engine/predictionSpellings';
+import { isPluralTwin, normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts, ruYoTwinOf, isFoldedArabicMatch } from '@/engine/predictionSpellings';
 import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
 
 const DEFAULT_CONFIG: PredictionConfig = {
@@ -607,6 +607,7 @@ export function getPredictions(
   // That is what the 2026-08-15 screenshot showed — "can't / candy / a" where
   // "go / see / do" belonged.
   const MAX_BARE_PREFIX_WHEN_COMPLETE = 1;
+  const MAX_FOLDED_ARABIC = 2;
   const taken: typeof filtered = [];
   // Russian typed without the dots on ё ("мед"): the reviewed ё word it
   // spells ("мёд") takes the first slot, ahead of web-frequent completions
@@ -623,9 +624,18 @@ export function getPredictions(
       if (key !== null) stemForms.set(key, [yoTwinShown]);
     }
     let barePrefixTaken = 0;
+    // Arabic: a typed ا also completes أ إ آ. Those folded matches are often
+    // the word meant ("اريد" → أريد) but must not crowd out the words that
+    // match as typed ("اسم" → اسمع, listen!), so they get at most two slots
+    // here; the backfill below still uses them when nothing else matches.
+    let foldedTaken = 0;
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
       if (c.word === yoTwinShown) continue;
+      if (lang === 'ar' && isFoldedArabicMatch(c.word, completionPrefix)) {
+        if (foldedTaken >= MAX_FOLDED_ARABIC) continue;
+        foldedTaken++;
+      }
       if (
         partialIsCompleteWord
         && !c.hasContext
