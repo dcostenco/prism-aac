@@ -124,7 +124,7 @@ describe('Arabic predictions typed with a bare alef', () => {
     expect(words.some(word => word.startsWith('ان'))).toBe(false);
   });
 
-  // Sol review 2026-11-01: folded matches must not crowd out the words that
+  // Review 2026-11-01: folded matches must not crowd out the words that
   // match as typed. They get at most two slots while those words remain.
   it('"اسم" keeps اسمع (listen!) and اسمي next to the folded أسماء / أسمع', () => {
     const words = shown('اسم');
@@ -166,7 +166,7 @@ describe('folded Arabic matches on the bar (engine rules)', () => {
     expect(shown).toEqual(expect.arrayContaining(['أريد', 'اريدها']));
   });
 
-  // Sol review round 3: the typed word's own hamza spelling is the word
+  // Review 2026-11-01, round 3: the typed word's own hamza spelling is the word
   // itself, so a full stem group of words that fit the context (أريدك,
   // أريده after أنا) must not push it off the bar.
   it("the typed word's own hamza spelling is kept when its stem group is full", () => {
@@ -177,7 +177,7 @@ describe('folded Arabic matches on the bar (engine rules)', () => {
     expect(new Set(shown).size).toBe(shown.length);
   });
 
-  // Sol review round 5: when no word that matches as typed takes the
+  // Review 2026-11-01, round 5: when no word that matches as typed takes the
   // look-alike slot, the folded one keeps its ranked place; lower-ranked
   // words must not use up the folded slots, the bar or its stem group first.
   it('a folded look-alike keeps its place ahead of lower-ranked folded words', () => {
@@ -201,7 +201,7 @@ describe('folded Arabic matches on the bar (engine rules)', () => {
     expect(shown[0]).toBe('أسماء');
   });
 
-  // Sol review round 4: a word that matches as typed but is refused by the
+  // Review 2026-11-01, round 4: a word that matches as typed but is refused by the
   // stem limit (اسمي, after the contextual اسمك / اسمه fill the group) must
   // not keep the look-alike slot: the folded أسماء takes it.
   it('a refused word that matches as typed leaves the look-alike slot to a folded one', () => {
@@ -218,7 +218,7 @@ describe('folded Arabic matches on the bar (engine rules)', () => {
     expect(shown).not.toContain('أسماء');
   });
 
-  // Sol review round 3: with no word that matches as typed, the slot goes
+  // Review 2026-11-01, round 3: with no word that matches as typed, the slot goes
   // to the folded completion instead of staying empty, on both sides of the
   // count that makes "اسم" a complete word.
   it('a complete typed word with no completion as typed offers its folded completion', () => {
@@ -239,7 +239,7 @@ describe('folded Arabic matches on the bar (engine rules)', () => {
     expect(shown).not.toContain('أسماء');
   });
 
-  // Sol review round 2: أسماء and أسمع are refused (the complete word's
+  // Review 2026-11-01, round 2: أسماء and أسمع are refused (the complete word's
   // look-alike slot is taken) and must not use up the folded slots, or the
   // contextual إسماعيل is refused too and the bar fills without it.
   it('folded words that were refused do not use up the two folded slots', () => {
