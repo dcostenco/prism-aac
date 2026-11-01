@@ -141,7 +141,8 @@ describe('Arabic predictions typed with a bare alef', () => {
     // matches as typed, the backfill shows more than two folded words.
     const words = shown('اكل');
     expect(words).toEqual(expect.arrayContaining(['أكل', 'آكل', 'أكلت']));
-    expect(words.filter(word => /^[أإآ]كل/.test(word)).length).toBeGreaterThan(2);
+    expect(words).toHaveLength(5);
+    expect(words.slice(0, 4).every(word => /^[أإآ]كل/.test(word))).toBe(true);
   });
 });
 
@@ -172,6 +173,25 @@ describe('folded Arabic matches on the bar (engine rules)', () => {
     const shown = predict('أنا اريد', { 'أنا': 500, 'اريد': 200, 'أريد': 100, 'أريدك': 40, 'أريده': 40 },
       { 'أنا|أريدك': 50, 'أنا|أريده': 50 });
     expect(shown).toEqual(expect.arrayContaining(['أريدك', 'أريده', 'أريد']));
+    expect(shown.length).toBeLessThanOrEqual(5);
+    expect(new Set(shown).size).toBe(shown.length);
+  });
+
+  // Sol review round 4: a word that matches as typed but is refused by the
+  // stem limit (اسمي, after the contextual اسمك / اسمه fill the group) must
+  // not keep the look-alike slot: the folded أسماء takes it.
+  it('a refused word that matches as typed leaves the look-alike slot to a folded one', () => {
+    const shown = predict('يا اسم', { 'يا': 500, 'اسم': 500, 'اسمك': 1000, 'اسمه': 990, 'أسماء': 800, 'اسمي': 50 },
+      { 'يا|اسمك': 50, 'يا|اسمه': 50 });
+    expect(shown).toEqual(expect.arrayContaining(['اسمك', 'اسمه', 'أسماء']));
+  });
+
+  // ...and a later word that matches as typed gets it when the first is refused.
+  it('a refused word that matches as typed leaves the look-alike slot to the next one', () => {
+    const shown = predict('يا اسم', { 'يا': 500, 'اسم': 500, 'اسمك': 1000, 'اسمه': 990, 'أسماء': 800, 'اسمي': 60, 'اسمع': 50 },
+      { 'يا|اسمك': 50, 'يا|اسمه': 50 });
+    expect(shown).toEqual(expect.arrayContaining(['اسمك', 'اسمه', 'اسمع']));
+    expect(shown).not.toContain('أسماء');
   });
 
   // Sol review round 3: with no word that matches as typed, the slot goes

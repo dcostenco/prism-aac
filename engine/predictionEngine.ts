@@ -623,54 +623,52 @@ export function getPredictions(
       const key = groupKey(yoTwinShown);
       if (key !== null) stemForms.set(key, [yoTwinShown]);
     }
+    // A look-alike counts against its cap only once it is on the bar, so a
+    // candidate refused by the stem limit does not use the slot up.
     let barePrefixTaken = 0;
     // Arabic: a typed ا also completes أ إ آ. Those folded matches are often
     // the word meant ("اريد" → أريد) but must not crowd out the words that
     // match as typed ("اسم" → اسمع, listen!), so they get at most two slots
     // here, counted only once shown; the backfill below still uses them when
     // nothing else matches. When the typed word is already complete, the one
-    // look-alike slot goes to a word that matches as typed if there is one,
-    // else to a folded one; the typed word's own hamza spelling is the word
-    // itself and is outside both limits.
+    // look-alike slot goes to a word that matches as typed; a folded one waits
+    // and takes it only if none got it. The typed word's own hamza spelling
+    // is the word itself and is outside every limit.
     let foldedTaken = 0;
-    // Whether a word that matches as typed is waiting for that slot; when
-    // none is, a folded completion may have it rather than leave it empty.
-    const literalLookAlike = lang === 'ar' && partialIsCompleteWord && filtered.some(c => !c.hasContext
-      && matchesPredictionPrefix(c.word, partialWord, lang) && !isFoldedArabicMatch(c.word, completionPrefix));
-    const take = (c: typeof filtered[number], folded: boolean) => {
+    const waitingFolded: typeof filtered = [];
+    const admit = (c: typeof filtered[number], folded: boolean, lookAlike: boolean): boolean => {
+      const key = groupKey(c.word);
+      if (key !== null) {
+        const forms = stemForms.get(key) ?? [];
+        if (forms.length >= MAX_PER_STEM) return false;
+        if (forms.some(shown => isSuffixedTwin(c.word, shown))) return false;
+        stemForms.set(key, [...forms, c.word]);
+      }
       taken.push(c);
       if (folded) foldedTaken++;
+      if (lookAlike) barePrefixTaken++;
+      return true;
     };
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
       if (c.word === yoTwinShown) continue;
       const folded = lang === 'ar' && isFoldedArabicMatch(c.word, completionPrefix);
       const hamzaSpelling = folded && isArabicHamzaSpellingOf(c.word, partialWord);
-      if (folded && !hamzaSpelling && foldedTaken >= MAX_FOLDED_ARABIC) continue;
-      if (
-        partialIsCompleteWord
-        && !c.hasContext
-        && !hamzaSpelling
-        && matchesPredictionPrefix(c.word, partialWord, lang)
-      ) {
-        if (folded && literalLookAlike) continue;
-        if (barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE) continue;
-        barePrefixTaken++;
-      }
-      const countsAsFolded = folded && !hamzaSpelling;
-      const key = groupKey(c.word);
-      // The typed word's own hamza spelling is the word itself: no stem limit.
       if (hamzaSpelling) {
+        const key = groupKey(c.word);
         if (key !== null) stemForms.set(key, [...(stemForms.get(key) ?? []), c.word]);
-        take(c, false);
+        taken.push(c);
         continue;
       }
-      if (key === null) { take(c, countsAsFolded); continue; }
-      const forms = stemForms.get(key) ?? [];
-      if (forms.length >= MAX_PER_STEM) continue;
-      if (forms.some(shown => isSuffixedTwin(c.word, shown))) continue;
-      stemForms.set(key, [...forms, c.word]);
-      take(c, countsAsFolded);
+      if (folded && foldedTaken >= MAX_FOLDED_ARABIC) continue;
+      const lookAlike = partialIsCompleteWord && !c.hasContext && matchesPredictionPrefix(c.word, partialWord, lang);
+      if (lookAlike && barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE) continue;
+      if (lookAlike && folded) { waitingFolded.push(c); continue; }
+      admit(c, folded, lookAlike);
+    }
+    for (const c of waitingFolded) {
+      if (taken.length >= config.maxResults || barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE || foldedTaken >= MAX_FOLDED_ARABIC) break;
+      admit(c, true, true);
     }
   }
   // Backfill — second pass without the stem-diversity constraint when we
