@@ -3,6 +3,11 @@ import { foldPictureWordCase } from '@/lib/wordCase';
 
 const SPELLING_ALIASES = spellingAliases as Record<string, Record<string, string>>;
 const VIETNAMESE_TONE_MARKS = /[\u0300\u0301\u0303\u0309\u0323]/g;
+// Arabic is often typed with a bare alef where the word has hamza or madda
+// ("انا" for "أنا"): a typed ا also completes أ إ آ, as Arabic search does.
+// An explicitly typed أ إ آ stays exact. Bare-alef words are not merged into
+// their hamza look-alikes: "انظر" (look!) and "أنظر" (I look) are different words.
+const AR_HAMZA_ALEFS = new Set(['أ', 'إ', 'آ']);
 
 /** Keep edge punctuation separate so prediction and selection agree on the token. */
 export function predictionTokenParts(value: string): { leading: string; word: string; trailing: string } {
@@ -75,6 +80,10 @@ export function matchesPredictionPrefix(word: string, prefix: string, lang = 'en
   if (lang === 'vi' && candidate.length >= typed.length) {
     return [...typed].every((letter, index) => candidate[index] === letter ||
       candidate[index].normalize('NFD').replace(VIETNAMESE_TONE_MARKS, '') === letter.normalize('NFD'));
+  }
+  if (lang === 'ar' && candidate.length >= typed.length) {
+    return [...typed].every((letter, index) => candidate[index] === letter ||
+      (letter === 'ا' && AR_HAMZA_ALEFS.has(candidate[index])));
   }
   if (lang !== 'ru' || candidate.length < typed.length) return false;
   // Omitted ё is tolerated; explicitly typed ё remains precise.

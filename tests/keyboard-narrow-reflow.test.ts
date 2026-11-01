@@ -147,11 +147,12 @@ describe('buildKeyboardRows — narrow phone reflow', () => {
       raw[2].slice(0, UTIL_ROW_BASE_KEYS),
     ]);
     expect(built[UTIL_ROW_INDEX].util).toBe(true);
-    expect(tail.keys).toEqual(['ج', 'ة', 'ظ', 'ط', 'ذ', 'د']);
+    // Row 2 has 14 letters since أ إ آ joined it (2026-11-01): four overflow.
+    expect(tail.keys).toEqual(['ج', 'ن', 'م', 'ك', 'ة', 'ظ', 'ط', 'ذ', 'د']);
     expect(tail.continuation).toBe(true);
     expect([...built[0].keys, tail.keys[0]]).toEqual(raw[0]);
-    expect([...built[1].keys, tail.keys[1]]).toEqual(raw[1]);
-    expect([...built[2].keys, ...tail.keys.slice(2)]).toEqual(raw[2]);
+    expect([...built[1].keys, ...tail.keys.slice(1, 5)]).toEqual(raw[1]);
+    expect([...built[2].keys, ...tail.keys.slice(5)]).toEqual(raw[2]);
   });
 
   it('moves Hebrew util-row overflow into a wide continuation row', () => {
