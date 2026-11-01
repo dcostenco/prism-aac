@@ -1,7 +1,7 @@
 import { WordFreqEntry, PredictionConfig } from '@/types';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { getStemmer, type Stemmer } from '@/engine/stemmers';
-import { isPluralTwin, normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts, ruYoTwinOf, isFoldedArabicMatch } from '@/engine/predictionSpellings';
+import { isPluralTwin, normalizePredictionSpelling, predictionWordKey, preferredPredictionSpelling, matchesPredictionPrefix, matchesPredictionContext, predictionTokenParts, ruYoTwinOf, isFoldedArabicMatch, isArabicHamzaSpellingOf } from '@/engine/predictionSpellings';
 import { getReviewedBasicWords } from '@/constants/reviewedBasicWords';
 
 const DEFAULT_CONFIG: PredictionConfig = {
@@ -627,30 +627,39 @@ export function getPredictions(
     // Arabic: a typed ا also completes أ إ آ. Those folded matches are often
     // the word meant ("اريد" → أريد) but must not crowd out the words that
     // match as typed ("اسم" → اسمع, listen!), so they get at most two slots
-    // here; the backfill below still uses them when nothing else matches.
+    // here, counted only once shown; the backfill below still uses them when
+    // nothing else matches. When the typed word is already complete, the one
+    // look-alike slot goes to a word that matches as typed, never a folded
+    // one, except the typed word's own hamza spelling, which is the word itself.
     let foldedTaken = 0;
+    const take = (c: typeof filtered[number], folded: boolean) => {
+      taken.push(c);
+      if (folded) foldedTaken++;
+    };
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
       if (c.word === yoTwinShown) continue;
-      if (lang === 'ar' && isFoldedArabicMatch(c.word, completionPrefix)) {
-        if (foldedTaken >= MAX_FOLDED_ARABIC) continue;
-        foldedTaken++;
-      }
+      const folded = lang === 'ar' && isFoldedArabicMatch(c.word, completionPrefix);
+      const hamzaSpelling = folded && isArabicHamzaSpellingOf(c.word, partialWord);
+      if (folded && !hamzaSpelling && foldedTaken >= MAX_FOLDED_ARABIC) continue;
       if (
         partialIsCompleteWord
         && !c.hasContext
+        && !hamzaSpelling
         && matchesPredictionPrefix(c.word, partialWord, lang)
       ) {
+        if (folded) continue;
         if (barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE) continue;
         barePrefixTaken++;
       }
+      const countsAsFolded = folded && !hamzaSpelling;
       const key = groupKey(c.word);
-      if (key === null) { taken.push(c); continue; }
+      if (key === null) { take(c, countsAsFolded); continue; }
       const forms = stemForms.get(key) ?? [];
       if (forms.length >= MAX_PER_STEM) continue;
       if (forms.some(shown => isSuffixedTwin(c.word, shown))) continue;
       stemForms.set(key, [...forms, c.word]);
-      taken.push(c);
+      take(c, countsAsFolded);
     }
   }
   // Backfill — second pass without the stem-diversity constraint when we

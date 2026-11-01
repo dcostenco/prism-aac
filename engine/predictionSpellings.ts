@@ -77,6 +77,12 @@ export function ruYoTwinOf(typed: string): string | null {
   }) ?? null;
 }
 
+/** True when an Arabic word is the typed word itself with أ إ آ where ا was typed ("أريد" for "اريد"). */
+export function isArabicHamzaSpellingOf(word: string, typed: string): boolean {
+  const base = (value: string) => [...normalizePredictionSpelling(value, 'ar').replace(AR_MARKS, '')].length;
+  return base(word) === base(typed) && isFoldedArabicMatch(word, typed);
+}
+
 /** Reviewed alternate spellings complete the same word; distinct accented words stay separate. */
 export function matchesPredictionPrefix(word: string, prefix: string, lang = 'en'): boolean {
   const candidate = normalizePredictionSpelling(word, lang);

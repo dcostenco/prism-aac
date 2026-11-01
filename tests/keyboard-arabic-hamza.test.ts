@@ -11,6 +11,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { buildKeyboardRows, getLetterRows } from '@/constants/keyboardLayouts';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
 import { matchesPredictionPrefix } from '@/engine/predictionSpellings';
+import { getPredictions } from '@/engine/predictionEngine';
 import { ensureLangCorpusLoaded, isAllowedInLang } from '@/lib/langAllowlist';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -126,6 +127,43 @@ describe('Arabic predictions typed with a bare alef', () => {
   });
 
   it('"اكل" fills the bar with folded words when nothing matches as typed', () => {
-    expect(shown('اكل')).toEqual(expect.arrayContaining(['أكل', 'آكل', 'أكلت']));
+    // The two-slot limit is for the first pass only: with no word that
+    // matches as typed, the backfill shows more than two folded words.
+    const words = shown('اكل');
+    expect(words).toEqual(expect.arrayContaining(['أكل', 'آكل', 'أكلت']));
+    expect(words.filter(word => /^[أإآ]كل/.test(word)).length).toBeGreaterThan(2);
+  });
+});
+
+// Fixed word tables, so the ranking rules are pinned whatever the seed says.
+// "اسم" and "اريد" count as complete words (count ≥ 100).
+describe('folded Arabic matches on the bar (engine rules)', () => {
+  const AR_SCRIPT = /^[\u0600-\u06FF]+$/;
+  const freq = (entries: Record<string, number>) =>
+    Object.fromEntries(Object.entries(entries).map(([word, count]) => [word, { count, lastUsed: 0 }]));
+  const predict = (text: string, words: Record<string, number>, bigrams: Record<string, number> = {}) =>
+    getPredictions(text, freq(words), freq(bigrams), undefined, {}, [], new Set(), AR_SCRIPT, 'ar');
+
+  it('a complete typed word keeps its one look-alike slot for a word that matches as typed', () => {
+    const shown = predict('اسم', { 'اسم': 500, 'أسماء': 400, 'اسمي': 50 });
+    expect(shown).toContain('اسمي');
+    expect(shown).not.toContain('أسماء');
+  });
+
+  it("a complete typed word's own hamza spelling is still offered, beside a word that matches as typed", () => {
+    const shown = predict('اريد', { 'اريد': 200, 'أريد': 450, 'اريدها': 300 });
+    expect(shown).toEqual(expect.arrayContaining(['أريد', 'اريدها']));
+  });
+
+  // Sol review round 2: أسماء and أسمع are refused (the complete word's
+  // look-alike slot is taken) and must not use up the folded slots, or the
+  // contextual إسماعيل is refused too and the bar fills without it.
+  it('folded words that were refused do not use up the two folded slots', () => {
+    const shown = predict('يا اسم',
+      { 'يا': 500, 'اسم': 500, 'اسمك': 950, 'أسماء': 900, 'أسمع': 890, 'إسماعيل': 5, 'اسمه': 5, 'اسمها': 5, 'اسمر': 5, 'اسمين': 5, 'اسمي': 5, 'اسمان': 5 },
+      { 'يا|إسماعيل': 12, 'يا|اسمه': 10, 'يا|اسمها': 10, 'يا|اسمر': 10, 'يا|اسمين': 10, 'يا|اسمي': 10, 'يا|اسمان': 10 });
+    expect(shown).toHaveLength(5);
+    expect(shown).toContain('إسماعيل');
+    expect(shown).not.toContain('أسماء');
   });
 });
